@@ -8,7 +8,7 @@ requirements, design, implementation, and documentation.
 Companion documents:
 
 - `docs/terms-of-reference.md`
-- `docs/design.md`: not yet present
+- `docs/design.md`
 - `docs/roadmap.md`: not yet present
 
 Last substantive revision: 2026-06-13

@@ -8,9 +8,8 @@ design starts.
 
 Companion documents:
 
-- `docs/context.md`: not yet present; candidate terms are listed in the
-  handoff section.
-- `docs/design.md`: not yet present.
+- `docs/context.md`
+- `docs/design.md`
 - `docs/roadmap.md`: not yet present.
 - ADRs: none yet.
 
