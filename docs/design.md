@@ -26,8 +26,8 @@ typestate, or graph validation. Existing crates such as `statig`, `rust-fsm`,
 `smlang`, `sfsm`, `typed-fsm`, `finny`, and `macro-machines` already cover
 those product shapes.
 
-The first technical test is not whether `statelet` can model every finite
-state machine. The test is whether it can improve real transition-heavy code,
+The first technical test is not whether `statelet` can model every finite state
+machine. The test is whether it can improve real transition-heavy code,
 especially `mdtablefix` `ProcessBuffer` and continuation handling, without
 making that code look alien.
 
@@ -93,8 +93,8 @@ the function body visible to reviewers.
 ### 3.4 Treat tracing as an integration, not the core model
 
 Decision: tracing support is behind a `tracing` feature. The default feature
-set is empty until an implementation spike proves that observability must be
-on by default.
+set is empty until an implementation spike proves that observability must be on
+by default.
 
 Cargo default features are hard to remove without breaking downstream users.
 The ToR calls observability central, but not every state machine consumer wants
@@ -115,13 +115,13 @@ The initial workspace should contain only crates that earn a boundary.
 
 <!-- markdownlint-disable MD013 -->
 
-| Crate | Publish | Responsibility | May depend on |
-| --- | --- | --- | --- |
-| `statelet` | Yes | Runtime vocabulary, traits, feature-gated integrations, documentation, and optional macro re-exports | External runtime dependencies; optionally `statelet-macros` for re-export only |
-| `statelet-macros` | Yes | Attribute and derive macros, syntax parsing, generated token output, compile-time diagnostics | `statelet`, `syn`, `quote`, `proc-macro2`, diagnostic helpers |
-| `statelet-test-support` | No, only if needed | Shared test fixtures for compile tests and examples | `statelet`; optionally `statelet-macros` as a dev dependency |
-| `examples/*` | No | Realistic consumer crates, including the `mdtablefix` validation spike if vendored locally | `statelet` as a consumer would |
-| `xtask` or tooling crate | No, only if needed | Dependency-topology checks that cannot be expressed cleanly in Makefile targets | Cargo metadata crates and process helpers |
+| Crate                    | Publish            | Responsibility                                                                                       | May depend on                                                                  |
+| ------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `statelet`               | Yes                | Runtime vocabulary, traits, feature-gated integrations, documentation, and optional macro re-exports | External runtime dependencies; optionally `statelet-macros` for re-export only |
+| `statelet-macros`        | Yes                | Attribute and derive macros, syntax parsing, generated token output, compile-time diagnostics        | `statelet`, `syn`, `quote`, `proc-macro2`, diagnostic helpers                  |
+| `statelet-test-support`  | No, only if needed | Shared test fixtures for compile tests and examples                                                  | `statelet`; optionally `statelet-macros` as a dev dependency                   |
+| `examples/*`             | No                 | Realistic consumer crates, including the `mdtablefix` validation spike if vendored locally           | `statelet` as a consumer would                                                 |
+| `xtask` or tooling crate | No, only if needed | Dependency-topology checks that cannot be expressed cleanly in Makefile targets                      | Cargo metadata crates and process helpers                                      |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -204,9 +204,9 @@ fn handle_line(&mut self, line: &str) -> Result<Decision, Error> {
 }
 ```
 
-The `state` and `event` entries are Rust expressions encoded as string
-literals in v0.1. This avoids inventing a nested DSL in the attribute grammar
-and lets the macro parse them as expressions with `syn`.
+The `state` and `event` entries are Rust expressions encoded as string literals
+in v0.1. This avoids inventing a nested DSL in the attribute grammar and lets
+the macro parse them as expressions with `syn`.
 
 The macro may also accept `infallible`:
 
@@ -248,9 +248,9 @@ The macro must not:
 - change function visibility or call convention except where wrapping requires
   a private implementation function.
 
-Generated code must use absolute paths such as `::statelet::...` by default.
-If crate renaming support is needed, use `proc-macro-crate` rather than relying
-on a hard-coded local crate name. This follows the Rust Reference warning that
+Generated code must use absolute paths such as `::statelet::...` by default. If
+crate renaming support is needed, use `proc-macro-crate` rather than relying on
+a hard-coded local crate name. This follows the Rust Reference warning that
 procedural macros are unhygienic.
 
 ## 8. Fallibility checking
@@ -264,8 +264,8 @@ For `fallible`, the macro accepts return types whose outer shape is
 syntax, so v0.1 should reject aliases unless a later spike proves a better
 diagnostic strategy.
 
-For `infallible`, the macro rejects a syntactic `Result<_, _>` return type.
-It does not reject panics, because panics are not part of the declared domain
+For `infallible`, the macro rejects a syntactic `Result<_, _>` return type. It
+does not reject panics, because panics are not part of the declared domain
 failure contract.
 
 The compile errors should point at the fallibility argument or the return type,
@@ -301,12 +301,12 @@ The initial feature set should be:
 
 <!-- markdownlint-disable MD013 -->
 
-| Feature | Default | Purpose | Design rule |
-| --- | --- | --- | --- |
-| `macros` | Probably yes | Re-export `statelet-macros` from `statelet` | May depend on `statelet-macros`; must not be needed for runtime-only use |
-| `tracing` | No | Enable transition-specific tracing output | Adds `tracing`; does not change transition semantics |
-| `derive` | Probably yes if derives live in `statelet-macros` | Enable `StateName` derive re-export | Must not pull in tracing |
-| `serde` | No | Serialize runtime vocabulary if needed | Must not affect macro expansion |
+| Feature   | Default                                           | Purpose                                     | Design rule                                                              |
+| --------- | ------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| `macros`  | Probably yes                                      | Re-export `statelet-macros` from `statelet` | May depend on `statelet-macros`; must not be needed for runtime-only use |
+| `tracing` | No                                                | Enable transition-specific tracing output   | Adds `tracing`; does not change transition semantics                     |
+| `derive`  | Probably yes if derives live in `statelet-macros` | Enable `StateName` derive re-export         | Must not pull in tracing                                                 |
+| `serde`   | No                                                | Serialize runtime vocabulary if needed      | Must not affect macro expansion                                          |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -383,8 +383,8 @@ cargo tree --workspace --duplicates
 
 A later tool may replace manual inspection with a machine-readable
 `cargo metadata` check. `lading` and `whitaker` can mitigate this class of
-problem, but their existence does not remove the need for direct topology
-tests in this repository.
+problem, but their existence does not remove the need for direct topology tests
+in this repository.
 
 ## 12. `mdtablefix` validation spike
 

@@ -23,9 +23,9 @@ uses one of these terms, it should mean the definition recorded here.
 
 ### State machine
 
-Explicit stateful logic that changes behaviour according to a current state
-and input. In `statelet`, a state machine is normally expressed with
-project-owned Rust enums, structs, methods, and `match` expressions.
+Explicit stateful logic that changes behaviour according to a current state and
+input. In `statelet`, a state machine is normally expressed with project-owned
+Rust enums, structs, methods, and `match` expressions.
 
 ### Ordinary Rust state machine
 
@@ -47,8 +47,8 @@ argument, parsed line, command, protocol message, timer tick, or domain value.
 
 ### Transition boundary
 
-A method or function where stateful logic decides to stay in the current
-state, move to another state, emit output, ignore input, or fail.
+A method or function where stateful logic decides to stay in the current state,
+move to another state, emit output, ignore input, or fail.
 
 ### Transition contract
 
@@ -64,8 +64,8 @@ emitting output, ignoring input, or domain-specific completion.
 
 ### Fallible transition
 
-A transition boundary whose signature reports domain failure with `Result`.
-The design treats fallibility as part of the transition contract, not as an
+A transition boundary whose signature reports domain failure with `Result`. The
+design treats fallibility as part of the transition contract, not as an
 implementation detail hidden inside the function body.
 
 ### Infallible transition
@@ -76,8 +76,8 @@ A transition boundary whose signature does not report domain failure with
 ### State name
 
 A stable, low-cost name for a state used in diagnostics, tracing fields, and
-generated documentation. A state name is not required to be the same as
-`Debug` output.
+generated documentation. A state name is not required to be the same as `Debug`
+output.
 
 ### Transition instrumentation
 
@@ -118,8 +118,8 @@ cycle or keeps a stable boundary testable.
 ### Dependency topology
 
 The directed graph of crate dependencies across runtime, proc-macro,
-test-helper, example, and generated-code crates. The topology must stay
-acyclic and understandable.
+test-helper, example, and generated-code crates. The topology must stay acyclic
+and understandable.
 
 ### Circular dependency
 
@@ -141,9 +141,9 @@ safety or typestate correctness.
 
 ### Graph safety
 
-Compile-time proof that a state-machine graph admits only declared
-transitions. This is a non-goal for initial `statelet` unless later metadata can
-provide it without reshaping user code.
+Compile-time proof that a state-machine graph admits only declared transitions.
+This is a non-goal for initial `statelet` unless later metadata can provide it
+without reshaping user code.
 
 ### Typestate
 

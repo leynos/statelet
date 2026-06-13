@@ -3,8 +3,8 @@
 Status: Draft v0.1 with acknowledged open questions
 
 Audience: Product owner, engineering lead, maintainers, crate reviewers, and
-contributors evaluating whether `statelet` should exist before technical
-design starts.
+contributors evaluating whether `statelet` should exist before technical design
+starts.
 
 Companion documents:
 
@@ -25,9 +25,9 @@ diagram output.
 
 That market reality makes a broad "another Rust state-machine framework"
 position weak. The useful question is narrower: whether teams that already
-write ordinary enum- or struct-backed Rust state machines need a small
-library that standardizes transition boundaries without taking over dispatch,
-storage, event modelling, or control flow.
+write ordinary enum- or struct-backed Rust state machines need a small library
+that standardizes transition boundaries without taking over dispatch, storage,
+event modelling, or control flow.
 
 The motivating pattern comes from parser, stream-processing, and protocol code
 where the hand-written state machine is the right model, but the surrounding
@@ -36,8 +36,8 @@ observable, and explicit about fallibility. They do not necessarily want a
 statechart engine, a graph-first DSL, or a generated runtime.
 
 `statelet` exists if that wedge is real. It should be evaluated as a
-maintenance-safety toolkit for ordinary Rust state machines, not as a
-framework competing to own the whole state-machine model.
+maintenance-safety toolkit for ordinary Rust state machines, not as a framework
+competing to own the whole state-machine model.
 
 ## 2. Domain
 
@@ -58,12 +58,12 @@ Prior art falls into four broad groups:
 
 <!-- markdownlint-disable MD013 -->
 
-| Group | Examples | What they optimize for |
-| --- | --- | --- |
-| Event-driven frameworks | `statig`, `rust-fsm` | A state machine as an object that accepts events through a runtime API |
-| Transition-table DSLs | `smlang`, `state-machines` | A graph or transition list as the centre of the model |
-| Static and embedded generators | `sm`, `sfsm`, `typed-fsm`, `finny` | Compile-time validation, low overhead, `no_std`, and embedded suitability |
-| Graph and logging macro helpers | `macro-machines` | Macro-defined machines with logging and Graphviz-style output |
+| Group                           | Examples                           | What they optimize for                                                    |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
+| Event-driven frameworks         | `statig`, `rust-fsm`               | A state machine as an object that accepts events through a runtime API    |
+| Transition-table DSLs           | `smlang`, `state-machines`         | A graph or transition list as the centre of the model                     |
+| Static and embedded generators  | `sm`, `sfsm`, `typed-fsm`, `finny` | Compile-time validation, low overhead, `no_std`, and embedded suitability |
+| Graph and logging macro helpers | `macro-machines`                   | Macro-defined machines with logging and Graphviz-style output             |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -75,8 +75,8 @@ storage, and dispatch decisions in ordinary project code.
 Internal prior art also matters. The `rstest-bdd` project is an example of a
 proc-macro crate previously implemented in this project family. It shows that
 the team can ship Rust macro tooling, but it also supplies a caution: avoiding
-circular dependencies is difficult once macro crates, runtime crates,
-test-only support crates, and generated examples start depending on each other.
+circular dependencies is difficult once macro crates, runtime crates, test-only
+support crates, and generated examples start depending on each other.
 `statelet` should treat dependency topology as a product risk from the start,
 not as a clean-up task after the API settles.
 
@@ -86,16 +86,16 @@ The direct competitive landscape is active and varied:
 
 <!-- markdownlint-disable MD013 -->
 
-| Crate | Current signal | Relevance to `statelet` |
-| --- | ---: | --- |
-| `statig` | 0.4.1; 805,049 recent downloads on crates.io, 2026-06-13 | Mature hierarchical, event-driven machine with generated state machinery |
-| `rust-fsm` | 0.8.0; 177,910 recent downloads on crates.io, 2026-06-13 | Framework plus DSL for finite state machines |
-| `smlang` | 0.8.0; 163,007 recent downloads on crates.io, 2026-06-13 | Procedural macro DSL with guards, actions, async support, and generated docs |
-| `sm` | 0.9.0; updated 2019-11-09 on crates.io | Static macro-defined state machines; older but still downloaded |
-| `typed-fsm` | 0.4.8 on docs.rs | Embedded-oriented event-driven FSM generator with compile-time validation |
-| `finny` | 0.2.0 on docs.rs | Builder-style procedural macro with dispatcher, guards, and hierarchy |
-| `sfsm` | 0.4.3 on docs.rs | Static, embedded-oriented generator with transition and state traits |
-| `macro-machines` | 0.10.8; 141 recent downloads on crates.io, 2026-06-13 | Relevant prior art for logging and Graphviz generation |
+| Crate            | Current signal                                           | Relevance to `statelet`                                                      |
+| ---------------- | -------------------------------------------------------: | ---------------------------------------------------------------------------- |
+| `statig`         | 0.4.1; 805,049 recent downloads on crates.io, 2026-06-13 | Mature hierarchical, event-driven machine with generated state machinery     |
+| `rust-fsm`       | 0.8.0; 177,910 recent downloads on crates.io, 2026-06-13 | Framework plus DSL for finite state machines                                 |
+| `smlang`         | 0.8.0; 163,007 recent downloads on crates.io, 2026-06-13 | Procedural macro DSL with guards, actions, async support, and generated docs |
+| `sm`             | 0.9.0; updated 2019-11-09 on crates.io                   | Static macro-defined state machines; older but still downloaded              |
+| `typed-fsm`      | 0.4.8 on docs.rs                                         | Embedded-oriented event-driven FSM generator with compile-time validation    |
+| `finny`          | 0.2.0 on docs.rs                                         | Builder-style procedural macro with dispatcher, guards, and hierarchy        |
+| `sfsm`           | 0.4.3 on docs.rs                                         | Static, embedded-oriented generator with transition and state traits         |
+| `macro-machines` | 0.10.8; 141 recent downloads on crates.io, 2026-06-13    | Relevant prior art for logging and Graphviz generation                       |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -119,14 +119,14 @@ crate into well-served territory.
 
 <!-- markdownlint-disable MD013 -->
 
-| Type | Description | Context | Cares about | Will dislike | Current alternative |
-| --- | --- | --- | --- | --- | --- |
-| Primary user | Rust maintainer of small stateful logic | Works on parsers, protocol handlers, stream processors, CLIs, retry loops, or import pipelines | Explicit control flow, reviewable transitions, low dependency cost, consistent diagnostics | Framework lock-in, hidden branch logic, generated models that look unlike local code | Hand-written methods plus ad hoc tracing and review discipline |
-| Primary user | Library author preserving a small public API | Maintains reusable Rust crates where a full FSM framework would be too large a commitment | Small surface area, opt-in macros, clear contracts, feature-gated dependencies | Required runtime engine, macro magic that changes ownership semantics | Local helper types, `Debug`, and documentation |
-| Secondary user | Code reviewer or future maintainer | Reads transition-heavy code after the original author has moved on | Predictable naming, state/event/result fields in logs, visible fallibility contracts | Needing to learn a new graph DSL to review ordinary branch logic | Manual inspection and reviewer memory |
-| Stakeholder | Project sponsor or crate owner | Decides whether the crate earns maintenance effort | A defensible wedge, low support burden, clear non-goals | A product surface that grows into a general FSM framework | Do nothing; keep patterns project-local |
-| Non-user | Developer seeking a graph-first state-machine engine | Needs generated dispatch, statecharts, graph validation, lifecycle hooks, or formal transition tables | Existing framework capability | A crate that refuses to own the graph | `statig`, `smlang`, `rust-fsm`, `typed-fsm`, `sfsm`, `finny`, or `state-machines` |
-| Non-user | Embedded hard real-time FSM author | Needs `no_std`, no allocation, ISR safety, static dispatch guarantees, or microcontroller-specific constraints | Predictable generated code and platform support | A library optimized for application-code maintainability | `typed-fsm`, `sfsm`, `sm`, `finny`, or hand-written static code |
+| Type           | Description                                          | Context                                                                                                        | Cares about                                                                                | Will dislike                                                                         | Current alternative                                                               |
+| -------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Primary user   | Rust maintainer of small stateful logic              | Works on parsers, protocol handlers, stream processors, CLIs, retry loops, or import pipelines                 | Explicit control flow, reviewable transitions, low dependency cost, consistent diagnostics | Framework lock-in, hidden branch logic, generated models that look unlike local code | Hand-written methods plus ad hoc tracing and review discipline                    |
+| Primary user   | Library author preserving a small public API         | Maintains reusable Rust crates where a full FSM framework would be too large a commitment                      | Small surface area, opt-in macros, clear contracts, feature-gated dependencies             | Required runtime engine, macro magic that changes ownership semantics                | Local helper types, `Debug`, and documentation                                    |
+| Secondary user | Code reviewer or future maintainer                   | Reads transition-heavy code after the original author has moved on                                             | Predictable naming, state/event/result fields in logs, visible fallibility contracts       | Needing to learn a new graph DSL to review ordinary branch logic                     | Manual inspection and reviewer memory                                             |
+| Stakeholder    | Project sponsor or crate owner                       | Decides whether the crate earns maintenance effort                                                             | A defensible wedge, low support burden, clear non-goals                                    | A product surface that grows into a general FSM framework                            | Do nothing; keep patterns project-local                                           |
+| Non-user       | Developer seeking a graph-first state-machine engine | Needs generated dispatch, statecharts, graph validation, lifecycle hooks, or formal transition tables          | Existing framework capability                                                              | A crate that refuses to own the graph                                                | `statig`, `smlang`, `rust-fsm`, `typed-fsm`, `sfsm`, `finny`, or `state-machines` |
+| Non-user       | Embedded hard real-time FSM author                   | Needs `no_std`, no allocation, ISR safety, static dispatch guarantees, or microcontroller-specific constraints | Predictable generated code and platform support                                            | A library optimized for application-code maintainability                             | `typed-fsm`, `sfsm`, `sm`, `finny`, or hand-written static code                   |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -263,14 +263,14 @@ Competing alternatives:
 
 <!-- markdownlint-disable MD013 -->
 
-| Assumption | Consequence if false |
-| --- | --- |
-| A meaningful segment of Rust users prefers hand-written enum/struct state machines over frameworks for small application logic | The crate becomes a style preference with weak adoption pull |
-| Users will accept an attribute macro when it removes repetitive instrumentation and contract boilerplate | The macro surface becomes harder to justify than a conventions-only crate |
-| The narrow wedge is easier to maintain than a general framework | Feature pressure may turn the crate into the crowded product it was meant to avoid |
-| Existing crates do not already satisfy this exact transition-boundary pattern | `statelet` should either narrow further or not be built |
-| Tracing consistency is valuable enough to appear early | If not, tracing should become optional sugar rather than the central thesis |
-| Dependency topology can stay simple enough for regular validation | If not, circular dependencies may make the proc-macro split harder to maintain than the state-machine pattern it standardizes |
+| Assumption                                                                                                                     | Consequence if false                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| A meaningful segment of Rust users prefers hand-written enum/struct state machines over frameworks for small application logic | The crate becomes a style preference with weak adoption pull                                                                  |
+| Users will accept an attribute macro when it removes repetitive instrumentation and contract boilerplate                       | The macro surface becomes harder to justify than a conventions-only crate                                                     |
+| The narrow wedge is easier to maintain than a general framework                                                                | Feature pressure may turn the crate into the crowded product it was meant to avoid                                            |
+| Existing crates do not already satisfy this exact transition-boundary pattern                                                  | `statelet` should either narrow further or not be built                                                                       |
+| Tracing consistency is valuable enough to appear early                                                                         | If not, tracing should become optional sugar rather than the central thesis                                                   |
+| Dependency topology can stay simple enough for regular validation                                                              | If not, circular dependencies may make the proc-macro split harder to maintain than the state-machine pattern it standardizes |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -292,17 +292,17 @@ Competing alternatives:
 
 <!-- markdownlint-disable MD013 -->
 
-| Question | Why it matters | Resolution criteria | Owner | Suggested path |
-| --- | --- | --- | --- | --- |
-| Is the first-class product a macro crate, a conventions crate, or a small trait crate with macro sugar? | This determines API shape, dependency cost, and how users adopt the pattern | A design note compares at least two shapes against the user job and non-goals | Project owner | Technical design |
-| Should tracing be a default feature or fully opt-in? | Observability is part of the wedge, but default dependencies affect adoption | A dependency and user-experience trade-off is recorded before v0.1 implementation | Project owner | ADR candidate |
-| What is the minimum transition outcome vocabulary? | Too much vocabulary becomes a framework; too little fails to standardize the pattern | The design names the smallest set needed by real examples | Engineering lead | Implementation spike |
-| Can fallible/infallible contracts be checked cleanly by an attribute macro? | This is one of the proposed maintenance-safety claims | A macro spike proves useful diagnostics on representative signatures | Engineering lead | Implementation spike |
-| Should diagram or test metadata exist in v0.1? | These features risk pulling the crate towards graph ownership | v0.1 either excludes them or defines metadata that does not shape user code | Project owner | Roadmap decision |
-| Does `statelet` improve `mdtablefix` enough to justify extraction? | `mdtablefix` is the motivating Day 2 usefulness test, not a toy example | A spike applies the proposed API to `ProcessBuffer` and continuation handling, then records whether reviewability or diagnostics improved without obscuring branch logic | Project owner | Validation spike |
-| Which other real code examples validate the wedge? | The crate should not overfit to one parser | At least one additional non-toy example is documented before release | Project owner | Example selection |
-| How will `statelet` prevent circular dependency drift? | Prior proc-macro work in `rstest-bdd` showed that avoiding dependency cycles is a real maintenance risk | CI or local gates include a repeatable dependency-topology check covering runtime, proc-macro, test-helper, example, and generated-code crates | Engineering lead | Validation tooling spike |
-| What project licence, maintenance policy, and MSRV should apply? | Crate consumers need these commitments before adoption | The repository declares them before publishing | Project owner | Repository setup |
+| Question                                                                                                | Why it matters                                                                                          | Resolution criteria                                                                                                                                                      | Owner            | Suggested path           |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- | ------------------------ |
+| Is the first-class product a macro crate, a conventions crate, or a small trait crate with macro sugar? | This determines API shape, dependency cost, and how users adopt the pattern                             | A design note compares at least two shapes against the user job and non-goals                                                                                            | Project owner    | Technical design         |
+| Should tracing be a default feature or fully opt-in?                                                    | Observability is part of the wedge, but default dependencies affect adoption                            | A dependency and user-experience trade-off is recorded before v0.1 implementation                                                                                        | Project owner    | ADR candidate            |
+| What is the minimum transition outcome vocabulary?                                                      | Too much vocabulary becomes a framework; too little fails to standardize the pattern                    | The design names the smallest set needed by real examples                                                                                                                | Engineering lead | Implementation spike     |
+| Can fallible/infallible contracts be checked cleanly by an attribute macro?                             | This is one of the proposed maintenance-safety claims                                                   | A macro spike proves useful diagnostics on representative signatures                                                                                                     | Engineering lead | Implementation spike     |
+| Should diagram or test metadata exist in v0.1?                                                          | These features risk pulling the crate towards graph ownership                                           | v0.1 either excludes them or defines metadata that does not shape user code                                                                                              | Project owner    | Roadmap decision         |
+| Does `statelet` improve `mdtablefix` enough to justify extraction?                                      | `mdtablefix` is the motivating Day 2 usefulness test, not a toy example                                 | A spike applies the proposed API to `ProcessBuffer` and continuation handling, then records whether reviewability or diagnostics improved without obscuring branch logic | Project owner    | Validation spike         |
+| Which other real code examples validate the wedge?                                                      | The crate should not overfit to one parser                                                              | At least one additional non-toy example is documented before release                                                                                                     | Project owner    | Example selection        |
+| How will `statelet` prevent circular dependency drift?                                                  | Prior proc-macro work in `rstest-bdd` showed that avoiding dependency cycles is a real maintenance risk | CI or local gates include a repeatable dependency-topology check covering runtime, proc-macro, test-helper, example, and generated-code crates                           | Engineering lead | Validation tooling spike |
+| What project licence, maintenance policy, and MSRV should apply?                                        | Crate consumers need these commitments before adoption                                                  | The repository declares them before publishing                                                                                                                           | Project owner    | Repository setup         |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -353,8 +353,7 @@ the macro-versus-trait question and the tracing feature policy.
 ## Appendix A. References
 
 - crates.io keyword API for `state-machine`, reporting 154 crates on
-  2026-06-13:
-  `https://crates.io/api/v1/keywords/state-machine`
+  2026-06-13: `https://crates.io/api/v1/keywords/state-machine`
 - crates.io API for `statig`, accessed 2026-06-13:
   `https://crates.io/api/v1/crates/statig`
 - docs.rs documentation for `statig`, accessed 2026-06-13:
@@ -380,8 +379,7 @@ the macro-versus-trait question and the tracing feature policy.
 - docs.rs source page for `macro-machines`, accessed 2026-06-13:
   `https://docs.rs/crate/macro-machines/latest/source/`
 - `rstest-bdd` repository, internal prior art for Rust proc-macro crate
-  delivery, accessed 2026-06-13:
-  `https://github.com/leynos/rstest-bdd/`
+  delivery, accessed 2026-06-13: `https://github.com/leynos/rstest-bdd/`
 - `lading` repository, developing mitigation tooling, accessed 2026-06-13:
   `https://github.com/leynos/lading`
 - `whitaker` repository, developing validation tooling, accessed 2026-06-13:
