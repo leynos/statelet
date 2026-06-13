@@ -1,6 +1,6 @@
 # statelet - terms of reference
 
-Status: Draft v0.1 with acknowledged open questions
+Status: Draft v0.2 after design review
 
 Audience: Product owner, engineering lead, maintainers, crate reviewers, and
 contributors evaluating whether `statelet` should exist before technical design
@@ -39,6 +39,11 @@ statechart engine, a graph-first DSL, or a generated runtime.
 maintenance-safety toolkit for ordinary Rust state machines, not as a framework
 competing to own the whole state-machine model.
 
+The first validation step is not a macro. It is the strongest non-macro
+baseline: documented conventions, `StateName`, stable tracing field names,
+local helpers, and `#[tracing::instrument(fields(...))]`. A macro belongs in
+`statelet` only if it beats that baseline on real code.
+
 ## 2. Domain
 
 The domain is Rust state-machine implementation for small to medium application
@@ -58,12 +63,12 @@ Prior art falls into four broad groups:
 
 <!-- markdownlint-disable MD013 -->
 
-| Group                           | Examples                           | What they optimize for                                                    |
-| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
-| Event-driven frameworks         | `statig`, `rust-fsm`               | A state machine as an object that accepts events through a runtime API    |
-| Transition-table DSLs           | `smlang`, `state-machines`         | A graph or transition list as the centre of the model                     |
-| Static and embedded generators  | `sm`, `sfsm`, `typed-fsm`, `finny` | Compile-time validation, low overhead, `no_std`, and embedded suitability |
-| Graph and logging macro helpers | `macro-machines`                   | Macro-defined machines with logging and Graphviz-style output             |
+| Group                           | Examples                                | What they optimize for                                                    |
+| ------------------------------- | --------------------------------------- | ------------------------------------------------------------------------- |
+| Event-driven frameworks         | `statig`, `rust-fsm`                    | A state machine as an object that accepts events through a runtime API    |
+| Transition-table DSLs           | `smlang`, `state-machines`, `stateless` | A graph or transition list as the centre of the model                     |
+| Static and embedded generators  | `sm`, `sfsm`, `typed-fsm`, `finny`      | Compile-time validation, low overhead, `no_std`, and embedded suitability |
+| Graph and logging macro helpers | `macro-machines`                        | Macro-defined machines with logging and Graphviz-style output             |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -95,6 +100,7 @@ The direct competitive landscape is active and varied:
 | `typed-fsm`      | 0.4.8 on docs.rs                                         | Embedded-oriented event-driven FSM generator with compile-time validation    |
 | `finny`          | 0.2.0 on docs.rs                                         | Builder-style procedural macro with dispatcher, guards, and hierarchy        |
 | `sfsm`           | 0.4.3 on docs.rs                                         | Static, embedded-oriented generator with transition and state traits         |
+| `stateless`      | docs.rs describes a zero-cost transition-table macro     | Closest warning against owning transition tables                             |
 | `macro-machines` | 0.10.8; 141 recent downloads on crates.io, 2026-06-13    | Relevant prior art for logging and Graphviz generation                       |
 
 <!-- markdownlint-enable MD013 -->
@@ -170,14 +176,15 @@ Competing alternatives:
 
 - Define `statelet` as a lightweight toolkit for transition boundaries in
   ordinary Rust state machines.
+- Prove the conventions-only baseline before publishing the macro surface.
 - Preserve user-owned state, event, output, error, storage, and dispatch
   models.
-- Provide a small shared transition vocabulary that makes outcomes explicit
-  without imposing a runtime engine.
+- Provide only the shared vocabulary that real examples consume; do not publish
+  an outcome ontology before it has a user.
 - Support opt-in transition instrumentation with predictable state, event,
   transition, result, and error fields.
-- Support explicit fallible and infallible transition contracts where the macro
-  can check the declared shape.
+- Support explicit fallible and infallible transition declarations without
+  pretending to prove semantic failure behaviour.
 - Keep the core surface small enough that a maintainer can understand the
   generated contract from the documentation and examples.
 - Make the crate useful in parser, protocol, stream-processing, CLI workflow,
@@ -221,6 +228,11 @@ Competing alternatives:
   handling flow while preserving ordinary Rust control flow, avoiding a
   generated dispatch loop, and making review or diagnostics measurably clearer
   than the unannotated version.
+- The `mdtablefix` spike includes a non-macro baseline using
+  `#[tracing::instrument]` and local helpers. A macro passes only if it beats
+  that baseline by a stated margin.
+- A second non-toy validation example is named before release. The initial
+  candidate is `lading`'s publish workflow phase coordination.
 
 ### 7.2 Operational success
 
@@ -267,6 +279,7 @@ Competing alternatives:
 | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
 | A meaningful segment of Rust users prefers hand-written enum/struct state machines over frameworks for small application logic | The crate becomes a style preference with weak adoption pull                                                                  |
 | Users will accept an attribute macro when it removes repetitive instrumentation and contract boilerplate                       | The macro surface becomes harder to justify than a conventions-only crate                                                     |
+| Real expression-token attribute arguments are acceptable to users                                                              | If not, the macro may still feel too alien even without string literals                                                       |
 | The narrow wedge is easier to maintain than a general framework                                                                | Feature pressure may turn the crate into the crowded product it was meant to avoid                                            |
 | Existing crates do not already satisfy this exact transition-boundary pattern                                                  | `statelet` should either narrow further or not be built                                                                       |
 | Tracing consistency is valuable enough to appear early                                                                         | If not, tracing should become optional sugar rather than the central thesis                                                   |
@@ -296,11 +309,12 @@ Competing alternatives:
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- | ------------------------ |
 | Is the first-class product a macro crate, a conventions crate, or a small trait crate with macro sugar? | This determines API shape, dependency cost, and how users adopt the pattern                             | A design note compares at least two shapes against the user job and non-goals                                                                                            | Project owner    | Technical design         |
 | Should tracing be a default feature or fully opt-in?                                                    | Observability is part of the wedge, but default dependencies affect adoption                            | A dependency and user-experience trade-off is recorded before v0.1 implementation                                                                                        | Project owner    | ADR candidate            |
-| What is the minimum transition outcome vocabulary?                                                      | Too much vocabulary becomes a framework; too little fails to standardize the pattern                    | The design names the smallest set needed by real examples                                                                                                                | Engineering lead | Implementation spike     |
-| Can fallible/infallible contracts be checked cleanly by an attribute macro?                             | This is one of the proposed maintenance-safety claims                                                   | A macro spike proves useful diagnostics on representative signatures                                                                                                     | Engineering lead | Implementation spike     |
+| What is the minimum transition outcome vocabulary, if any?                                              | Too much vocabulary becomes a framework; unused public vocabulary becomes compatibility debt            | The design names the smallest set consumed by real examples or defers the type                                                                                           | Engineering lead | Implementation spike     |
+| Can fallible/infallible declarations be useful without hard false-positive checks?                      | Alias-blind syntactic checking can reject valid code or miss aliased `Result`                           | The macro treats declarations as descriptive by default and makes strict checking opt-in                                                                                 | Engineering lead | Implementation spike     |
+| What does `#[transition]` add over `#[tracing::instrument]` plus helpers?                               | This is the make-or-break value claim for the macro                                                     | A head-to-head `mdtablefix` baseline comparison states the concrete added value or defers the macro                                                                      | Engineering lead | Validation spike         |
 | Should diagram or test metadata exist in v0.1?                                                          | These features risk pulling the crate towards graph ownership                                           | v0.1 either excludes them or defines metadata that does not shape user code                                                                                              | Project owner    | Roadmap decision         |
 | Does `statelet` improve `mdtablefix` enough to justify extraction?                                      | `mdtablefix` is the motivating Day 2 usefulness test, not a toy example                                 | A spike applies the proposed API to `ProcessBuffer` and continuation handling, then records whether reviewability or diagnostics improved without obscuring branch logic | Project owner    | Validation spike         |
-| Which other real code examples validate the wedge?                                                      | The crate should not overfit to one parser                                                              | At least one additional non-toy example is documented before release                                                                                                     | Project owner    | Example selection        |
+| Does `lading` publish workflow coordination validate the wedge outside parsers?                         | The crate should not overfit to `mdtablefix`                                                            | `lading` is evaluated or replaced with a better named non-toy example before macro publication                                                                           | Project owner    | Example selection        |
 | How will `statelet` prevent circular dependency drift?                                                  | Prior proc-macro work in `rstest-bdd` showed that avoiding dependency cycles is a real maintenance risk | CI or local gates include a repeatable dependency-topology check covering runtime, proc-macro, test-helper, example, and generated-code crates                           | Engineering lead | Validation tooling spike |
 | What project licence, maintenance policy, and MSRV should apply?                                        | Crate consumers need these commitments before adoption                                                  | The repository declares them before publishing                                                                                                                           | Project owner    | Repository setup         |
 
@@ -374,6 +388,8 @@ the macro-versus-trait question and the tracing feature policy.
   `https://docs.rs/typed-fsm/latest/typed_fsm/`
 - docs.rs documentation for `finny`, accessed 2026-06-13:
   `https://docs.rs/finny/latest/finny/`
+- docs.rs documentation for `stateless`, accessed 2026-06-13:
+  `https://docs.rs/stateless`
 - crates.io API for `macro-machines`, accessed 2026-06-13:
   `https://crates.io/api/v1/crates/macro-machines`
 - docs.rs source page for `macro-machines`, accessed 2026-06-13:

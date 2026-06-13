@@ -1,6 +1,6 @@
 # statelet context
 
-Status: Draft v0.1
+Status: Draft v0.2
 
 Audience: Maintainers, contributors, and reviewers working on `statelet`
 requirements, design, implementation, and documentation.
@@ -56,11 +56,31 @@ The declared shape of a transition boundary, including how it identifies state,
 which event or input it handles, whether it is fallible, which outcome type it
 returns, and which observability fields it emits.
 
+### Non-macro baseline
+
+The required first validation shape for `statelet`: documented conventions,
+`StateName`, stable tracing field names, local helpers, and ordinary
+`#[tracing::instrument(fields(...))]` annotations. The macro must beat this
+baseline before it earns publication.
+
+### Bet register
+
+The explicit list of product and technical assumptions that must be tested
+before the affected API ships. In `statelet`, the register covers macro value,
+attribute grammar, fallibility checking, topology, and validation-example
+representativeness.
+
 ### Transition outcome
 
 The value returned by a transition boundary to describe the visible result of
 handling input. An outcome may report staying in state, moving between states,
 emitting output, ignoring input, or domain-specific completion.
+
+### Transition-table ownership
+
+A design where the crate owns the declared transition graph and generates
+state/event structure from it. This is out of scope for `statelet`; crates such
+as `stateless`, `smlang`, and `state-machines` already serve that product shape.
 
 ### Fallible transition
 
