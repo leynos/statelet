@@ -73,6 +73,14 @@ hand-written state machine whose author wants a named transition contract and
 consistent observability, while keeping the machine's state, event, error,
 storage, and dispatch decisions in ordinary project code.
 
+Internal prior art also matters. The `rstest-bdd` project is an example of a
+proc-macro crate previously implemented in this project family. It shows that
+the team can ship Rust macro tooling, but it also supplies a caution: avoiding
+circular dependencies is difficult once macro crates, runtime crates,
+test-only support crates, and generated examples start depending on each other.
+`statelet` should treat dependency topology as a product risk from the start,
+not as a clean-up task after the API settles.
+
 ## 3. Market context
 
 The direct competitive landscape is active and varied:
@@ -223,6 +231,11 @@ Competing alternatives:
 - Macro expansion is explainable through documentation and examples.
 - The crate has compatibility tests for representative transition signatures,
   fallible/infallible contracts, and feature combinations.
+- The crate regularly tests its dependency graph for circular dependencies
+  across runtime, proc-macro, test-helper, example, and generated-code crates.
+  The test is required even while supporting tooling such as `lading` and
+  `whitaker` matures, because those tools mitigate the risk rather than remove
+  it.
 
 ### 7.3 Strategic success
 
@@ -258,6 +271,7 @@ Competing alternatives:
 | The narrow wedge is easier to maintain than a general framework | Feature pressure may turn the crate into the crowded product it was meant to avoid |
 | Existing crates do not already satisfy this exact transition-boundary pattern | `statelet` should either narrow further or not be built |
 | Tracing consistency is valuable enough to appear early | If not, tracing should become optional sugar rather than the central thesis |
+| Dependency topology can stay simple enough for regular validation | If not, circular dependencies may make the proc-macro split harder to maintain than the state-machine pattern it standardizes |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -269,6 +283,11 @@ Competing alternatives:
   trait vocabulary, feature flags, and compile-time checks.
 - A later roadmap must sequence validation around examples from real
   transition-heavy code, not only toy state machines.
+- The `rstest-bdd` repository is internal prior art for proc-macro crate
+  delivery and dependency-graph risk.
+- `lading` and `whitaker` are developing mitigation tools for dependency and
+  validation concerns, but `statelet` must still test for circular dependencies
+  directly.
 
 ## 9. Open questions
 
@@ -283,6 +302,7 @@ Competing alternatives:
 | Should diagram or test metadata exist in v0.1? | These features risk pulling the crate towards graph ownership | v0.1 either excludes them or defines metadata that does not shape user code | Project owner | Roadmap decision |
 | Does `statelet` improve `mdtablefix` enough to justify extraction? | `mdtablefix` is the motivating Day 2 usefulness test, not a toy example | A spike applies the proposed API to `ProcessBuffer` and continuation handling, then records whether reviewability or diagnostics improved without obscuring branch logic | Project owner | Validation spike |
 | Which other real code examples validate the wedge? | The crate should not overfit to one parser | At least one additional non-toy example is documented before release | Project owner | Example selection |
+| How will `statelet` prevent circular dependency drift? | Prior proc-macro work in `rstest-bdd` showed that avoiding dependency cycles is a real maintenance risk | CI or local gates include a repeatable dependency-topology check covering runtime, proc-macro, test-helper, example, and generated-code crates | Engineering lead | Validation tooling spike |
 | What project licence, maintenance policy, and MSRV should apply? | Crate consumers need these commitments before adoption | The repository declares them before publishing | Project owner | Repository setup |
 
 <!-- markdownlint-enable MD013 -->
@@ -299,12 +319,17 @@ Competing alternatives:
   state access, event access, outcome, and fallibility.
 - Ordinary Rust state machine: a state machine expressed with project-owned
   enums, structs, methods, `match` expressions, and domain errors.
+- Proc-macro crate: a Rust crate that exposes procedural macros and usually
+  sits beside one or more runtime/support crates.
 - Framework: a crate that owns the dispatch model, state-machine object, or
   graph semantics.
 - DSL: a macro or language surface where the transition graph is declared
   outside ordinary Rust control flow.
 - Maintenance safety: protection against drift in naming, instrumentation,
   fallibility, and review conventions; not a claim of formal graph safety.
+- Dependency topology: the directed graph of crate dependencies that must stay
+  acyclic and understandable across runtime, proc-macro, test-helper, example,
+  and generated-code crates.
 
 ### 10.2 ADR candidates
 
@@ -315,6 +340,8 @@ Competing alternatives:
 - ADR: Whether v0.1 includes diagram or test metadata.
 - ADR or validation note: `mdtablefix` spike result and whether it justifies
   extracting `statelet` as an external Day 2 library.
+- ADR or validation note: dependency-topology checks for proc-macro crate
+  splits, informed by `rstest-bdd`.
 
 ### 10.3 Downstream readiness
 
@@ -353,3 +380,10 @@ the macro-versus-trait question and the tracing feature policy.
   `https://crates.io/api/v1/crates/macro-machines`
 - docs.rs source page for `macro-machines`, accessed 2026-06-13:
   `https://docs.rs/crate/macro-machines/latest/source/`
+- `rstest-bdd` repository, internal prior art for Rust proc-macro crate
+  delivery, accessed 2026-06-13:
+  `https://github.com/leynos/rstest-bdd/`
+- `lading` repository, developing mitigation tooling, accessed 2026-06-13:
+  `https://github.com/leynos/lading`
+- `whitaker` repository, developing validation tooling, accessed 2026-06-13:
+  `https://github.com/leynos/whitaker`
