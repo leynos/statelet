@@ -613,7 +613,65 @@ The implementation should resolve these before publishing v0.1:
 - Which second validation example is accepted if `lading` is replaced.
 - Project licence, MSRV, and crates.io metadata.
 
-## 15. References
+## Appendix A. Comparison with `stateless`
+
+`stateless` is the closest current crate to the dangerous edge of `statelet`'s
+scope. It is not a direct duplicate of the revised proposal, but it defines the
+line `statelet` must not cross.
+
+The useful comparison is:
+
+```text
+stateless: declare the transition graph; get generated State/Event structure.
+
+statelet: keep the existing Rust code; mark and instrument transition
+boundaries.
+```
+
+`stateless` is a compact structural FSM generator. Its `statemachine!` macro
+takes a declarative transition table and generates state and event enums plus
+transition lookup. It is the better fit when the transition graph is clean
+enough to list directly and the user wants generated structure around that
+graph.
+
+`statelet` should remain a compact transition-boundary convention and
+instrumentation toolkit. It is the better fit when the state machine is already
+embedded in ordinary Rust methods and converting it to a transition table would
+hide the domain predicates, parser context, side effects, or error handling
+that reviewers need to see.
+
+Use `stateless` when:
+
+- the state graph is the centre of the design;
+- the project wants generated `State` and `Event` enums;
+- transition lookup, valid-event enumeration, or DOT output are useful;
+- compile-time validation of the declared table is part of the value.
+
+Consider `statelet` only when:
+
+- the transition code should stay inside existing Rust methods;
+- branch logic, side effects, and domain predicates are more important than a
+  central graph;
+- the team wants stable state names and transition tracing fields;
+- `#[tracing::instrument(fields(...))]` plus helpers is useful but repetitive.
+
+This makes the product boundary operational:
+
+- `stateless` asks for the transition structure.
+- `statelet` labels the transition boundary.
+
+If `statelet` starts generating states or events, owning valid transitions,
+enumerating valid events, generating diagrams from declared transitions, or
+claiming graph safety, it has moved into `stateless` territory. At that point,
+the design should either stop or choose `stateless` as the better-shaped tool.
+
+The `mdtablefix` and second-example validation gates must therefore ask a
+specific question: does the target code become clearer by staying hand-written
+and gaining transition-boundary observability, or would a transition table be
+the more honest model? The first answer supports `statelet`; the second answer
+points to `stateless` or another graph-first crate.
+
+## Appendix B. References
 
 - `docs/terms-of-reference.md`
 - `docs/context.md`
