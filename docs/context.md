@@ -9,9 +9,9 @@ Companion documents:
 
 - `docs/terms-of-reference.md`
 - `docs/design.md`
-- `docs/roadmap.md`: not yet present
+- `docs/roadmap.md`
 
-Last substantive revision: 2026-06-13
+Last substantive revision: 2026-06-14
 
 ## Purpose
 

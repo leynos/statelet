@@ -23,6 +23,8 @@ set.
   initial Statelet design work.
 - [Technical design](design.md) defines the initial crate split, macro
   contract, feature policy, and validation strategy.
+- [Roadmap](roadmap.md) translates the terms of reference and technical design
+  into sequenced delivery phases, dependencies, and validation tasks.
 
 ## Rust reference material
 

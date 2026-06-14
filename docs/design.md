@@ -9,9 +9,9 @@ Companion documents:
 
 - `docs/terms-of-reference.md`
 - `docs/context.md`
-- `docs/roadmap.md`: not yet present
+- `docs/roadmap.md`
 
-Last substantive revision: 2026-06-13
+Last substantive revision: 2026-06-14
 
 ## 1. Design context
 
@@ -199,6 +199,12 @@ Struct support can wait until a real use case needs it. The generated names
 should default to variant names and allow explicit renames later only if
 examples prove the need.
 
+The `mdtablefix` baseline must scrutinize whether `&'static str` is enough for
+the first slice. If instrumentation, metrics, or downstream dashboards need a
+stable numeric discriminant or other low-cardinality identifier, record that
+before publishing `StateName`. The default remains `&'static str` until a real
+example consumes something stronger.
+
 ### 6.2 Transition outcome vocabulary
 
 Do not publish `TransitionOutcome` in the first implementation slice. The
@@ -309,6 +315,11 @@ When `fallible` is present, the macro may record transition error fields if the
 returned value is visibly an error and can be observed without imposing broad
 trait bounds. When `infallible` is present, the macro omits error-specific
 fields. Both declarations document intent at the transition boundary.
+
+Descriptive mode may still inspect the return type syntactically to decide
+whether `transition.error` can be extracted. The difference from `check_return`
+is failure behaviour: descriptive mode silently omits fields it cannot support,
+while `check_return` turns a declared mismatch into a compile error.
 
 If the user adds `check_return`, the macro performs only a syntactic check:
 
@@ -488,11 +499,15 @@ in this repository.
 
 ### 11.7 Compile-time and binary-size budget
 
-The `mdtablefix` spike must measure build-time and binary-size impact before
-the macro is accepted. The initial budget is:
+The `mdtablefix` spike and a synthetic stress fixture must measure build-time
+and binary-size impact before the macro is accepted. The real spike proves
+usefulness on production-shaped code; the synthetic fixture checks scaling
+beyond the handful of transitions that `mdtablefix` may expose. The initial
+budget is:
 
-- annotating 20 transition boundaries in a downstream crate adds no more than
-  10% to clean debug build time compared with the non-macro baseline;
+- the marginal clean-debug build-time cost per annotated transition stays
+  below 0.5% of the downstream crate's non-macro baseline on a 20-transition
+  synthetic fixture;
 - the release binary or library artefact grows by no more than 2% compared with
   the non-macro baseline;
 - generated code size stays understandable in `cargo expand` for one annotated
@@ -585,13 +600,20 @@ If the macro cannot beat the baseline in §11.2, the project ships the
 conventions/runtime crate and defers `statelet-macros`. This is a successful
 validation outcome, not a failed implementation.
 
-### 13.7 Attribute syntax looks alien
+### 13.7 Conventions baseline is also too weak
+
+If `StateName`, documented transition fields, and local helpers add little over
+plain `#[tracing::instrument(fields(state = %self.mode))]` in both validation
+examples, the project should ship nothing and keep the pattern local. That is
+the B1 failure case and must be treated as a valid discovery outcome.
+
+### 13.8 Attribute syntax looks alien
 
 String-encoded expressions are forbidden because they break the product thesis:
 they lose editor support, produce weaker spans, and make ordinary Rust look
 like a mini DSL. Attribute arguments must use real expression tokens.
 
-### 13.8 Feature leakage appears without a cycle
+### 13.9 Feature leakage appears without a cycle
 
 Feature unification can pull `tracing` or macro dependencies into builds where
 users disabled them even when the dependency graph is acyclic. The

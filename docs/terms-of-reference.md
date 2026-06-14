@@ -10,10 +10,10 @@ Companion documents:
 
 - `docs/context.md`
 - `docs/design.md`
-- `docs/roadmap.md`: not yet present.
+- `docs/roadmap.md`
 - ADRs: none yet.
 
-Last substantive revision: 2026-06-13
+Last substantive revision: 2026-06-14
 
 ## 1. Background and motivation
 
@@ -233,6 +233,10 @@ Competing alternatives:
   that baseline by a stated margin.
 - A second non-toy validation example is named before release. The initial
   candidate is `lading`'s publish workflow phase coordination.
+- If both validation examples show that `StateName`, documented field names,
+  and helper functions add little over local `#[tracing::instrument]`
+  annotations, the correct outcome is to ship nothing and keep the convention
+  project-local.
 
 ### 7.2 Operational success
 
