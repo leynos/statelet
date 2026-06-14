@@ -72,7 +72,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Whitaker cache hit: ${WHITAKER_CACHE_HIT:-}"
-          if [ "${WHITAKER_CACHE_HIT:-}" != "true" ]; then
+          if [ "x${WHITAKER_CACHE_HIT:-}" != "xtrue" ]; then
             echo "Installing Whitaker installer at ${WHITAKER_INSTALLER_REV}"
             cargo install --locked \
               --git https://github.com/leynos/whitaker \

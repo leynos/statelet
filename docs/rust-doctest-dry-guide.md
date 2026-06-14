@@ -625,11 +625,11 @@ accessed on July 15, 2025,
 <https://stackoverflow.com/questions/70111757/how-can-i-write-documentation-tests-for-private-modules>
 [^2]: Rustdoc doctests need fixing - Swatinem, accessed on July 15, 2025,
 <https://swatinem.de/blog/fix-rustdoc/>
-[^3]: Documentation tests - The rustdoc boOK - Rust Documentation, accessed on
+[^3]: Documentation tests - The rustdoc Book - Rust Documentation, accessed on
 July 15, 2025, <https://doc.rust-lang.org/rustdoc/documentation-tests.html>
-[^4]: Documentation tests - - GitHub Pages, accessed on July 15, 2025,
+[^4]: Documentation tests - GitHub Pages, accessed on July 15, 2025,
 <https://ebarnard.github.io/2019-06-03-rust-smaller-trait-implementers-docs/rustdoc/documentation-tests.html>
-[^5]: Documentation tests - - MIT, accessed on July 15, 2025,
+[^5]: Documentation tests - MIT, accessed on July 15, 2025,
 <http://web.mit.edu/rust-lang_v1.25/arch/amd64_ubuntu1404/share/doc/rust/html/rustdoc/documentation-tests.html>
 [^6]: LogRocket Blog — Organizing Rust tests, accessed on July 15, 2025,
 <https://blog.logrocket.com/how-to-organize-rust-tests/>
@@ -651,7 +651,7 @@ July 15, 2025, <https://doc.rust-lang.org/rustdoc/documentation-tests.html>
        <https://users.rust-lang.org/t/test-setup-for-doctests/50426>
 [^12]: quote_doctest - Rust - [Docs.rs](http://Docs.rs), accessed on July 15,
 2025, <https://docs.rs/quote-doctest>
-[^13]: Advanced features - The rustdoc boOK - Rust Documentation, accessed on
+[^13]: Advanced features - The rustdoc Book - Rust Documentation, accessed on
        July 15, 2025, <https://doc.rust-lang.org/rustdoc/advanced-features.html>
 [^14]: Stack Overflow — Conditionally executing a module-level doctest,
 accessed on July 15, 2025,
