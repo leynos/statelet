@@ -1,36 +1,34 @@
 # User Guide
 
-This guide explains how to use the generated Statelet project after rendering
-it from the template.
+This guide explains the current user-facing shape of Statelet. The crate is in
+the design and validation phase, so this page is a signpost rather than an API
+manual.
 
-## Generated Tooling
+## Current status
 
-Generated projects use Rust 2024, a pinned nightly toolchain, strict lint
-settings, and documented starter code. Library projects render `src/lib.rs`.
-Application projects render `src/main.rs`, `src/lib.rs`, release automation, and
-`[package.metadata.binstall]` metadata for binary installation.
+Statelet is being evaluated as a small toolkit for marking transition
+boundaries in ordinary Rust state machines. It does not yet expose a stable
+runtime API or a procedural macro.
 
-Development builds use Cranelift for debug code generation. On Linux targets,
-`.cargo/config.toml` configures clang to link with `mold` so local debug builds
-link quickly. Coverage generation uses `lld` instead because LLVM coverage
-tools expect LLVM-compatible linker behaviour.
+The first validation slice is deliberately conventions-only. The project must
+prove that stable state names and documented tracing fields improve real
+`mdtablefix` code before any macro surface is published.
 
-## Makefile Targets
+## What to read first
 
-The generated `Makefile` exposes these public targets:
+- [Terms of reference](terms-of-reference.md) explains the problem space,
+  intended users, non-goals, and validation test.
+- [Technical design](design.md) explains the proposed crate boundary, runtime
+  vocabulary, macro gate, and dependency constraints.
+- [Roadmap](roadmap.md) explains the delivery phases and the evidence required
+  to ship nothing, ship conventions only, or proceed to a macro.
 
-- `make all` runs formatting checks, linting, and tests.
-- `make check-fmt` verifies Rust formatting.
-- `make lint` runs rustdoc, Clippy, and Whitaker with warnings denied.
-- `make test` runs `cargo nextest run` when cargo-nextest is installed and
-  falls back to `cargo test` otherwise. All projects also run doctests.
-- `make build` builds the debug target.
-- `make release` builds the release target.
-- `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
-- `make audit` derives the Rust workspace root with `cargo metadata` and runs
-  `cargo audit` once from that root.
-- `make markdownlint` checks Markdown files.
-- `make nixie` validates Mermaid diagrams.
+## Expected user model
 
-Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
-full generated workflow locally on Linux.
+Use Statelet only if the state machine already belongs in your codebase as
+ordinary Rust. Statelet should help name and observe transition boundaries; it
+should not move branch logic into a graph DSL or runtime engine.
+
+If you need generated dispatch, transition tables, typestate guarantees,
+hierarchical statecharts, or embedded hard real-time behaviour, the design
+expects you to use a crate built for those jobs instead.

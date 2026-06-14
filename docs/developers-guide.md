@@ -1,6 +1,13 @@
 # Developer Guide
 
-This guide explains the contributor workflow for the generated Statelet project.
+This guide explains the contributor workflow and implementation tooling for the
+generated Statelet project.
+
+## Generated project shape
+
+Statelet uses Rust 2024, a pinned nightly toolchain, strict lint settings, and
+documented starter code. The current repository is a library project and renders
+`src/lib.rs`.
 
 ## Local Workflow
 
@@ -10,6 +17,21 @@ Use `make all` as the public entrypoint for formatting, linting, and tests.
 available. `make audit` derives the Rust workspace root with `cargo metadata`,
 logs workspace member manifests, and runs `cargo audit` once from the workspace
 root. `make coverage` uses `cargo llvm-cov` with `lld`.
+
+The generated `Makefile` exposes these public targets:
+
+- `make all` runs formatting checks, linting, and tests.
+- `make check-fmt` verifies Rust formatting.
+- `make lint` runs rustdoc, Clippy, and Whitaker with warnings denied.
+- `make test` runs `cargo nextest run` when cargo-nextest is installed and
+  falls back to `cargo test` otherwise. All projects also run doctests.
+- `make build` builds the debug target.
+- `make release` builds the release target.
+- `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
+- `make audit` derives the Rust workspace root with `cargo metadata` and runs
+  `cargo audit` once from that root.
+- `make markdownlint` checks Markdown files.
+- `make nixie` validates Mermaid diagrams.
 
 GitHub Actions Act validation lives in `.github/workflows/act-validation.yml`.
 The main `.github/workflows/ci.yml` workflow deliberately does not run

@@ -5,8 +5,8 @@ set.
 
 ## Project guides
 
-- [User guide](users-guide.md) explains how to use the generated project and
-  its public build and test commands.
+- [User guide](users-guide.md) explains the current user-facing Statelet
+  status, expected user model, and design signposts.
 - [Developer guide](developers-guide.md) explains the local workflow and
   implementation tooling for contributors.
 - [Repository layout](repository-layout.md) explains the generated project's
