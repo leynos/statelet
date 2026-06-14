@@ -1,4 +1,4 @@
-# Whitaker User's Guide
+# Whitaker user's guide
 
 <!-- markdownlint-disable MD013 -->
 
@@ -8,7 +8,7 @@ explains how to integrate the lints into a project and configure them.
 For contributors who want to develop new lints or work on Whitaker itself, see
 the [Developer's Guide](developers-guide.md).
 
-## Quick Setup
+## Quick setup
 
 ### Prerequisites
 
@@ -147,7 +147,7 @@ libraries = [
 ]
 ```
 
-### Standard vs Experimental Lints
+### Standard vs experimental lints
 
 Whitaker lints are divided into two categories:
 
@@ -175,7 +175,7 @@ build experimental lints as individual libraries, combine it with
 require `--experimental`; without that opt-in the installer rejects the request
 before building anything.
 
-## Lint Configuration
+## Lint configuration
 
 Configure lint behaviour in `dylint.toml` at the workspace root:
 
@@ -212,7 +212,7 @@ provider_param_attributes = ["case", "values", "files", "future", "context"]
 use_source_callee_fallback = false
 ```
 
-## Localized Diagnostics
+## Localized diagnostics
 
 Whitaker supports multiple languages for diagnostic messages. Set the locale
 via the `DYLINT_LOCALE` environment variable or in `dylint.toml`:
@@ -229,7 +229,7 @@ Available locales:
 
 ______________________________________________________________________
 
-## Available Lints
+## Available lints
 
 ### `bumpy_road_function`
 

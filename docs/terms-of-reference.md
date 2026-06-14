@@ -112,9 +112,9 @@ and hand-roll tracing or debug output when a state bug appears.
 
 The market gap is therefore a narrow ergonomics and maintenance gap:
 
-> I already want to write an ordinary Rust enum/struct state machine. Give me
-> just enough macro help to make the pattern uniform, observable, and hard to
-> botch, without taking over my model.
+> An ordinary Rust enum/struct state machine is already the desired model.
+> Provide just enough macro help to make the pattern uniform, observable, and
+> hard to botch, without taking over user-owned control flow.
 
 The gap disappears if `statelet` becomes a framework or DSL. Features such as a
 required dispatch loop, required event enum, graph ownership, lifecycle hooks,

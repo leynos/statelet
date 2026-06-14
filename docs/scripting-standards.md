@@ -203,7 +203,7 @@ with local.env(GIT_AUTHOR_NAME="CI", GIT_AUTHOR_EMAIL="ci@example.org"):
 ### Foreground execution and background jobs
 
 ```python
-from plumbum import FG, BG
+from plumbum import FG, BG, local
 from plumbum.cmd import make
 
 # Stream output to terminal

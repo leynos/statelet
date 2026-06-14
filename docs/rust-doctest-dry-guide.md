@@ -339,10 +339,6 @@ mod doctest_helpers {
     pub use super::TestContext;
     use std::io::Result;
 
-    pub struct TestContext {
-        //… fields for the test context…
-    }
-
     pub fn setup_test_environment() -> Result<TestContext> {
         // All the complex, shared setup logic lives here once.
         println!("Setting up test environment…");
@@ -435,11 +431,14 @@ the doctest itself.
 ///
 /// ```
 /// # #[cfg(feature = "serde")]
-/// # {
+/// # fn serde_example() -> Result<(), serde_json::Error> {
 /// #   let my_struct = MyStruct::new();
-/// #   let json = serde_json::to_string(&my_struct).unwrap();
+/// #   let json = serde_json::to_string(&my_struct)?;
 /// #   assert_eq!(json, "{}");
+/// #   Ok(())
 /// # }
+/// # #[cfg(feature = "serde")]
+/// # serde_example()?;
 /// ```
 ```
 
@@ -458,9 +457,13 @@ done with inner doc comments (//!).
 //! #![cfg_attr(not(feature = "serde"), doc = "```ignore")]
 //! #![cfg_attr(feature = "serde", doc = "```")]
 //! // Example code that requires the "serde" feature.
-//! let my_struct = MyStruct::new();
-//! let json = serde_json::to_string(&my_struct).unwrap();
-//! assert_eq!(json, "{}");
+//! fn serde_example() -> Result<(), serde_json::Error> {
+//!     let my_struct = MyStruct::new();
+//!     let json = serde_json::to_string(&my_struct)?;
+//!     assert_eq!(json, "{}");
+//!     Ok(())
+//! }
+//! serde_example()?;
 //! ```
 ```
 

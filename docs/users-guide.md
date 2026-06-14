@@ -14,6 +14,23 @@ The first validation slice is deliberately conventions-only. The project must
 prove that stable state names and documented tracing fields improve real
 `mdtablefix` code before any macro surface is published.
 
+## Quick start
+
+Run the public validation entrypoint from a fresh checkout:
+
+```bash
+git clone https://github.com/leynos/statelet.git
+cd statelet
+make all
+```
+
+The most useful public commands are:
+
+- `make all` builds confidence by running formatting checks, linting, and
+  tests.
+- `make lint` runs the repository lint suite.
+- `make test` runs the repository test suite.
+
 ## What to read first
 
 - [Terms of reference](terms-of-reference.md) explains the problem space,

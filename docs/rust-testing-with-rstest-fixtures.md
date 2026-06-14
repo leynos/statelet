@@ -1121,8 +1121,9 @@ for maintainability and scalability.
     `tests/` directory (e.g., `tests/common/fixtures.rs`) and re-exporting
     public fixtures.
   - Alternatively, define shared fixtures in the library crate itself (e.g., in
-    `src/lib.rs` or `src/fixtures.rs` under `#[cfg(test)]`) and `use` them in
-    integration tests.
+    `src/lib.rs` or `src/fixtures.rs`) and `use` them in integration tests.
+    Integration tests compile as external crates, so shared library fixtures
+    must not be hidden behind `#[cfg(test)]`.
 - **Naming Conventions:** Use clear, descriptive names for fixtures that
   indicate what they provide or set up. Test function names should clearly
   state what behaviour they are verifying.
@@ -1233,7 +1234,7 @@ mind:
 - `no_std` **Support:** `rstest` generally relies on the standard library
   (`std`) being available, as test runners and many common testing utilities
   depend on `std`. Therefore, it is typically not suitable for testing
-  `#! [no_std]` libraries in a truly `no_std` test environment where the test
+  `#![no_std]` libraries in a truly `no_std` test environment where the test
   harness itself cannot link `std`.
 - **Learning Curve:** While designed for simplicity in basic use cases, the full
   range of attributes and advanced features (e.g., fixture composition, partial

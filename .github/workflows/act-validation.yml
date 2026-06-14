@@ -5,6 +5,10 @@ name: Act Validation
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   act-validation:
     runs-on: ubuntu-latest

@@ -3,6 +3,14 @@
 This guide explains the contributor workflow and implementation tooling for the
 generated Statelet project.
 
+## Normative references
+
+- [Technical design](design.md) defines crate boundaries, public API decisions,
+  and validation gates.
+- [Repository layout](repository-layout.md) explains the top-level files,
+  directories, and ownership boundaries.
+- [Documentation contents](contents.md) indexes the full documentation set.
+
 ## Generated project shape
 
 Statelet uses Rust 2024, a pinned nightly toolchain, strict lint settings, and
