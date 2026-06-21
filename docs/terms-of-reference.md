@@ -11,7 +11,7 @@ Companion documents:
 - `docs/context.md`
 - `docs/design.md`
 - `docs/roadmap.md`
-- ADRs: none yet.
+- `docs/adr-001-proving-ground-candidates.md`
 
 Last substantive revision: 2026-06-14
 
@@ -231,7 +231,7 @@ Competing alternatives:
 - The `mdtablefix` spike includes a non-macro baseline using
   `#[tracing::instrument]` and local helpers. A macro passes only if it beats
   that baseline by a stated margin.
-- A second non-toy validation example is named before release. ADR 001 proposes
+- A second non-toy validation example is named before release. ADR 001 selects
   `wireframe` connection actor and active-output transitions as the next
   proving ground after `mdtablefix`.
 - If both validation examples show that `StateName`, documented field names,
@@ -358,7 +358,7 @@ Competing alternatives:
 - ADR: Whether v0.1 includes diagram or test metadata.
 - ADR or validation note: `mdtablefix` spike result and whether it justifies
   extracting `statelet` as an external Day 2 library.
-- ADR 001: candidate proving grounds after `mdtablefix`.
+- [ADR 001: candidate proving grounds after `mdtablefix`](adr-001-proving-ground-candidates.md).
 - ADR or validation note: dependency-topology checks for proc-macro crate
   splits, informed by `rstest-bdd`.
 

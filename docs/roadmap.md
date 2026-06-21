@@ -156,7 +156,7 @@ ships conventions only, or proceeds to a macro spike. See design.md §§11.1,
 Idea: if the same transition-boundary conventions help `wireframe` connection
 actors, Statelet is less likely to be an `mdtablefix`-specific style extraction.
 
-This phase validates the wedge outside Markdown table repair. ADR 001 proposes
+This phase validates the wedge outside Markdown table repair. ADR 001 selects
 `wireframe` as the candidate because connection lifecycle and active-output
 transitions create explicit stateful boundaries without requiring Statelet to
 own routing, protocol modelling, or graph validation.
@@ -166,15 +166,17 @@ own routing, protocol modelling, or graph validation.
 This step answers whether Statelet's runtime conventions transfer to a
 connection-actor lifecycle outside Markdown table repair. Its outcome informs
 B1 and B6 before any macro work. See terms-of-reference.md §§7-9, design.md
-§§11.1, 12, and adr-001-proving-ground-candidates.md.
+§§11.1, 12, and
+[adr-001-proving-ground-candidates.md](adr-001-proving-ground-candidates.md).
 
 - [ ] 3.1.1. Identify `wireframe` transition-boundary candidates.
   - Requires phase 2 unless 2.2.3 chose "ship nothing".
-  - Select connection actor, active-output, shutdown, queue, or verification
-    naming boundaries that currently rely on local convention.
+  - Select connection actor and active-output transition boundaries that
+    currently rely on local convention.
   - Success: the candidate list explains why `stateless` or another
     graph-first crate is not the more honest model.
-  - See design.md Appendix A and adr-001-proving-ground-candidates.md.
+  - See design.md Appendix A and
+    [adr-001-proving-ground-candidates.md](adr-001-proving-ground-candidates.md).
 - [ ] 3.1.2. Apply the conventions-only baseline to selected `wireframe`
   boundaries.
   - Requires 3.1.1.
