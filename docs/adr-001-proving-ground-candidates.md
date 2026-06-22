@@ -165,7 +165,7 @@ rollout.
 
 1. Keep `mdtablefix` as the first validation slice.
 2. Replace the previous second-example placeholder with this ADR's `wireframe`
-   recommendation in the design and roadmap.
+   recommendation in the design, roadmap, and terms of reference.
 3. After `mdtablefix`, apply the conventions-only baseline to the `wireframe`
    connection actor seam.
 4. Record whether `StateName`, documented `transition.*` fields, local helpers,
