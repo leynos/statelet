@@ -188,8 +188,8 @@ rollout.
 
 ## Outstanding decisions
 
-- Whether the `wireframe` spike demonstrates enough value to remain the
-  established second validation domain.
+- Whether the `wireframe` spike demonstrates enough value to validate the
+  selected second proving ground.
 - Whether `StateName` needs only stable string labels or a stronger
   low-cardinality identifier after `mdtablefix` and `wireframe`.
 - Whether the macro remains deferred after both validation examples, ships as a
