@@ -164,8 +164,8 @@ rollout.
 ## Migration plan
 
 1. Keep `mdtablefix` as the first validation slice.
-2. Replace the previous `lading` second-example placeholder with this ADR's
-   `wireframe` recommendation in the design and roadmap.
+2. Replace the previous second-example placeholder with this ADR's `wireframe`
+   recommendation in the design and roadmap.
 3. After `mdtablefix`, apply the conventions-only baseline to the `wireframe`
    connection actor seam.
 4. Record whether `StateName`, documented `transition.*` fields, local helpers,
@@ -188,8 +188,8 @@ rollout.
 
 ## Outstanding decisions
 
-- Whether the `wireframe` spike demonstrates enough value to replace `lading`
-  permanently as the second validation domain.
+- Whether the `wireframe` spike demonstrates enough value to remain the
+  established second validation domain.
 - Whether `StateName` needs only stable string labels or a stronger
   low-cardinality identifier after `mdtablefix` and `wireframe`.
 - Whether the macro remains deferred after both validation examples, ships as a
