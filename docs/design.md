@@ -10,8 +10,9 @@ Companion documents:
 - `docs/terms-of-reference.md`
 - `docs/context.md`
 - `docs/roadmap.md`
+- `docs/adr-001-proving-ground-candidates.md`
 
-Last substantive revision: 2026-06-14
+Last substantive revision: 2026-06-15
 
 ## 1. Design context
 
@@ -557,11 +558,13 @@ The macro spike passes only if all of these are true:
 The spike fails if the most honest result is a local helper function or
 `tracing::instrument` annotation without `statelet`.
 
-The second non-toy validation candidate is `lading`'s publish workflow phase
-coordination. It exercises a different domain from Markdown table repair:
-release planning, package ordering, dry-run/live execution, and failure
-handling. Before publishing the macro, the project must either validate
-`statelet` there or replace it with a better named example and record why.
+The second non-toy validation candidate is tracked by
+`docs/adr-001-proving-ground-candidates.md`. That ADR selects `wireframe`'s
+connection actor and active-output transitions as the primary proving ground
+after `mdtablefix`, with `weaver` as the next targeted pocket if another
+candidate is needed. Before publishing the macro, the project must either
+validate `statelet` in the accepted second example or record why the candidate
+changed.
 
 ## 13. Failure modes
 
@@ -632,7 +635,6 @@ The implementation should resolve these before publishing v0.1:
 - Whether `async fn` support is explicitly tested in v0.1 or documented as
   unsupported. The default answer is unsupported until tracing across `.await`
   is proven safe and unsurprising.
-- Which second validation example is accepted if `lading` is replaced.
 - Project licence, MSRV, and crates.io metadata.
 
 ## Appendix A. Comparison with `stateless`

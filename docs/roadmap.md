@@ -153,29 +153,31 @@ ships conventions only, or proceeds to a macro spike. See design.md §§11.1,
 
 ## 3. Vertical slice 2: A second non-toy validation domain
 
-Idea: if the same transition-boundary conventions help `lading` publish
-workflow coordination, Statelet is less likely to be an `mdtablefix`-specific
-style extraction.
+Idea: if the same transition-boundary conventions help `wireframe` connection
+actors, Statelet is less likely to be an `mdtablefix`-specific style extraction.
 
-This phase validates the wedge outside Markdown table repair. `lading` is the
-initial candidate because publish planning, package ordering, dry-run/live
-execution, and failure handling create stateful workflow boundaries without
-requiring a graph-first model.
+This phase validates the wedge outside Markdown table repair. ADR 001 selects
+`wireframe` as the candidate because connection lifecycle and active-output
+transitions create explicit stateful boundaries without requiring Statelet to
+own routing, protocol modelling, or graph validation.
 
-### 3.1. Apply the conventions baseline to `lading`
+### 3.1. Apply the conventions baseline to `wireframe`
 
-This step answers whether Statelet's runtime conventions transfer to release
-workflow coordination. Its outcome informs B1 and B6 before any macro work. See
-terms-of-reference.md §§7-9 and design.md §§11.1, 12.
+This step answers whether Statelet's runtime conventions transfer to a
+connection-actor lifecycle outside Markdown table repair. Its outcome informs
+B1 and B6 before any macro work. See terms-of-reference.md §§7-9, design.md
+§§11.1, 12, and
+[adr-001-proving-ground-candidates.md](adr-001-proving-ground-candidates.md).
 
-- [ ] 3.1.1. Identify `lading` transition-boundary candidates.
+- [ ] 3.1.1. Identify `wireframe` transition-boundary candidates.
   - Requires phase 2 unless 2.2.3 chose "ship nothing".
-  - Select publish planning, package ordering, dry-run/live execution, or
-    failure-handling boundaries that currently rely on local convention.
+  - Select connection actor and active-output transition boundaries that
+    currently rely on local convention.
   - Success: the candidate list explains why `stateless` or another
     graph-first crate is not the more honest model.
-  - See design.md Appendix A.
-- [ ] 3.1.2. Apply the conventions-only baseline to selected `lading`
+  - See design.md Appendix A and
+    [adr-001-proving-ground-candidates.md](adr-001-proving-ground-candidates.md).
+- [ ] 3.1.2. Apply the conventions-only baseline to selected `wireframe`
   boundaries.
   - Requires 3.1.1.
   - Use the same `StateName` and tracing field contract proven or revised in
@@ -185,7 +187,7 @@ terms-of-reference.md §§7-9 and design.md §§11.1, 12.
   - See design.md §§9, 11.1, and 12.
 - [ ] 3.1.3. Decide whether the runtime/conventions crate earns publication.
   - Requires 3.1.2.
-  - Success: the decision cites both `mdtablefix` and `lading`; it either
+  - Success: the decision cites both `mdtablefix` and `wireframe`; it either
     stops the project, publishes conventions only, or unlocks Phase 4.
   - See terms-of-reference.md §7 and design.md §§11.1, 13.7.
 

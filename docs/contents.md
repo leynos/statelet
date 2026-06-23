@@ -26,6 +26,12 @@ set.
 - [Roadmap](roadmap.md) translates the terms of reference and technical design
   into sequenced delivery phases, dependencies, and validation tasks.
 
+## Decision records
+
+- [ADR 001: Select proving ground candidates](adr-001-proving-ground-candidates.md)
+  proposes `wireframe` as the primary proving ground after `mdtablefix`, with
+  `weaver`, `netsuke`, and `ddlint` ranked as narrower or weaker candidates.
+
 ## Rust reference material
 
 - [Reliable testing in Rust via dependency injection](reliable-testing-in-rust-via-dependency-injection.md)
