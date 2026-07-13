@@ -22,8 +22,9 @@ jobs:
       - uses: actions/checkout@4f1f4aec02e41874fa0262ea8ff5172d7978ad1e
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Setup Rust
-        uses: leynos/shared-actions/.github/actions/setup-rust@455d9ed03477c0026da96c2541ca26569a74acac
+        uses: leynos/shared-actions/.github/actions/setup-rust@927edd45ae77be4251a8a18ca9eb5613a2e32cbd
       - name: Install mold linker
         if: runner.os == 'Linux'
         run: |
@@ -96,7 +97,7 @@ jobs:
           echo "Coverage CFLAGS: -fuse-ld=lld"
           echo "Coverage LDFLAGS: -fuse-ld=lld"
       - name: Test and Measure Coverage
-        uses: leynos/shared-actions/.github/actions/generate-coverage@1213d7874aa42ff034587d9385f35178d51e1f65
+        uses: leynos/shared-actions/.github/actions/generate-coverage@927edd45ae77be4251a8a18ca9eb5613a2e32cbd
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang
           RUSTFLAGS: -C link-arg=-fuse-ld=lld
@@ -105,12 +106,15 @@ jobs:
         with:
           output-path: lcov.info
           format: lcov
-      - name: Upload coverage data to CodeScene
-        env:
-          CS_ACCESS_TOKEN: ${{ secrets.CS_ACCESS_TOKEN }}
-        if: ${{ env.CS_ACCESS_TOKEN }}
-        uses: leynos/shared-actions/.github/actions/upload-codescene-coverage@455d9ed03477c0026da96c2541ca26569a74acac
-        with:
-          format: lcov
-          access-token: ${{ env.CS_ACCESS_TOKEN }}
-          installer-checksum: ${{ vars.CODESCENE_CLI_SHA256 }}
+          with-ratchet: 'true'
+      # The `mode: check` changed-line coverage gate is deliberately not
+      # wired in yet: CodeScene projects without a gates configuration
+      # reject every `cs-coverage check` call with "HTTP call succeeded,
+      # but the received project-config isn't valid. Lacks the gates
+      # configuration." (a CodeScene-side, per-project setting, not a CI
+      # defect — see ddlint#287). Add the check step in a fast-follow PR
+      # once the project's coverage gate is confirmed enabled; the
+      # `fetch-depth: 0` checkout above and the ratchet are already in
+      # place for it. Main-branch coverage upload lives in
+      # coverage-main.yml instead, since CodeScene only accepts uploads
+      # for analysed branches.

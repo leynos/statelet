@@ -29,8 +29,10 @@ pytestmark = pytest.mark.skipif(
 )
 
 #: The leynos/shared-actions commit the estate rollout pins the reusable
-#: workflow to. Bump the caller and this test together.
-PINNED_SHA = "859416a90eb3987b46a57682c5d6b8964ad3f0a6"
+#: workflow to (shared-actions#334, which adds the CodeScene coverage
+#: `mode: check` gate; the estate keeps a single repo-wide pin). Bump the
+#: caller and this test together.
+PINNED_SHA = "927edd45ae77be4251a8a18ca9eb5613a2e32cbd"
 
 EXPECTED_USES = (
     "leynos/shared-actions/.github/workflows/mutation-cargo.yml@" + PINNED_SHA
