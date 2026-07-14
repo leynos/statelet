@@ -30,7 +30,7 @@ that standardizes transition boundaries without taking over dispatch, storage,
 event modelling, or control flow.
 
 The motivating pattern comes from parser, stream-processing, and protocol code
-where the hand-written state machine is the right model, but the surrounding
+where the handwritten state machine is the right model, but the surrounding
 discipline drifts. Maintainers want transition methods to be recognizable,
 observable, and explicit about fallibility. They do not necessarily want a
 statechart engine, a graph-first DSL, or a generated runtime.
@@ -73,7 +73,7 @@ Prior art falls into four broad groups:
 <!-- markdownlint-enable MD013 -->
 
 `statelet` should coexist with these crates. Its domain boundary is the
-hand-written state machine whose author wants a named transition contract and
+handwritten state machine whose author wants a named transition contract and
 consistent observability, while keeping the machine's state, event, error,
 storage, and dispatch decisions in ordinary project code.
 
@@ -127,12 +127,12 @@ crate into well-served territory.
 
 | Type           | Description                                          | Context                                                                                                        | Cares about                                                                                | Will dislike                                                                         | Current alternative                                                               |
 | -------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Primary user   | Rust maintainer of small stateful logic              | Works on parsers, protocol handlers, stream processors, CLIs, retry loops, or import pipelines                 | Explicit control flow, reviewable transitions, low dependency cost, consistent diagnostics | Framework lock-in, hidden branch logic, generated models that look unlike local code | Hand-written methods plus ad hoc tracing and review discipline                    |
+| Primary user   | Rust maintainer of small stateful logic              | Works on parsers, protocol handlers, stream processors, CLIs, retry loops, or import pipelines                 | Explicit control flow, reviewable transitions, low dependency cost, consistent diagnostics | Framework lock-in, hidden branch logic, generated models that look unlike local code | Handwritten methods plus ad hoc tracing and review discipline                     |
 | Primary user   | Library author preserving a small public API         | Maintains reusable Rust crates where a full FSM framework would be too large a commitment                      | Small surface area, opt-in macros, clear contracts, feature-gated dependencies             | Required runtime engine, macro magic that changes ownership semantics                | Local helper types, `Debug`, and documentation                                    |
 | Secondary user | Code reviewer or future maintainer                   | Reads transition-heavy code after the original author has moved on                                             | Predictable naming, state/event/result fields in logs, visible fallibility contracts       | Needing to learn a new graph DSL to review ordinary branch logic                     | Manual inspection and reviewer memory                                             |
 | Stakeholder    | Project sponsor or crate owner                       | Decides whether the crate earns maintenance effort                                                             | A defensible wedge, low support burden, clear non-goals                                    | A product surface that grows into a general FSM framework                            | Do nothing; keep patterns project-local                                           |
 | Non-user       | Developer seeking a graph-first state-machine engine | Needs generated dispatch, statecharts, graph validation, lifecycle hooks, or formal transition tables          | Existing framework capability                                                              | A crate that refuses to own the graph                                                | `statig`, `smlang`, `rust-fsm`, `typed-fsm`, `sfsm`, `finny`, or `state-machines` |
-| Non-user       | Embedded hard real-time FSM author                   | Needs `no_std`, no allocation, ISR safety, static dispatch guarantees, or microcontroller-specific constraints | Predictable generated code and platform support                                            | A library optimized for application-code maintainability                             | `typed-fsm`, `sfsm`, `sm`, `finny`, or hand-written static code                   |
+| Non-user       | Embedded hard real-time FSM author                   | Needs `no_std`, no allocation, ISR safety, static dispatch guarantees, or microcontroller-specific constraints | Predictable generated code and platform support                                            | A library optimized for application-code maintainability                             | `typed-fsm`, `sfsm`, `sm`, `finny`, or handwritten static code                    |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -213,7 +213,7 @@ Competing alternatives:
 
 ### 7.1 User-facing success
 
-- A maintainer can apply `statelet` to an existing hand-written state machine
+- A maintainer can apply `statelet` to an existing handwritten state machine
   without introducing a generated dispatch loop or moving branch logic into a
   transition table.
 - Examples show parser, protocol, stream-processing, and retry-style code where
@@ -280,15 +280,15 @@ Competing alternatives:
 
 <!-- markdownlint-disable MD013 -->
 
-| Assumption                                                                                                                     | Consequence if false                                                                                                          |
-| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| A meaningful segment of Rust users prefers hand-written enum/struct state machines over frameworks for small application logic | The crate becomes a style preference with weak adoption pull                                                                  |
-| Users will accept an attribute macro when it removes repetitive instrumentation and contract boilerplate                       | The macro surface becomes harder to justify than a conventions-only crate                                                     |
-| Real expression-token attribute arguments are acceptable to users                                                              | If not, the macro may still feel too alien even without string literals                                                       |
-| The narrow wedge is easier to maintain than a general framework                                                                | Feature pressure may turn the crate into the crowded product it was meant to avoid                                            |
-| Existing crates do not already satisfy this exact transition-boundary pattern                                                  | `statelet` should either narrow further or not be built                                                                       |
-| Tracing consistency is valuable enough to appear early                                                                         | If not, tracing should become optional sugar rather than the central thesis                                                   |
-| Dependency topology can stay simple enough for regular validation                                                              | If not, circular dependencies may make the proc-macro split harder to maintain than the state-machine pattern it standardizes |
+| Assumption                                                                                                                    | Consequence if false                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| A meaningful segment of Rust users prefers handwritten enum/struct state machines over frameworks for small application logic | The crate becomes a style preference with weak adoption pull                                                                  |
+| Users will accept an attribute macro when it removes repetitive instrumentation and contract boilerplate                      | The macro surface becomes harder to justify than a conventions-only crate                                                     |
+| Real expression-token attribute arguments are acceptable to users                                                             | If not, the macro may still feel too alien even without string literals                                                       |
+| The narrow wedge is easier to maintain than a general framework                                                               | Feature pressure may turn the crate into the crowded product it was meant to avoid                                            |
+| Existing crates do not already satisfy this exact transition-boundary pattern                                                 | `statelet` should either narrow further or not be built                                                                       |
+| Tracing consistency is valuable enough to appear early                                                                        | If not, tracing should become optional sugar rather than the central thesis                                                   |
+| Dependency topology can stay simple enough for regular validation                                                             | If not, circular dependencies may make the proc-macro split harder to maintain than the state-machine pattern it standardizes |
 
 <!-- markdownlint-enable MD013 -->
 

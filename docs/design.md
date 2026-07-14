@@ -401,14 +401,14 @@ evidence-producing gate before the affected API is published.
 
 <!-- markdownlint-disable MD013 -->
 
-| Bet | Claim                                                                          | Confidence | Required evidence                                                                             |
-| --- | ------------------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------- |
-| B1  | A real segment prefers hand-written state machines and wants shared convention | Low-medium | `mdtablefix` plus one second non-toy example both improve without framework adoption          |
-| B2  | `#[transition]` beats `#[tracing::instrument]` plus helper functions           | Low        | A head-to-head `mdtablefix` baseline comparison states the concrete value added by the macro  |
-| B3  | The attribute argument grammar is acceptable to ordinary Rust users            | Medium     | Macro syntax uses real expression tokens, and diagnostics point at user-written expressions   |
-| B4  | Fallibility declarations help more than they annoy                             | Medium     | Hard return-shape checks are opt-in, and alias limitations are documented and tested          |
-| B5  | Dependency topology stays acyclic and feature leakage is catchable             | High       | CI runs feature-matrix and topology checks from the first macro-crate commit                  |
-| B6  | `mdtablefix` is representative enough to generalize the wedge                  | Low-medium | A second validation example is named before release and evaluated before publishing the macro |
+| Bet | Claim                                                                         | Confidence | Required evidence                                                                             |
+| --- | ----------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------- |
+| B1  | A real segment prefers handwritten state machines and wants shared convention | Low-medium | `mdtablefix` plus one second non-toy example both improve without framework adoption          |
+| B2  | `#[transition]` beats `#[tracing::instrument]` plus helper functions          | Low        | A head-to-head `mdtablefix` baseline comparison states the concrete value added by the macro  |
+| B3  | The attribute argument grammar is acceptable to ordinary Rust users           | Medium     | Macro syntax uses real expression tokens, and diagnostics point at user-written expressions   |
+| B4  | Fallibility declarations help more than they annoy                            | Medium     | Hard return-shape checks are opt-in, and alias limitations are documented and tested          |
+| B5  | Dependency topology stays acyclic and feature leakage is catchable            | High       | CI runs feature-matrix and topology checks from the first macro-crate commit                  |
+| B6  | `mdtablefix` is representative enough to generalize the wedge                 | Low-medium | A second validation example is named before release and evaluated before publishing the macro |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -690,7 +690,7 @@ claiming graph safety, it has moved into `stateless` territory. At that point,
 the design should either stop or choose `stateless` as the better-shaped tool.
 
 The `mdtablefix` and second-example validation gates must therefore ask a
-specific question: does the target code become clearer by staying hand-written
+specific question: does the target code become clearer by staying handwritten
 and gaining transition-boundary observability, or would a transition table be
 the more honest model? The first answer supports `statelet`; the second answer
 points to `stateless` or another graph-first crate.
