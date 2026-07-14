@@ -27,7 +27,7 @@ framework.
 
 ## Decision drivers
 
-- Prefer existing hand-written state machines where Statelet can ornament a
+- Prefer existing handwritten state machines where Statelet can ornament a
   transition boundary without replacing local control flow.
 - Prefer repositories that already use, or can plausibly benefit from,
   `tracing`-oriented transition diagnostics.
@@ -57,7 +57,7 @@ _Table 1: Candidate proving grounds after `mdtablefix`._
 ### Option A: `wireframe`
 
 `wireframe` is the strongest application. Its connection actor already has the
-kind of hand-written state machine Statelet is intended to make more legible.
+kind of handwritten state machine Statelet is intended to make more legible.
 `ActorState` wraps `RunState` variants such as active, shutting down, and
 finished, and the actor loop polls typed events before dispatching them through
 explicit matches.

@@ -39,6 +39,9 @@ The generated `Makefile` exposes these public targets:
 - `make audit` derives the Rust workspace root with `cargo metadata` and runs
   `cargo audit` once from that root.
 - `make markdownlint` checks Markdown files.
+- `make spelling` checks the shared en-GB-oxendict configuration for drift,
+  runs the consumer phrase scanner, and checks tracked Markdown prose with the
+  pinned `typos` release.
 - `make nixie` validates Mermaid diagrams.
 
 GitHub Actions Act validation lives in `.github/workflows/act-validation.yml`.
@@ -55,6 +58,37 @@ LLVM-compatible linker behaviour.
 
 Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
 full generated workflow locally on Linux.
+
+## Spelling policy
+
+The tracked `typos.toml` is generated from the shared estate dictionary and the
+repository-specific `typos.local.toml` overlay. Never edit generated entries by
+hand. Add only narrow repository terminology to the overlay.
+
+The configuration builder is pinned to commit
+`d6da92f02240a79a945c835f69bdd08a888da1d0`. Regenerate the configuration with:
+
+```sh
+TYPOS_CONFIG_BUILDER_COMMIT=d6da92f02240a79a945c835f69bdd08a888da1d0
+uvx --python 3.14 \
+  --from "git+https://github.com/leynos/typos-config-builder.git@${TYPOS_CONFIG_BUILDER_COMMIT}" \
+  typos-config-builder
+```
+
+Use the same command with `--check` in quality gates to detect drift without
+rewriting `typos.toml`. The builder refreshes the shared dictionary into the
+untracked `.typos-oxendict-base.toml` cache only when the authority is newer,
+records refresh metadata in `.typos-oxendict-base.json`, and reuses a valid
+local cache when the authority is unavailable.
+
+Typos splits hyphenated phrases into separate words. The consumer-owned
+`scripts/typos_rollout_check.py` therefore reads phrase corrections from the
+shared cache and local overlay, while taking ignore patterns and file
+exclusions from generated `typos.toml`. It reports prohibited phrases without
+duplicating the builder's validation, cache, merge, or rendering behaviour.
+Quoted APIs and identifiers retain their upstream spelling; put them in
+backticks or fenced code blocks where practical rather than adding broad
+word-level exceptions.
 
 ### Security audit ignores
 
