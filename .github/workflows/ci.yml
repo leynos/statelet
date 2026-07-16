@@ -111,14 +111,14 @@ jobs:
           output-path: lcov.info
           format: lcov
           with-ratchet: 'true'
-      # The `mode: check` changed-line coverage gate is deliberately not
-      # wired in yet: CodeScene projects without a gates configuration
-      # reject every `cs-coverage check` call with "HTTP call succeeded,
-      # but the received project-config isn't valid. Lacks the gates
-      # configuration." (a CodeScene-side, per-project setting, not a CI
-      # defect — see ddlint#287). Add the check step in a fast-follow PR
-      # once the project's coverage gate is confirmed enabled; the
-      # `fetch-depth: 0` checkout above and the ratchet are already in
-      # place for it. Main-branch coverage upload lives in
-      # coverage-main.yml instead, since CodeScene only accepts uploads
-      # for analysed branches.
+      - name: Check coverage against CodeScene gates
+        env:
+          CS_ACCESS_TOKEN: ${{ secrets.CS_ACCESS_TOKEN }}
+        if: env.CS_ACCESS_TOKEN != '' && github.event_name == 'pull_request'
+        uses: leynos/shared-actions/.github/actions/upload-codescene-coverage@927edd45ae77be4251a8a18ca9eb5613a2e32cbd
+        with:
+          format: lcov
+          mode: check
+          project-url: https://api.codescene.io/v2/projects/81801
+          access-token: ${{ env.CS_ACCESS_TOKEN }}
+          installer-checksum: ${{ vars.CODESCENE_CLI_SHA256 }}
