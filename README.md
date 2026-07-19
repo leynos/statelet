@@ -1,5 +1,8 @@
 # Statelet
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](
+https://deepwiki.com/leynos/statelet)
+
 *Transition-boundary conventions for ordinary Rust state machines.*
 
 Statelet is being designed for teams that already write explicit Rust state
