@@ -125,6 +125,60 @@ If a workflow's behaviour genuinely depends on a feature only present from a
 particular commit onwards, express that as a comment or a changelog note, not
 as a test assertion on the SHA string.
 
+## Mutation-testing workflow contract tests
+
+This repository runs scheduled, informational mutation testing through a thin
+caller workflow, [`.github/workflows/mutation-testing.yml`](../.github/workflows/mutation-testing.yml),
+which delegates to the shared reusable workflow
+`leynos/shared-actions/.github/workflows/mutation-cargo.yml`. The heavy lifting
+— running `cargo-mutants` and summarizing survivors — lives in
+`shared-actions`; this repository carries only declarative configuration. The
+run is **informational only**: it never gates a pull request. Survivors are
+reported through the job summary and downloadable artefacts so they can be
+triaged into tests, not enforced as a blocking check.
+
+The workflow runs on a **daily schedule** and on **manual dispatch**; select a
+branch in the Actions "Run workflow" control to exercise a feature branch.
+
+The caller passes a small set of configuration inputs, each carrying intent:
+
+- `extra-args` — arguments forwarded to `cargo-mutants` (here
+  `--all-features`) so the mutation run matches the CI test baseline
+  (`CARGO_FLAGS = --all-targets --all-features`); a mismatch would report
+  feature-gated code as untested.
+- `setup-commands` — installs `clang`, `lld`, and `mold` before mutation runs,
+  mirroring the linker setup that `.cargo/config.toml` makes mandatory for
+  every cargo build; without it, mutated builds would fail before a single
+  mutant could be tested.
+
+The `uses:` reference pins the shared workflow to a full 40-character commit
+SHA rather than a branch or tag, so a force-push upstream cannot silently
+change what runs here. The contract test asserts only that the pin is a full
+commit SHA, not a particular value, so Dependabot bumps it automatically
+without any accompanying test edit.
+
+Because the caller is configuration rather than code, a contract test in
+[`tests/workflow_contracts/mutation_testing_test.py`](../tests/workflow_contracts/mutation_testing_test.py)
+pins the shape it must uphold, failing the pull request when the caller
+drifts — repointing the pin at a branch, widening the token scope, or
+dropping the linker setup or feature configuration — rather than letting the
+breakage surface only in a scheduled run. The test module self-skips when the
+workflow file is absent, so it does not fail in working copies that omit
+`.github/`. Run it locally with `make test-workflow-contracts`. The test
+validates:
+
+- the `uses:` reference targets `mutation-cargo.yml` pinned to a full commit
+  SHA;
+- the job is named `mutation` and is the only job in the workflow;
+- the `with:` block carries exactly the expected `extra-args` and
+  `setup-commands`;
+- job permissions are least-privilege (`contents: read`, `id-token: write`)
+  and the workflow-level default token scope is empty;
+- `concurrency` serializes runs per ref without cancelling one in progress;
+  and
+- the triggers keep the daily schedule and a plain `workflow_dispatch` with no
+  legacy branch input.
+
 ### Security audit ignores
 
 Security audit jobs may set `CARGO_AUDIT_IGNORES` for narrowly scoped RustSec
