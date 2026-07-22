@@ -126,12 +126,18 @@ Thresholds that trigger escalation rather than autonomous continuation.
 
 ## Progress
 
-- [ ] (pending) Stage A: confirm orientation, the five required out-of-scope
-  concerns, and the exact decision sentence. No file changes.
-- [ ] (pending) Stage B: add the red acceptance check
-  (`scripts`/inline grep) and confirm it fails before the ADR exists.
-- [ ] (pending) Stage C: author `docs/adr-002-transition-boundary-scope.md`
-  from the embedded artifact; confirm the red check turns green.
+- [x] (2026-07-22 20:39Z) Stage A: confirmed orientation, the five required
+  out-of-scope concerns, and the exact decision sentence. The local ADR
+  convention requires `Status`, `Date`, and `Context and problem statement` in
+  that order. No deliverable files changed.
+- [x] (2026-07-22 20:40Z) Stage B: ran the shared inline acceptance predicate
+  before authoring. It returned
+  `RED: docs/adr-002-transition-boundary-scope.md absent` with exit status 1,
+  as required; no durable script was needed.
+- [x] (2026-07-22 20:43Z) Stage C: authored
+  `docs/adr-002-transition-boundary-scope.md` from the embedded artifact with
+  the current acceptance date. The shared predicate returned
+  `GREEN: decision sentence present with all five concerns in order`.
 - [ ] (pending) Stage D: sync companion documents and close the item. The four
   companion edits are the highest-risk-to-omit work, so they are tracked
   separately:
@@ -747,3 +753,10 @@ Signposted documentation and skills for the implementer:
   switched brittle design-section numbers to name-plus-number citations. These
   changes affect only validation mechanics and ADR wording, not the plan's
   scope or stage structure.
+- 2026-07-22: implementation began after plan approval. Stage A confirmed the
+  local ADR convention and found no scope conflict among the design, terms of
+  reference, README, and user's guide. Stage B remains the next step.
+- 2026-07-22: completed the red-green documentation contract. The inline
+  predicate failed because ADR 002 was absent, then passed after the ADR was
+  created with the required decision sentence. Companion-document wiring and
+  final validation remain.
