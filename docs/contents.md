@@ -31,6 +31,9 @@ set.
 - [ADR 001: Select proving ground candidates](adr-001-proving-ground-candidates.md)
   proposes `wireframe` as the primary proving ground after `mdtablefix`, with
   `weaver`, `netsuke`, and `ddlint` ranked as narrower or weaker candidates.
+- [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md)
+  defines the marker-only ownership boundary that keeps Statelet out of
+  framework responsibilities.
 
 ## Rust reference material
 

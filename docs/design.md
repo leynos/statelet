@@ -11,6 +11,7 @@ Companion documents:
 - `docs/context.md`
 - `docs/roadmap.md`
 - `docs/adr-001-proving-ground-candidates.md`
+- `docs/adr-002-transition-boundary-scope.md`
 
 Last substantive revision: 2026-06-15
 
@@ -20,6 +21,9 @@ Last substantive revision: 2026-06-15
 It exists for codebases that already want explicit Rust enums, structs,
 methods, and `match` expressions, but want shared discipline around transition
 contracts, fallibility, and observability.
+
+[ADR 002](adr-002-transition-boundary-scope.md) is the canonical authority for
+the boundary between Statelet's transition marking and framework ownership.
 
 The design deliberately avoids the full state-machine framework shape. It does
 not own dispatch, storage, events, lifecycle hooks, async orchestration,

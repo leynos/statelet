@@ -4,7 +4,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`, `Decision Log`,
 and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
-Status: DRAFT
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -138,19 +138,21 @@ Thresholds that trigger escalation rather than autonomous continuation.
   `docs/adr-002-transition-boundary-scope.md` from the embedded artifact with
   the current acceptance date. The shared predicate returned
   `GREEN: decision sentence present with all five concerns in order`.
-- [ ] (pending) Stage D: sync companion documents and close the item. The four
-  companion edits are the highest-risk-to-omit work, so they are tracked
-  separately:
-  - [ ] (pending) D1: add the ADR 002 entry to `docs/contents.md` "Decision
-    records" (grep-guarded, add-if-absent).
-  - [ ] (pending) D2: add ADR 002 to the `docs/design.md` companion list and a
-    single citation from §1 or §2.
-  - [ ] (pending) D3: resolve the `docs/terms-of-reference.md` §10.2 candidate
-    bullet into a link to ADR 002 and add it to the companion list.
-  - [ ] (pending) D4: tick roadmap 1.1.1 (`[ ]` → `[x]`) and link the accepted
-    ADR in its success line.
-  - [ ] (pending) D5: run the link check and all Markdown gates, then request a
-    CodeRabbit review and clear every concern.
+- [x] (2026-07-22 20:48Z) Stage D: synchronized companion documents, closed
+  roadmap item 1.1.1, and completed validation. The four companion edits were
+  tracked separately because they were the highest-risk-to-omit work:
+  - [x] (2026-07-22 20:46Z) D1: added the ADR 002 entry to
+    `docs/contents.md` "Decision records".
+  - [x] (2026-07-22 20:46Z) D2: added ADR 002 to the `docs/design.md`
+    companion list and a canonical-scope-authority citation in §1.
+  - [x] (2026-07-22 20:46Z) D3: resolved the
+    `docs/terms-of-reference.md` §10.2 candidate as an ADR 002 link and added
+    it to the companion list.
+  - [x] (2026-07-22 20:46Z) D4: ticked roadmap 1.1.1 and linked ADR 002 from
+    its success line.
+  - [x] (2026-07-22 20:48Z) D5: content and all-touched-files link checks
+    passed; `make markdownlint`, `make check-fmt`, and `make nixie` passed;
+    `coderabbit review --agent` completed without reporting a concern.
 
 This section must always reflect the actual current state of the work. The
 implementing agent updates checkboxes with timestamps as stages complete.
@@ -162,6 +164,13 @@ implementing agent updates checkboxes with timestamps as stages complete.
   `$(MDLINT) '**/*.md'` and `.markdownlint-cli2.jsonc` ignores only `target`,
   `node_modules`, and `.venv`. Impact: the plan is authored at an 80-column
   prose wrap so the gate stays green while the plan lives in-tree.
+- Observation: `make fmt` rewrote an unrelated paragraph in the imported
+  `docs/rstest-bdd-users-guide.md` despite no source change there. Evidence:
+  the first formatter diff contained that file only in addition to the ADR and
+  ExecPlan changes. Impact: restored the imported-guide churn before
+  committing; the formatter is not a no-op on the pre-existing tree, so final
+  validation uses `make fmt`, restores the unrelated change, then runs the
+  check gates.
 
 ## Decision log
 
@@ -213,9 +222,18 @@ implementing agent updates checkboxes with timestamps as stages complete.
 
 ## Outcomes & retrospective
 
-To be completed at delivery. Compare the merged ADR against the roadmap 1.1.1
-success criterion, note whether any companion-document conflict surfaced, and
-record whether the `Accepted`-on-merge convention was kept or revised.
+Delivered one accepted ADR that records the marker-only scope. It contains the
+required decision sentence exactly once, is reachable from the documentation
+index, design, and terms of reference, and closes roadmap item 1.1.1. No scope
+conflict surfaced among the design, terms of reference, README, and user's
+guide; `Accepted` was retained because the ADR ratifies that already-settled
+position.
+
+The documentation-focused red-green check was effective: it failed before the
+ADR existed and then proved the exact, whitespace-wrapped sentence once
+authored. `make fmt` was not idempotent for one unrelated imported guide, so
+that pre-existing formatter churn was restored before each commit; the planned
+files remained formatted and all check gates passed.
 
 ## Context and orientation
 
@@ -760,3 +778,9 @@ Signposted documentation and skills for the implementer:
   predicate failed because ADR 002 was absent, then passed after the ADR was
   created with the required decision sentence. Companion-document wiring and
   final validation remain.
+- 2026-07-22: synchronized the index, design, terms of reference, and roadmap.
+  The content predicate remains green and the all-touched-files link check
+  produced no `BROKEN` output. Final gates and review remain.
+- 2026-07-22: completed Stage D. All required Markdown gates passed and both
+  requested CodeRabbit milestone reviews completed without reported concerns.
+  The plan status is now COMPLETE; no implementation work remains.

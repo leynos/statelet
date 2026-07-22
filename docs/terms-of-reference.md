@@ -12,6 +12,7 @@ Companion documents:
 - `docs/design.md`
 - `docs/roadmap.md`
 - `docs/adr-001-proving-ground-candidates.md`
+- `docs/adr-002-transition-boundary-scope.md`
 
 Last substantive revision: 2026-06-14
 
@@ -351,8 +352,7 @@ Competing alternatives:
 
 ### 10.2 ADR candidates
 
-- ADR: `statelet` is a transition-boundary toolkit, not a state-machine
-  framework.
+- [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md).
 - ADR: Macro-first versus trait-first API shape.
 - ADR: Default dependency and feature policy for tracing.
 - ADR: Whether v0.1 includes diagram or test metadata.

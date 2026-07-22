@@ -32,10 +32,11 @@ runtime/conventions crate, and what evidence justifies a proc macro. Its
 outcome informs every later implementation slice. See terms-of-reference.md
 §§7-9 and design.md §§11.1, 13.6-13.7.
 
-- [ ] 1.1.1. Record the transition-boundary scope decision as an ADR.
+- [x] 1.1.1. Record the transition-boundary scope decision as an ADR.
   - See terms-of-reference.md §§1-6 and design.md §§1-3.
   - Success: one accepted ADR states that Statelet marks boundaries and does
-    not own dispatch, events, storage, transition tables, or graph safety.
+    not own dispatch, events, storage, transition tables, or graph safety:
+    [ADR 002](adr-002-transition-boundary-scope.md).
 - [ ] 1.1.2. Record the three possible v0.1 exits.
   - Requires 1.1.1.
   - Capture the "ship nothing", "ship conventions only", and "ship macro"
