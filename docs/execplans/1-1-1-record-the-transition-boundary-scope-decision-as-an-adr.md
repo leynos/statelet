@@ -135,7 +135,7 @@ Thresholds that trigger escalation rather than autonomous continuation.
   `RED: docs/adr-002-transition-boundary-scope.md absent` with exit status 1,
   as required; no durable script was needed.
 - [x] (2026-07-22 20:43Z) Stage C: authored
-  `docs/adr-002-transition-boundary-scope.md` from the embedded artifact with
+  `docs/adr-002-transition-boundary-scope.md` from the embedded artefact with
   the current acceptance date. The shared predicate returned
   `GREEN: decision sentence present with all five concerns in order`.
 - [x] (2026-07-22 20:48Z) Stage D: synchronized companion documents, closed
@@ -326,8 +326,8 @@ not pull in new tooling without escalation.
 
 ### Stage C: author the ADR
 
-Create `docs/adr-002-transition-boundary-scope.md` from the artifact embedded in
-`Artifacts and notes`, adjusting only the acceptance date to the merge date.
+Create `docs/adr-002-transition-boundary-scope.md` from the artefact embedded in
+`Artefacts and notes`, adjusting only the acceptance date to the merge date.
 Keep it within the same order of length as ADR 001. Re-run the Stage B check
 and confirm it passes (green). Run `make markdownlint` and `make fmt`; the
 formatter must be a no-op at commit time.
@@ -404,11 +404,11 @@ check_adr; echo "exit=$?"   # expect: RED: ... absent / exit=1
 
 Stage C — author the file directly with a file-writing tool or a heredoc (do
 not invoke an interactive `$EDITOR`, which can hang under automation), copying
-the embedded artifact and setting the acceptance date to the merge date. Then
+the embedded artefact and setting the acceptance date to the merge date. Then
 re-run the same predicate; a zero exit is the expected GREEN:
 
 ```bash
-# write docs/adr-002-transition-boundary-scope.md from the embedded artifact
+# write docs/adr-002-transition-boundary-scope.md from the embedded artefact
 check_adr; echo "exit=$?"   # expect: GREEN ... / exit=0
 ```
 
@@ -512,7 +512,7 @@ destructive: no migrations, no deletions, no generated artefacts. If a gate
 fails, correct the Markdown and re-run; the environment is left clean because
 only tracked Markdown changes.
 
-## Artifacts and notes
+## Artefacts and notes
 
 The following is the full proposed text for
 `docs/adr-002-transition-boundary-scope.md`. The implementer creates the file
@@ -752,7 +752,7 @@ Signposted documentation and skills for the implementer:
 ## Revision note
 
 - 2026-06-24: initial DRAFT. Establishes the four-stage plan, the embedded
-  proposed ADR 002 artifact, the documentation-appropriate Red-Green-Refactor
+  proposed ADR 002 artefact, the documentation-appropriate Red-Green-Refactor
   substitute, and the companion-document sync set. Remaining work is execution
   pending approval; no implementation has begun.
 - 2026-06-24: post-review revision after a community-of-experts pass. Replaced
@@ -784,3 +784,7 @@ Signposted documentation and skills for the implementer:
 - 2026-07-22: completed Stage D. All required Markdown gates passed and both
   requested CodeRabbit milestone reviews completed without reported concerns.
   The plan status is now COMPLETE; no implementation work remains.
+- 2026-08-14: corrected five US-spelling occurrences to the repository's
+  required Oxford British `artefact` after the post-rebase spelling gate
+  reported them. This terminology-only repair does not change the completed
+  ADR decision.
