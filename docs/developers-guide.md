@@ -59,6 +59,31 @@ LLVM-compatible linker behaviour.
 Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
 full generated workflow locally on Linux.
 
+## Fast development builds
+
+`make dev-build` and `make dev-test` offer an opt-in, faster iteration loop
+for local debug work. `dev-build` compiles debug binaries and `dev-test` runs
+the test suite; both use the Cranelift codegen backend and the mold linker
+configured in `tools/dev-fast/config.toml`.
+
+The `DEV_FAST_CONFIG` variable names that fragment, defaulting to
+`tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly
+with `--config "$(DEV_FAST_CONFIG)"`. Cargo never auto-discovers this
+fragment; it takes effect only when a target invokes it directly, so other
+`make` targets are unaffected.
+
+Using the fragment requires a nightly toolchain, because the Cranelift
+codegen backend is unstable. On Linux it also requires the mold linker on
+`PATH`; the fragment gates the linker flag behind a `target_os = "linux"`
+`cfg` table, so other platforms fall back to their default linker.
+
+Cranelift configuration must never be copied into `.cargo/config.toml`.
+Cargo auto-discovers that file and applies it to every invocation, which
+would silently degrade release, coverage, and verification builds to the
+faster but less optimizing backend. Keep the fast-build configuration
+isolated in `tools/dev-fast/config.toml` and reach it only through
+`make dev-build` and `make dev-test`.
+
 ## Spelling policy
 
 The tracked `typos.toml` is generated from the shared estate dictionary and the
