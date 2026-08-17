@@ -184,6 +184,12 @@ implementing agent updates checkboxes with timestamps as stages complete.
   exit successfully because the pipeline ran in a subshell. Impact: the
   validator now tracks failures explicitly and exits non-zero; the ExecPlan
   itself is included in the checked file set.
+- Observation: follow-up reconnaissance found a useful contrast across the
+  validation candidates: `mdtablefix` has inconsistent but infallible boundary
+  instrumentation, `wireframe` has a fallible handwritten actor seam with no
+  tracing, and `ddlint` has counter-based parser guards rather than a real
+  mode. Impact: ADR 002 records them as validation evidence without changing
+  its accepted scope or deciding that the macro should ship.
 
 ## Decision log
 
@@ -237,6 +243,10 @@ implementing agent updates checkboxes with timestamps as stages complete.
   a claim scoped to the competing crates named in this ADR, exact-once
   sentence validation, and a failing link check improve traceability without
   creating new product scope. Date/Author: 2026-08-17, review follow-up.
+- Decision: record the three reconnaissance examples in ADR 002 as validation
+  evidence. Rationale: concrete downstream seams make the scope boundary
+  falsifiable while preserving user-owned dispatch, events, storage, and graph
+  safety. Date/Author: 2026-08-17, follow-up documentation.
 
 ## Outcomes & retrospective
 
@@ -565,7 +575,7 @@ with this content, changing only the acceptance date to the merge date and
 adjusting wording only if a Stage A review requires it. It mirrors the section
 order, tone, and length of `docs/adr-001-proving-ground-candidates.md`.
 
-```markdown
+````markdown
 # Architectural decision record (ADR) 002: Scope Statelet to transition-boundary marking
 
 ## Status
@@ -583,8 +593,8 @@ cannot drift.
 
 Statelet enters a crowded market. On 2026-06-13, crates.io listed 154 crates
 under the `state-machine` keyword,[^1] spanning hierarchical event-driven
-engines,[^2] transition-table domain-specific languages (DSLs),[^3]
-static embedded generators,[^4] typestate APIs[^5], and diagram or logging
+engines,[^2] transition-table domain-specific languages (DSLs),[^3] static
+embedded generators,[^4] typestate APIs[^5], and diagram or logging
 helpers.[^6] A broad "another Rust state-machine framework" position is
 therefore weak.
 
@@ -626,6 +636,173 @@ what does it explicitly leave to user code and to existing crates?
   conventions, tracing defaults, second proving ground); it fixes only the
   ownership boundary.
 
+## Validation evidence
+
+The following reconnaissance examples test the boundary; they do not broaden it
+or decide that the optional macro should ship. They use the proposed surface
+from design §§6-9: an enum `StateName` derive returning stable labels,
+documented `transition.*` fields, and, only if it beats the baseline, an
+attribute whose `state(...)` and `event(...)` arguments are Rust expressions.
+None supplies a dispatcher, event enum, or transition table.
+
+### `mdtablefix`: conventions baseline
+
+`mdtablefix` remains the first spike (design §12). `ContinuationMode` is an
+existing enum in `src/wrap/paragraph/pending.rs`, while `ProcessBuffer` tracks
+table mode as `bool in_table` in `src/process/buffer.rs`. The latter project
+roadmap already proposes promoting that boolean to a small enum.
+Instrumentation is currently uneven: `ProcessBuffer` emits `debug!`,
+continuation handling uses `trace!`, and paths such as `handle_fence_line` are
+silent.
+
+The first phase must therefore keep the existing branches and apply a common
+convention with ordinary `tracing` instrumentation:
+
+```rust,ignore
+#[derive(Debug, PartialEq, StateName)]
+enum ContinuationMode {
+    Normalize,
+    TightCodeSpan,
+    VerbatimFlush,
+}
+
+#[derive(StateName)]
+enum BufferMode {
+    Text,
+    Table,
+}
+
+impl ProcessBuffer {
+    #[tracing::instrument(
+        level = "trace",
+        skip(self, line),
+        fields(
+            transition.name = "handle_table_line",
+            transition.state.before = self.mode.state_name(),
+            transition.event = "source_line",
+        )
+    )]
+    pub(super) fn handle_table_line(&mut self, line: String) -> Option<String> {
+        // Existing branch logic remains here.
+    }
+}
+```
+
+Only demonstrated repetition or drift may justify the equivalent macro form:
+
+```rust,ignore
+#[statelet::transition(
+    state(self.mode),
+    event(line),
+    infallible,
+    tracing(level = "trace")
+)]
+pub(super) fn handle_table_line(&mut self, line: String) -> Option<String> {
+    // Body remains byte-for-byte ordinary Rust.
+}
+```
+
+The relevant `ProcessBuffer`, fence-tracker, and continuation paths do not
+return `Result`. The design's requirement for a fallible transition therefore
+does not apply to this spike. It remains a useful test of whether a convention
+eliminates `debug!`-versus-`trace!` drift and names silent boundaries, but not
+of `fallible` or `transition.error`.
+
+### `wireframe`: primary proving ground
+
+`wireframe` supplies the complementary case selected by
+[ADR 001](adr-001-proving-ground-candidates.md). Its connection actor has the
+explicit `RunState { Active, ShuttingDown, Finished }` in
+`src/connection/state.rs`, generic `ActiveOutput<F, E>` in
+`src/connection/output.rs`, and a fallible `ConnectionActor::dispatch_event` in
+`src/connection/dispatch.rs`. The connection module has no tracing today, so
+Statelet would add observability rather than duplicate an existing local
+convention.
+
+The boundary demonstrates both generic enum derivation and why the state
+argument must accept an expression rather than a string: the actor state is a
+function parameter, not a field on `self`.
+
+```rust,ignore
+#[derive(StateName)]
+enum RunState {
+    Active,
+    ShuttingDown,
+    Finished,
+}
+
+#[derive(StateName)]
+enum ActiveOutput<F, E> {
+    None,
+    Response(FrameStream<F, E>),
+    MultiPacket(MultiPacketContext<F>),
+}
+
+#[statelet::transition(
+    state(state.run_state),
+    event(event),
+    fallible,
+    tracing(level = "debug")
+)]
+fn dispatch_event(
+    &mut self,
+    event: Event<F, E>,
+    state: &mut ActorState,
+    out: &mut Vec<F>,
+) -> Result<(), WireframeError<E>> {
+    // The existing event match remains the dispatcher.
+}
+```
+
+An error from `Event::Response` can then carry `transition.name`, the prior
+state, and `transition.error` without a Statelet-shaped domain type.
+`ActiveOutput::shutdown`, which replaces the active output with `None`, is the
+matching infallible boundary. The distinct benefit is label alignment:
+`crates/wireframe-verification` retains its Stateright model and proof
+responsibilities, while `StateName` can give production logs, tests, and the
+model the same `Active`, `ShuttingDown`, and `Finished` labels.
+
+### `ddlint`: negative control
+
+`ddlint` confirms why [ADR 001](adr-001-proving-ground-candidates.md) treats it
+as the weakest fit. Its `StructLiteralState` in
+`src/parser/expression/pratt.rs` is two `usize` counters, `active` and
+`suspension`, manipulated by activation and suspension wrappers around closures.
+`allows_struct_literals()` derives a boolean from those counters; there is no
+state enum to name, and parser warnings use `log`, not `tracing`.
+
+Forcing Statelet into this seam would first require a synthetic projection:
+
+```rust,ignore
+#[derive(StateName)]
+enum GuardMode {
+    Inactive,
+    Active,
+    Suspended,
+}
+
+impl StructLiteralState {
+    fn mode(&self) -> GuardMode {
+        // Derived solely from `active` and `suspension`.
+    }
+}
+```
+
+That would be decorative parser scaffolding. The projection would exist only to
+satisfy a marker; its before-state describes a scoped region rather than a
+boundary decision, and the important invariant remains counter balance and
+underflow prevention. `transition.*` fields do not express that invariant.
+Statelet should therefore not be introduced unless `ddlint` promotes this to a
+real mode representation and moves the relevant diagnostics to `tracing`.
+
+Together, the examples bracket the validation bet: `mdtablefix` tests whether
+conventions beat ad hoc instrumentation but cannot exercise fallibility;
+`wireframe` tests a fallible parameter-held state expression, generic derives,
+and verification-name alignment; and `ddlint` is the negative control where the
+correct outcome is "do not use Statelet". `TransitionOutcome` remains
+unpublished (design §6.2), so any initial `transition.outcome` field must use
+the project-local decision or return shape already present at the boundary.
+
 ## Options considered
 
 <!-- markdownlint-disable MD013 -->
@@ -645,8 +822,8 @@ serve each posture.*
 
 ### Option 0: Ship nothing / keep the convention project-local
 
-Statelet need not exist as a crate at all. If a stable state-naming contract and
-documented tracing fields add little over plain
+Statelet need not exist as a crate at all. If a stable state-naming contract
+and documented tracing fields add little over plain
 `#[tracing::instrument(fields(state = %self.mode))]`, the honest outcome is to
 ship nothing and keep the pattern project-local. The design preserves this
 outcome deliberately (its "Conventions baseline is also too weak" failure mode,
@@ -687,10 +864,10 @@ competition with a mature crate and would move branch logic out of the user's
 
 ### Option C: Dispatch and event-engine owner
 
-Statelet could provide an event-accepting runtime and dispatch loop, as `statig`
-and `rust-fsm` do. This is the well-served centre of the market and would
-require users to hand over their control flow — the one thing the target user
-most wants to keep. Rejected.
+Statelet could provide an event-accepting runtime and dispatch loop, as
+`statig` and `rust-fsm` do. This is the well-served centre of the market and
+would require users to hand over their control flow — the one thing the target
+user most wants to keep. Rejected.
 
 ### Option D: Diagram and graph-metadata owner
 
@@ -708,17 +885,17 @@ Statelet is scoped as a transition-boundary toolkit. **Statelet marks
 boundaries and does not own dispatch, events, storage, transition tables, or
 graph safety.** Its initial surface is expected to be state naming and
 documented `tracing` fields around boundaries that already exist in ordinary
-Rust code, but the delivery vehicle (conventions, trait crate, or macro) and the
-tracing-default question remain open and are decided elsewhere; this ADR fixes
-only the ownership boundary.
+Rust code, but the delivery vehicle (conventions, trait crate, or macro) and
+the tracing-default question remain open and are decided elsewhere; this ADR
+fixes only the ownership boundary.
 
 In the context of entering a crowded state-machine market, facing the risk that
 Statelet drifts into a framework and competes with mature crates, the project
 decides for a marker-only scope, and against owning transition tables (as
-`stateless` does), dispatch and events (as `statig` and `rust-fsm` do), storage,
-or graph safety, to keep the user's explicit Rust control flow as the model and
-keep the wedge falsifiable, accepting that the resulting product is smaller than
-a framework and may, on validation, prove too thin to ship at all.
+`stateless` does), dispatch and events (as `statig` and `rust-fsm` do),
+storage, or graph safety, to keep the user's explicit Rust control flow as the
+model and keep the wedge falsifiable, accepting that the resulting product is
+smaller than a framework and may, on validation, prove too thin to ship at all.
 
 ## Goals and non-goals
 
@@ -781,7 +958,7 @@ without Statelet taking ownership of `wireframe`'s Stateright model.
     `https://docs.rs/crate/macro-machines/latest/source/`; crates.io API for
     `macro-machines`, accessed 2026-06-13:
     `https://crates.io/api/v1/crates/macro-machines`
-```
+````
 
 ## Interfaces and dependencies
 
@@ -855,3 +1032,8 @@ Signposted documentation and skills for the implementer:
   and synchronized the embedded ADR's ADR 001 link. These are traceability and
   validation repairs only, not new product scope; `make markdownlint` and
   `make nixie` passed after the spelling correction.
+- 2026-08-17: added validated `mdtablefix`, `wireframe`, and `ddlint`
+  reconnaissance examples to ADR 002 and synchronized the embedded artefact.
+  The examples preserve the marker-only decision: they test conventions,
+  a fallible handwritten boundary, and an intentional non-adoption case rather
+  than decide the macro or add framework responsibilities.

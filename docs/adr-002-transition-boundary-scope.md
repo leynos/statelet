@@ -15,8 +15,8 @@ cannot drift.
 
 Statelet enters a crowded market. On 2026-06-13, crates.io listed 154 crates
 under the `state-machine` keyword,[^1] spanning hierarchical event-driven
-engines,[^2] transition-table domain-specific languages (DSLs),[^3]
-static embedded generators,[^4] typestate APIs[^5], and diagram or logging
+engines,[^2] transition-table domain-specific languages (DSLs),[^3] static
+embedded generators,[^4] typestate APIs[^5], and diagram or logging
 helpers.[^6] A broad "another Rust state-machine framework" position is
 therefore weak.
 
@@ -57,6 +57,173 @@ what does it explicitly leave to user code and to existing crates?
 - The decision must not pre-empt still-open questions (macro versus
   conventions, tracing defaults, second proving ground); it fixes only the
   ownership boundary.
+
+## Validation evidence
+
+The following reconnaissance examples test the boundary; they do not broaden it
+or decide that the optional macro should ship. They use the proposed surface
+from design §§6-9: an enum `StateName` derive returning stable labels,
+documented `transition.*` fields, and, only if it beats the baseline, an
+attribute whose `state(...)` and `event(...)` arguments are Rust expressions.
+None supplies a dispatcher, event enum, or transition table.
+
+### `mdtablefix`: conventions baseline
+
+`mdtablefix` remains the first spike (design §12). `ContinuationMode` is an
+existing enum in `src/wrap/paragraph/pending.rs`, while `ProcessBuffer` tracks
+table mode as `bool in_table` in `src/process/buffer.rs`. The latter project
+roadmap already proposes promoting that boolean to a small enum.
+Instrumentation is currently uneven: `ProcessBuffer` emits `debug!`,
+continuation handling uses `trace!`, and paths such as `handle_fence_line` are
+silent.
+
+The first phase must therefore keep the existing branches and apply a common
+convention with ordinary `tracing` instrumentation:
+
+```rust,ignore
+#[derive(Debug, PartialEq, StateName)]
+enum ContinuationMode {
+    Normalize,
+    TightCodeSpan,
+    VerbatimFlush,
+}
+
+#[derive(StateName)]
+enum BufferMode {
+    Text,
+    Table,
+}
+
+impl ProcessBuffer {
+    #[tracing::instrument(
+        level = "trace",
+        skip(self, line),
+        fields(
+            transition.name = "handle_table_line",
+            transition.state.before = self.mode.state_name(),
+            transition.event = "source_line",
+        )
+    )]
+    pub(super) fn handle_table_line(&mut self, line: String) -> Option<String> {
+        // Existing branch logic remains here.
+    }
+}
+```
+
+Only demonstrated repetition or drift may justify the equivalent macro form:
+
+```rust,ignore
+#[statelet::transition(
+    state(self.mode),
+    event(line),
+    infallible,
+    tracing(level = "trace")
+)]
+pub(super) fn handle_table_line(&mut self, line: String) -> Option<String> {
+    // Body remains byte-for-byte ordinary Rust.
+}
+```
+
+The relevant `ProcessBuffer`, fence-tracker, and continuation paths do not
+return `Result`. The design's requirement for a fallible transition therefore
+does not apply to this spike. It remains a useful test of whether a convention
+eliminates `debug!`-versus-`trace!` drift and names silent boundaries, but not
+of `fallible` or `transition.error`.
+
+### `wireframe`: primary proving ground
+
+`wireframe` supplies the complementary case selected by
+[ADR 001](adr-001-proving-ground-candidates.md). Its connection actor has the
+explicit `RunState { Active, ShuttingDown, Finished }` in
+`src/connection/state.rs`, generic `ActiveOutput<F, E>` in
+`src/connection/output.rs`, and a fallible `ConnectionActor::dispatch_event` in
+`src/connection/dispatch.rs`. The connection module has no tracing today, so
+Statelet would add observability rather than duplicate an existing local
+convention.
+
+The boundary demonstrates both generic enum derivation and why the state
+argument must accept an expression rather than a string: the actor state is a
+function parameter, not a field on `self`.
+
+```rust,ignore
+#[derive(StateName)]
+enum RunState {
+    Active,
+    ShuttingDown,
+    Finished,
+}
+
+#[derive(StateName)]
+enum ActiveOutput<F, E> {
+    None,
+    Response(FrameStream<F, E>),
+    MultiPacket(MultiPacketContext<F>),
+}
+
+#[statelet::transition(
+    state(state.run_state),
+    event(event),
+    fallible,
+    tracing(level = "debug")
+)]
+fn dispatch_event(
+    &mut self,
+    event: Event<F, E>,
+    state: &mut ActorState,
+    out: &mut Vec<F>,
+) -> Result<(), WireframeError<E>> {
+    // The existing event match remains the dispatcher.
+}
+```
+
+An error from `Event::Response` can then carry `transition.name`, the prior
+state, and `transition.error` without a Statelet-shaped domain type.
+`ActiveOutput::shutdown`, which replaces the active output with `None`, is the
+matching infallible boundary. The distinct benefit is label alignment:
+`crates/wireframe-verification` retains its Stateright model and proof
+responsibilities, while `StateName` can give production logs, tests, and the
+model the same `Active`, `ShuttingDown`, and `Finished` labels.
+
+### `ddlint`: negative control
+
+`ddlint` confirms why [ADR 001](adr-001-proving-ground-candidates.md) treats it
+as the weakest fit. Its `StructLiteralState` in
+`src/parser/expression/pratt.rs` is two `usize` counters, `active` and
+`suspension`, manipulated by activation and suspension wrappers around closures.
+`allows_struct_literals()` derives a boolean from those counters; there is no
+state enum to name, and parser warnings use `log`, not `tracing`.
+
+Forcing Statelet into this seam would first require a synthetic projection:
+
+```rust,ignore
+#[derive(StateName)]
+enum GuardMode {
+    Inactive,
+    Active,
+    Suspended,
+}
+
+impl StructLiteralState {
+    fn mode(&self) -> GuardMode {
+        // Derived solely from `active` and `suspension`.
+    }
+}
+```
+
+That would be decorative parser scaffolding. The projection would exist only to
+satisfy a marker; its before-state describes a scoped region rather than a
+boundary decision, and the important invariant remains counter balance and
+underflow prevention. `transition.*` fields do not express that invariant.
+Statelet should therefore not be introduced unless `ddlint` promotes this to a
+real mode representation and moves the relevant diagnostics to `tracing`.
+
+Together, the examples bracket the validation bet: `mdtablefix` tests whether
+conventions beat ad hoc instrumentation but cannot exercise fallibility;
+`wireframe` tests a fallible parameter-held state expression, generic derives,
+and verification-name alignment; and `ddlint` is the negative control where the
+correct outcome is "do not use Statelet". `TransitionOutcome` remains
+unpublished (design §6.2), so any initial `transition.outcome` field must use
+the project-local decision or return shape already present at the boundary.
 
 ## Options considered
 
