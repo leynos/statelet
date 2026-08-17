@@ -153,6 +153,10 @@ Thresholds that trigger escalation rather than autonomous continuation.
   - [x] (2026-07-22 20:48Z) D5: content and all-touched-files link checks
     passed; `make markdownlint`, `make check-fmt`, and `make nixie` passed;
     `coderabbit review --agent` completed without reporting a concern.
+- [x] (2026-08-17) Review follow-up: tightened the ADR evidence and the
+  acceptance/link predicates, and synchronized the embedded ADR. This is a
+  documentation-integrity repair only; it adds no product scope.
+  `make markdownlint` and `make nixie` passed after the spelling correction.
 
 This section must always reflect the actual current state of the work. The
 implementing agent updates checkboxes with timestamps as stages complete.
@@ -171,6 +175,15 @@ implementing agent updates checkboxes with timestamps as stages complete.
   committing; the formatter is not a no-op on the pre-existing tree, so final
   validation uses `make fmt`, restores the unrelated change, then runs the
   check gates.
+- Observation: review found that the ADR's market summary had no source
+  citations, its competing-crate claim reached into ADR 001, and the embedded
+  ADR had drifted from the delivered ADR's relative link. Impact: added ordered
+  footnotes from Appendix A, limited the claim to crates named in this ADR,
+  and synchronized the embedded artefact without changing the decision.
+- Observation: the original link loop only printed `BROKEN` and could still
+  exit successfully because the pipeline ran in a subshell. Impact: the
+  validator now tracks failures explicitly and exits non-zero; the ExecPlan
+  itself is included in the checked file set.
 
 ## Decision log
 
@@ -219,6 +232,11 @@ implementing agent updates checkboxes with timestamps as stages complete.
   phased build (phased work lives in the roadmap). Stating the sentence once
   removes a drift hazard between two copies. Date/Author: 2026-06-24, planning
   agent (post-review revision).
+- Decision: retain the accepted marker-only decision and repair only its
+  evidence and validation mechanics. Rationale: ordered Appendix A footnotes,
+  a claim scoped to the competing crates named in this ADR, exact-once
+  sentence validation, and a failing link check improve traceability without
+  creating new product scope. Date/Author: 2026-08-17, review follow-up.
 
 ## Outcomes & retrospective
 
@@ -382,15 +400,24 @@ ADR=docs/adr-002-transition-boundary-scope.md
 SENTENCE='marks boundaries and does not own dispatch, events, storage, transition tables, or graph safety'
 
 check_adr() {
+  local all_text outcome_text total_count outcome_count
   if [ ! -f "$ADR" ]; then
     echo "RED: $ADR absent"
     return 1
   fi
-  if tr '\n' ' ' < "$ADR" | tr -s ' ' | grep -qiF "$SENTENCE"; then
-    echo "GREEN: decision sentence present with all five concerns in order"
+  all_text=$(tr '\n' ' ' < "$ADR" | tr -s ' ')
+  outcome_text=$(awk '
+    /^## Decision outcome \/ proposed direction$/ { in_outcome=1; next }
+    in_outcome && /^## / { exit }
+    in_outcome { print }
+  ' "$ADR" | tr '\n' ' ' | tr -s ' ')
+  total_count=$(printf '%s\n' "$all_text" | grep -oF "$SENTENCE" | wc -l || true)
+  outcome_count=$(printf '%s\n' "$outcome_text" | grep -oF "$SENTENCE" | wc -l || true)
+  if [ "$total_count" -eq 1 ] && [ "$outcome_count" -eq 1 ]; then
+    echo "GREEN: decision sentence occurs once in Decision outcome and nowhere else"
     return 0
   fi
-  echo "RED: decision sentence (whitespace-folded) not found in $ADR"
+  echo "RED: decision sentence must occur once in Decision outcome and nowhere else"
   return 1
 }
 ```
@@ -416,6 +443,8 @@ Stage C/D — Markdown gates (capture to /tmp). Confirm `make nixie` is already 
 clean no-op on the pre-change tree so it is not blamed for this doc-only item:
 
 ```bash
+set -euo pipefail
+
 make markdownlint 2>&1 | tee /tmp/markdownlint-statelet-adr002.out
 make check-fmt    2>&1 | tee /tmp/check-fmt-statelet-adr002.out
 make nixie        2>&1 | tee /tmp/nixie-statelet-adr002.out
@@ -426,16 +455,32 @@ the roadmap link and the ADR's own outbound link to ADR 001, not only links
 *into* the new ADR). Any `BROKEN` line is a failure:
 
 ```bash
+set -euo pipefail
+
+broken=0
 for f in docs/contents.md docs/design.md docs/terms-of-reference.md \
-         docs/roadmap.md docs/adr-002-transition-boundary-scope.md; do
+         docs/roadmap.md docs/adr-002-transition-boundary-scope.md \
+         docs/execplans/1-1-1-record-the-transition-boundary-scope-decision-as-an-adr.md; do
   dir=$(dirname "$f")
-  grep -oE '\[[^]]+\]\([^)]+\.md(#[^)]*)?\)' "$f" \
-    | sed -E 's/.*\(([^)#]+\.md)(#[^)]*)?\)/\1/' \
-    | while read -r tgt; do
-        case "$tgt" in http*|/*) continue ;; esac
-        test -f "$dir/$tgt" || echo "BROKEN: $f -> $tgt"
-      done
+  while read -r tgt; do
+    case "$tgt" in http*|/*) continue ;; esac
+    if ! test -f "$dir/$tgt"; then
+      echo "BROKEN: $f -> $tgt"
+      broken=1
+    fi
+  done < <(
+    awk '
+      /^```/ { in_fence = !in_fence; next }
+      !in_fence { print }
+    ' "$f" \
+      | grep -oE '\[[^]]+\]\([^)]+\.md(#[^)]*)?\)' \
+      | sed -E 's/.*\(([^)#]+\.md)(#[^)]*)?\)/\1/' || true
+  )
 done
+if [ "$broken" -ne 0 ]; then
+  echo "link check failed"
+  exit 1
+fi
 echo "link check complete (no BROKEN lines above means pass)"
 ```
 
@@ -537,10 +582,11 @@ cannot drift.
 ## Context and problem statement
 
 Statelet enters a crowded market. On 2026-06-13, crates.io listed 154 crates
-under the `state-machine` keyword, spanning hierarchical event-driven engines,
-transition-table domain-specific languages (DSLs), static embedded generators,
-typestate APIs, and diagram or logging helpers. A broad "another Rust
-state-machine framework" position is therefore weak.
+under the `state-machine` keyword,[^1] spanning hierarchical event-driven
+engines,[^2] transition-table domain-specific languages (DSLs),[^3]
+static embedded generators,[^4] typestate APIs[^5], and diagram or logging
+helpers.[^6] A broad "another Rust state-machine framework" position is
+therefore weak.
 
 The terms of reference (§§1-6) and the technical design (§§1-3) instead stake a
 narrow claim: Statelet helps teams that have *already* written an ordinary Rust
@@ -565,10 +611,9 @@ what does it explicitly leave to user code and to existing crates?
 ## Decision drivers
 
 - A defensible wedge requires a boundary that competing crates do not already
-  occupy. Across the surveyed and representative crates (the named crates here
-  plus those in ADR 001), each *generates* the machine; the marker-only position
-  — instrumenting a machine the author has already written — is under-served
-  (see Options considered).
+  occupy. Across the competing state-machine crates named in this ADR, each
+  *generates* the machine; the marker-only position — instrumenting a machine
+  the author has already written — is under-served (see Options considered).
 - The primary user keeps explicit Rust control flow and wants it treated as a
   strength, not replaced by a generated dispatcher or transition table.
 - The crate must be able to fail cleanly: if marking boundaries adds little
@@ -717,9 +762,25 @@ machine, while Statelet standardizes names and observability at selected
 transition boundaries. It aligns with the terms of reference (§§1-6, §6.2), the
 design context and non-goals (§§1-3, §2.2), the README, and the user's guide,
 consolidating their shared position into one citable record. It complements
-ADR 001, which selects `wireframe` as the proving ground that will test this
-boundary on production-shaped code without Statelet taking ownership of
-`wireframe`'s Stateright model.
+[ADR 001](adr-001-proving-ground-candidates.md), which selects `wireframe` as
+the proving ground that will test this boundary on production-shaped code
+without Statelet taking ownership of `wireframe`'s Stateright model.
+
+[^1]: crates.io keyword API for `state-machine`, reporting 154 crates on
+    2026-06-13: `https://crates.io/api/v1/keywords/state-machine`
+[^2]: docs.rs documentation for `statig`, accessed 2026-06-13:
+    `https://docs.rs/statig/latest/statig/`
+[^3]: docs.rs documentation for `smlang`, accessed 2026-06-13:
+    `https://docs.rs/smlang/latest/smlang/`
+[^4]: crates.io API for `sm`, accessed 2026-06-13:
+    `https://crates.io/api/v1/crates/sm`
+[^5]: docs.rs documentation for `sfsm` and `typed-fsm`, accessed 2026-06-13:
+    `https://docs.rs/sfsm/latest/sfsm/`;
+    `https://docs.rs/typed-fsm/latest/typed_fsm/`
+[^6]: docs.rs source page for `macro-machines`, accessed 2026-06-13:
+    `https://docs.rs/crate/macro-machines/latest/source/`; crates.io API for
+    `macro-machines`, accessed 2026-06-13:
+    `https://crates.io/api/v1/crates/macro-machines`
 ```
 
 ## Interfaces and dependencies
@@ -788,3 +849,9 @@ Signposted documentation and skills for the implementer:
   required Oxford British `artefact` after the post-rebase spelling gate
   reported them. This terminology-only repair does not change the completed
   ADR decision.
+- 2026-08-17: review follow-up added ordered Appendix A footnotes for the
+  market count and six capability categories, limited the competing-crate
+  claim to this ADR, strengthened `check_adr` and the relative-link validator,
+  and synchronized the embedded ADR's ADR 001 link. These are traceability and
+  validation repairs only, not new product scope; `make markdownlint` and
+  `make nixie` passed after the spelling correction.

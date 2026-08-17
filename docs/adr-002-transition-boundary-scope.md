@@ -14,10 +14,11 @@ cannot drift.
 ## Context and problem statement
 
 Statelet enters a crowded market. On 2026-06-13, crates.io listed 154 crates
-under the `state-machine` keyword, spanning hierarchical event-driven engines,
-transition-table domain-specific languages (DSLs), static embedded generators,
-typestate APIs, and diagram or logging helpers. A broad "another Rust
-state-machine framework" position is therefore weak.
+under the `state-machine` keyword,[^1] spanning hierarchical event-driven
+engines,[^2] transition-table domain-specific languages (DSLs),[^3]
+static embedded generators,[^4] typestate APIs[^5], and diagram or logging
+helpers.[^6] A broad "another Rust state-machine framework" position is
+therefore weak.
 
 The terms of reference (§§1-6) and the technical design (§§1-3) instead stake a
 narrow claim: Statelet helps teams that have *already* written an ordinary Rust
@@ -42,10 +43,9 @@ what does it explicitly leave to user code and to existing crates?
 ## Decision drivers
 
 - A defensible wedge requires a boundary that competing crates do not already
-  occupy. Across the surveyed and representative crates (the named crates here
-  plus those in ADR 001), each *generates* the machine; the marker-only
-  position — instrumenting a machine the author has already written — is
-  under-served (see Options considered).
+  occupy. Across the competing state-machine crates named in this ADR, each
+  *generates* the machine; the marker-only position — instrumenting a machine
+  the author has already written — is under-served (see Options considered).
 - The primary user keeps explicit Rust control flow and wants it treated as a
   strength, not replaced by a generated dispatcher or transition table.
 - The crate must be able to fail cleanly: if marking boundaries adds little
@@ -197,3 +197,19 @@ consolidating their shared position into one citable record. It complements
 [ADR 001](adr-001-proving-ground-candidates.md), which selects `wireframe` as
 the proving ground that will test this boundary on production-shaped code
 without Statelet taking ownership of `wireframe`'s Stateright model.
+
+[^1]: crates.io keyword API for `state-machine`, reporting 154 crates on
+    2026-06-13: `https://crates.io/api/v1/keywords/state-machine`
+[^2]: docs.rs documentation for `statig`, accessed 2026-06-13:
+    `https://docs.rs/statig/latest/statig/`
+[^3]: docs.rs documentation for `smlang`, accessed 2026-06-13:
+    `https://docs.rs/smlang/latest/smlang/`
+[^4]: crates.io API for `sm`, accessed 2026-06-13:
+    `https://crates.io/api/v1/crates/sm`
+[^5]: docs.rs documentation for `sfsm` and `typed-fsm`, accessed 2026-06-13:
+    `https://docs.rs/sfsm/latest/sfsm/`;
+    `https://docs.rs/typed-fsm/latest/typed_fsm/`
+[^6]: docs.rs source page for `macro-machines`, accessed 2026-06-13:
+    `https://docs.rs/crate/macro-machines/latest/source/`; crates.io API for
+    `macro-machines`, accessed 2026-06-13:
+    `https://crates.io/api/v1/crates/macro-machines`
