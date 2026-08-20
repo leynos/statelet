@@ -398,16 +398,23 @@ Run all commands from the repository root (the directory containing
 
 Stage A/B/C — one shared acceptance predicate. Define it once and run the
 identical function before authoring (red) and after authoring (green). It folds
-the file to a single whitespace-normalized stream first, so the 80-column wrap
-the ADR is authored at cannot cause a false RED, and it matches the *full*
-decision sentence — all five concerns in order — so a stray occurrence of a
+the file to a single whitespace-normalized, emphasis-stripped stream first, so
+the 80-column wrap the ADR is authored at and any bold/italic styling cannot
+cause a false RED, and it matches the *complete* decision sentence — subject,
+all five concerns in order, and terminal full stop — so a stray occurrence of a
 word like "storage" in unrelated prose cannot cause a false GREEN:
 
 ```bash
 ADR=docs/adr-002-transition-boundary-scope.md
-# The canonical decision sentence the success criterion requires (roadmap 1.1.1).
-# Matched as a fixed string against a whitespace-folded copy of the file.
-SENTENCE='marks boundaries and does not own dispatch, events, storage, transition tables, or graph safety'
+# The complete canonical decision sentence the success criterion requires
+# (roadmap 1.1.1), including its leading subject so a different subject
+# cannot satisfy the predicate. Matched as a fixed string against a
+# whitespace-folded, emphasis-stripped copy of the file.
+SENTENCE='Statelet marks boundaries and does not own dispatch, events, storage, transition tables, or graph safety.'
+
+# Fold newlines, squeeze whitespace, and drop Markdown emphasis markers so the
+# match survives an 80-column rewrap and bold/italic styling.
+normalize() { tr '\n' ' ' | tr -d '*_' | tr -s ' '; }
 
 check_adr() {
   local all_text outcome_text total_count outcome_count
@@ -415,12 +422,12 @@ check_adr() {
     echo "RED: $ADR absent"
     return 1
   fi
-  all_text=$(tr '\n' ' ' < "$ADR" | tr -s ' ')
+  all_text=$(normalize < "$ADR")
   outcome_text=$(awk '
     /^## Decision outcome \/ proposed direction$/ { in_outcome=1; next }
     in_outcome && /^## / { exit }
     in_outcome { print }
-  ' "$ADR" | tr '\n' ' ' | tr -s ' ')
+  ' "$ADR" | normalize)
   total_count=$(printf '%s\n' "$all_text" | grep -oF "$SENTENCE" | wc -l || true)
   outcome_count=$(printf '%s\n' "$outcome_text" | grep -oF "$SENTENCE" | wc -l || true)
   if [ "$total_count" -eq 1 ] && [ "$outcome_count" -eq 1 ]; then
@@ -511,17 +518,19 @@ pass, and clear every concern before marking the roadmap item done.
 Acceptance is behavioural and observable without any runtime code:
 
 - Decision presence: the shared `check_adr` predicate from `Concrete steps`
-  matches the full decision sentence ("… marks boundaries and does not own
-  dispatch, events, storage, transition tables, or graph safety") against a
-  whitespace-folded copy of `docs/adr-002-transition-boundary-scope.md`. The
-  one predicate is the contract: because it matches the whole sentence, all
-  five concerns are verified together and in order, and the wrap the ADR is
-  authored at cannot break the match. Before Stage C it exits non-zero (red);
-  after Stage C it exits zero (green). Run this content check and the link
-  check *before* the Markdown gates so a structural failure is not masked by a
-  formatting pass. This is the documentation-appropriate Red-Green-Refactor
-  substitute, recorded here in place of a runtime test because the deliverable
-  has no executable behaviour.
+  matches the complete decision sentence ("Statelet marks boundaries and does
+  not own dispatch, events, storage, transition tables, or graph safety.")
+  against a whitespace-folded, emphasis-stripped copy of
+  `docs/adr-002-transition-boundary-scope.md`. The one predicate is the
+  contract: because it matches the whole sentence, including its leading
+  subject and terminal full stop, all five concerns are verified together and
+  in order, a different subject cannot satisfy the match, and the wrap or
+  emphasis styling the ADR is authored with cannot break the match. Before
+  Stage C it exits non-zero (red); after Stage C it exits zero (green). Run
+  this content check and the link check *before* the Markdown gates so a
+  structural failure is not masked by a formatting pass. This is the
+  documentation-appropriate Red-Green-Refactor substitute, recorded here in
+  place of a runtime test because the deliverable has no executable behaviour.
 - Single source of decision wording: the full decision sentence appears exactly
   once, in `## Decision outcome / proposed direction`. The `## Status` summary
   refers to it rather than restating the five-concern list, so the two cannot
@@ -790,7 +799,7 @@ impl StructLiteralState {
 
 That would be decorative parser scaffolding. The projection would exist only to
 satisfy a marker; its before-state describes a scoped region rather than a
-boundary decision, and the important invariant remains counter balance and
+boundary decision, and the important invariant remains counterbalance and
 underflow prevention. `transition.*` fields do not express that invariant.
 Statelet should therefore not be introduced unless `ddlint` promotes this to a
 real mode representation and moves the relevant diagnostics to `tracing`.
@@ -1037,3 +1046,9 @@ Signposted documentation and skills for the implementer:
   The examples preserve the marker-only decision: they test conventions,
   a fallible handwritten boundary, and an intentional non-adoption case rather
   than decide the macro or add framework responsibilities.
+- 2026-08-20: review follow-up hardened `check_adr` so `SENTENCE` is the
+  complete decision sentence, including its leading subject and terminal full
+  stop, and so both matched streams strip Markdown emphasis markers as well as
+  folding whitespace. This closes a gap where a differently-subjected sentence
+  or emphasis-wrapped text could otherwise satisfy the predicate. Validation
+  prose was updated to match; the ADR decision wording is unchanged.

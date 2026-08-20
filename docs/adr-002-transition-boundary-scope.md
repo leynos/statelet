@@ -212,7 +212,7 @@ impl StructLiteralState {
 
 That would be decorative parser scaffolding. The projection would exist only to
 satisfy a marker; its before-state describes a scoped region rather than a
-boundary decision, and the important invariant remains counter balance and
+boundary decision, and the important invariant remains counterbalance and
 underflow prevention. `transition.*` fields do not express that invariant.
 Statelet should therefore not be introduced unless `ddlint` promotes this to a
 real mode representation and moves the relevant diagnostics to `tracing`.
