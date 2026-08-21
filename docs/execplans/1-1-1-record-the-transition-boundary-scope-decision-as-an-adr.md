@@ -467,12 +467,36 @@ make check-fmt    2>&1 | tee /tmp/check-fmt-statelet-adr002.out
 make nixie        2>&1 | tee /tmp/nixie-statelet-adr002.out
 ```
 
-Stage D — resolve every relative Markdown link in each touched file (covering
-the roadmap link and the ADR's own outbound link to ADR 001, not only links
-*into* the new ADR). Any `BROKEN` line is a failure:
+Stage D — resolve every relative link in each touched file (covering inline
+and reference-style links, anchor-only links, non-`.md` relative targets, and
+`#fragment` resolution against the target's own headings), including the
+roadmap link and the ADR's own outbound link to ADR 001, not only links *into*
+the new ADR. Any `BROKEN` line is a failure:
 
 ```bash
 set -euo pipefail
+
+# Reduce a heading to its GitHub-style anchor slug.
+slugify() {
+  tr '[:upper:]' '[:lower:]' | sed -E 's/`//g; s/[^a-z0-9 _-]//g; s/ +/-/g'
+}
+
+# Print every heading anchor a Markdown file defines.
+anchors_of() {
+  awk '/^```/ { in_fence = !in_fence; next }
+       !in_fence && /^#{1,6} / { sub(/^#+[ ]*/, ""); print }' "$1" | slugify
+}
+
+# Print every inline and reference-style link target outside fenced code and
+# inline code spans.
+targets_of() {
+  local body
+  body=$(awk '/^```/ { in_fence = !in_fence; next } !in_fence { print }' "$1" \
+           | sed -E 's/`[^`]*`//g')
+  printf '%s\n' "$body" | { grep -oE '\]\([^) ]+\)' || true; } | sed -E 's/^\]\(//; s/\)$//'
+  printf '%s\n' "$body" | { grep -oE '^\[[^]^]+\]:[[:space:]]*[^[:space:]]+' || true; } \
+    | sed -E 's/^\[[^]]+\]:[[:space:]]*//'
+}
 
 broken=0
 for f in docs/contents.md docs/design.md docs/terms-of-reference.md \
@@ -480,19 +504,30 @@ for f in docs/contents.md docs/design.md docs/terms-of-reference.md \
          docs/execplans/1-1-1-record-the-transition-boundary-scope-decision-as-an-adr.md; do
   dir=$(dirname "$f")
   while read -r tgt; do
-    case "$tgt" in http*|/*) continue ;; esac
-    if ! test -f "$dir/$tgt"; then
-      echo "BROKEN: $f -> $tgt"
-      broken=1
+    [ -n "$tgt" ] || continue
+    case "$tgt" in http*|mailto:*|/*) continue ;; esac
+    path=${tgt%%#*}
+    frag=""
+    case "$tgt" in *#*) frag=${tgt#*#} ;; esac
+    if [ -z "$path" ]; then
+      target=$f
+    else
+      target="$dir/$path"
+      if ! test -e "$target"; then
+        echo "BROKEN: $f -> $tgt (missing target)"
+        broken=1
+        continue
+      fi
     fi
-  done < <(
-    awk '
-      /^```/ { in_fence = !in_fence; next }
-      !in_fence { print }
-    ' "$f" \
-      | grep -oE '\[[^]]+\]\([^)]+\.md(#[^)]*)?\)' \
-      | sed -E 's/.*\(([^)#]+\.md)(#[^)]*)?\)/\1/' || true
-  )
+    case "$target" in
+      *.md)
+        if [ -n "$frag" ] && ! anchors_of "$target" | grep -qxF "$frag"; then
+          echo "BROKEN: $f -> $tgt (unresolved fragment)"
+          broken=1
+        fi
+        ;;
+    esac
+  done < <(targets_of "$f")
 done
 if [ "$broken" -ne 0 ]; then
   echo "link check failed"
@@ -500,6 +535,28 @@ if [ "$broken" -ne 0 ]; then
 fi
 echo "link check complete (no BROKEN lines above means pass)"
 ```
+
+The validator was exercised against a scratch fixture file covering every
+link form, confirming each previously missed form now fails and no valid form
+regresses; the run exited non-zero, preserving the broken-link failure
+behaviour. Link syntax inside inline code spans — such as the examples in the
+table below — is excluded, so the plan's own fixture table does not trip the
+check.
+
+| Link form                | Fixture                                | Expected                    |
+| ------------------------ | -------------------------------------- | --------------------------- |
+| Inline `.md`             | `[a](good.md)`                         | pass                        |
+| Inline with anchor       | `[b](good.md#real-section)`            | pass                        |
+| Anchor-only              | `[c](#present-heading)`                | pass                        |
+| Non-`.md` target         | `[d](data.txt)`                        | pass                        |
+| Reference-style          | `[e][refok]` with `[refok]: good.md`   | pass                        |
+| Missing inline target    | `[f](nope.md)`                         | BROKEN, missing target      |
+| Unresolved anchor        | `[g](good.md#no-such-heading)`         | BROKEN, unresolved fragment |
+| Unresolved anchor-only   | `[h](#not-here)`                       | BROKEN, unresolved fragment |
+| Missing non-`.md` target | `[i](missing.txt)`                     | BROKEN, missing target      |
+| Missing reference target | `[j][refbad]` with `[refbad]: gone.md` | BROKEN, missing target      |
+
+*Table 2: Link-validator fixture cases and expected outcomes.*
 
 Each companion-document edit in Stage D must be idempotent. Before inserting a
 line into `contents.md`, `design.md`, or `terms-of-reference.md`, grep-guard it
@@ -543,8 +600,10 @@ Acceptance is behavioural and observable without any runtime code:
   and phased work lives in the roadmap, matching the ADR 001 precedent.
 - Reachability: `docs/contents.md` lists ADR 002 in "Decision records";
   `docs/design.md` and `docs/terms-of-reference.md` cite it; the link check
-  resolves every relative link in all touched files (including `roadmap.md` and
-  the ADR's outbound link to ADR 001) and prints no `BROKEN` line.
+  resolves every relative link in all touched files — inline, reference-style,
+  and anchor-only links, non-`.md` relative targets, and `#fragment`
+  resolution against the target's own headings — including `roadmap.md` and
+  the ADR's outbound link to ADR 001, and prints no `BROKEN` line.
 - Roadmap closure: `docs/roadmap.md` item 1.1.1 shows `[x]` and links the
   accepted ADR.
 - Gates: `make markdownlint` reports no errors; `make check-fmt` is clean;
@@ -1048,7 +1107,15 @@ Signposted documentation and skills for the implementer:
   than decide the macro or add framework responsibilities.
 - 2026-08-20: review follow-up hardened `check_adr` so `SENTENCE` is the
   complete decision sentence, including its leading subject and terminal full
-  stop, and so both matched streams strip Markdown emphasis markers as well as
-  folding whitespace. This closes a gap where a differently-subjected sentence
-  or emphasis-wrapped text could otherwise satisfy the predicate. Validation
+  stop, and so both matched streams strip Markdown emphasis markers and fold
+  whitespace. This closes a gap where a sentence with a different subject or
+  emphasis-wrapped text could otherwise satisfy the predicate. Validation
   prose was updated to match; the ADR decision wording is unchanged.
+- 2026-08-21: broadened the Stage D link validator to resolve reference-style
+  and anchor-only links, non-`.md` relative targets, and `#fragment`
+  resolution against the target's own headings, alongside the inline `.md`
+  form it already checked; recorded the fixture cases exercised against it.
+  Corrected the grammar of the 2026-08-20 revision-note entry. The extractor
+  also excludes inline code spans, so documented link examples are not
+  mistaken for live links. This is a validation-mechanics and editorial
+  repair only; it adds no product scope.
