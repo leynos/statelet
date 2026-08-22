@@ -591,6 +591,20 @@ Findings from the planning pass, carried forward:
   Outcome: the user authorized the bounded fourteen-file completion on
   2026-08-22. EP-M2 may proceed; its required sync map remains unchanged.
 
+## Outcomes & retrospective
+
+EP-M1 delivered an accepted ADR with a syntactically parsed, independently
+checked register. EP-M2 connected that record to every required companion
+document and completed roadmap task 1.1.2. EP-M3's complete deterministic
+delivery suite is green; its final CodeRabbit review remains the last pending
+acceptance item.
+
+The implementation confirmed that a document contract needs syntax and policy
+to stay separate: enforcing dominance in the parser would have made its test
+vacuous. It also confirmed that strict module-size and branch-count limits
+improve the test's boundary: the parent names scenarios, while its private child
+owns pure parser and policy work.
+
 ## Verification plan
 
 The change adds no runtime behaviour, so there is nothing to verify about
@@ -1086,6 +1100,12 @@ the formatting.
 - EP-M2 gates, 2026-08-22: `make markdownlint`, `make nixie`, and `make test`
   passed. Logs are
   `/tmp/{markdownlint,nixie,test}-8a7120cf-1d08-4a72-9031-10a3d69a87de-1-1-2-record-the-three-possible-v0-1-exits.out`.
+- EP-M2 CodeRabbit, 2026-08-22: `coderabbit review --agent` completed with
+  zero findings after commit `b2bb823` was pushed.
+- EP-M3 gates, 2026-08-22: `make check-fmt`, `make lint`, `make test`,
+  `make markdownlint`, `make nixie`, `make audit`, and
+  `make test-workflow-contracts` passed. Logs are
+  `/tmp/{check-fmt,lint,test,markdownlint,nixie,audit,test-workflow-contracts}-8a7120cf-1d08-4a72-9031-10a3d69a87de-1-1-2-record-the-three-possible-v0-1-exits.out`.
 
 ## Interfaces and dependencies
 
@@ -1328,3 +1348,5 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   fourteen-file completion recorded in D11.
 - 2026-08-22, revision 9: completed EP-M2, including every required
   cross-document reference and the roadmap completion marker.
+- 2026-08-22, revision 10: recorded the full EP-M3 deterministic-gate evidence
+  and the required outcomes and retrospective section; final review is pending.
