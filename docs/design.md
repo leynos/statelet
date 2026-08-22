@@ -12,6 +12,7 @@ Companion documents:
 - `docs/roadmap.md`
 - `docs/adr-001-proving-ground-candidates.md`
 - `docs/adr-002-transition-boundary-scope.md`
+- `docs/adr-003-v0-1-exit-register.md`
 
 Last substantive revision: 2026-08-22
 
@@ -415,6 +416,9 @@ evidence-producing gate before the affected API is published.
 | B6  | `mdtablefix` is representative enough to generalize the wedge                 | Low-medium | A second validation example is named before release and evaluated before publishing the macro |
 
 <!-- markdownlint-enable MD013 -->
+
+ADR 003 records how final B1 and B2 verdicts map to the three v0.1 exit scopes
+and their roadmap gates.
 
 ### 11.2 Baseline comparison
 

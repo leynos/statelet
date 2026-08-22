@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: BLOCKED
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -412,7 +412,8 @@ escalate rather than working around it.
       conformance-basis checks passed.
 - [x] (2026-08-22 00:29Z) EP-M1: ADR 003 written; contract test complete and
       green; the red transcript observed and recorded in `Artefacts and notes`.
-- [ ] EP-M2: companion-document sync complete; roadmap 1.1.2 ticked.
+- [x] (2026-08-22 00:29Z) EP-M2: companion-document sync complete; roadmap
+      1.1.2 ticked.
 - [ ] EP-M3: full gates green; branch pushed; pull request opened.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
@@ -586,6 +587,9 @@ Findings from the planning pass, carried forward:
   bounded fourteen-file completion, or to revise the implementation approach.
   The latter cannot preserve every required sync-map edit. Date/Author:
   2026-08-22, implementing agent.
+
+  Outcome: the user authorized the bounded fourteen-file completion on
+  2026-08-22. EP-M2 may proceed; its required sync map remains unchanged.
 
 ## Verification plan
 
@@ -1077,6 +1081,11 @@ the formatting.
 - EP-M1 gates, 2026-08-22: `make check-fmt`, `make lint`, `make test`,
   `make markdownlint`, and `make audit` all passed. The gate runner's logs are
   `/tmp/*-8a7120cf-1d08-4a72-9031-10a3d69a87de-1-1-2-record-the-three-possible-v0-1-exits-6.out`.
+- EP-M1 CodeRabbit, 2026-08-22: `coderabbit review --agent` completed with
+  zero findings after commit `7e8f957` was pushed.
+- EP-M2 gates, 2026-08-22: `make markdownlint`, `make nixie`, and `make test`
+  passed. Logs are
+  `/tmp/{markdownlint,nixie,test}-8a7120cf-1d08-4a72-9031-10a3d69a87de-1-1-2-record-the-three-possible-v0-1-exits.out`.
 
 ## Interfaces and dependencies
 
@@ -1313,5 +1322,9 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
 - 2026-08-22, revision 6: completed EP-M1 after the split test modules passed
   the complete deterministic gate suite independently.
 - 2026-08-22, revision 7: blocked before EP-M2 at the plan's twelve-file scope
-  tolerance. The remaining required sync would bring the total to fourteen;
-  D11 records the options requiring approval.
+  tolerance. The remaining required sync would bring the total to fourteen; D11
+  records the options requiring approval.
+- 2026-08-22, revision 8: resumed after the user authorized the bounded
+  fourteen-file completion recorded in D11.
+- 2026-08-22, revision 9: completed EP-M2, including every required
+  cross-document reference and the roadmap completion marker.

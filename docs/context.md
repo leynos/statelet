@@ -74,7 +74,7 @@ representativeness.
 
 One of the three mutually exclusive release scopes Statelet may deliver as
 v0.1, selected by a stated verdict on bets B1 and B2 at a named roadmap gate.
-It is not a test exit criterion.
+It is not a test exit criterion. See [ADR 003](adr-003-v0-1-exit-register.md).
 
 ### Transition outcome
 

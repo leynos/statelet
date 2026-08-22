@@ -13,6 +13,7 @@ Companion documents:
 - `docs/roadmap.md`
 - `docs/adr-001-proving-ground-candidates.md`
 - `docs/adr-002-transition-boundary-scope.md`
+- `docs/adr-003-v0-1-exit-register.md`
 
 Last substantive revision: 2026-08-22
 
@@ -352,6 +353,7 @@ Competing alternatives:
 
 ### 10.2 ADR candidates
 
+- [ADR 003: Record the v0.1 exit register](adr-003-v0-1-exit-register.md).
 - [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md).
 - ADR: Macro-first versus trait-first API shape.
 - ADR: Default dependency and feature policy for tracing.
