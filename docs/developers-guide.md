@@ -58,6 +58,11 @@ Keep that child test-only: do not reuse it from runtime code or other document
 contracts. A future contract with different document grammar should own its own
 parser and policy boundary rather than extending this one.
 
+The register is machine-checked against the cited design passages, glossary,
+and roadmap gates. Changes to design sections 11.1, 11.2, 13.6, or 13.7, or to
+roadmap tasks 2.2.3, 3.1.3, or 4.3.1, must update ADR 003 and its test together
+when `make test` reports deliberate document drift.
+
 ## Tooling
 
 Development builds use Cranelift for debug code generation. On Linux targets,

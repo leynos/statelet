@@ -34,6 +34,8 @@ set.
 - [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md)
   defines the marker-only ownership boundary that keeps Statelet out of
   framework responsibilities.
+- [ADR 003: Record the v0.1 exit register](adr-003-v0-1-exit-register.md)
+  defines every v0.1 release scope and the evidence gate that selects it.
 
 ## Rust reference material
 
