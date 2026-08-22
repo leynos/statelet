@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -414,7 +414,8 @@ escalate rather than working around it.
       green; the red transcript observed and recorded in `Artefacts and notes`.
 - [x] (2026-08-22 00:29Z) EP-M2: companion-document sync complete; roadmap
       1.1.2 ticked.
-- [ ] EP-M3: full gates green; branch pushed; pull request opened.
+- [x] (2026-08-22 00:29Z) EP-M3: full gates green; branch pushed; pull
+      request #50 remains open as a draft.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -596,8 +597,7 @@ Findings from the planning pass, carried forward:
 EP-M1 delivered an accepted ADR with a syntactically parsed, independently
 checked register. EP-M2 connected that record to every required companion
 document and completed roadmap task 1.1.2. EP-M3's complete deterministic
-delivery suite is green; its final CodeRabbit review remains the last pending
-acceptance item.
+delivery suite and final CodeRabbit review are green.
 
 The implementation confirmed that a document contract needs syntax and policy
 to stay separate: enforcing dominance in the parser would have made its test
@@ -1106,6 +1106,8 @@ the formatting.
   `make markdownlint`, `make nixie`, `make audit`, and
   `make test-workflow-contracts` passed. Logs are
   `/tmp/{check-fmt,lint,test,markdownlint,nixie,audit,test-workflow-contracts}-8a7120cf-1d08-4a72-9031-10a3d69a87de-1-1-2-record-the-three-possible-v0-1-exits.out`.
+- EP-M3 CodeRabbit, 2026-08-22: `coderabbit review --agent` completed with
+  zero findings and no rate limit after commit `1dcce4d` was pushed.
 
 ## Interfaces and dependencies
 
@@ -1350,3 +1352,5 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   cross-document reference and the roadmap completion marker.
 - 2026-08-22, revision 10: recorded the full EP-M3 deterministic-gate evidence
   and the required outcomes and retrospective section; final review is pending.
+- 2026-08-22, revision 11: final CodeRabbit review returned zero findings;
+  marked the plan complete.
