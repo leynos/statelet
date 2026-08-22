@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: IN PROGRESS
+Status: BLOCKED
 
 ## Purpose / big picture
 
@@ -577,6 +577,15 @@ Findings from the planning pass, carried forward:
   after Leta's language server failed. The developer's guide records that this
   test-only boundary is not reusable from runtime code or other contracts.
   Date/Author: 2026-08-22, implementing agent.
+
+- Decision D11: pause before EP-M2 because the scope tolerance is reached.
+  Evidence: EP-M1 touches ten files; the mandatory remaining sync requires
+  `docs/contents.md`, `docs/roadmap.md`, `docs/users-guide.md`, and
+  `docs/repository-layout.md`, increasing the total to fourteen. The stated
+  tolerance is more than twelve files touched. Options are to authorize this
+  bounded fourteen-file completion, or to revise the implementation approach.
+  The latter cannot preserve every required sync-map edit. Date/Author:
+  2026-08-22, implementing agent.
 
 ## Verification plan
 
@@ -1303,3 +1312,6 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   guide; the milestone requires fresh gates before it can complete.
 - 2026-08-22, revision 6: completed EP-M1 after the split test modules passed
   the complete deterministic gate suite independently.
+- 2026-08-22, revision 7: blocked before EP-M2 at the plan's twelve-file scope
+  tolerance. The remaining required sync would bring the total to fourteen;
+  D11 records the options requiring approval.
