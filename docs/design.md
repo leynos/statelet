@@ -13,7 +13,7 @@ Companion documents:
 - `docs/adr-001-proving-ground-candidates.md`
 - `docs/adr-002-transition-boundary-scope.md`
 
-Last substantive revision: 2026-06-15
+Last substantive revision: 2026-08-22
 
 ## 1. Design context
 
@@ -610,9 +610,10 @@ validation outcome, not a failed implementation.
 ### 13.7 Conventions baseline is also too weak
 
 If `StateName`, documented transition fields, and local helpers add little over
-plain `#[tracing::instrument(fields(state = %self.mode))]` in both validation
-examples, the project should ship nothing and keep the pattern local. That is
-the B1 failure case and must be treated as a valid discovery outcome.
+plain `#[tracing::instrument(fields(state = %self.mode))]` in either validation
+example, the project should ship nothing and keep the pattern local. That is
+the B1 failure case and must be treated as a valid discovery outcome. ADR 003
+registers this outcome as exit E1 and §13.6 as exit E2.
 
 ### 13.8 Attribute syntax looks alien
 

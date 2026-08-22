@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: DRAFT
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -407,10 +407,11 @@ escalate rather than working around it.
 
 ## Progress
 
-- [ ] EP-M0: plan approved, including the R1-versus-R2 choice in `Open question
-      for the approval gate`.
-- [ ] EP-M1: ADR 003 written; contract test complete and green; the red
-      transcript observed and recorded in `Artefacts and notes`.
+- [x] (2026-08-22 00:29Z) EP-M0: plan approved, including the R1-versus-R2
+      choice in `Open question for the approval gate`; orientation and
+      conformance-basis checks passed.
+- [x] (2026-08-22 00:29Z) EP-M1: ADR 003 written; contract test complete and
+      green; the red transcript observed and recorded in `Artefacts and notes`.
 - [ ] EP-M2: companion-document sync complete; roadmap 1.1.2 ticked.
 - [ ] EP-M3: full gates green; branch pushed; pull request opened.
 
@@ -459,6 +460,19 @@ Findings from the planning pass, carried forward:
   the Stage-Gate Go/Kill/Hold vocabulary and Duke's kill-criteria "state and
   date" framing as the actual antecedents, which are managerial, not
   Rust-specific.
+
+- Observation: Leta could register the workspace but `rust-analyzer` could not
+  start because its language-server component is unavailable. Evidence: the
+  Stage A `leta` query returned `LSP error -1: Connection closed`. Impact:
+  direct, read-only inspection is the navigation fallback for this change; no
+  toolchain component is installed because this documentation-and-test change
+  does not require altering the developer environment.
+
+- Observation: Whitaker rejects a three-term syntactic filter even in a small
+  parser. Evidence: the first EP-M1 `make lint` run reported
+  `conditional-max-n-branches` for the row filter. Impact: the parser now uses
+  the named `is_register_header_or_divider` predicate, preserving the syntax
+  boundary while meeting the two-branch house rule.
 
 ## Decision log
 
@@ -545,6 +559,24 @@ Findings from the planning pass, carried forward:
   `Accepted` on the same reading. The first draft left this ambiguous between
   its Stage C and its Tolerances; it is resolved here. Date/Author: 2026-08-22,
   planning agent, after design review.
+
+- Decision D9: apply the glossary entry and R1 source amendments in EP-M1.
+  Rationale: `INV-ANCHORS` is a complete, green contract at the end of EP-M1;
+  it cannot check `docs/context.md` and the R1 rule while those documents wait
+  for EP-M2. This moves three already-authorized documentation edits earlier,
+  without changing their content, scope, architecture or acceptance evidence.
+  EP-M2 retains every remaining companion reference and the roadmap checkbox.
+  Date/Author: 2026-08-22, implementing agent.
+
+- Decision D10: split the contract test into a parent and private child module.
+  Rationale: the original test file reached 436 lines, exceeding the
+  repository's 400-line code-file limit. The parent owns externally visible
+  test scenarios; `tests/v0_1_exit_register_contract/support.rs` owns only pure
+  parser and policy predicates. The repository has no existing equivalent
+  helper, as confirmed by the Stage A symbol search and a fallback text search
+  after Leta's language server failed. The developer's guide records that this
+  test-only boundary is not reusable from runtime code or other contracts.
+  Date/Author: 2026-08-22, implementing agent.
 
 ## Verification plan
 
@@ -740,9 +772,10 @@ Add the two dev-dependencies. Write the complete contract test — parser, error
 enum, all predicates, all negative controls. Write
 `docs/adr-003-v0-1-exit-register.md` from the artefact embedded below, but
 initially **without** the register block, so the live-document tests fail with
-`MissingDelimiters`. Capture that transcript; this is the red step. Then insert
-the register block and re-run; this is the green step. Commit only the green
-state, per Constraint 4.
+`MissingDelimiters`. Apply the glossary entry and the authorized R1 source
+amendments before this red run, so unrelated anchors stay green. Capture that
+transcript; this is the red step. Then insert the register block and re-run;
+this is the green step. Commit only the green state, per Constraint 4.
 
 Validation (go/no-go): `make fmt` then `make check-fmt`, `make lint`,
 `make test`, `make markdownlint`, `make audit`. All green. The red transcript
@@ -750,8 +783,8 @@ is pasted into `Artefacts and notes`.
 
 ### Stage C — companion sync (EP-M2)
 
-Apply the sync map, including the single authorized design amendment under
-resolution R1, and tick roadmap 1.1.2.
+Apply the remaining sync-map references and tick roadmap 1.1.2. The R1
+amendment and glossary entry were moved to EP-M1 by D9.
 
 Validation: `make markdownlint`, `make nixie`, and `make test` — the last
 because `INV-ANCHORS` now covers `docs/context.md` and the amended §13.7.
@@ -782,9 +815,9 @@ Run the full gate set, push, open a draft pull request.
 
 ### EP-M2 — documentation coherent
 
-- **Outcome**: every companion document references ADR 003; `docs/context.md`
-  defines "v0.1 exit"; the R1 amendment to `docs/design.md` §13.7 and
-  `docs/terms-of-reference.md` §7.1 is applied; roadmap 1.1.2 is ticked.
+- **Outcome**: every remaining companion document references ADR 003 and
+  roadmap 1.1.2 is ticked. `docs/context.md` and the R1 amendments are already
+  present from EP-M1 under D9.
 - **Acceptance evidence**: `make markdownlint`, `make nixie`, `make test`
   green; every new cross-reference resolves.
 - **Conformance check**: no scope prose contradicts ADR 002; the design
@@ -1025,9 +1058,16 @@ the formatting.
 
 ## Artefacts and notes
 
-Record here as work proceeds: the Step 4 red transcript; the Step 5 green
-transcript; and the output of the two reviewer checks from
-`Validation and acceptance`.
+- Step 4 red, 2026-08-22: `make test` compiled the contract and reported the
+  expected `MissingDelimiters` repair for every live-register assertion; all
+  syntax and policy negative controls passed. The first run also exposed an
+  overly strict B1/B2 table-row check, which was corrected to parse a trimmed
+  first cell before the green run.
+- Step 5 green, 2026-08-22: `make fmt` then `make test` passed 20 tests and
+  one doctest. The test adds under 30 seconds to a clean run.
+- EP-M1 gates, 2026-08-22: `make check-fmt`, `make lint`, `make test`,
+  `make markdownlint`, and `make audit` all passed. The gate runner's logs are
+  `/tmp/*-8a7120cf-1d08-4a72-9031-10a3d69a87de-1-1-2-record-the-three-possible-v0-1-exits-6.out`.
 
 ## Interfaces and dependencies
 
@@ -1252,3 +1292,14 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
     thirty-second checks, so the guard is repairable by a stranger.
   - **Added the in-repository documentation signposts** the task asked for and
     revision 1 omitted.
+- 2026-08-22, revision 3: implementation began. Recorded the unavailable Leta
+  language server, the red/green evidence, and D9's sequencing correction so
+  that `INV-ANCHORS` remains a complete green contract at EP-M1.
+- 2026-08-22, revision 4: completed EP-M1 with a guarded ADR, total register,
+  R1 amendments, and independently green deterministic gates.
+- 2026-08-22, revision 5: reopened EP-M1 before commit because the contract
+  test exceeded the 400-line file limit. Split its pure test-only support
+  module and documented the ownership and non-reuse rule in the developer's
+  guide; the milestone requires fresh gates before it can complete.
+- 2026-08-22, revision 6: completed EP-M1 after the split test modules passed
+  the complete deterministic gate suite independently.

@@ -49,6 +49,15 @@ The main `.github/workflows/ci.yml` workflow deliberately does not run
 `make test WITH_ACT=1`; the separate Act workflow runs those slower
 container-backed checks in parallel.
 
+## V0.1 exit-register contract
+
+`tests/v0_1_exit_register_contract.rs` owns the integration-test scenarios for
+ADR 003. Its private `tests/v0_1_exit_register_contract/support.rs` child owns
+only the pure Markdown parser and policy predicates used by those scenarios.
+Keep that child test-only: do not reuse it from runtime code or other document
+contracts. A future contract with different document grammar should own its own
+parser and policy boundary rather than extending this one.
+
 ## Tooling
 
 Development builds use Cranelift for debug code generation. On Linux targets,

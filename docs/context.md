@@ -70,6 +70,12 @@ before the affected API ships. In `statelet`, the register covers macro value,
 attribute grammar, fallibility checking, topology, and validation-example
 representativeness.
 
+### v0.1 exit
+
+One of the three mutually exclusive release scopes Statelet may deliver as
+v0.1, selected by a stated verdict on bets B1 and B2 at a named roadmap gate.
+It is not a test exit criterion.
+
 ### Transition outcome
 
 The value returned by a transition boundary to describe the visible result of

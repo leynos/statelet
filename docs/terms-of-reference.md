@@ -14,7 +14,7 @@ Companion documents:
 - `docs/adr-001-proving-ground-candidates.md`
 - `docs/adr-002-transition-boundary-scope.md`
 
-Last substantive revision: 2026-06-14
+Last substantive revision: 2026-08-22
 
 ## 1. Background and motivation
 
@@ -235,7 +235,7 @@ Competing alternatives:
 - A second non-toy validation example is named before release. ADR 001 selects
   `wireframe` connection actor and active-output transitions as the next
   proving ground after `mdtablefix`.
-- If both validation examples show that `StateName`, documented field names,
+- If either validation example shows that `StateName`, documented field names,
   and helper functions add little over local `#[tracing::instrument]`
   annotations, the correct outcome is to ship nothing and keep the convention
   project-local.
