@@ -243,6 +243,11 @@ pub(super) fn check_quoted_clauses(
 }
 
 pub(super) fn check_gate_bindings(rows: &[Row], adr: &str, roadmap: &str) -> Result<(), String> {
+    check_gate_tasks(adr, roadmap)?;
+    check_row_gates(rows)
+}
+
+fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
     for (gate, task) in GATES {
         if gate_task(adr, gate).as_deref() != Some(task) {
             return Err(format!(
@@ -260,6 +265,10 @@ pub(super) fn check_gate_bindings(rows: &[Row], adr: &str, roadmap: &str) -> Res
             ));
         }
     }
+    Ok(())
+}
+
+fn check_row_gates(rows: &[Row]) -> Result<(), String> {
     for row in rows {
         if !GATES.iter().any(|(gate, _)| *gate == row.gate) {
             return Err(format!(
