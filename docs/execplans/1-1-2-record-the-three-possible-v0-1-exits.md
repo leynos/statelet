@@ -416,6 +416,9 @@ escalate rather than working around it.
       1.1.2 ticked.
 - [x] (2026-08-22 00:29Z) EP-M3: full gates green; branch pushed; pull
       request #50 remains open as a draft.
+- [x] (2026-08-23 23:40Z) Maintenance: split gate-task and parsed-row checks
+      into private helpers while preserving the wrapper signature, validation
+      order, and existing error text; added focused negative controls.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -591,6 +594,14 @@ Findings from the planning pass, carried forward:
 
   Outcome: the user authorized the bounded fourteen-file completion on
   2026-08-22. EP-M2 may proceed; its required sync map remains unchanged.
+
+- Decision D12: retain `check_gate_bindings` as the ordered public contract and
+  move its independent loops into private helpers. Rationale: the two checks
+  have distinct responsibilities, but the task requires gate-to-task and live
+  roadmap validation to fail before any parsed-row gate error. The helpers
+  preserve that sequence and every existing error string, without changing the
+  Markdown parser, register model, gate definitions, or contract scope.
+  Date/Author: 2026-08-23, implementing agent.
 
 ## Outcomes & retrospective
 
