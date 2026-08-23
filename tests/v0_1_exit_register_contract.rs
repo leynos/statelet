@@ -80,8 +80,48 @@ fn gate_bindings_resolve() {
     let rows = live_rows();
     check_gate_bindings(&rows, ADR, ROADMAP)
         .expect("ADR 003 gates must resolve to live roadmap tasks");
+}
+
+#[test]
+fn gate_bindings_reject_wrong_adr_task() {
+    let rows = live_rows();
     let changed_gate = ADR.replace("3.1.3", "3.1.4");
-    assert!(check_gate_bindings(&rows, &changed_gate, ROADMAP).is_err());
+    assert_eq!(
+        check_gate_bindings(&rows, &changed_gate, ROADMAP),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: G2 must bind roadmap task 3.1.3. Repair: restore \
+             the gate table binding."
+                .to_owned()
+        )
+    );
+}
+
+#[test]
+fn gate_bindings_reject_ticked_roadmap_task() {
+    let rows = live_rows();
+    let ticked_task = ROADMAP.replace("- [ ] 3.1.3.", "- [x] 3.1.3.");
+    assert_eq!(
+        check_gate_bindings(&rows, ADR, &ticked_task),
+        Err(
+            "docs/roadmap.md: task 3.1.3 is absent or already ticked. Repair: retain the live, \
+             unticked gate named by ADR 003."
+                .to_owned()
+        )
+    );
+}
+
+#[test]
+fn gate_bindings_reject_unknown_row_gate() {
+    let rows = parse_register(&valid_register().replace("G2", "G9"))
+        .expect("the unknown-gate control must remain syntactically valid");
+    assert_eq!(
+        check_gate_bindings(&rows, ADR, ROADMAP),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: row uses unknown gate G9. Repair: use G1, G2, or \
+             G3."
+            .to_owned()
+        )
+    );
 }
 
 #[rstest]
