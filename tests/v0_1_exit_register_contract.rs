@@ -36,6 +36,17 @@ fn live_rows() -> Vec<Row> {
     }
 }
 
+fn dominance_invalid_rows() -> Vec<Row> {
+    let source = valid_register().replace(
+        "| Falsified  | Held       | E1 ship nothing          | G2   | no        |",
+        "| Falsified  | Held       | E3 ship macro            | G2   | no        |",
+    );
+    match parse_register(&source) {
+        Ok(rows) => rows,
+        Err(error) => panic!("{error}"),
+    }
+}
+
 #[rstest]
 #[case::b1_and_b2_falsified(Verdict::Falsified, Verdict::Falsified)]
 #[case::b1_falsified_b2_held(Verdict::Falsified, Verdict::Held)]
@@ -57,11 +68,30 @@ fn totality_holds(#[case] b1: Verdict, #[case] b2: Verdict) {
 fn dominance_holds() {
     let rows = live_rows();
     check_dominance(&rows).expect("a falsified B1 must choose the off-ramp");
-    let invalid = parse_register(&valid_register().replace("E1 ship nothing", "E3 ship macro"))
-        .expect("the dominance control must remain syntactically valid");
+    let invalid = dominance_invalid_rows();
     assert!(
         check_dominance(&invalid).is_err(),
         "the policy check must reject a syntactically valid E3 row"
+    );
+}
+
+#[test]
+fn dominance_rejects_a_reachable_dead_row() {
+    let source = valid_register().replace(
+        "| Falsified  | Held       | E1 ship nothing          | G2   | no        |",
+        "| Falsified  | Held       | E1 ship nothing          | G2   | yes       |",
+    );
+    let invalid = match parse_register(&source) {
+        Ok(rows) => rows,
+        Err(error) => panic!("{error}"),
+    };
+    assert_eq!(
+        check_dominance(&invalid),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: Falsified/Held must be marked unreachable. \
+             Repair: set its Reachable cell to no."
+                .to_owned()
+        )
     );
 }
 
@@ -73,6 +103,35 @@ fn quoted_passages_still_resolve() {
         "the macro crate ships",
     );
     assert!(check_quoted_clauses(ADR, &rewritten, TERMS, CONTEXT).is_err());
+    let b1_row_deleted = format!(
+        "{}\nB1 still says both improve without framework adoption outside the table.",
+        DESIGN.replace(
+            "| B1  | A real segment prefers handwritten state machines and wants shared \
+             convention | Low-medium | `mdtablefix` plus one second non-toy example both improve \
+             without framework adoption          |\n",
+            "",
+        )
+    );
+    assert_eq!(
+        check_quoted_clauses(ADR, &b1_row_deleted, TERMS, CONTEXT),
+        Err(
+            "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
+             or revise ADR 003."
+                .to_owned()
+        )
+    );
+    let invented_citation = ADR.replace(
+        "both improve without framework adoption",
+        "a made-up validation clause",
+    );
+    assert_eq!(
+        check_quoted_clauses(&invented_citation, DESIGN, TERMS, CONTEXT),
+        Err(
+            "docs/design.md no longer contains \"a made-up validation clause\". Repair: update \
+             ADR 003 and its contract together."
+                .to_owned()
+        )
+    );
 }
 
 #[test]
@@ -130,12 +189,42 @@ fn gate_bindings_reject_unknown_row_gate() {
 #[case(Verdict::Held, Verdict::Falsified, Exit::E2)]
 #[case(Verdict::Held, Verdict::Held, Exit::E3)]
 fn hand_written_cases_match_register(#[case] b1: Verdict, #[case] b2: Verdict, #[case] exit: Exit) {
-    let rows = live_rows();
+    check_hand_written_case(&live_rows(), b1, b2, exit)
+        .expect("the handwritten expectation must match the live register");
+}
+
+#[test]
+fn hand_written_cases_reject_a_dominance_invalid_register() {
+    assert!(
+        check_hand_written_case(
+            &dominance_invalid_rows(),
+            Verdict::Falsified,
+            Verdict::Held,
+            Exit::E1,
+        )
+        .is_err(),
+        "the handwritten expectation must reject the dominance-invalid row"
+    );
+}
+
+fn check_hand_written_case(
+    rows: &[Row],
+    b1: Verdict,
+    b2: Verdict,
+    expected_exit: Exit,
+) -> Result<(), String> {
     let actual = rows
         .iter()
         .find(|row| row.b1 == b1 && row.b2 == b2)
         .map(|row| row.exit);
-    assert_eq!(actual, Some(exit));
+    if actual == Some(expected_exit) {
+        Ok(())
+    } else {
+        Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: {b1:?}/{b2:?} selects {actual:?}. Repair: \
+             restore its handwritten exit expectation to {expected_exit:?}."
+        ))
+    }
 }
 
 #[rstest]
