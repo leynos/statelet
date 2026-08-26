@@ -419,6 +419,10 @@ escalate rather than working around it.
 - [x] (2026-08-23 23:40Z) Maintenance: split gate-task and parsed-row checks
       into private helpers while preserving the wrapper signature, validation
       order, and existing error text; added focused negative controls.
+- [x] (2026-08-26 21:53Z) EP-M4: restored the missing reachability,
+      ADR-citation,
+      and handwritten-case negative controls identified during review; focused
+      red/green evidence, the full delivery suite, and CodeRabbit are green.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -478,6 +482,12 @@ Findings from the planning pass, carried forward:
   `conditional-max-n-branches` for the row filter. Impact: the parser now uses
   the named `is_register_header_or_divider` predicate, preserving the syntax
   boundary while meeting the two-branch house rule.
+
+- Observation: a quote checker can appear to validate ADR citations while only
+  checking a parallel hard-coded list. Evidence: an ADR-only fabricated clause
+  initially failed because the original citation was absent, not because the
+  fabricated clause could not resolve. Impact: `INV-ANCHORS` now extracts
+  quotes from the ADR evidence section before checking `docs/design.md`.
 
 ## Decision log
 
@@ -603,6 +613,16 @@ Findings from the planning pass, carried forward:
   Markdown parser, register model, gate definitions, or contract scope.
   Date/Author: 2026-08-23, implementing agent.
 
+- Decision D13: make `check_dominance` the policy owner for register
+  reachability, derive quoted design clauses from ADR 003's evidence section,
+  and reuse one handwritten-case predicate for live and invalid rows.
+  Rationale: reachability is parsed syntax that needs an independent policy
+  assertion; a hard-coded citation list cannot detect a fabricated ADR quote;
+  and the handwritten predicate must reject the same dominance-invalid fixture
+  as the dominance check. These changes preserve the parser's syntax-only
+  boundary and add no runtime code or dependencies. Date/Author: 2026-08-26,
+  implementing agent.
+
 ## Outcomes & retrospective
 
 EP-M1 delivered an accepted ADR with a syntactically parsed, independently
@@ -615,6 +635,10 @@ to stay separate: enforcing dominance in the parser would have made its test
 vacuous. It also confirmed that strict module-size and branch-count limits
 improve the test's boundary: the parent names scenarios, while its private child
 owns pure parser and policy work.
+
+EP-M4 closed three review-identified gaps without changing the document model:
+reachability is now a dominance policy, citations come from ADR 003 itself, and
+the handwritten case predicate tests both the real and dominance-invalid rows.
 
 ## Verification plan
 
@@ -666,7 +690,8 @@ failure the suite exists to prevent.
 ### INV-DOMINANCE — a falsified B1 forces the off-ramp
 
 - **Obligation**: both rows where B1 is `Falsified` name exit E1 ("ship
-  nothing").
+  nothing"); `(Falsified, Held)` is marked unreachable; and the three other
+  verdict combinations are marked reachable.
 - **Method**: parameterized test over the parsed rows, plus `INV-CASES` below.
 - **Rationale**: this is the one rule no existing document states, and the one
   a careless reader gets wrong — it is tempting to think a good macro could
@@ -680,15 +705,18 @@ failure the suite exists to prevent.
   to make the mapping total and to forbid a later reader from reasoning their
   way to E3 from a dead wedge. The ADR must state this, and must mark the row
   unreachable.
-- **Domain**: the two rows where B1 is `Falsified`.
+- **Domain**: all four register rows, with the exit rule applying to the two
+  rows where B1 is `Falsified`.
 - **Artefact**: `tests/v0_1_exit_register_contract.rs`, test
   `dominance_holds`.
 - **Evidence**: `make test`.
 - **Non-vacuity**: a control fixture mapping `(Falsified, Held)` to E3 parses
   successfully — parsing applies no policy — and must then fail
-  `dominance_holds` naming that row. Because the parser does not enforce
-  dominance, this test can fail on a real document, which is exactly what the
-  first draft got wrong. A witness fixture with the correct mapping must pass.
+  `dominance_holds` naming that row. A separate fixture changing that row's
+  `Reachable` cell from `no` to `yes` must fail with the repair to mark it
+  unreachable. Because the parser does not enforce either policy, these tests
+  can fail on a real document, which is exactly what the first draft got wrong.
+  A witness fixture with the correct mapping must pass.
 
 ### INV-ANCHORS — every quoted design passage still says what is quoted
 
@@ -704,8 +732,9 @@ failure the suite exists to prevent.
   Additionally the row identifiers `B1` and `B2` must appear as *table rows* of
   §11.1, and the glossary entry anchor for "v0.1 exit" must exist in
   `docs/context.md`.
-- **Method**: cross-document contract test over `include_str!`-embedded text,
-  with whitespace folded to single spaces before comparison.
+- **Method**: extract quoted clauses from ADR 003's evidence section, then
+  compare each with `include_str!`-embedded source text after whitespace is
+  folded to single spaces.
 - **Rationale**: this obligation earns the test its keep. Checking that a
   *heading* exists is a weak proxy: §13.7 could keep its title and reverse its
   meaning. Checking the load-bearing clause converts existence into agreement.
@@ -1365,3 +1394,11 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   and the required outcomes and retrospective section; final review is pending.
 - 2026-08-22, revision 11: final CodeRabbit review returned zero findings;
   marked the plan complete.
+- 2026-08-26, revision 13: reopened after review identified that reachability
+  had no policy check, ADR quotations were hard-coded, and the handwritten
+  expectation did not exercise the dominance-invalid fixture. Added EP-M4 and
+  D13; the parser remains syntax-only and full delivery gates remain pending.
+- 2026-08-26, revision 14: completed EP-M4. The focused red run rejected the
+  unvalidated reachability and hard-coded citation controls; the green suite
+  passed after the predicates were added. All deterministic delivery gates and
+  the required CodeRabbit review are green.

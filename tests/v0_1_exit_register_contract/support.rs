@@ -5,19 +5,6 @@ use std::fmt::{self, Display, Formatter};
 const BEGIN: &str = "<!-- exit-register:begin -->";
 const END: &str = "<!-- exit-register:end -->";
 const GATES: [(&str, &str); 3] = [("G1", "2.2.3"), ("G2", "3.1.3"), ("G3", "4.3.1")];
-const CLAUSES: [(&str, &str); 5] = [
-    ("design.md", "both improve without framework adoption"),
-    ("design.md", "states the concrete value added by the macro"),
-    ("design.md", "the macro crate does not ship in v0.1"),
-    (
-        "design.md",
-        "the project ships the conventions/runtime crate and defers",
-    ),
-    (
-        "design.md",
-        "the project should ship nothing and keep the pattern local",
-    ),
-];
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(super) enum Verdict {
@@ -193,6 +180,26 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
             row.b1, row.b2, row.exit
         ));
     }
+    if let Some(row) = rows
+        .iter()
+        .find(|row| is_unreachable_dominance_row(row) && row.reachable)
+    {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked unreachable. Repair: \
+             set its Reachable cell to no.",
+            row.b1, row.b2
+        ));
+    }
+    if let Some(row) = rows
+        .iter()
+        .find(|row| !is_unreachable_dominance_row(row) && !row.reachable)
+    {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked reachable. Repair: set \
+             its Reachable cell to yes.",
+            row.b1, row.b2
+        ));
+    }
     Ok(())
 }
 
@@ -202,16 +209,9 @@ pub(super) fn check_quoted_clauses(
     terms: &str,
     context: &str,
 ) -> Result<(), String> {
-    let folded_adr = fold_whitespace(adr);
     let folded_design = fold_whitespace(design);
-    for (source, clause) in CLAUSES {
-        if !folded_adr.contains(clause) {
-            return Err(format!(
-                "docs/adr-003-v0-1-exit-register.md omits {clause:?} from {source}. Repair: \
-                 restore the cited clause."
-            ));
-        }
-        if !folded_design.contains(clause) {
+    for clause in quoted_clauses(adr)? {
+        if !folded_design.contains(&clause) {
             return Err(format!(
                 "docs/design.md no longer contains {clause:?}. Repair: update ADR 003 and its \
                  contract together."
@@ -292,6 +292,38 @@ pub(super) fn valid_register() -> String {
 }
 
 fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }
+
+fn is_unreachable_dominance_row(row: &Row) -> bool {
+    row.b1 == Verdict::Falsified && row.b2 == Verdict::Held
+}
+
+fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
+    let Some((_, after_heading)) = adr.split_once("## Evidence the register preserves") else {
+        return Err(
+            "docs/adr-003-v0-1-exit-register.md lacks its evidence section. Repair: restore the \
+             quoted source clauses."
+                .to_owned(),
+        );
+    };
+    let evidence = after_heading
+        .split_once("\n## ")
+        .map_or(after_heading, |(section, _)| section);
+    let clauses = evidence
+        .split('"')
+        .skip(1)
+        .step_by(2)
+        .map(fold_whitespace)
+        .collect::<Vec<_>>();
+    if clauses.is_empty() {
+        Err(
+            "docs/adr-003-v0-1-exit-register.md cites no clauses. Repair: quote each load-bearing \
+             source clause in the evidence section."
+                .to_owned(),
+        )
+    } else {
+        Ok(clauses)
+    }
+}
 
 fn gate_task(adr: &str, gate: &str) -> Option<String> {
     adr.lines().find_map(|line| {
