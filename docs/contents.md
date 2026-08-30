@@ -23,8 +23,14 @@ set.
   initial Statelet design work.
 - [Technical design](design.md) defines the initial crate split, macro
   contract, feature policy, and validation strategy.
+- [State representation and observability design](state-representation-and-observability-design.md)
+  proposes refinements for project-owned state models, naming, transition
+  fields, outcome labels, and asynchronous macro validation.
 - [Roadmap](roadmap.md) translates the terms of reference and technical design
   into sequenced delivery phases, dependencies, and validation tasks.
+- [State representation and observability roadmap](state-representation-and-observability-roadmap.md)
+  sequences the focused evidence needed to accept or reject the proposed
+  representation and observability refinements.
 
 ## Decision records
 
@@ -34,6 +40,9 @@ set.
 - [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md)
   defines the marker-only ownership boundary that keeps Statelet out of
   framework responsibilities.
+- [ADR 004: Refine representation and observability contracts](adr-004-representation-and-observability-contracts.md)
+  proposes stronger prerequisites and field semantics for payload-carrying
+  states, semantic labels, domain outcomes, and asynchronous boundaries.
 
 ## Rust reference material
 
