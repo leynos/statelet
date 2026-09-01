@@ -423,6 +423,10 @@ escalate rather than working around it.
       ADR-citation,
       and handwritten-case negative controls identified during review; focused
       red/green evidence, the full delivery suite, and CodeRabbit are green.
+- [x] (2026-09-01 21:53Z) EP-M5: enforced each register row's exit-to-gate
+      binding and replaced the remaining broad negative-control assertions with
+      exact error contracts; focused red/green evidence, full delivery gates,
+      and CodeRabbit are green.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -488,6 +492,12 @@ Findings from the planning pass, carried forward:
   initially failed because the original citation was absent, not because the
   fabricated clause could not resolve. Impact: `INV-ANCHORS` now extracts
   quotes from the ADR evidence section before checking `docs/design.md`.
+
+- Observation: validating a gate-table identifier and validating a register
+  row's selected decision gate are distinct obligations. Evidence: changing an
+  E3 row from G3 to known G1 initially passed every gate check. Impact:
+  `check_row_gates` now rejects a known-but-wrong selected gate with a targeted
+  repair.
 
 ## Decision log
 
@@ -623,6 +633,12 @@ Findings from the planning pass, carried forward:
   boundary and add no runtime code or dependencies. Date/Author: 2026-08-26,
   implementing agent.
 
+- Decision D14: make `check_row_gates` validate the decision gate selected by
+  each parsed row as well as gate vocabulary. Rationale: a known gate can still
+  select the wrong decision point; E1 rows must use G2 and E2/E3 rows must use
+  G3. The policy stays separate from the syntax parser and runs only after a
+  row's gate name is known. Date/Author: 2026-09-01, implementing agent.
+
 ## Outcomes & retrospective
 
 EP-M1 delivered an accepted ADR with a syntactically parsed, independently
@@ -639,6 +655,10 @@ owns pure parser and policy work.
 EP-M4 closed three review-identified gaps without changing the document model:
 reachability is now a dominance policy, citations come from ADR 003 itself, and
 the handwritten case predicate tests both the real and dominance-invalid rows.
+
+EP-M5 completed the row-level gate contract and converted the remaining broad
+negative controls into exact error contracts, so a passing test now proves both
+the rejection reason and the repair guidance.
 
 ## Verification plan
 
@@ -755,8 +775,8 @@ failure the suite exists to prevent.
 ### INV-GATES — every named gate resolves to a live roadmap task
 
 - **Obligation**: each exit's gate identifier (G1 → task 2.2.3, G2 → task
-  3.1.3, G3 → task 4.3.1) appears in `docs/roadmap.md` as a task, and each such
-  task is still unticked.
+  3.1.3, G3 → task 4.3.1) appears in `docs/roadmap.md` as a task, each such
+  task is still unticked, and every register row binds E1 to G2 or E2/E3 to G3.
 - **Method**: cross-document contract test over `include_str!`-embedded
   `docs/roadmap.md`.
 - **Rationale**: D4 says kill criteria bind only when they state both a state
@@ -766,14 +786,17 @@ failure the suite exists to prevent.
   probability failures in the whole change and had zero guard. The unticked
   check matters because a gate that has already been passed cannot select an
   exit; if it has been ticked, the register needs revisiting.
-- **Domain**: the three gate identifiers extracted from the register.
+- **Domain**: the three gate-table identifiers and all four parsed register
+  rows.
 - **Artefact**: test `gate_bindings_resolve`.
 - **Evidence**: `make test`.
-- **Non-vacuity**: two controls. (a) A roadmap fixture in which task 3.1.3 has
-  been renumbered to 3.1.4 must fail, naming the missing gate. (b) A roadmap
-  fixture in which task 4.3.1 is ticked `- [x]` must fail with a distinct
-  message. A control citing a gate identifier that never existed must also
-  fail, proving extraction is from the ADR.
+- **Non-vacuity**: three controls. (a) A roadmap fixture in which task 3.1.3
+  has been renumbered to 3.1.4 must fail, naming the missing gate. (b) A
+  roadmap fixture in which task 4.3.1 is ticked `- [x]` must fail with a
+  distinct message. (c) A syntactically valid E3 row changed from its required
+  G3 to known but incorrect G1 must fail with the repair to bind it to G3. A
+  control citing a gate identifier that never existed must also fail, proving
+  extraction is from the ADR.
 
 ### INV-CASES — handwritten expectations agree with the document
 
@@ -1402,3 +1425,6 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   unvalidated reachability and hard-coded citation controls; the green suite
   passed after the predicates were added. All deterministic delivery gates and
   the required CodeRabbit review are green.
+- 2026-09-01, revision 15: completed EP-M5. A known but wrong row gate failed
+  in the focused red run; the exit-to-gate policy made it pass in green. All
+  deterministic delivery gates and the required CodeRabbit review are green.

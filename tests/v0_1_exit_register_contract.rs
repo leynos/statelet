@@ -69,9 +69,13 @@ fn dominance_holds() {
     let rows = live_rows();
     check_dominance(&rows).expect("a falsified B1 must choose the off-ramp");
     let invalid = dominance_invalid_rows();
-    assert!(
-        check_dominance(&invalid).is_err(),
-        "the policy check must reject a syntactically valid E3 row"
+    assert_eq!(
+        check_dominance(&invalid),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: Falsified/Held selects E3. Repair: a falsified \
+             B1 must select E1 ship nothing."
+                .to_owned()
+        )
     );
 }
 
@@ -183,6 +187,23 @@ fn gate_bindings_reject_unknown_row_gate() {
     );
 }
 
+#[test]
+fn gate_bindings_reject_wrong_known_row_gate() {
+    let rows = parse_register(&valid_register().replace(
+        "| Held       | Held       | E3 ship macro            | G3   | yes       |",
+        "| Held       | Held       | E3 ship macro            | G1   | yes       |",
+    ))
+    .expect("the wrong-known-gate control must remain syntactically valid");
+    assert_eq!(
+        check_gate_bindings(&rows, ADR, ROADMAP),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: Held/Held with E3 must use gate G3, not G1. \
+             Repair: bind this exit row to G3."
+                .to_owned()
+        )
+    );
+}
+
 #[rstest]
 #[case(Verdict::Falsified, Verdict::Falsified, Exit::E1)]
 #[case(Verdict::Falsified, Verdict::Held, Exit::E1)]
@@ -195,15 +216,18 @@ fn hand_written_cases_match_register(#[case] b1: Verdict, #[case] b2: Verdict, #
 
 #[test]
 fn hand_written_cases_reject_a_dominance_invalid_register() {
-    assert!(
+    assert_eq!(
         check_hand_written_case(
             &dominance_invalid_rows(),
             Verdict::Falsified,
             Verdict::Held,
             Exit::E1,
+        ),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: Falsified/Held selects Some(E3). Repair: restore \
+             its handwritten exit expectation to E1."
+                .to_owned()
         )
-        .is_err(),
-        "the handwritten expectation must reject the dominance-invalid row"
     );
 }
 
@@ -253,11 +277,28 @@ fn totality_rejects_missing_duplicate_and_extra_rows() {
         "<!-- exit-register:end -->",
         "| Held | Held | E3 ship macro | G3 | yes |\n<!-- exit-register:end -->",
     );
-    assert!(
-        check_totality(&parse_register(&missing).expect("missing-row control parses")).is_err()
+    assert_eq!(
+        check_totality(&parse_register(&missing).expect("missing-row control parses")),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
+             provide one row for each B1/B2 verdict combination."
+                .to_owned()
+        )
     );
-    assert!(
-        check_totality(&parse_register(&duplicate).expect("duplicate control parses")).is_err()
+    assert_eq!(
+        check_totality(&parse_register(&duplicate).expect("duplicate control parses")),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: ambiguous Falsified/Held. Repair: keep exactly \
+             one row for that combination."
+                .to_owned()
+        )
     );
-    assert!(check_totality(&parse_register(&extra).expect("extra-row control parses")).is_err());
+    assert_eq!(
+        check_totality(&parse_register(&extra).expect("extra-row control parses")),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
+             provide one row for each B1/B2 verdict combination."
+                .to_owned()
+        )
+    );
 }
