@@ -277,8 +277,23 @@ fn check_row_gates(rows: &[Row]) -> Result<(), String> {
                 row.gate
             ));
         }
+        let required_gate = required_row_gate(row);
+        if row.gate != required_gate {
+            return Err(format!(
+                "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} with {:?} must use gate \
+                 {required_gate}, not {}. Repair: bind this exit row to {required_gate}.",
+                row.b1, row.b2, row.exit, row.gate
+            ));
+        }
     }
     Ok(())
+}
+
+const fn required_row_gate(row: &Row) -> &'static str {
+    match row.exit {
+        Exit::E1 => "G2",
+        Exit::E2 | Exit::E3 => "G3",
+    }
 }
 
 pub(super) fn valid_register() -> String {
