@@ -63,6 +63,11 @@ and roadmap gates. Changes to design sections 11.1, 11.2, 13.6, or 13.7, or to
 roadmap tasks 2.2.3, 3.1.3, or 4.3.1, must update ADR 003 and its test together
 when `make test` reports deliberate document drift.
 
+The contract test keeps `googletest` and `pretty_assertions` test-only. It uses
+`googletest` for matcher-based assertions that identify the affected verdict
+combination, and `pretty_assertions` for readable diffs when parsed document
+rows differ. Neither dependency belongs in the runtime crate.
+
 ## Tooling
 
 Development builds use Cranelift for debug code generation. On Linux targets,

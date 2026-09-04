@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: COMPLETE
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -41,7 +41,7 @@ criteria *before* speculative public API is written.
 
 ## Context and orientation
 
-Read this section first if you have never seen this repository.
+Begin with this section when the repository is unfamiliar.
 
 ### What Statelet is
 
@@ -415,7 +415,7 @@ escalate rather than working around it.
 - [x] (2026-08-22 00:29Z) EP-M2: companion-document sync complete; roadmap
       1.1.2 ticked.
 - [x] (2026-08-22 00:29Z) EP-M3: full gates green; branch pushed; pull
-      request #50 remains open as a draft.
+      request #50 is open and ready for review.
 - [x] (2026-08-23 23:40Z) Maintenance: split gate-task and parsed-row checks
       into private helpers while preserving the wrapper signature, validation
       order, and existing error text; added focused negative controls.
@@ -427,6 +427,10 @@ escalate rather than working around it.
       binding and replaced the remaining broad negative-control assertions with
       exact error contracts; focused red/green evidence, full delivery gates,
       and CodeRabbit are green.
+- [ ] (2026-09-04) EP-M6: address the two confirmed contract-test findings for
+      exact roadmap task matching and section-bounded B1/B2 table matching;
+      focused red controls were accepted and now pass in focused green, while
+      full deterministic gates and the required review remain pending.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -639,6 +643,11 @@ Findings from the planning pass, carried forward:
   G3. The policy stays separate from the syntax parser and runs only after a
   row's gate name is known. Date/Author: 2026-09-01, implementing agent.
 
+- Observation (2026-09-04): the roadmap-prefix and unbounded-table controls
+  were accepted in focused red because each exposed a false pass. They now pass
+  in focused green after exact task delimiting and section-bounded table
+  extraction; full deterministic gates and review remain pending.
+
 ## Outcomes & retrospective
 
 EP-M1 delivered an accepted ADR with a syntactically parsed, independently
@@ -764,13 +773,15 @@ failure the suite exists to prevent.
 - **Domain**: the seven anchors listed above.
 - **Artefact**: test `quoted_passages_still_resolve`.
 - **Evidence**: `make test`.
-- **Non-vacuity**: three controls. (a) A design fixture with the §13.7 sentence
+- **Non-vacuity**: four controls. (a) A design fixture with the §13.7 sentence
   reworded must fail, naming the clause. (b) A design fixture with the **B1 row
   deleted** but the token `B1` still present in surrounding prose must fail —
   without this control a naive `contains("B1")` passes and the check is
-  worthless. (c) An ADR fixture citing a clause that has never existed must
-  fail, proving the check reads the ADR's citations rather than a hard-coded
-  list. The real pair must be accepted.
+  worthless. (c) A design fixture with the B1 row relocated outside the §11.1
+  table must fail, proving the row is checked in the required table rather than
+  anywhere in the document. (d) An ADR fixture citing a clause that has never
+  existed must fail, proving the check reads the ADR's citations rather than a
+  hard-coded list. The real pair must be accepted.
 
 ### INV-GATES — every named gate resolves to a live roadmap task
 
@@ -790,13 +801,14 @@ failure the suite exists to prevent.
   rows.
 - **Artefact**: test `gate_bindings_resolve`.
 - **Evidence**: `make test`.
-- **Non-vacuity**: three controls. (a) A roadmap fixture in which task 3.1.3
-  has been renumbered to 3.1.4 must fail, naming the missing gate. (b) A
-  roadmap fixture in which task 4.3.1 is ticked `- [x]` must fail with a
-  distinct message. (c) A syntactically valid E3 row changed from its required
-  G3 to known but incorrect G1 must fail with the repair to bind it to G3. A
-  control citing a gate identifier that never existed must also fail, proving
-  extraction is from the ADR.
+- **Non-vacuity**: three controls. (a) Roadmap fixtures in which task 3.1.3
+  has been renumbered to 3.1.4 or 3.1.30 must fail, naming the missing gate;
+  the latter must not pass through prefix matching. (b) A roadmap fixture in
+  which task 4.3.1 is ticked `- [x]` must fail with a distinct message. (c) A
+  syntactically valid E3 row changed from its required G3 to known but
+  incorrect G1 must fail with the repair to bind it to G3. A control citing a
+  gate identifier that never existed must also fail, proving extraction is from
+  the ADR.
 
 ### INV-CASES — handwritten expectations agree with the document
 
@@ -1334,16 +1346,17 @@ Prose the ADR must carry alongside those tables:
 
 ### The ADR's remaining sections
 
-Follow the style guide's order. `Status: Accepted` with the date and a one-line
-summary that does *not* restate the decision, following ADR 002's convention so
-the two cannot drift. `Context and problem statement` frames the question:
-under what evidence does Statelet ship the macro, ship conventions only, or
-ship nothing? `Decision drivers` names B1, B2, and B6 as forces with their
-recorded confidence levels, and states the rule that opinion evidence does not
-raise confidence. `Options considered` presents the three exits plus the
-rejected `--cfg statelet_unstable` fourth option from D5, with a captioned
-comparison table. `Decision outcome` states the single decision from D2: defer
-the ship/no-ship choice and bind it to the register above.
+Follow the style guide's order. `Status: Accepted` must contain only the status
+value, with the date in a separate `Date` section. Place any one-line summary
+in a separate prose section outside `Status`, following this canonical format
+so the summary and decision cannot drift. `Context and problem statement`
+frames the question: under what evidence does Statelet ship the macro, ship
+conventions only, or ship nothing? `Decision drivers` names B1, B2, and B6 as
+forces with their recorded confidence levels, and states the rule that opinion
+evidence does not raise confidence. `Options considered` presents the three
+exits plus the rejected `--cfg statelet_unstable` fourth option from D5, with a
+captioned comparison table. `Decision outcome` states the single decision from
+D2: defer the ship/no-ship choice and bind it to the register above.
 `Goals and non-goals` states that the ADR does not choose an exit.
 `Known risks and limitations` records that no Rust-ecosystem precedent for
 published kill criteria was found, and that the antecedents are managerial
@@ -1428,3 +1441,12 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
 - 2026-09-01, revision 15: completed EP-M5. A known but wrong row gate failed
   in the focused red run; the exit-to-gate policy made it pass in green. All
   deterministic delivery gates and the required CodeRabbit review are green.
+- 2026-09-04, revision 16: applied review-driven documentation corrections:
+  canonicalized ADR status/date/summary structure, clarified the either-example
+  off-ramp, added the contract-test sequence diagram and accessible caption,
+  and documented the test-only assertion dependencies.
+- 2026-09-04, revision 17: reopened the plan for two confirmed contract-test
+  repairs. Recorded focused red/green evidence for exact roadmap task matching
+  and section-bounded bet-table matching, expanded the corresponding invariant
+  non-vacuity obligations, and corrected PR #50's state to open and ready for
+  review; full gates and review are pending.

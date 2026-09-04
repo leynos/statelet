@@ -420,6 +420,35 @@ evidence-producing gate before the affected API is published.
 ADR 003 records how final B1 and B2 verdicts map to the three v0.1 exit scopes
 and their roadmap gates.
 
+The following sequence diagram shows how `make test` runs the ADR 003 contract
+and traces each document and policy check before reporting a result.
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Make as make_test
+    participant Test as v0_1_exit_register_contract
+    participant ADR as adr_003_v0_1_exit_register_md
+    participant Design as design_md
+    participant Roadmap as roadmap_md
+
+    Dev->>Make: make test
+    Make->>Test: run v0_1_exit_register_contract
+    Test->>ADR: include_str!("docs/adr-003-v0-1-exit-register.md")
+    Test->>Design: include_str!("docs/design.md")
+    Test->>Roadmap: include_str!("docs/roadmap.md")
+    Test->>Test: parse_register(adr_body)
+    Test->>Test: check_totality(rows)
+    Test->>Test: check_dominance(rows)
+    Test->>Test: check_quoted_clauses(design_body)
+    Test->>Test: check_gate_bindings(rows, roadmap_body)
+    Test->>Dev: report pass/fail with repair hints
+```
+
+*Figure: A developer runs `make test`; the contract test reads the ADR, design,
+and roadmap, parses the register, applies totality, dominance, citation, and
+gate checks, then reports a pass or failure with repair guidance.*
+
 ### 11.2 Baseline comparison
 
 Before implementing `statelet-macros`, build the `mdtablefix` baseline without

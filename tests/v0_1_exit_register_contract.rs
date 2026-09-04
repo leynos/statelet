@@ -174,6 +174,20 @@ fn gate_bindings_reject_ticked_roadmap_task() {
 }
 
 #[test]
+fn gate_bindings_reject_a_roadmap_task_prefix() {
+    let rows = live_rows();
+    let renumbered_task = ROADMAP.replace("- [ ] 3.1.3.", "- [ ] 3.1.30.");
+    assert_eq!(
+        check_gate_bindings(&rows, ADR, &renumbered_task),
+        Err(
+            "docs/roadmap.md: task 3.1.3 is absent or already ticked. Repair: retain the live, \
+             unticked gate named by ADR 003."
+                .to_owned()
+        )
+    );
+}
+
+#[test]
 fn gate_bindings_reject_unknown_row_gate() {
     let rows = parse_register(&valid_register().replace("G2", "G9"))
         .expect("the unknown-gate control must remain syntactically valid");
@@ -199,6 +213,25 @@ fn gate_bindings_reject_wrong_known_row_gate() {
         Err(
             "docs/adr-003-v0-1-exit-register.md: Held/Held with E3 must use gate G3, not G1. \
              Repair: bind this exit row to G3."
+                .to_owned()
+        )
+    );
+}
+
+#[test]
+fn quoted_passages_reject_a_bet_outside_its_table() {
+    let b1_row = "| B1  | A real segment prefers handwritten state machines and wants shared \
+                  convention | Low-medium | `mdtablefix` plus one second non-toy example both \
+                  improve without framework adoption          |\n";
+    let b1_outside_its_table = DESIGN.replace(b1_row, "").replace(
+        "### 11.2 Baseline comparison",
+        &format!("### 11.2 Baseline comparison\n\n{b1_row}"),
+    );
+    assert_eq!(
+        check_quoted_clauses(ADR, &b1_outside_its_table, TERMS, CONTEXT),
+        Err(
+            "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
+             or revise ADR 003."
                 .to_owned()
         )
     );
