@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: COMPLETE
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -431,6 +431,11 @@ escalate rather than working around it.
       for exact roadmap task matching and section-bounded B1/B2 table matching;
       focused red controls were accepted and passed in focused green, the full
       deterministic suite passed, and CodeRabbit returned zero findings.
+- [ ] (2026-09-04) EP-M7: repair the remaining contract-test controls by
+      asserting the exact cited-clause error, naming a missing verdict
+      combination before the row-count check, and mutating an ADR gate-table
+      identifier in the gate negative control; full gates and CodeRabbit are
+      pending.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -658,6 +663,28 @@ Findings from the planning pass, carried forward:
   documentation-and-contract-test milestone. Date/Author: 2026-09-04,
   implementing agent.
 
+- Decision D16: keep EP-M7 within the existing syntax-and-policy contract
+  boundary. Rationale: exact failure assertions make each negative control
+  attributable; checking missing and duplicate verdict combinations before the
+  cardinality check preserves the distinct extra-row error; and mutating the
+  ADR gate table while leaving register rows unchanged proves that gate-task
+  validation reads the ADR. None of these refinements changes the Markdown
+  parser, register model, or contract-test scope. Date/Author: 2026-09-04,
+  implementing agent.
+
+- Observation (2026-09-04): the rewritten-clause control currently proves only
+  rejection when it uses a broad error assertion. EP-M7 must assert the exact
+  missing-source-clause message and repair guidance required by `INV-ANCHORS`.
+
+- Observation (2026-09-04): checking the four-row cardinality before verdict
+  combinations hides which combination was removed. EP-M7 must check missing
+  and duplicate combinations first, while retaining the cardinality error for
+  an extra fifth row.
+
+- Observation (2026-09-04): changing a register row to `G9` exercises row
+  vocabulary, but does not prove that the ADR gate table is read. EP-M7 must
+  mutate an ADR gate-table identifier to `G9` with the register rows unchanged.
+
 ## Outcomes & retrospective
 
 EP-M1 delivered an accepted ADR with a syntactically parsed, independently
@@ -686,6 +713,11 @@ focused red and green controls, full deterministic suite, and required
 CodeRabbit review all passed, with zero findings. The final-gate E1 → G2
 mapping remains intentional. The stale property-test, docstring-coverage, and
 `Plan:` title suggestions remain skipped for the reasons recorded in D15.
+
+EP-M7 is reopened for three further contract-test refinements. The exact
+quoted-clause error, verdict-specific missing-row error, and ADR gate-table
+identifier control are specified below; implementation, deterministic gates,
+and CodeRabbit review remain pending.
 
 ## Verification plan
 
@@ -727,12 +759,16 @@ failure the suite exists to prevent.
   `is_err()`. (a) The empty string must yield `MissingDelimiters`, not a
   vacuously complete empty map — this is the classic vacuity hole. (b) A
   document with delimiters but no rows must yield `MissingDelimiters`. (c) A
-  register missing one row must fail totality naming that combination. (d) A
-  register with a duplicated combination must fail as ambiguous. (e) A register
-  with a spurious fifth combination must fail. (f) A register with an
-  unrecognized verdict token must yield `UnknownVerdict`. A witness — the real
-  ADR — must be accepted. If `parse_register` were replaced by a stub returning
-  an empty `Ok`, controls (a) through (f) fail.
+  register missing one row must check combinations before the final row-count
+  check and fail with
+  `docs/adr-003-v0-1-exit-register.md: missing Held/Held. Repair: add that
+  verdict combination.`
+  (d) A register with a duplicated combination must fail as ambiguous. (e) A
+  register with a spurious fifth combination must retain the four-row
+  cardinality error. (f) A register with an unrecognized verdict token must
+  yield `UnknownVerdict`. A witness — the real ADR — must be accepted. If
+  `parse_register` were replaced by a stub returning an empty `Ok`, controls
+  (a) through (f) fail.
 
 ### INV-DOMINANCE — a falsified B1 forces the off-ramp
 
@@ -792,14 +828,17 @@ failure the suite exists to prevent.
 - **Artefact**: test `quoted_passages_still_resolve`.
 - **Evidence**: `make test`.
 - **Non-vacuity**: four controls. (a) A design fixture with the §13.7 sentence
-  reworded must fail, naming the clause. (b) A design fixture with the **B1 row
-  deleted** but the token `B1` still present in surrounding prose must fail —
-  without this control a naive `contains("B1")` passes and the check is
-  worthless. (c) A design fixture with the B1 row relocated outside the §11.1
-  table must fail, proving the row is checked in the required table rather than
-  anywhere in the document. (d) An ADR fixture citing a clause that has never
-  existed must fail, proving the check reads the ADR's citations rather than a
-  hard-coded list. The real pair must be accepted.
+  reworded must fail with the exact missing-clause message
+  `docs/design.md no longer contains "the macro crate does not ship in v0.1".
+  Repair: update ADR 003 and its contract together.`
+  (b) A design fixture with the **B1 row deleted** but the token `B1` still
+  present in surrounding prose must fail — without this control a naive
+  `contains("B1")` passes and the check is worthless. (c) A design fixture with
+  the B1 row relocated outside the §11.1 table must fail, proving the row is
+  checked in the required table rather than anywhere in the document. (d) An
+  ADR fixture citing a clause that has never existed must fail, proving the
+  check reads the ADR's citations rather than a hard-coded list. The real pair
+  must be accepted.
 
 ### INV-GATES — every named gate resolves to a live roadmap task
 
@@ -819,14 +858,16 @@ failure the suite exists to prevent.
   rows.
 - **Artefact**: test `gate_bindings_resolve`.
 - **Evidence**: `make test`.
-- **Non-vacuity**: three controls. (a) Roadmap fixtures in which task 3.1.3
+- **Non-vacuity**: five controls. (a) Roadmap fixtures in which task 3.1.3
   has been renumbered to 3.1.4 or 3.1.30 must fail, naming the missing gate;
   the latter must not pass through prefix matching. (b) A roadmap fixture in
   which task 4.3.1 is ticked `- [x]` must fail with a distinct message. (c) A
   syntactically valid E3 row changed from its required G3 to known but
-  incorrect G1 must fail with the repair to bind it to G3. A control citing a
-  gate identifier that never existed must also fail, proving extraction is from
-  the ADR.
+  incorrect G1 must fail with the repair to bind it to G3. (d) A register row
+  changed to unknown G9 must fail the row-vocabulary check. (e) An ADR gate
+  table identifier changed from G2 to G9, with register rows unchanged, must
+  fail the exact missing-gate error, proving extraction is from the ADR rather
+  than only from hard-coded row mappings.
 
 ### INV-CASES — handwritten expectations agree with the document
 
@@ -1473,3 +1514,8 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   full deterministic suite; CodeRabbit returned zero findings. The plan is
   complete, with the final-gate mapping and intentional review-warning skips
   preserved.
+- 2026-09-04, revision 19: reopened the plan as EP-M7 for three confirmed
+  contract-test refinements: exact cited-clause failure guidance,
+  verdict-specific missing-row reporting before cardinality, and an ADR
+  gate-table identifier negative control. Full deterministic gates and
+  CodeRabbit review are pending.
