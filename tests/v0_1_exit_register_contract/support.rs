@@ -141,30 +141,40 @@ fn parse_reachability(value: &str, line: usize) -> Result<bool, ParseError> {
 }
 
 pub(super) fn check_totality(rows: &[Row]) -> Result<(), String> {
-    if rows.len() != 4 {
-        return Err(
-            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
-             provide one row for each B1/B2 verdict combination."
-                .to_owned(),
-        );
-    }
+    let mut missing = None;
+    let mut duplicate = None;
     for (b1, b2) in verdict_combinations() {
         let matches = rows
             .iter()
             .filter(|row| row.b1 == b1 && row.b2 == b2)
             .count();
         if matches == 0 {
-            return Err(format!(
-                "docs/adr-003-v0-1-exit-register.md: missing {b1:?}/{b2:?}. Repair: add that \
-                 verdict combination."
-            ));
+            missing = Some((b1, b2));
         }
         if matches > 1 {
-            return Err(format!(
-                "docs/adr-003-v0-1-exit-register.md: ambiguous {b1:?}/{b2:?}. Repair: keep \
-                 exactly one row for that combination."
-            ));
+            duplicate = Some((b1, b2));
         }
+    }
+    if rows.len() == 4
+        && let Some((b1, b2)) = duplicate
+    {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: ambiguous {b1:?}/{b2:?}. Repair: keep exactly \
+             one row for that combination."
+        ));
+    }
+    if let Some((b1, b2)) = missing {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: missing {b1:?}/{b2:?}. Repair: add that verdict \
+             combination."
+        ));
+    }
+    if rows.len() != 4 {
+        return Err(
+            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
+             provide one row for each B1/B2 verdict combination."
+                .to_owned(),
+        );
     }
     Ok(())
 }

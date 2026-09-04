@@ -106,7 +106,14 @@ fn quoted_passages_still_resolve() {
         "the macro crate does not ship in v0.1",
         "the macro crate ships",
     );
-    assert!(check_quoted_clauses(ADR, &rewritten, TERMS, CONTEXT).is_err());
+    assert_eq!(
+        check_quoted_clauses(ADR, &rewritten, TERMS, CONTEXT),
+        Err(
+            "docs/design.md no longer contains \"the macro crate does not ship in v0.1\". Repair: \
+             update ADR 003 and its contract together."
+                .to_owned()
+        )
+    );
     let b1_row_deleted = format!(
         "{}\nB1 still says both improve without framework adoption outside the table.",
         DESIGN.replace(
@@ -149,6 +156,23 @@ fn gate_bindings_resolve() {
 fn gate_bindings_reject_wrong_adr_task() {
     let rows = live_rows();
     let changed_gate = ADR.replace("3.1.3", "3.1.4");
+    assert_eq!(
+        check_gate_bindings(&rows, &changed_gate, ROADMAP),
+        Err(
+            "docs/adr-003-v0-1-exit-register.md: G2 must bind roadmap task 3.1.3. Repair: restore \
+             the gate table binding."
+                .to_owned()
+        )
+    );
+}
+
+#[test]
+fn gate_bindings_reject_unknown_adr_gate_table_identifier() {
+    let rows = live_rows();
+    let changed_gate = ADR.replace(
+        "| G2   | 3.1.3        | B1 across both validation examples                             |",
+        "| G9   | 3.1.3        | B1 across both validation examples                             |",
+    );
     assert_eq!(
         check_gate_bindings(&rows, &changed_gate, ROADMAP),
         Err(
@@ -313,8 +337,8 @@ fn totality_rejects_missing_duplicate_and_extra_rows() {
     assert_eq!(
         check_totality(&parse_register(&missing).expect("missing-row control parses")),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
-             provide one row for each B1/B2 verdict combination."
+            "docs/adr-003-v0-1-exit-register.md: missing Held/Held. Repair: add that verdict \
+             combination."
                 .to_owned()
         )
     );
