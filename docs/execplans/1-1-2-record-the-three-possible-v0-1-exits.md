@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -427,10 +427,10 @@ escalate rather than working around it.
       binding and replaced the remaining broad negative-control assertions with
       exact error contracts; focused red/green evidence, full delivery gates,
       and CodeRabbit are green.
-- [ ] (2026-09-04) EP-M6: address the two confirmed contract-test findings for
-      exact roadmap task matching and section-bounded B1/B2 table matching;
-      focused red controls were accepted and now pass in focused green, while
-      full deterministic gates and the required review remain pending.
+- [x] (2026-09-04) EP-M6: addressed the two confirmed contract-test findings
+      for exact roadmap task matching and section-bounded B1/B2 table matching;
+      focused red controls were accepted and passed in focused green, the full
+      deterministic suite passed, and CodeRabbit returned zero findings.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -646,7 +646,17 @@ Findings from the planning pass, carried forward:
 - Observation (2026-09-04): the roadmap-prefix and unbounded-table controls
   were accepted in focused red because each exposed a false pass. They now pass
   in focused green after exact task delimiting and section-bounded table
-  extraction; full deterministic gates and review remain pending.
+  extraction; the existing Markdown parsing model remains unchanged.
+
+- Decision D15: keep the document model while tightening both contract-test
+  boundaries. Rationale: matching a roadmap checklist item with its delimiter
+  and limiting `has_table_bet` to the §11.1 table prevent false positives
+  without changing `parse_register`, introducing domain types, or broadening
+  the contract-test scope. The intentional final-gate mapping remains E1 → G2
+  and E2/E3 → G3. The broader property-test, docstring-coverage, and `Plan:`
+  title suggestions remain skipped because they are stale or outside this
+  documentation-and-contract-test milestone. Date/Author: 2026-09-04,
+  implementing agent.
 
 ## Outcomes & retrospective
 
@@ -668,6 +678,14 @@ the handwritten case predicate tests both the real and dominance-invalid rows.
 EP-M5 completed the row-level gate contract and converted the remaining broad
 negative controls into exact error contracts, so a passing test now proves both
 the rejection reason and the repair guidance.
+
+EP-M6 completed the final review repairs without changing the document model:
+roadmap task identifiers are matched at their exact checklist boundary, and
+`has_table_bet` only considers matching rows inside the §11.1 bet table. The
+focused red and green controls, full deterministic suite, and required
+CodeRabbit review all passed, with zero findings. The final-gate E1 → G2
+mapping remains intentional. The stale property-test, docstring-coverage, and
+`Plan:` title suggestions remain skipped for the reasons recorded in D15.
 
 ## Verification plan
 
@@ -1450,3 +1468,8 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   and section-bounded bet-table matching, expanded the corresponding invariant
   non-vacuity obligations, and corrected PR #50's state to open and ready for
   review; full gates and review are pending.
+- 2026-09-04, revision 18: completed EP-M6. Exact task delimiting and
+  section-bounded bet-table matching passed focused red/green controls and the
+  full deterministic suite; CodeRabbit returned zero findings. The plan is
+  complete, with the final-gate mapping and intentional review-warning skips
+  preserved.
