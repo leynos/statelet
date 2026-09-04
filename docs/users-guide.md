@@ -14,6 +14,10 @@ The first validation slice is deliberately conventions-only. The project must
 prove that stable state names and documented tracing fields improve real
 `mdtablefix` code before any macro surface is published.
 
+Statelet may deliberately ship nothing if either validation example shows
+little value. [ADR 003](adr-003-v0-1-exit-register.md) records that off-ramp
+alongside the conventions-only and macro release scopes.
+
 ## Quick start
 
 Run the public validation entrypoint from a fresh checkout:
