@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -431,11 +431,13 @@ escalate rather than working around it.
       for exact roadmap task matching and section-bounded B1/B2 table matching;
       focused red controls were accepted and passed in focused green, the full
       deterministic suite passed, and CodeRabbit returned zero findings.
-- [ ] (2026-09-04) EP-M7: repair the remaining contract-test controls by
+- [x] (2026-09-04) EP-M7: repaired the remaining contract-test controls by
       asserting the exact cited-clause error, naming a missing verdict
       combination before the row-count check, and mutating an ADR gate-table
-      identifier in the gate negative control; full gates and CodeRabbit are
-      pending.
+      identifier in the gate negative control. Focused red controls failed for
+      each former false pass and focused green controls passed after the fixes;
+      the full deterministic gate suite passed, and CodeRabbit returned zero
+      findings.
 
 Add a UTC timestamp as each completes: `- [x] (2026-08-22 14:05Z) EP-M1: ...`.
 
@@ -685,6 +687,13 @@ Findings from the planning pass, carried forward:
   vocabulary, but does not prove that the ADR gate table is read. EP-M7 must
   mutate an ADR gate-table identifier to `G9` with the register rows unchanged.
 
+- Decision D17: preserve the generic extra-row error while reporting missing
+  and duplicate verdict combinations first. Rationale: a four-row register
+  with a missing combination needs a verdict-specific repair message, whereas
+  a fifth row with all four combinations present is an excess-row problem and
+  must retain the cardinality guidance. Date/Author: 2026-09-04,
+  implementing agent.
+
 ## Outcomes & retrospective
 
 EP-M1 delivered an accepted ADR with a syntactically parsed, independently
@@ -714,10 +723,12 @@ CodeRabbit review all passed, with zero findings. The final-gate E1 → G2
 mapping remains intentional. The stale property-test, docstring-coverage, and
 `Plan:` title suggestions remain skipped for the reasons recorded in D15.
 
-EP-M7 is reopened for three further contract-test refinements. The exact
-quoted-clause error, verdict-specific missing-row error, and ADR gate-table
-identifier control are specified below; implementation, deterministic gates,
-and CodeRabbit review remain pending.
+EP-M7 completed three further contract-test refinements: the quoted-clause
+control now asserts its exact missing-source error, totality reports a missing
+verdict combination before cardinality while retaining the generic extra-row
+error, and the gate contract mutates an ADR gate-table identifier to prove
+that the table is read. Focused red and green controls, the full deterministic
+suite, and the required CodeRabbit review all passed, with zero findings.
 
 ## Verification plan
 
@@ -1519,3 +1530,8 @@ unresolved until G2 and G3, and cross-references `design.md` §14.
   verdict-specific missing-row reporting before cardinality, and an ADR
   gate-table identifier negative control. Full deterministic gates and
   CodeRabbit review are pending.
+- 2026-09-04, revision 20: completed EP-M7. Focused red and green controls,
+  the full deterministic gate suite, and CodeRabbit all passed; the latter
+  returned zero findings. Recorded the totality error-precedence decision so
+  missing combinations receive specific guidance while the generic extra-row
+  cardinality error remains unchanged.
