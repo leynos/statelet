@@ -2,8 +2,7 @@
 
 ## Status
 
-Accepted, 2026-08-22. Statelet records three release scopes and the evidence
-gates that select them; it does not yet choose one.
+Accepted
 
 ## Date
 

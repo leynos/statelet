@@ -257,7 +257,7 @@ fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
         }
         if !roadmap
             .lines()
-            .any(|line| line.trim_start().starts_with(&format!("- [ ] {task}")))
+            .any(|line| line.trim_start().starts_with(&format!("- [ ] {task}.")))
         {
             return Err(format!(
                 "docs/roadmap.md: task {task} is absent or already ticked. Repair: retain the \
@@ -356,13 +356,20 @@ fn gate_task(adr: &str, gate: &str) -> Option<String> {
 }
 
 fn has_table_bet(design: &str, bet: &str) -> bool {
-    design.lines().any(|line| {
-        line.trim()
-            .trim_matches('|')
-            .split('|')
-            .next()
-            .is_some_and(|cell| cell.trim() == bet)
-    })
+    design
+        .split_once("### 11.1 Bet register")
+        .is_some_and(|(_, after_heading)| {
+            let section = after_heading
+                .split_once("\n### ")
+                .map_or(after_heading, |(section, _)| section);
+            section.lines().any(|line| {
+                line.trim()
+                    .trim_matches('|')
+                    .split('|')
+                    .next()
+                    .is_some_and(|cell| cell.trim() == bet)
+            })
+        })
 }
 
 const fn verdict_combinations() -> [(Verdict, Verdict); 4] {
