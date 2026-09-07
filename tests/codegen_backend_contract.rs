@@ -56,9 +56,12 @@ fn the_release_profile_is_left_on_the_default_backend() {
     );
 }
 
+/// The table header selecting every Linux target, whatever the architecture.
+const LINUX_TARGET: &str = r#"[target.'cfg(target_os = "linux")']"#;
+
 #[test]
 fn linux_links_with_mold_through_clang() {
-    let Some(target) = table(CARGO_CONFIG, "[target.x86_64-unknown-linux-gnu]") else {
+    let Some(target) = table(CARGO_CONFIG, LINUX_TARGET) else {
         panic!("`.cargo/config.toml` declares no Linux target table:\n{CARGO_CONFIG}");
     };
 
@@ -69,6 +72,25 @@ fn linux_links_with_mold_through_clang() {
     assert!(
         target.contains("-fuse-ld=mold"),
         "the Linux target must select the mold linker:\n{target}"
+    );
+}
+
+#[test]
+fn the_linker_selector_covers_every_linux_architecture() {
+    // A target-triple table would leave aarch64 Linux on the default linker,
+    // which is the state this configuration was in before #61. mold supports
+    // every Linux architecture, so the selector is keyed on the operating
+    // system; asserting the header, not merely the keys inside it, is what
+    // makes a narrowing visible.
+    assert!(
+        CARGO_CONFIG.contains(LINUX_TARGET),
+        "the Linux linker settings must be keyed on `cfg(target_os = \"linux\")`, not on one \
+         target triple:\n{CARGO_CONFIG}"
+    );
+    assert!(
+        !CARGO_CONFIG.contains("[target.x86_64-unknown-linux-gnu]"),
+        "an x86_64-only table is a narrowing unless it carries a genuinely architecture-specific \
+         flag; the linker settings belong in the cfg table:\n{CARGO_CONFIG}"
     );
 }
 

@@ -52,12 +52,14 @@ container-backed checks in parallel.
 ## Tooling
 
 Development builds use Cranelift for debug code generation, which is the estate
-standard for development, test, lint and proof builds. On
-`x86_64-unknown-linux-gnu`, `.cargo/config.toml` configures clang to link with
-`mold` so debug builds link quickly. Coverage generation uses `lld` because LLVM
-coverage tooling expects LLVM-compatible linker behaviour, and it overrides the
-codegen backend as described under [the codegen-backend
-standard](#the-codegen-backend-standard).
+standard for development, test, lint and proof builds. On Linux,
+`.cargo/config.toml` configures clang to link with `mold` so debug builds link
+quickly. That table is keyed on `cfg(target_os = "linux")`, so it covers every
+Linux architecture rather than a single triple.
+
+Coverage generation uses `lld` because LLVM coverage tooling expects
+LLVM-compatible linker behaviour, and it overrides the codegen backend as
+described under [the codegen-backend standard](#the-codegen-backend-standard).
 
 Coverage also overrides the codegen backend. `-Cinstrument-coverage` is an LLVM
 feature that Cranelift does not implement, so with the dev profile's Cranelift
@@ -95,12 +97,11 @@ full generated workflow locally on Linux.
 debug work. `dev-build` compiles debug binaries and `dev-test` runs the test
 suite; both pass `tools/dev-fast/config.toml` to Cargo explicitly.
 
-That fragment sets the same dev-profile Cranelift backend that
-`.cargo/config.toml` already applies to every build, so the backend is not what
-these targets add. What differs is the linker selector: the fragment gates `mold`
-behind a `cfg(target_os = "linux")` table, while `.cargo/config.toml` names the
-`x86_64-unknown-linux-gnu` triple, so the fragment also covers other Linux
-architectures.
+That fragment sets the same dev-profile Cranelift backend, and now the same
+`cfg(target_os = "linux")` linker selector, that `.cargo/config.toml` already
+applies to every build. The two agree deliberately: `.cargo/config.toml` was
+keyed on the `x86_64-unknown-linux-gnu` triple until #61 widened it, which had
+left other Linux architectures on the default linker.
 
 The `DEV_FAST_CONFIG` variable names that fragment, defaulting to
 `tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly
@@ -113,13 +114,15 @@ codegen backend is unstable. On Linux it also requires the mold linker on
 `PATH`; the fragment gates the linker flag behind a `target_os = "linux"`
 `cfg` table, so other platforms fall back to their default linker.
 
-
 ### The codegen-backend standard
 
 Cranelift belongs in `.cargo/config.toml`, and this repository puts it there.
 Dev-profile Cranelift with `mold` as the linker is the estate standard for
 development, test, lint and proof builds across every Rust repository, so
-Cargo auto-discovering the file is the intent rather than a hazard. The test
+Cargo auto-discovering the file is the intent rather than a hazard. `mold`
+supports every Linux architecture, so the linker table is keyed on
+`cfg(target_os = "linux")`; a target-triple table is for a flag that is
+genuinely architecture-specific. The test
 profile inherits its codegen backend from dev, which is why `make test` gets
 Cranelift without naming it.
 
