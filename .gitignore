@@ -2,6 +2,9 @@ target/
 **/*.rs.bk
 __pycache__/
 
+# Coverage output: `make coverage` and the CI action both write it here
+lcov.info
+
 # Local spelling-policy caches and helper tool state
 .coverage
 .pytest_cache/
