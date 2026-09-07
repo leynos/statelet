@@ -65,7 +65,13 @@ error: `-Cinstrument-coverage` is LLVM specific and not supported by Cranelift
 ```
 
 The `coverage` recipe therefore sets `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm`
-for that one invocation, which leaves every other target on Cranelift.
+for that one invocation. It overrides the dev profile only, so other
+dev-profile builds such as `make build` and `make test` keep Cranelift.
+`make release` is unaffected either way: `--release` selects the release
+profile, which `.cargo/config.toml` does not touch, so release builds already
+use LLVM. Setting the dev profile is enough for coverage because the test
+profile inherits its codegen backend from dev.
+
 `tests/coverage_contract.rs` asserts the override is present and precedes the
 cargo invocation, because removing it leaves the Makefile looking correct and
 surfaces as a build failure minutes later.
