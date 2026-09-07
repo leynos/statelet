@@ -70,6 +70,13 @@ for that one invocation, which leaves every other target on Cranelift.
 cargo invocation, because removing it leaves the Makefile looking correct and
 surfaces as a build failure minutes later.
 
+CI needs no such line in the workflow. The shared `generate-coverage` action
+detects Cranelift for itself, by scanning `.cargo/config.toml` upward from the
+manifest and the manifest's own `[profile.*]` sections, and exports the same
+`CARGO_PROFILE_*_CODEGEN_BACKEND=llvm` overrides before it builds. The Makefile
+override is the local counterpart of that, which is why coverage can fail
+locally while the CI job gets as far as running the tests.
+
 Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
 full generated workflow locally on Linux.
 
