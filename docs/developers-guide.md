@@ -51,10 +51,13 @@ container-backed checks in parallel.
 
 ## Tooling
 
-Development builds use Cranelift for debug code generation. On Linux targets,
-`.cargo/config.toml` configures clang to link with `mold` so debug builds link
-quickly. Coverage generation uses `lld` because LLVM coverage tooling expects
-LLVM-compatible linker behaviour.
+Development builds use Cranelift for debug code generation, which is the estate
+standard for development, test, lint and proof builds. On
+`x86_64-unknown-linux-gnu`, `.cargo/config.toml` configures clang to link with
+`mold` so debug builds link quickly. Coverage generation uses `lld` because LLVM
+coverage tooling expects LLVM-compatible linker behaviour, and it overrides the
+codegen backend as described under [the codegen-backend
+standard](#the-codegen-backend-standard).
 
 Coverage also overrides the codegen backend. `-Cinstrument-coverage` is an LLVM
 feature that Cranelift does not implement, so with the dev profile's Cranelift
@@ -88,10 +91,16 @@ full generated workflow locally on Linux.
 
 ## Fast development builds
 
-`make dev-build` and `make dev-test` offer an opt-in, faster iteration loop
-for local debug work. `dev-build` compiles debug binaries and `dev-test` runs
-the test suite; both use the Cranelift codegen backend and the mold linker
-configured in `tools/dev-fast/config.toml`.
+`make dev-build` and `make dev-test` offer an opt-in iteration loop for local
+debug work. `dev-build` compiles debug binaries and `dev-test` runs the test
+suite; both pass `tools/dev-fast/config.toml` to Cargo explicitly.
+
+That fragment sets the same dev-profile Cranelift backend that
+`.cargo/config.toml` already applies to every build, so the backend is not what
+these targets add. What differs is the linker selector: the fragment gates `mold`
+behind a `cfg(target_os = "linux")` table, while `.cargo/config.toml` names the
+`x86_64-unknown-linux-gnu` triple, so the fragment also covers other Linux
+architectures.
 
 The `DEV_FAST_CONFIG` variable names that fragment, defaulting to
 `tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly
@@ -104,12 +113,34 @@ codegen backend is unstable. On Linux it also requires the mold linker on
 `PATH`; the fragment gates the linker flag behind a `target_os = "linux"`
 `cfg` table, so other platforms fall back to their default linker.
 
-Cranelift configuration must never be copied into `.cargo/config.toml`.
-Cargo auto-discovers that file and applies it to every invocation, which
-would silently degrade release, coverage, and verification builds to the
-faster but less optimizing backend. Keep the fast-build configuration
-isolated in `tools/dev-fast/config.toml` and reach it only through
-`make dev-build` and `make dev-test`.
+
+### The codegen-backend standard
+
+Cranelift belongs in `.cargo/config.toml`, and this repository puts it there.
+Dev-profile Cranelift with `mold` as the linker is the estate standard for
+development, test, lint and proof builds across every Rust repository, so
+Cargo auto-discovering the file is the intent rather than a hazard. The test
+profile inherits its codegen backend from dev, which is why `make test` gets
+Cranelift without naming it.
+
+Two kinds of build must not use Cranelift, and do not:
+
+- **Release builds.** `--release` selects the release profile, which
+  `.cargo/config.toml` does not configure, so release builds already use LLVM.
+- **Coverage runs.** `-Cinstrument-coverage` is an LLVM feature Cranelift does
+  not implement, so a coverage build overrides the backend for that invocation
+  alone. In CI the shared `generate-coverage` action does this for itself: it
+  detects Cranelift by scanning `.cargo/config.toml` and the manifest's
+  `[profile.*]` sections, then exports
+  `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm` and the `TEST` equivalent before
+  building.
+
+An earlier version of this guide, and the header of
+`tools/dev-fast/config.toml`, stated the opposite rule: that Cranelift must
+never be copied into `.cargo/config.toml` because Cargo would apply it to
+release, coverage and verification builds. That rule was in error and is
+withdrawn (#60). Release builds were never affected, and coverage has an
+explicit override rather than a silent degradation.
 
 ## Spelling policy
 
