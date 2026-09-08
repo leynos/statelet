@@ -64,10 +64,9 @@ supply. Nothing here cross-compiles today, so adding those settings belongs
 with the first cross target rather than now.
 
 Coverage generation uses `lld` because LLVM coverage tooling expects
-LLVM-compatible linker behaviour, and it overrides the codegen backend as
-described under [the codegen-backend standard](#the-codegen-backend-standard).
-
-Coverage also overrides the codegen backend. `-Cinstrument-coverage` is an LLVM
+LLVM-compatible linker behaviour, and it overrides the codegen backend, for the
+reason set out under [the codegen-backend
+standard](#the-codegen-backend-standard). `-Cinstrument-coverage` is an LLVM
 feature that Cranelift does not implement, so with the dev profile's Cranelift
 backend in force `cargo llvm-cov` stops at the first crate:
 
@@ -91,8 +90,8 @@ CI needs no such line in the workflow. The shared `generate-coverage` action
 detects Cranelift for itself, by scanning `.cargo/config.toml` upward from the
 manifest and the manifest's own `[profile.*]` sections, and exports the same
 `CARGO_PROFILE_*_CODEGEN_BACKEND=llvm` overrides before it builds. The Makefile
-override is the local counterpart of that, which is why coverage can fail
-locally while the CI job gets as far as running the tests.
+override is the local counterpart of that: before it existed, coverage failed
+at the first crate locally while the CI job ran the tests.
 
 Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
 full generated workflow locally on Linux.
@@ -128,9 +127,8 @@ development, test, lint, and proof builds across every Rust repository, so
 Cargo auto-discovering the file is the intent rather than a hazard. `mold`
 supports every Linux architecture, so the linker table is keyed on
 `cfg(target_os = "linux")`; a target-triple table is for a flag that is
-genuinely architecture-specific. The test
-profile inherits its codegen backend from dev, which is why `make test` gets
-Cranelift without naming it.
+genuinely architecture-specific. The test profile inherits its codegen backend
+from dev, which is why `make test` gets Cranelift without naming it.
 
 Two kinds of build must not use Cranelift:
 
@@ -142,8 +140,9 @@ Two kinds of build must not use Cranelift:
   invocation. In CI this is already handled: the shared `generate-coverage`
   action detects Cranelift by scanning `.cargo/config.toml` and the manifest's
   `[profile.*]` sections, then exports `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm`
-  and the `TEST` equivalent before building. The local `make coverage` recipe
-  has no such override yet, so it fails at the first crate; #59 adds it.
+  and the `TEST` equivalent before building. Locally the `coverage` recipe sets
+  `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm` itself, added in #59 and asserted by
+  `tests/coverage_contract.rs`.
 
 An earlier version of this guide, and the header of
 `tools/dev-fast/config.toml`, stated the opposite rule: that Cranelift must
