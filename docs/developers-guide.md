@@ -56,6 +56,33 @@ Development builds use Cranelift for debug code generation. On Linux targets,
 quickly. Coverage generation uses `lld` because LLVM coverage tooling expects
 LLVM-compatible linker behaviour.
 
+Coverage also overrides the codegen backend. `-Cinstrument-coverage` is an LLVM
+feature that Cranelift does not implement, so with the dev profile's Cranelift
+backend in force `cargo llvm-cov` stops at the first crate:
+
+```text
+error: `-Cinstrument-coverage` is LLVM specific and not supported by Cranelift
+```
+
+The `coverage` recipe therefore sets `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm`
+for that one invocation. It overrides the dev profile only, so other
+dev-profile builds such as `make build` and `make test` keep Cranelift.
+`make release` is unaffected either way: `--release` selects the release
+profile, which `.cargo/config.toml` does not touch, so release builds already
+use LLVM. Setting the dev profile is enough for coverage because the test
+profile inherits its codegen backend from dev.
+
+`tests/coverage_contract.rs` asserts the override is present and precedes the
+cargo invocation, because removing it leaves the Makefile looking correct and
+surfaces as a build failure minutes later.
+
+CI needs no such line in the workflow. The shared `generate-coverage` action
+detects Cranelift for itself, by scanning `.cargo/config.toml` upward from the
+manifest and the manifest's own `[profile.*]` sections, and exports the same
+`CARGO_PROFILE_*_CODEGEN_BACKEND=llvm` overrides before it builds. The Makefile
+override is the local counterpart of that, which is why coverage can fail
+locally while the CI job gets as far as running the tests.
+
 Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
 full generated workflow locally on Linux.
 
