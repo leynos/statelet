@@ -51,12 +51,22 @@ container-backed checks in parallel.
 
 ## Tooling
 
-Development builds use Cranelift for debug code generation. On Linux targets,
+Development builds use Cranelift for debug code generation, which is the estate
+standard for development, test, lint, and proof builds. On Linux,
 `.cargo/config.toml` configures clang to link with `mold` so debug builds link
-quickly. Coverage generation uses `lld` because LLVM coverage tooling expects
-LLVM-compatible linker behaviour.
+quickly. That table is keyed on `cfg(target_os = "linux")`, so it covers every
+Linux architecture rather than a single triple.
 
-Coverage also overrides the codegen backend. `-Cinstrument-coverage` is an LLVM
+That selector suits native builds, where clang defaults to the host triple. It
+would also match a cross-compilation to a non-host Linux target, and clang
+would then need a `--target` flag and a sysroot that the configuration does not
+supply. Nothing here cross-compiles today, so adding those settings belongs
+with the first cross target rather than now.
+
+Coverage generation uses `lld` because LLVM coverage tooling expects
+LLVM-compatible linker behaviour, and it overrides the codegen backend, for the
+reason set out under [the codegen-backend
+standard](#the-codegen-backend-standard). `-Cinstrument-coverage` is an LLVM
 feature that Cranelift does not implement, so with the dev profile's Cranelift
 backend in force `cargo llvm-cov` stops at the first crate:
 
@@ -80,18 +90,23 @@ CI needs no such line in the workflow. The shared `generate-coverage` action
 detects Cranelift for itself, by scanning `.cargo/config.toml` upward from the
 manifest and the manifest's own `[profile.*]` sections, and exports the same
 `CARGO_PROFILE_*_CODEGEN_BACKEND=llvm` overrides before it builds. The Makefile
-override is the local counterpart of that, which is why coverage can fail
-locally while the CI job gets as far as running the tests.
+override is the local counterpart of that: before it existed, coverage failed
+at the first crate locally while the CI job ran the tests.
 
 Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
 full generated workflow locally on Linux.
 
 ## Fast development builds
 
-`make dev-build` and `make dev-test` offer an opt-in, faster iteration loop
-for local debug work. `dev-build` compiles debug binaries and `dev-test` runs
-the test suite; both use the Cranelift codegen backend and the mold linker
-configured in `tools/dev-fast/config.toml`.
+`make dev-build` and `make dev-test` offer an opt-in iteration loop for local
+debug work. `dev-build` compiles debug binaries and `dev-test` runs the test
+suite; both pass `tools/dev-fast/config.toml` to Cargo explicitly.
+
+That fragment sets the same dev-profile Cranelift backend, and now the same
+`cfg(target_os = "linux")` linker selector, that `.cargo/config.toml` already
+applies to every build. The two agree deliberately: `.cargo/config.toml` was
+keyed on the `x86_64-unknown-linux-gnu` triple until #61 widened it, which had
+left other Linux architectures on the default linker.
 
 The `DEV_FAST_CONFIG` variable names that fragment, defaulting to
 `tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly
@@ -104,12 +119,37 @@ codegen backend is unstable. On Linux it also requires the mold linker on
 `PATH`; the fragment gates the linker flag behind a `target_os = "linux"`
 `cfg` table, so other platforms fall back to their default linker.
 
-Cranelift configuration must never be copied into `.cargo/config.toml`.
-Cargo auto-discovers that file and applies it to every invocation, which
-would silently degrade release, coverage, and verification builds to the
-faster but less optimizing backend. Keep the fast-build configuration
-isolated in `tools/dev-fast/config.toml` and reach it only through
-`make dev-build` and `make dev-test`.
+### The codegen-backend standard
+
+Cranelift belongs in `.cargo/config.toml`, and this repository puts it there.
+Dev-profile Cranelift with `mold` as the linker is the estate standard for
+development, test, lint, and proof builds across every Rust repository, so
+Cargo auto-discovering the file is the intent rather than a hazard. `mold`
+supports every Linux architecture, so the linker table is keyed on
+`cfg(target_os = "linux")`; a target-triple table is for a flag that is
+genuinely architecture-specific. The test profile inherits its codegen backend
+from dev, which is why `make test` gets Cranelift without naming it.
+
+Two kinds of build must not use Cranelift:
+
+- **Release builds.** `--release` selects the release profile, which
+  `.cargo/config.toml` does not configure, so release builds already use LLVM.
+  Nothing has to be done for this.
+- **Coverage runs.** `-Cinstrument-coverage` is an LLVM feature Cranelift does
+  not implement, so a coverage build must override the backend for that
+  invocation. In CI this is already handled: the shared `generate-coverage`
+  action detects Cranelift by scanning `.cargo/config.toml` and the manifest's
+  `[profile.*]` sections, then exports `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm`
+  and the `TEST` equivalent before building. Locally the `coverage` recipe sets
+  `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm` itself, added in #59 and asserted by
+  `tests/coverage_contract.rs`.
+
+An earlier version of this guide, and the header of
+`tools/dev-fast/config.toml`, stated the opposite rule: that Cranelift must
+never be copied into `.cargo/config.toml` because Cargo would apply it to
+release, coverage and verification builds. That rule was in error and is
+withdrawn (#60). Release builds were never affected, and coverage has an
+explicit override rather than a silent degradation.
 
 ## Spelling policy
 

@@ -4,6 +4,21 @@ codegen-backend = true
 [profile.dev]
 codegen-backend = "cranelift"
 
-[target.x86_64-unknown-linux-gnu]
+# mold is the estate's default linker and supports every Linux architecture,
+# so the table is keyed on the operating system rather than on one triple:
+# `x86_64-unknown-linux-gnu` alone left aarch64 Linux on the default linker.
+# Cargo honours both `linker` and `rustflags` in a `cfg` table, and this
+# matches the selector `tools/dev-fast/config.toml` already uses. Keep a
+# target-triple table only for a flag that is genuinely architecture-specific.
+#
+# This selects clang and mold for any Linux target, which is correct for a
+# native build because clang defaults to the host triple. Cross-compiling to a
+# non-host Linux target would also match, and clang would then need `--target`
+# and a sysroot that nothing here supplies. Nothing in this repository
+# cross-compiles: every workflow job runs on `ubuntu-latest`, no target is
+# passed anywhere, and `rust-toolchain.toml` installs no extra targets. Add
+# those settings alongside the first cross target, rather than discovering it
+# at link time.
+[target.'cfg(target_os = "linux")']
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]

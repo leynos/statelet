@@ -1,13 +1,24 @@
 # Canonical opt-in Cargo configuration fragment for accelerated local debug
 # builds.
 #
-# This configuration is deliberately kept out of `.cargo/config.toml`.
-# Cargo auto-discovers that path, so anything placed there applies to
-# release packaging, coverage, and verification builds, which must keep
-# the supported LLVM backend and platform linker. In a consuming
-# repository this fragment lives at `tools/dev-fast/config.toml` and is
-# passed explicitly with `cargo --config tools/dev-fast/config.toml ...`
-# from `make dev-build` and `make dev-test`.
+# This fragment is passed to Cargo explicitly, with
+# `cargo --config tools/dev-fast/config.toml ...` from `make dev-build` and
+# `make dev-test`, rather than being auto-discovered.
+#
+# An earlier version of this header stated that the configuration was
+# deliberately kept out of `.cargo/config.toml` because Cargo would otherwise
+# apply it to release packaging, coverage and verification builds. That was in
+# error and is withdrawn (statelet#60). Dev-profile Cranelift with mold is the
+# estate standard for development, test, lint, and proof builds, and this
+# repository's `.cargo/config.toml` sets it for that reason. Release builds are
+# unaffected, because `--release` selects a profile neither file configures,
+# and coverage overrides the backend explicitly for its own invocation because
+# `-Cinstrument-coverage` is LLVM-specific.
+#
+# What this fragment still adds over `.cargo/config.toml` is the linker
+# selector below: a `cfg(target_os = "linux")` table rather than the
+# `x86_64-unknown-linux-gnu` triple, so it also covers other Linux
+# architectures.
 #
 # Repositories that set repository-wide `rustflags` in `.cargo/config.toml`
 # must restate them in the target table below. Cargo joins the rustflags of
