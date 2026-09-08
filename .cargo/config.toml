@@ -10,6 +10,15 @@ codegen-backend = "cranelift"
 # Cargo honours both `linker` and `rustflags` in a `cfg` table, and this
 # matches the selector `tools/dev-fast/config.toml` already uses. Keep a
 # target-triple table only for a flag that is genuinely architecture-specific.
+#
+# This selects clang and mold for any Linux target, which is correct for a
+# native build because clang defaults to the host triple. Cross-compiling to a
+# non-host Linux target would also match, and clang would then need `--target`
+# and a sysroot that nothing here supplies. Nothing in this repository
+# cross-compiles: every workflow job runs on `ubuntu-latest`, no target is
+# passed anywhere, and `rust-toolchain.toml` installs no extra targets. Add
+# those settings alongside the first cross target, rather than discovering it
+# at link time.
 [target.'cfg(target_os = "linux")']
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]

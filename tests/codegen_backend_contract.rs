@@ -52,6 +52,26 @@ fn string_at<'a>(root: &'a Value, path: &[&str], key: &str) -> Option<&'a str> {
     table(root, path)?.get(key)?.as_str()
 }
 
+/// Joins a target table's `rustflags` array into one string for searching.
+fn rustflags(target: &Value) -> String {
+    target
+        .get("rustflags")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .unwrap_or_default()
+}
+
+/// Whether a target table chooses a linker, by driver or by `-fuse-ld` flag.
+fn selects_a_linker(target: &Value) -> bool {
+    target.get("linker").is_some() || rustflags(target).contains("-fuse-ld=")
+}
+
 #[test]
 fn the_dev_profile_uses_cranelift() {
     let config = config().expect("`.cargo/config.toml` must be valid TOML");
@@ -130,16 +150,47 @@ fn the_linker_selector_covers_every_linux_architecture() {
         "the Linux linker settings must be keyed on `{LINUX_TARGET}`, not on one target \
          triple:\n{CARGO_CONFIG}"
     );
-    let triples: Vec<&String> = targets
-        .keys()
-        .filter(|key| key.ends_with("-linux-gnu") || key.ends_with("-linux-musl"))
+    // A Linux target-triple table is legitimate for a genuinely
+    // architecture-specific setting. What must not reappear there is the
+    // linker selection, because that is what narrowed it before.
+    let narrowed: Vec<&String> = targets
+        .iter()
+        .filter(|(key, _)| key.ends_with("-linux-gnu") || key.ends_with("-linux-musl"))
+        .filter(|(_, value)| selects_a_linker(value))
+        .map(|(key, _)| key)
         .collect();
     assert!(
-        triples.is_empty(),
-        "a Linux target-triple table is a narrowing unless it carries a genuinely \
-         architecture-specific flag; the linker settings belong in the cfg table, found \
-         {triples:?}"
+        narrowed.is_empty(),
+        "the linker selection belongs in the `{LINUX_TARGET}` table, not in a target-triple \
+         table; found it in {narrowed:?}"
     );
+}
+
+#[test]
+fn a_triple_table_is_allowed_unless_it_takes_back_the_linker() {
+    // Mutation check for the selector assertion. A target-triple table is
+    // legitimate for an architecture-specific flag; what it must not do is
+    // reclaim the linker, whether by naming a driver or by a `-fuse-ld` flag.
+    let cases = [
+        ("rustflags = [\"-Ctarget-cpu=neoverse-n1\"]", false),
+        ("linker = \"clang\"", true),
+        ("rustflags = [\"-Clink-arg=-fuse-ld=mold\"]", true),
+    ];
+
+    for (body, narrows) in cases {
+        let document = format!("[target.aarch64-unknown-linux-gnu]\n{body}\n");
+        let parsed = parse(&document).expect("valid TOML");
+        let Some(target) = table(&parsed, &["target", "aarch64-unknown-linux-gnu"]) else {
+            panic!("the fixture declares the table: {document}");
+        };
+
+        assert_eq!(
+            selects_a_linker(target),
+            narrows,
+            "{body} should {} count as reclaiming the linker",
+            if narrows { "" } else { "not" }
+        );
+    }
 }
 
 #[test]

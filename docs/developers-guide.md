@@ -57,6 +57,12 @@ standard for development, test, lint, and proof builds. On Linux,
 quickly. That table is keyed on `cfg(target_os = "linux")`, so it covers every
 Linux architecture rather than a single triple.
 
+That selector suits native builds, where clang defaults to the host triple. It
+would also match a cross-compilation to a non-host Linux target, and clang
+would then need a `--target` flag and a sysroot that the configuration does not
+supply. Nothing here cross-compiles today, so adding those settings belongs
+with the first cross target rather than now.
+
 Coverage generation uses `lld` because LLVM coverage tooling expects
 LLVM-compatible linker behaviour, and it overrides the codegen backend as
 described under [the codegen-backend standard](#the-codegen-backend-standard).
