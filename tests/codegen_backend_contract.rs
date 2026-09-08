@@ -1,10 +1,10 @@
 //! Contract test for the repository's codegen-backend and linker standard.
 //!
 //! Dev-profile Cranelift with the mold linker, configured in
-//! `.cargo/config.toml`, is the estate standard for development, test, lint
-//! and proof builds. Release builds use LLVM because `--release` selects a
-//! profile that file does not configure, and coverage overrides the backend
-//! for its own invocation because `-Cinstrument-coverage` is LLVM-specific.
+//! `.cargo/config.toml`, is the standard for development, test, lint, and
+//! proof builds. Release builds use LLVM because `--release` selects a profile
+//! that file does not configure, and coverage runs override the backend for
+//! their own invocation because `-Cinstrument-coverage` is LLVM-specific.
 //!
 //! This is a contract rather than a comment because the repository previously
 //! documented the opposite rule, that Cranelift must never appear in
@@ -12,8 +12,11 @@
 //! and acting on it would silently make every debug build slower while leaving
 //! nothing to fail.
 //!
-//! The assertions read the configuration file rather than describing it, so
-//! they need no toolchain and no build.
+//! The configuration is parsed as TOML rather than searched as text. A
+//! substring search cannot tell a live table from a commented-out one, so
+//! `# [profile.dev]` would satisfy it while Cargo ignored the setting.
+
+use toml::Value;
 
 /// The auto-discovered Cargo configuration, read at compile time.
 ///
@@ -23,55 +26,90 @@
 /// exactly when the contract needs re-checking.
 const CARGO_CONFIG: &str = include_str!("../.cargo/config.toml");
 
-/// Returns the body of a named table, up to the next table header.
-fn table<'a>(config: &'a str, header: &str) -> Option<&'a str> {
-    let after = config.split_once(header)?.1;
-    Some(after.split_once("\n[").map_or(after, |(body, _)| body))
+/// The table key selecting every Linux target, whatever the architecture.
+const LINUX_TARGET: &str = r#"cfg(target_os = "linux")"#;
+
+/// Parses a TOML document into a value that [`table`] can walk.
+///
+/// `toml::from_str` into a `Table` rather than `str::parse::<Value>`, which
+/// parses a bare value rather than a document.
+fn parse(text: &str) -> Result<Value, toml::de::Error> {
+    toml::from_str::<toml::Table>(text).map(Value::Table)
+}
+
+/// Parses the configuration, returning the error rather than unwrapping it.
+///
+/// This is a helper, so a parse failure is the test body's verdict to report.
+fn config() -> Result<Value, toml::de::Error> { parse(CARGO_CONFIG) }
+
+/// Reads a nested table by path, for example `["profile", "dev"]`.
+fn table<'a>(root: &'a Value, path: &[&str]) -> Option<&'a Value> {
+    path.iter().try_fold(root, |value, key| value.get(*key))
+}
+
+/// Reads a string-valued key from a nested table.
+fn string_at<'a>(root: &'a Value, path: &[&str], key: &str) -> Option<&'a str> {
+    table(root, path)?.get(key)?.as_str()
 }
 
 #[test]
 fn the_dev_profile_uses_cranelift() {
-    let Some(profile) = table(CARGO_CONFIG, "[profile.dev]") else {
-        panic!("`.cargo/config.toml` declares no [profile.dev] table:\n{CARGO_CONFIG}");
-    };
+    let config = config().expect("`.cargo/config.toml` must be valid TOML");
 
-    assert!(
-        profile.contains(r#"codegen-backend = "cranelift""#),
-        "[profile.dev] must select Cranelift, the standard for development, test, lint and proof \
-         builds:\n{profile}"
+    assert_eq!(
+        string_at(&config, &["profile", "dev"], "codegen-backend"),
+        Some("cranelift"),
+        "[profile.dev] must select Cranelift, the standard for development, test, lint, and proof \
+         builds:\n{CARGO_CONFIG}"
     );
-    assert!(
-        CARGO_CONFIG.contains("codegen-backend = true"),
-        "the [unstable] table must enable codegen-backend, or Cargo rejects the profile \
+    assert_eq!(
+        table(&config, &["unstable"]).and_then(|t| t.get("codegen-backend")),
+        Some(&Value::Boolean(true)),
+        "[unstable] must enable codegen-backend, or Cargo rejects the profile \
          setting:\n{CARGO_CONFIG}"
     );
 }
 
 #[test]
-fn the_release_profile_is_left_on_the_default_backend() {
-    assert!(
-        table(CARGO_CONFIG, "[profile.release]").is_none(),
-        "`.cargo/config.toml` must not configure the release profile; release builds use \
-         LLVM:\n{CARGO_CONFIG}"
+fn the_release_profile_does_not_select_cranelift() {
+    // The release table is allowed to exist and to carry tuning such as `lto`
+    // or `opt-level`. What it must not do is put release builds on Cranelift.
+    let config = config().expect("`.cargo/config.toml` must be valid TOML");
+    let backend = string_at(&config, &["profile", "release"], "codegen-backend");
+
+    assert_ne!(
+        backend,
+        Some("cranelift"),
+        "release builds must not use Cranelift:\n{CARGO_CONFIG}"
     );
 }
 
-/// The table header selecting every Linux target, whatever the architecture.
-const LINUX_TARGET: &str = r#"[target.'cfg(target_os = "linux")']"#;
-
 #[test]
 fn linux_links_with_mold_through_clang() {
-    let Some(target) = table(CARGO_CONFIG, LINUX_TARGET) else {
+    let config = config().expect("`.cargo/config.toml` must be valid TOML");
+    let Some(target) = table(&config, &["target", LINUX_TARGET]) else {
         panic!("`.cargo/config.toml` declares no Linux target table:\n{CARGO_CONFIG}");
     };
 
-    assert!(
-        target.contains(r#"linker = "clang""#),
+    assert_eq!(
+        target.get("linker").and_then(Value::as_str),
+        Some("clang"),
         "the Linux target must link through clang, which is what invokes mold:\n{target}"
     );
+    let flags = target
+        .get("rustflags")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .unwrap_or_default();
     assert!(
-        target.contains("-fuse-ld=mold"),
-        "the Linux target must select the mold linker:\n{target}"
+        flags.contains("-fuse-ld=mold"),
+        "the Linux target must select the mold linker, got {flags:?}"
     );
 }
 
@@ -80,32 +118,63 @@ fn the_linker_selector_covers_every_linux_architecture() {
     // A target-triple table would leave aarch64 Linux on the default linker,
     // which is the state this configuration was in before #61. mold supports
     // every Linux architecture, so the selector is keyed on the operating
-    // system; asserting the header, not merely the keys inside it, is what
+    // system; asserting the key, not merely the settings inside it, is what
     // makes a narrowing visible.
+    let config = config().expect("`.cargo/config.toml` must be valid TOML");
+    let Some(targets) = table(&config, &["target"]).and_then(Value::as_table) else {
+        panic!("`.cargo/config.toml` declares no [target] tables:\n{CARGO_CONFIG}");
+    };
+
     assert!(
-        CARGO_CONFIG.contains(LINUX_TARGET),
-        "the Linux linker settings must be keyed on `cfg(target_os = \"linux\")`, not on one \
-         target triple:\n{CARGO_CONFIG}"
+        targets.contains_key(LINUX_TARGET),
+        "the Linux linker settings must be keyed on `{LINUX_TARGET}`, not on one target \
+         triple:\n{CARGO_CONFIG}"
     );
+    let triples: Vec<&String> = targets
+        .keys()
+        .filter(|key| key.ends_with("-linux-gnu") || key.ends_with("-linux-musl"))
+        .collect();
     assert!(
-        !CARGO_CONFIG.contains("[target.x86_64-unknown-linux-gnu]"),
-        "an x86_64-only table is a narrowing unless it carries a genuinely architecture-specific \
-         flag; the linker settings belong in the cfg table:\n{CARGO_CONFIG}"
+        triples.is_empty(),
+        "a Linux target-triple table is a narrowing unless it carries a genuinely \
+         architecture-specific flag; the linker settings belong in the cfg table, found \
+         {triples:?}"
     );
 }
 
 #[test]
-fn the_table_reader_stops_at_the_next_header() {
-    // Mutation check: a reader that ran to the end of the file would find a
-    // later table's keys and report them as the requested table's, which would
-    // make every assertion above pass for the wrong reason.
-    let sample = "[profile.dev]\nkey = 1\n\n[target.other]\nlinker = \"clang\"\n";
+fn the_parser_ignores_commented_out_configuration() {
+    // Mutation check for the parsing itself. A substring search would accept
+    // each of these as a live setting, which is what this test exists to stop.
+    let commented = "# [profile.dev]\n# codegen-backend = \"cranelift\"\n";
+    let from_comments = parse(commented).expect("a comment-only document is valid TOML");
 
-    let Some(profile) = table(sample, "[profile.dev]") else {
-        panic!("the reader must find a table that is present");
-    };
+    assert!(table(&from_comments, &["profile", "dev"]).is_none());
 
-    assert!(profile.contains("key = 1"));
-    assert!(!profile.contains("linker"));
-    assert!(table(sample, "[profile.release]").is_none());
+    let live = "[profile.dev]\ncodegen-backend = \"cranelift\"\n";
+    let from_live = parse(live).expect("valid TOML");
+
+    assert_eq!(
+        string_at(&from_live, &["profile", "dev"], "codegen-backend"),
+        Some("cranelift")
+    );
+}
+
+#[test]
+fn the_release_check_tolerates_unrelated_tuning() {
+    // Mutation check for the release assertion: adding `lto` or `opt-level`
+    // must not fail it, but selecting Cranelift must.
+    let tuned = "[profile.release]\nlto = true\nopt-level = 3\n";
+    let from_tuning = parse(tuned).expect("valid TOML");
+    assert_ne!(
+        string_at(&from_tuning, &["profile", "release"], "codegen-backend"),
+        Some("cranelift")
+    );
+
+    let wrong = "[profile.release]\ncodegen-backend = \"cranelift\"\n";
+    let from_cranelift = parse(wrong).expect("valid TOML");
+    assert_eq!(
+        string_at(&from_cranelift, &["profile", "release"], "codegen-backend"),
+        Some("cranelift")
+    );
 }

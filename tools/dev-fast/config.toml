@@ -9,7 +9,7 @@
 # deliberately kept out of `.cargo/config.toml` because Cargo would otherwise
 # apply it to release packaging, coverage and verification builds. That was in
 # error and is withdrawn (statelet#60). Dev-profile Cranelift with mold is the
-# estate standard for development, test, lint and proof builds, and this
+# estate standard for development, test, lint, and proof builds, and this
 # repository's `.cargo/config.toml` sets it for that reason. Release builds are
 # unaffected, because `--release` selects a profile neither file configures,
 # and coverage overrides the backend explicitly for its own invocation because
