@@ -85,4 +85,4 @@ camino = "1.2.5"
 rstest = "0.26.1"
 # The codegen-backend contract parses `.cargo/config.toml` structurally; a
 # substring search would accept a commented-out table as a live one.
-toml = "0.9.8"
+toml = "1.1.4"
