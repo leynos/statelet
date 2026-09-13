@@ -30,7 +30,8 @@ compact and omits build output such as `target/`.
 │   └── lib.rs
 
 ├── tests/
-│   └── stub.rs
+│   ├── stub.rs
+│   └── v0_1_exit_register_contract.rs
 ├── AGENTS.md
 ├── Cargo.toml
 ├── LICENSE
@@ -69,6 +70,8 @@ compact and omits build output such as `target/`.
   behaviour.
 - `tests/stub.rs`: Keeps the generated test directory valid until real tests
   replace it.
+- `tests/v0_1_exit_register_contract.rs`: Guards ADR 003 against drift in its
+  exit register, cited evidence, and roadmap gates.
 - `AGENTS.md`: Provides repository-specific working instructions for agents and
   contributors.
 - `Cargo.toml`: Defines package metadata, dependencies, lint policy, and Cargo

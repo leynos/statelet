@@ -37,12 +37,13 @@ outcome informs every later implementation slice. See terms-of-reference.md
   - Success: one accepted ADR states that Statelet marks boundaries and does
     not own dispatch, events, storage, transition tables, or graph safety:
     [ADR 002](adr-002-transition-boundary-scope.md).
-- [ ] 1.1.2. Record the three possible v0.1 exits.
+- [x] 1.1.2. Record the three possible v0.1 exits.
   - Requires 1.1.1.
   - Capture the "ship nothing", "ship conventions only", and "ship macro"
     outcomes.
   - Success: the exit note maps B1 and B2 to concrete evidence from
-    design.md §11.1 and failure modes in design.md §§13.6-13.7.
+    design.md §11.1 and failure modes in design.md §§13.6-13.7:
+    [ADR 003](adr-003-v0-1-exit-register.md).
 - [ ] 1.1.3. Define the `StateName` consumption question for Phase 2.
   - Requires 1.1.2.
   - Decide what `mdtablefix` must consume to prove whether `&'static str` is
