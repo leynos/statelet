@@ -49,7 +49,6 @@ The main `.github/workflows/ci.yml` workflow deliberately does not run
 `make test WITH_ACT=1`; the separate Act workflow runs those slower
 container-backed checks in parallel.
 
-
 ## V0.1 exit-register contract
 
 `tests/v0_1_exit_register_contract.rs` owns the integration-test scenarios for
