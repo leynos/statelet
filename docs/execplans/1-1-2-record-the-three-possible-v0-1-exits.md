@@ -63,7 +63,7 @@ This is, today, a documentation-heavy and code-empty skeleton:
   `TODO` to delete it once real functionality exists.
 - `Cargo.toml` declares package `statelet` version 0.1.0, edition 2024, licence
   ISC, with an **empty** `[dependencies]` table and only `camino = "1.2.5"` and
-  `rstest = "0.26.1"` under `[dev-dependencies]`.
+  `rstest = "0.27.0"` under `[dev-dependencies]`.
 - `tests/stub.rs` is a disposable placeholder.
 - `tests/dev_fast_contract.rs` is the one real test in the repository. It is a
   *contract test*: it asserts a property of the repository's own configuration
@@ -1044,7 +1044,7 @@ Edit `Cargo.toml`, `[dev-dependencies]` only, leaving `[dependencies]` empty.
 camino = "1.2.5"
 googletest = "0.14.3"
 pretty_assertions = "1.4.1"
-rstest = "0.26.1"
+rstest = "0.27.0"
 ```
 
 ```bash

@@ -440,7 +440,7 @@ sequenceDiagram
     Test->>Test: parse_register(adr_body)
     Test->>Test: check_totality(rows)
     Test->>Test: check_dominance(rows)
-    Test->>Test: check_quoted_clauses(design_body)
+    Test->>Test: check_quoted_clauses(adr_body, design_body, terms_body, context_body)
     Test->>Test: check_gate_bindings(rows, roadmap_body)
     Test->>Dev: report pass/fail with repair hints
 ```
