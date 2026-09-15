@@ -31,7 +31,6 @@ pub(super) enum ParseError {
     UnknownVerdict { found: String },
     UnknownExit { found: String },
 }
-
 impl Display for ParseError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -58,7 +57,6 @@ impl Display for ParseError {
         }
     }
 }
-
 /// Parses a delimited register; for example, a complete ADR yields four rows.
 pub(super) fn parse_register(adr: &str) -> Result<Vec<Row>, ParseError> {
     let Some((_, after_begin)) = adr.split_once(BEGIN) else {
@@ -84,9 +82,6 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
     if !trimmed.starts_with('|') {
         return Ok(None);
     }
-    if trimmed.contains("B1 verdict") || trimmed.contains("---") {
-        return Ok(None);
-    }
     let cells = trimmed
         .trim_matches('|')
         .split('|')
@@ -95,6 +90,13 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
     let [b1, b2, exit, gate, reachable] = cells.as_slice() else {
         return Err(ParseError::MalformedRow { line: line_number });
     };
+    if cells == ["B1 verdict", "B2 verdict", "Exit", "Gate", "Reachable"]
+        || cells
+            .iter()
+            .all(|cell| !cell.is_empty() && cell.bytes().all(|byte| byte == b'-'))
+    {
+        return Ok(None);
+    }
     Ok(Some(Row {
         b1: parse_verdict(b1)?,
         b2: parse_verdict(b2)?,
@@ -240,7 +242,9 @@ pub(super) fn check_quoted_clauses(
         .map_or_else(String::new, |(_, after_heading)| {
             after_heading
                 .lines()
-                .take_while(|line| !line.starts_with('#'))
+                .take_while(|line| {
+                    !line.trim_start_matches(' ').starts_with('#') || line.starts_with("    ")
+                })
                 .collect::<Vec<_>>()
                 .join("\n")
         });
@@ -320,15 +324,6 @@ const fn required_row_gate(row: &Row) -> &'static str {
         Exit::E1 => "G2",
         Exit::E2 | Exit::E3 => "G3",
     }
-}
-pub(super) fn valid_register() -> String {
-    format!(
-        "{BEGIN}\n| B1 verdict | B2 verdict | Exit | Gate | Reachable |\n| --- | --- | --- | --- \
-         | --- |\n| Falsified  | Falsified  | E1 ship nothing          | G2   | yes       |\n| \
-         Falsified  | Held       | E1 ship nothing          | G2   | no        |\n| Held       | \
-         Falsified  | E2 ship conventions only | G3   | yes       |\n| Held       | Held       | \
-         E3 ship macro            | G3   | yes       |\n{END}"
-    )
 }
 fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }
 fn is_unreachable_dominance_row(row: &Row) -> bool {

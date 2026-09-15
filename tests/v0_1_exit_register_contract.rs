@@ -4,9 +4,14 @@
 //! syntax separately from the policies it records, so a malformed table and a
 //! mistaken exit rule report different repairs.
 
+#[path = "v0_1_exit_register_contract/fixtures.rs"]
+mod fixtures;
+#[path = "v0_1_exit_register_contract/regression_controls.rs"]
+mod regression_controls;
 #[path = "v0_1_exit_register_contract/support.rs"]
 mod support;
 
+use fixtures::valid_register;
 use googletest::prelude::*;
 use pretty_assertions::assert_eq;
 use rstest::rstest;
@@ -20,7 +25,6 @@ use support::{
     check_quoted_clauses,
     check_totality,
     parse_register,
-    valid_register,
 };
 
 const ADR: &str = include_str!("../docs/adr-003-v0-1-exit-register.md");
