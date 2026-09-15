@@ -431,12 +431,16 @@ sequenceDiagram
     participant ADR as adr_003_v0_1_exit_register_md
     participant Design as design_md
     participant Roadmap as roadmap_md
+    participant Terms as terms_of_reference_md
+    participant Context as context_md
 
     Dev->>Make: make test
     Make->>Test: run v0_1_exit_register_contract
     Test->>ADR: include_str!("docs/adr-003-v0-1-exit-register.md")
     Test->>Design: include_str!("docs/design.md")
     Test->>Roadmap: include_str!("docs/roadmap.md")
+    Test->>Terms: include_str!("docs/terms-of-reference.md")
+    Test->>Context: include_str!("docs/context.md")
     Test->>Test: parse_register(adr_body)
     Test->>Test: check_totality(rows)
     Test->>Test: check_dominance(rows)
