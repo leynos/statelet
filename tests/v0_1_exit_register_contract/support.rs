@@ -138,34 +138,41 @@ fn parse_reachability(value: &str, line: usize) -> Result<bool, ParseError> {
 }
 /// Validates register coverage; for example, duplicate verdict pairs are rejected.
 pub(super) fn check_totality(rows: &[Row]) -> Result<(), String> {
-    let mut missing = None;
-    let mut duplicate = None;
-    for (b1, b2) in verdict_combinations() {
-        let matches = rows
-            .iter()
-            .filter(|row| row.b1 == b1 && row.b2 == b2)
-            .count();
-        if matches == 0 {
-            missing = Some((b1, b2));
-        }
-        if matches > 1 {
-            duplicate = Some((b1, b2));
-        }
-    }
-    if rows.len() == 4
-        && let Some((b1, b2)) = duplicate
-    {
-        return Err(format!(
+    check_ambiguous_four_row_register(rows)?;
+    check_missing_verdict_combination(rows)?;
+    check_register_row_count(rows)
+}
+/// Rejects four rows with a duplicate pair; for example, Falsified/Held appears twice.
+fn check_ambiguous_four_row_register(rows: &[Row]) -> Result<(), String> {
+    let duplicate = verdict_combinations().into_iter().rfind(|(b1, b2)| {
+        rows.iter()
+            .filter(|row| row.b1 == *b1 && row.b2 == *b2)
+            .count()
+            > 1
+    });
+    match (rows.len(), duplicate) {
+        (4, Some((b1, b2))) => Err(format!(
             "docs/adr-003-v0-1-exit-register.md: ambiguous {b1:?}/{b2:?}. Repair: keep exactly \
              one row for that combination."
-        ));
+        )),
+        _ => Ok(()),
     }
+}
+/// Rejects absent verdict pairs; for example, a missing Held/Held pair fails first.
+fn check_missing_verdict_combination(rows: &[Row]) -> Result<(), String> {
+    let missing = verdict_combinations()
+        .into_iter()
+        .rfind(|(b1, b2)| !rows.iter().any(|row| row.b1 == *b1 && row.b2 == *b2));
     if let Some((b1, b2)) = missing {
         return Err(format!(
             "docs/adr-003-v0-1-exit-register.md: missing {b1:?}/{b2:?}. Repair: add that verdict \
              combination."
         ));
     }
+    Ok(())
+}
+/// Rejects the wrong row count; for example, a fifth register row is invalid.
+fn check_register_row_count(rows: &[Row]) -> Result<(), String> {
     if rows.len() != 4 {
         return Err(
             "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
@@ -177,6 +184,7 @@ pub(super) fn check_totality(rows: &[Row]) -> Result<(), String> {
 }
 /// Enforces dominance and reachability; for example, Falsified/Held stays unreachable.
 pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
+    let is_unreachable = |row: &Row| row.b1 == Verdict::Falsified && row.b2 == Verdict::Held;
     if let Some(row) = rows
         .iter()
         .find(|row| row.b1 == Verdict::Falsified && row.exit != Exit::E1)
@@ -187,10 +195,7 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
             row.b1, row.b2, row.exit
         ));
     }
-    if let Some(row) = rows
-        .iter()
-        .find(|row| is_unreachable_dominance_row(row) && row.reachable)
-    {
+    if let Some(row) = rows.iter().find(|row| is_unreachable(row) && row.reachable) {
         return Err(format!(
             "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked unreachable. Repair: \
              set its Reachable cell to no.",
@@ -199,7 +204,7 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
     }
     if let Some(row) = rows
         .iter()
-        .find(|row| !is_unreachable_dominance_row(row) && !row.reachable)
+        .find(|row| !is_unreachable(row) && !row.reachable)
     {
         return Err(format!(
             "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked reachable. Repair: set \
@@ -328,9 +333,6 @@ pub(super) fn valid_register() -> String {
     )
 }
 fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }
-fn is_unreachable_dominance_row(row: &Row) -> bool {
-    row.b1 == Verdict::Falsified && row.b2 == Verdict::Held
-}
 fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
     let Some((_, after_heading)) = adr.split_once("## Evidence the register preserves") else {
         return Err(
@@ -349,14 +351,13 @@ fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
         .map(fold_whitespace)
         .collect::<Vec<_>>();
     if clauses.is_empty() {
-        Err(
+        return Err(
             "docs/adr-003-v0-1-exit-register.md cites no clauses. Repair: quote each load-bearing \
              source clause in the evidence section."
                 .to_owned(),
-        )
-    } else {
-        Ok(clauses)
+        );
     }
+    Ok(clauses)
 }
 fn gate_task(adr: &str, gate: &str) -> Option<String> {
     adr.lines().find_map(|line| {

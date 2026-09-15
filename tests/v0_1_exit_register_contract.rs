@@ -207,26 +207,22 @@ fn gate_bindings_reject_unknown_adr_gate_table_identifier() -> Result<(), String
 /// Rejects a roadmap task that has already been marked complete.
 #[test]
 fn gate_bindings_reject_ticked_roadmap_task() -> Result<(), String> {
-    let rows = live_rows()?;
     let ticked_task = ROADMAP.replace("- [ ] 3.1.3.", "- [x] 3.1.3.");
-    assert_eq!(
-        check_gate_bindings(&rows, ADR, &ticked_task),
-        Err(
-            "docs/roadmap.md: task 3.1.3 is absent or already ticked. Repair: retain the live, \
-             unticked gate named by ADR 003."
-                .to_owned()
-        )
-    );
-    Ok(())
+    assert_roadmap_task_is_rejected(&ticked_task)
 }
 
 /// Rejects a prefix-only task match after the required task is renumbered.
 #[test]
 fn gate_bindings_reject_a_roadmap_task_prefix() -> Result<(), String> {
-    let rows = live_rows()?;
     let renumbered_task = ROADMAP.replace("- [ ] 3.1.3.", "- [ ] 3.1.30.");
+    assert_roadmap_task_is_rejected(&renumbered_task)
+}
+
+/// Asserts that a changed G2 task is unavailable; for example, a ticked task fails.
+fn assert_roadmap_task_is_rejected(roadmap: &str) -> Result<(), String> {
+    let rows = live_rows()?;
     assert_eq!(
-        check_gate_bindings(&rows, ADR, &renumbered_task),
+        check_gate_bindings(&rows, ADR, roadmap),
         Err(
             "docs/roadmap.md: task 3.1.3 is absent or already ticked. Repair: retain the live, \
              unticked gate named by ADR 003."
