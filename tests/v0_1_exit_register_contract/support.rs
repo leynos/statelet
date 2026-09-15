@@ -63,6 +63,7 @@ impl Display for ParseError {
     }
 }
 
+/// Parses a delimited register; for example, a complete ADR yields four rows.
 pub(super) fn parse_register(adr: &str) -> Result<Vec<Row>, ParseError> {
     let Some((_, after_begin)) = adr.split_once(BEGIN) else {
         return Err(ParseError::MissingDelimiters);
@@ -81,7 +82,7 @@ pub(super) fn parse_register(adr: &str) -> Result<Vec<Row>, ParseError> {
         Ok(rows)
     }
 }
-
+/// Converts one table line into a row; for example, non-table prose yields `None`.
 fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseError> {
     let trimmed = line.trim();
     if !trimmed.starts_with('|') {
@@ -106,11 +107,11 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
         reachable: parse_reachability(reachable, line_number)?,
     }))
 }
-
+/// Recognises the register table's header and divider rows.
 fn is_register_header_or_divider(row: &str) -> bool {
     row.contains("B1 verdict") || row.contains("---")
 }
-
+/// Parses a verdict cell; for example, `Held` becomes `Verdict::Held`.
 fn parse_verdict(value: &str) -> Result<Verdict, ParseError> {
     match value {
         "Falsified" => Ok(Verdict::Falsified),
@@ -120,7 +121,7 @@ fn parse_verdict(value: &str) -> Result<Verdict, ParseError> {
         }),
     }
 }
-
+/// Parses an exit cell; for example, `E3 ship macro` becomes `Exit::E3`.
 fn parse_exit(value: &str) -> Result<Exit, ParseError> {
     match value {
         "E1 ship nothing" => Ok(Exit::E1),
@@ -131,7 +132,7 @@ fn parse_exit(value: &str) -> Result<Exit, ParseError> {
         }),
     }
 }
-
+/// Parses reachability; for example, `no` becomes `false`.
 fn parse_reachability(value: &str, line: usize) -> Result<bool, ParseError> {
     match value {
         "yes" => Ok(true),
@@ -140,6 +141,7 @@ fn parse_reachability(value: &str, line: usize) -> Result<bool, ParseError> {
     }
 }
 
+/// Validates register coverage; for example, duplicate verdict pairs are rejected.
 pub(super) fn check_totality(rows: &[Row]) -> Result<(), String> {
     let mut missing = None;
     let mut duplicate = None;
@@ -179,6 +181,7 @@ pub(super) fn check_totality(rows: &[Row]) -> Result<(), String> {
     Ok(())
 }
 
+/// Enforces dominance and reachability; for example, Falsified/Held stays unreachable.
 pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
     if let Some(row) = rows
         .iter()
@@ -213,6 +216,7 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
     Ok(())
 }
 
+/// Validates source evidence; for example, fabricated ADR citations are rejected.
 pub(super) fn check_quoted_clauses(
     adr: &str,
     design: &str,
@@ -252,11 +256,13 @@ pub(super) fn check_quoted_clauses(
     Ok(())
 }
 
+/// Validates gate bindings; for example, a renumbered roadmap task is rejected.
 pub(super) fn check_gate_bindings(rows: &[Row], adr: &str, roadmap: &str) -> Result<(), String> {
     check_gate_tasks(adr, roadmap)?;
     check_row_gates(rows)
 }
 
+/// Resolves each ADR gate; for example, G2 must retain task 3.1.3.
 fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
     for (gate, task) in GATES {
         if gate_task(adr, gate).as_deref() != Some(task) {
@@ -278,6 +284,7 @@ fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Validates row gates; for example, E3 must select G3 rather than G1.
 fn check_row_gates(rows: &[Row]) -> Result<(), String> {
     for row in rows {
         if !GATES.iter().any(|(gate, _)| *gate == row.gate) {
@@ -299,6 +306,7 @@ fn check_row_gates(rows: &[Row]) -> Result<(), String> {
     Ok(())
 }
 
+/// Selects the policy gate; for example, E1 rows use G2.
 const fn required_row_gate(row: &Row) -> &'static str {
     match row.exit {
         Exit::E1 => "G2",

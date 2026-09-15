@@ -29,6 +29,7 @@ const TERMS: &str = include_str!("../docs/terms-of-reference.md");
 const CONTEXT: &str = include_str!("../docs/context.md");
 const ROADMAP: &str = include_str!("../docs/roadmap.md");
 
+/// Parses the live ADR; for example, its complete register yields four rows.
 fn live_rows() -> Vec<Row> {
     match parse_register(ADR) {
         Ok(rows) => rows,
@@ -36,6 +37,7 @@ fn live_rows() -> Vec<Row> {
     }
 }
 
+/// Produces a syntactically valid register whose dominated row selects E3.
 fn dominance_invalid_rows() -> Vec<Row> {
     let source = valid_register().replace(
         "| Falsified  | Held       | E1 ship nothing          | G2   | no        |",
@@ -47,6 +49,7 @@ fn dominance_invalid_rows() -> Vec<Row> {
     }
 }
 
+/// Covers each final B1/B2 verdict combination exactly once.
 #[rstest]
 #[case::b1_and_b2_falsified(Verdict::Falsified, Verdict::Falsified)]
 #[case::b1_falsified_b2_held(Verdict::Falsified, Verdict::Held)]
@@ -64,6 +67,7 @@ fn totality_holds(#[case] b1: Verdict, #[case] b2: Verdict) {
     );
 }
 
+/// Enforces B1 dominance and checks its prescribed repair message.
 #[test]
 fn dominance_holds() {
     let rows = live_rows();
@@ -79,6 +83,7 @@ fn dominance_holds() {
     );
 }
 
+/// Rejects a row that marks the dominated Falsified/Held combination reachable.
 #[test]
 fn dominance_rejects_a_reachable_dead_row() {
     let source = valid_register().replace(
@@ -99,6 +104,7 @@ fn dominance_rejects_a_reachable_dead_row() {
     );
 }
 
+/// Resolves ADR evidence and rejects rewritten, relocated, and fabricated clauses.
 #[test]
 fn quoted_passages_still_resolve() {
     check_quoted_clauses(ADR, DESIGN, TERMS, CONTEXT).expect("ADR 003 citations must resolve");
@@ -145,6 +151,7 @@ fn quoted_passages_still_resolve() {
     );
 }
 
+/// Resolves every ADR gate to its live, unticked roadmap task.
 #[test]
 fn gate_bindings_resolve() {
     let rows = live_rows();
@@ -152,6 +159,7 @@ fn gate_bindings_resolve() {
         .expect("ADR 003 gates must resolve to live roadmap tasks");
 }
 
+/// Rejects a gate table entry whose task identifier differs from its binding.
 #[test]
 fn gate_bindings_reject_wrong_adr_task() {
     let rows = live_rows();
@@ -166,6 +174,7 @@ fn gate_bindings_reject_wrong_adr_task() {
     );
 }
 
+/// Rejects an ADR gate table that omits the required G2 identifier.
 #[test]
 fn gate_bindings_reject_unknown_adr_gate_table_identifier() {
     let rows = live_rows();
@@ -183,6 +192,7 @@ fn gate_bindings_reject_unknown_adr_gate_table_identifier() {
     );
 }
 
+/// Rejects a roadmap task that has already been marked complete.
 #[test]
 fn gate_bindings_reject_ticked_roadmap_task() {
     let rows = live_rows();
@@ -197,6 +207,7 @@ fn gate_bindings_reject_ticked_roadmap_task() {
     );
 }
 
+/// Rejects a prefix-only task match after the required task is renumbered.
 #[test]
 fn gate_bindings_reject_a_roadmap_task_prefix() {
     let rows = live_rows();
@@ -211,6 +222,7 @@ fn gate_bindings_reject_a_roadmap_task_prefix() {
     );
 }
 
+/// Rejects a register row that uses an identifier outside the gate table.
 #[test]
 fn gate_bindings_reject_unknown_row_gate() {
     let rows = parse_register(&valid_register().replace("G2", "G9"))
@@ -225,6 +237,7 @@ fn gate_bindings_reject_unknown_row_gate() {
     );
 }
 
+/// Rejects a row that selects a known gate for the wrong exit path.
 #[test]
 fn gate_bindings_reject_wrong_known_row_gate() {
     let rows = parse_register(&valid_register().replace(
@@ -242,6 +255,7 @@ fn gate_bindings_reject_wrong_known_row_gate() {
     );
 }
 
+/// Rejects a B1 row copied outside section 11.1 of the design document.
 #[test]
 fn quoted_passages_reject_a_bet_outside_its_table() {
     let b1_row = "| B1  | A real segment prefers handwritten state machines and wants shared \
@@ -261,6 +275,7 @@ fn quoted_passages_reject_a_bet_outside_its_table() {
     );
 }
 
+/// Matches each handwritten exit expectation against the parsed register.
 #[rstest]
 #[case(Verdict::Falsified, Verdict::Falsified, Exit::E1)]
 #[case(Verdict::Falsified, Verdict::Held, Exit::E1)]
@@ -271,6 +286,7 @@ fn hand_written_cases_match_register(#[case] b1: Verdict, #[case] b2: Verdict, #
         .expect("the handwritten expectation must match the live register");
 }
 
+/// Rejects handwritten expectations when the dominated row selects E3.
 #[test]
 fn hand_written_cases_reject_a_dominance_invalid_register() {
     assert_eq!(
@@ -288,6 +304,7 @@ fn hand_written_cases_reject_a_dominance_invalid_register() {
     );
 }
 
+/// Compares one parsed row with its expected exit; for example, Held/Held maps to E3.
 fn check_hand_written_case(
     rows: &[Row],
     b1: Verdict,
@@ -308,6 +325,7 @@ fn check_hand_written_case(
     }
 }
 
+/// Rejects empty, malformed, and unknown-value register fixtures.
 #[rstest]
 #[case::empty("", ParseError::MissingDelimiters)]
 #[case::empty_block(
@@ -320,6 +338,7 @@ fn parser_rejects_malformed_registers(#[case] source: &str, #[case] expected: Pa
     assert_eq!(parse_register(source), Err(expected));
 }
 
+/// Distinguishes missing, duplicate, and extra-row totality failures.
 #[test]
 fn totality_rejects_missing_duplicate_and_extra_rows() {
     let missing = valid_register().replace(
