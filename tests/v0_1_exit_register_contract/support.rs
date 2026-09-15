@@ -93,11 +93,7 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
     let [b1, b2, exit, gate, reachable] = cells.as_slice() else {
         return Err(ParseError::MalformedRow { line: line_number });
     };
-    if cells == ["B1 verdict", "B2 verdict", "Exit", "Gate", "Reachable"]
-        || cells
-            .iter()
-            .all(|cell| !cell.is_empty() && cell.bytes().all(|byte| byte == b'-'))
-    {
+    if is_structural_row(&cells) {
         return Ok(None);
     }
     Ok(Some(Row {
@@ -107,6 +103,21 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
         gate: (*gate).to_owned(),
         reachable: parse_reachability(reachable, line_number)?,
     }))
+}
+/// Identifies a structural table row rather than an exit-register data row.
+fn is_structural_row(cells: &[&str]) -> bool {
+    is_register_header(cells) || is_register_divider(cells)
+}
+/// Identifies the exact exit-register header row.
+fn is_register_header(cells: &[&str]) -> bool {
+    cells == ["B1 verdict", "B2 verdict", "Exit", "Gate", "Reachable"]
+}
+/// Identifies a five-cell divider whose cells are each made entirely of hyphens.
+fn is_register_divider(cells: &[&str]) -> bool {
+    cells.iter().all(|cell| {
+        cell.strip_prefix('-')
+            .is_some_and(|rest| rest.bytes().all(|byte| byte == b'-'))
+    })
 }
 /// Parses a verdict cell; for example, `Held` becomes `Verdict::Held`.
 fn parse_verdict(value: &str) -> Result<Verdict, ParseError> {
