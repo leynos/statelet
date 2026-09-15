@@ -137,6 +137,18 @@ fn quoted_passages_still_resolve() {
                 .to_owned()
         )
     );
+    let split_case_rewritten = DESIGN.replace(
+        "in either validation\nexample",
+        "in both validation\nexamples",
+    );
+    assert_eq!(
+        check_quoted_clauses(ADR, &split_case_rewritten, TERMS, CONTEXT),
+        Err(
+            "docs/design.md §13.7 does not record the R1 split-case rule. Repair: amend section \
+             13.7 to say either validation example."
+                .to_owned()
+        )
+    );
     let invented_citation = ADR.replace(
         "both improve without framework adoption",
         "a made-up validation clause",

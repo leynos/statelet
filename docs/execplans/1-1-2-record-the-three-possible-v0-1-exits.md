@@ -55,23 +55,29 @@ transition tables, or graph safety. The glossary for all such terms is
 `docs/context.md`; treat it as normative and cite it rather than redefining
 terms locally.
 
-### The current state of the repository
+### At plan inception: current state of the repository
 
-This is, today, a documentation-heavy and code-empty skeleton:
+At plan inception, this was a documentation-heavy and code-empty skeleton:
 
 - `src/lib.rs` contains a single nine-line stub, `greet()`, marked with a
   `TODO` to delete it once real functionality exists.
 - `Cargo.toml` declares package `statelet` version 0.1.0, edition 2024, licence
   ISC, with an **empty** `[dependencies]` table and only `camino = "1.2.5"` and
-  `rstest = "0.27.0"` under `[dev-dependencies]`.
+  `rstest = "0.27.0"` under `[dev-dependencies]`. The delivered work added
+  `googletest` and `pretty_assertions` as test-only dependencies and changed
+  `Cargo.lock`; the later `toml` dependency belongs to the separate
+  codegen-backend contract.
 - `tests/stub.rs` is a disposable placeholder.
-- `tests/dev_fast_contract.rs` is the one real test in the repository. It is a
-  *contract test*: it asserts a property of the repository's own configuration
-  rather than of runtime behaviour. Read it before starting; this plan follows
-  its style closely.
+- At plan inception, `tests/dev_fast_contract.rs` was the repository's only
+  real test. It is a *contract test*: it asserts a property of the repository's
+  own configuration rather than of runtime behaviour. The delivered work added
+  the v0.1 exit-register contract test and its private support module; separate
+  codegen-backend and coverage contract tests are outside this historical
+  snapshot.
 
-There is no workspace, no proc-macro crate, and no runtime API. Everything this
-plan touches is documentation plus one new integration test.
+There is no workspace, no proc-macro crate, and no runtime API. The plan's
+touched set is documentation, test-only Cargo metadata including `Cargo.lock`,
+and one new integration contract test with its private support module.
 
 ### The documents this plan depends on
 
@@ -212,9 +218,10 @@ Reads only: `docs/design.md`, `docs/terms-of-reference.md`,
 `.markdownlint-cli2.jsonc`.
 
 Creates: `docs/adr-003-v0-1-exit-register.md`;
-`tests/v0_1_exit_register_contract.rs`.
+`tests/v0_1_exit_register_contract.rs`;
+`tests/v0_1_exit_register_contract/support.rs`.
 
-Edits: `Cargo.toml` (dev-dependencies only), `docs/context.md`,
+Edits: `Cargo.toml` (dev-dependencies only), `Cargo.lock`, `docs/context.md`,
 `docs/contents.md`, `docs/design.md`, `docs/terms-of-reference.md`,
 `docs/roadmap.md`, `docs/users-guide.md`, `docs/developers-guide.md`,
 `docs/repository-layout.md`.
