@@ -5,20 +5,17 @@ use std::fmt::{self, Display, Formatter};
 const BEGIN: &str = "<!-- exit-register:begin -->";
 const END: &str = "<!-- exit-register:end -->";
 const GATES: [(&str, &str); 3] = [("G1", "2.2.3"), ("G2", "3.1.3"), ("G3", "4.3.1")];
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(super) enum Verdict {
     Falsified,
     Held,
 }
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum Exit {
     E1,
     E2,
     E3,
 }
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct Row {
     pub(super) b1: Verdict,
@@ -27,7 +24,6 @@ pub(super) struct Row {
     gate: String,
     reachable: bool,
 }
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum ParseError {
     MissingDelimiters,
@@ -173,18 +169,17 @@ fn check_missing_verdict_combination(rows: &[Row]) -> Result<(), String> {
 }
 /// Rejects the wrong row count; for example, a fifth register row is invalid.
 fn check_register_row_count(rows: &[Row]) -> Result<(), String> {
-    if rows.len() != 4 {
-        return Err(
-            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
-             provide one row for each B1/B2 verdict combination."
-                .to_owned(),
-        );
+    if rows.len() == 4 {
+        return Ok(());
     }
-    Ok(())
+    Err(
+        "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
+         provide one row for each B1/B2 verdict combination."
+            .to_owned(),
+    )
 }
 /// Enforces dominance and reachability; for example, Falsified/Held stays unreachable.
 pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
-    let is_unreachable = |row: &Row| row.b1 == Verdict::Falsified && row.b2 == Verdict::Held;
     if let Some(row) = rows
         .iter()
         .find(|row| row.b1 == Verdict::Falsified && row.exit != Exit::E1)
@@ -195,7 +190,10 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
             row.b1, row.b2, row.exit
         ));
     }
-    if let Some(row) = rows.iter().find(|row| is_unreachable(row) && row.reachable) {
+    if let Some(row) = rows
+        .iter()
+        .find(|row| is_unreachable_dominance_row(row) && row.reachable)
+    {
         return Err(format!(
             "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked unreachable. Repair: \
              set its Reachable cell to no.",
@@ -204,7 +202,7 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
     }
     if let Some(row) = rows
         .iter()
-        .find(|row| !is_unreachable(row) && !row.reachable)
+        .find(|row| !is_unreachable_dominance_row(row) && !row.reachable)
     {
         return Err(format!(
             "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked reachable. Repair: set \
@@ -333,6 +331,9 @@ pub(super) fn valid_register() -> String {
     )
 }
 fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }
+fn is_unreachable_dominance_row(row: &Row) -> bool {
+    row.b1 == Verdict::Falsified && row.b2 == Verdict::Held
+}
 fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
     let Some((_, after_heading)) = adr.split_once("## Evidence the register preserves") else {
         return Err(
