@@ -88,7 +88,7 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
     if !trimmed.starts_with('|') {
         return Ok(None);
     }
-    if is_register_header_or_divider(trimmed) {
+    if trimmed.contains("B1 verdict") || trimmed.contains("---") {
         return Ok(None);
     }
     let cells = trimmed
@@ -106,10 +106,6 @@ fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseErr
         gate: (*gate).to_owned(),
         reachable: parse_reachability(reachable, line_number)?,
     }))
-}
-/// Recognizes the register table's header and divider rows.
-fn is_register_header_or_divider(row: &str) -> bool {
-    row.contains("B1 verdict") || row.contains("---")
 }
 /// Parses a verdict cell; for example, `Held` becomes `Verdict::Held`.
 fn parse_verdict(value: &str) -> Result<Verdict, ParseError> {
@@ -238,12 +234,14 @@ pub(super) fn check_quoted_clauses(
     }
     let split_case_section = design
         .split_once("### 13.7 Conventions baseline is also too weak")
-        .map_or("", |(_, after_heading)| {
+        .map_or_else(String::new, |(_, after_heading)| {
             after_heading
-                .split_once("\n### ")
-                .map_or(after_heading, |(section, _)| section)
+                .lines()
+                .take_while(|line| !line.starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n")
         });
-    if !fold_whitespace(split_case_section).contains("in either validation example") {
+    if !fold_whitespace(&split_case_section).contains("in either validation example") {
         return Err(
             "docs/design.md §13.7 does not record the R1 split-case rule. Repair: amend section \
              13.7 to say either validation example."

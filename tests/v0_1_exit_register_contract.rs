@@ -30,33 +30,25 @@ const CONTEXT: &str = include_str!("../docs/context.md");
 const ROADMAP: &str = include_str!("../docs/roadmap.md");
 
 /// Parses the live ADR; for example, its complete register yields four rows.
-fn live_rows() -> Vec<Row> {
-    match parse_register(ADR) {
-        Ok(rows) => rows,
-        Err(error) => panic!("{error}"),
-    }
+fn live_rows() -> Result<Vec<Row>, String> {
+    parse_register(ADR).map_err(|error| error.to_string())
 }
-
 /// Produces a syntactically valid register whose dominated row selects E3.
-fn dominance_invalid_rows() -> Vec<Row> {
+fn dominance_invalid_rows() -> Result<Vec<Row>, String> {
     let source = valid_register().replace(
         "| Falsified  | Held       | E1 ship nothing          | G2   | no        |",
         "| Falsified  | Held       | E3 ship macro            | G2   | no        |",
     );
-    match parse_register(&source) {
-        Ok(rows) => rows,
-        Err(error) => panic!("{error}"),
-    }
+    parse_register(&source).map_err(|error| error.to_string())
 }
-
 /// Covers each final B1/B2 verdict combination exactly once.
 #[rstest]
 #[case::b1_and_b2_falsified(Verdict::Falsified, Verdict::Falsified)]
 #[case::b1_falsified_b2_held(Verdict::Falsified, Verdict::Held)]
 #[case::b1_held_b2_falsified(Verdict::Held, Verdict::Falsified)]
 #[case::b1_and_b2_held(Verdict::Held, Verdict::Held)]
-fn totality_holds(#[case] b1: Verdict, #[case] b2: Verdict) {
-    let rows = live_rows();
+fn totality_holds(#[case] b1: Verdict, #[case] b2: Verdict) -> Result<(), String> {
+    let rows = live_rows()?;
     check_totality(&rows)
         .expect("ADR 003 must provide one row for every final verdict combination");
     assert_that!(
@@ -65,14 +57,15 @@ fn totality_holds(#[case] b1: Verdict, #[case] b2: Verdict) {
             .count(),
         eq(1)
     );
+    Ok(())
 }
 
 /// Enforces B1 dominance and checks its prescribed repair message.
 #[test]
-fn dominance_holds() {
-    let rows = live_rows();
+fn dominance_holds() -> Result<(), String> {
+    let rows = live_rows()?;
     check_dominance(&rows).expect("a falsified B1 must choose the off-ramp");
-    let invalid = dominance_invalid_rows();
+    let invalid = dominance_invalid_rows()?;
     assert_eq!(
         check_dominance(&invalid),
         Err(
@@ -81,19 +74,17 @@ fn dominance_holds() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a row that marks the dominated Falsified/Held combination reachable.
 #[test]
-fn dominance_rejects_a_reachable_dead_row() {
+fn dominance_rejects_a_reachable_dead_row() -> Result<(), String> {
     let source = valid_register().replace(
         "| Falsified  | Held       | E1 ship nothing          | G2   | no        |",
         "| Falsified  | Held       | E1 ship nothing          | G2   | yes       |",
     );
-    let invalid = match parse_register(&source) {
-        Ok(rows) => rows,
-        Err(error) => panic!("{error}"),
-    };
+    let invalid = parse_register(&source).map_err(|error| error.to_string())?;
     assert_eq!(
         check_dominance(&invalid),
         Err(
@@ -102,6 +93,7 @@ fn dominance_rejects_a_reachable_dead_row() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Resolves ADR evidence and rejects rewritten, relocated, and fabricated clauses.
@@ -137,10 +129,15 @@ fn quoted_passages_still_resolve() {
                 .to_owned()
         )
     );
-    let split_case_rewritten = DESIGN.replace(
-        "in either validation\nexample",
-        "in both validation\nexamples",
-    );
+    let split_case_rewritten = DESIGN
+        .replace(
+            "in either validation\nexample",
+            "in both validation\nexamples",
+        )
+        .replace(
+            "## 14. Deferred decisions",
+            "## 14. Deferred decisions\n\nin either validation example",
+        );
     assert_eq!(
         check_quoted_clauses(ADR, &split_case_rewritten, TERMS, CONTEXT),
         Err(
@@ -165,16 +162,17 @@ fn quoted_passages_still_resolve() {
 
 /// Resolves every ADR gate to its live, unticked roadmap task.
 #[test]
-fn gate_bindings_resolve() {
-    let rows = live_rows();
+fn gate_bindings_resolve() -> Result<(), String> {
+    let rows = live_rows()?;
     check_gate_bindings(&rows, ADR, ROADMAP)
         .expect("ADR 003 gates must resolve to live roadmap tasks");
+    Ok(())
 }
 
 /// Rejects a gate table entry whose task identifier differs from its binding.
 #[test]
-fn gate_bindings_reject_wrong_adr_task() {
-    let rows = live_rows();
+fn gate_bindings_reject_wrong_adr_task() -> Result<(), String> {
+    let rows = live_rows()?;
     let changed_gate = ADR.replace("3.1.3", "3.1.4");
     assert_eq!(
         check_gate_bindings(&rows, &changed_gate, ROADMAP),
@@ -184,12 +182,13 @@ fn gate_bindings_reject_wrong_adr_task() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects an ADR gate table that omits the required G2 identifier.
 #[test]
-fn gate_bindings_reject_unknown_adr_gate_table_identifier() {
-    let rows = live_rows();
+fn gate_bindings_reject_unknown_adr_gate_table_identifier() -> Result<(), String> {
+    let rows = live_rows()?;
     let changed_gate = ADR.replace(
         "| G2   | 3.1.3        | B1 across both validation examples                             |",
         "| G9   | 3.1.3        | B1 across both validation examples                             |",
@@ -202,12 +201,13 @@ fn gate_bindings_reject_unknown_adr_gate_table_identifier() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a roadmap task that has already been marked complete.
 #[test]
-fn gate_bindings_reject_ticked_roadmap_task() {
-    let rows = live_rows();
+fn gate_bindings_reject_ticked_roadmap_task() -> Result<(), String> {
+    let rows = live_rows()?;
     let ticked_task = ROADMAP.replace("- [ ] 3.1.3.", "- [x] 3.1.3.");
     assert_eq!(
         check_gate_bindings(&rows, ADR, &ticked_task),
@@ -217,12 +217,13 @@ fn gate_bindings_reject_ticked_roadmap_task() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a prefix-only task match after the required task is renumbered.
 #[test]
-fn gate_bindings_reject_a_roadmap_task_prefix() {
-    let rows = live_rows();
+fn gate_bindings_reject_a_roadmap_task_prefix() -> Result<(), String> {
+    let rows = live_rows()?;
     let renumbered_task = ROADMAP.replace("- [ ] 3.1.3.", "- [ ] 3.1.30.");
     assert_eq!(
         check_gate_bindings(&rows, ADR, &renumbered_task),
@@ -232,6 +233,7 @@ fn gate_bindings_reject_a_roadmap_task_prefix() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a register row that uses an identifier outside the gate table.
@@ -293,17 +295,22 @@ fn quoted_passages_reject_a_bet_outside_its_table() {
 #[case(Verdict::Falsified, Verdict::Held, Exit::E1)]
 #[case(Verdict::Held, Verdict::Falsified, Exit::E2)]
 #[case(Verdict::Held, Verdict::Held, Exit::E3)]
-fn hand_written_cases_match_register(#[case] b1: Verdict, #[case] b2: Verdict, #[case] exit: Exit) {
-    check_hand_written_case(&live_rows(), b1, b2, exit)
+fn hand_written_cases_match_register(
+    #[case] b1: Verdict,
+    #[case] b2: Verdict,
+    #[case] exit: Exit,
+) -> Result<(), String> {
+    check_hand_written_case(&live_rows()?, b1, b2, exit)
         .expect("the handwritten expectation must match the live register");
+    Ok(())
 }
 
 /// Rejects handwritten expectations when the dominated row selects E3.
 #[test]
-fn hand_written_cases_reject_a_dominance_invalid_register() {
+fn hand_written_cases_reject_a_dominance_invalid_register() -> Result<(), String> {
     assert_eq!(
         check_hand_written_case(
-            &dominance_invalid_rows(),
+            &dominance_invalid_rows()?,
             Verdict::Falsified,
             Verdict::Held,
             Exit::E1,
@@ -314,6 +321,7 @@ fn hand_written_cases_reject_a_dominance_invalid_register() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Compares one parsed row with its expected exit; for example, Held/Held maps to E3.
