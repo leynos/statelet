@@ -2,6 +2,9 @@
 
 use std::fmt::{self, Display, Formatter};
 
+#[path = "support/split_case.rs"]
+mod split_case;
+
 const BEGIN: &str = "<!-- exit-register:begin -->";
 const END: &str = "<!-- exit-register:end -->";
 const GATES: [(&str, &str); 3] = [("G1", "2.2.3"), ("G2", "3.1.3"), ("G3", "4.3.1")];
@@ -237,31 +240,7 @@ pub(super) fn check_quoted_clauses(
                 .to_owned(),
         );
     }
-    let split_case_section = design
-        .split_once("### 13.7 Conventions baseline is also too weak")
-        .map_or_else(String::new, |(_, after_heading)| {
-            after_heading
-                .lines()
-                .take_while(|line| {
-                    !line.trim_start_matches(' ').starts_with('#') || line.starts_with("    ")
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        });
-    if !fold_whitespace(&split_case_section).contains("in either validation example") {
-        return Err(
-            "docs/design.md §13.7 does not record the R1 split-case rule. Repair: amend section \
-             13.7 to say either validation example."
-                .to_owned(),
-        );
-    }
-    if !fold_whitespace(terms).contains("If either validation example shows that") {
-        return Err(
-            "docs/terms-of-reference.md does not record the R1 split-case rule. Repair: amend \
-             section 7.1 to say either validation example."
-                .to_owned(),
-        );
-    }
+    split_case::check_split_case_amendments(design, terms)?;
     if !context.contains("### v0.1 exit") {
         return Err(
             "docs/context.md lacks the v0.1 exit glossary entry. Repair: define the term beside \

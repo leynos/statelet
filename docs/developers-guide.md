@@ -54,11 +54,13 @@ container-backed checks in parallel.
 `tests/v0_1_exit_register_contract.rs` owns the integration-test scenarios for
 ADR 003. Its private `tests/v0_1_exit_register_contract/support.rs` child owns
 only the pure Markdown parser and policy predicates used by those scenarios. Its
+private `tests/v0_1_exit_register_contract/support/split_case.rs` child, called
+only by `support.rs`, owns the R1 companion-document split-case policy. Its
 private `tests/v0_1_exit_register_contract/fixtures.rs` child owns the canonical
 valid-register fixture shared by the integration scenarios. Its private
 `tests/v0_1_exit_register_contract/regression_controls.rs` child owns edge-case
-parser and citation scenarios. Keep all three children test-only: do not reuse
-them from runtime code or other document contracts. A future contract
+parser and citation scenarios. Keep these modules test-only: do not reuse them
+from runtime code or other document contracts. A future contract
 with different document grammar should own its own parser, policy, and
 regression boundary rather than extending these children.
 
