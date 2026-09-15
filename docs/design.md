@@ -450,8 +450,9 @@ sequenceDiagram
 ```
 
 *Figure: A developer runs `make test`; the contract test reads the ADR, design,
-and roadmap, parses the register, applies totality, dominance, citation, and
-gate checks, then reports a pass or failure with repair guidance.*
+terms of reference, context, and roadmap, parses the register, applies totality,
+dominance, citation, and gate checks, then reports a pass or failure with repair
+guidance.*
 
 ### 11.2 Baseline comparison
 
