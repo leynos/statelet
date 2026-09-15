@@ -1,0 +1,385 @@
+//! Parsing and policy checks for the v0.1 exit-register contract tests.
+
+use std::fmt::{self, Display, Formatter};
+
+#[path = "support/split_case.rs"]
+mod split_case;
+
+const BEGIN: &str = "<!-- exit-register:begin -->";
+const END: &str = "<!-- exit-register:end -->";
+const GATES: [(&str, &str); 3] = [("G1", "2.2.3"), ("G2", "3.1.3"), ("G3", "4.3.1")];
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(super) enum Verdict {
+    Falsified,
+    Held,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum Exit {
+    E1,
+    E2,
+    E3,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct Row {
+    pub(super) b1: Verdict,
+    pub(super) b2: Verdict,
+    pub(super) exit: Exit,
+    gate: String,
+    reachable: bool,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) enum ParseError {
+    MissingDelimiters,
+    MalformedRow { line: usize },
+    UnknownVerdict { found: String },
+    UnknownExit { found: String },
+}
+impl Display for ParseError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingDelimiters => write!(
+                formatter,
+                "docs/adr-003-v0-1-exit-register.md: no exit register found between {BEGIN} and \
+                 {END}. Repair: add the register block to the Exit register section."
+            ),
+            Self::MalformedRow { line } => write!(
+                formatter,
+                "docs/adr-003-v0-1-exit-register.md:{line}: malformed exit-register row. Repair: \
+                 supply B1, B2, Exit, Gate and Reachable cells."
+            ),
+            Self::UnknownVerdict { found } => write!(
+                formatter,
+                "docs/adr-003-v0-1-exit-register.md: unknown verdict {found:?}. Repair: use \
+                 Falsified or Held."
+            ),
+            Self::UnknownExit { found } => write!(
+                formatter,
+                "docs/adr-003-v0-1-exit-register.md: unknown exit {found:?}. Repair: use E1 ship \
+                 nothing, E2 ship conventions only, or E3 ship macro."
+            ),
+        }
+    }
+}
+/// Parses a delimited register; for example, a complete ADR yields four rows.
+pub(super) fn parse_register(adr: &str) -> Result<Vec<Row>, ParseError> {
+    let Some((_, after_begin)) = adr.split_once(BEGIN) else {
+        return Err(ParseError::MissingDelimiters);
+    };
+    let Some((register, _)) = after_begin.split_once(END) else {
+        return Err(ParseError::MissingDelimiters);
+    };
+    let rows = register
+        .lines()
+        .enumerate()
+        .filter_map(|(offset, line)| row_from_line(line, offset + 1).transpose())
+        .collect::<Result<Vec<_>, _>>()?;
+    if rows.is_empty() {
+        Err(ParseError::MissingDelimiters)
+    } else {
+        Ok(rows)
+    }
+}
+/// Converts one table line into a row; for example, non-table prose yields `None`.
+fn row_from_line(line: &str, line_number: usize) -> Result<Option<Row>, ParseError> {
+    let trimmed = line.trim();
+    if !trimmed.starts_with('|') {
+        return Ok(None);
+    }
+    let cells = trimmed
+        .trim_matches('|')
+        .split('|')
+        .map(str::trim)
+        .collect::<Vec<_>>();
+    let [b1, b2, exit, gate, reachable] = cells.as_slice() else {
+        return Err(ParseError::MalformedRow { line: line_number });
+    };
+    if is_structural_row(&cells) {
+        return Ok(None);
+    }
+    Ok(Some(Row {
+        b1: parse_verdict(b1)?,
+        b2: parse_verdict(b2)?,
+        exit: parse_exit(exit)?,
+        gate: (*gate).to_owned(),
+        reachable: parse_reachability(reachable, line_number)?,
+    }))
+}
+/// Identifies a structural table row rather than an exit-register data row.
+fn is_structural_row(cells: &[&str]) -> bool {
+    is_register_header(cells) || is_register_divider(cells)
+}
+/// Identifies the exact exit-register header row.
+fn is_register_header(cells: &[&str]) -> bool {
+    cells == ["B1 verdict", "B2 verdict", "Exit", "Gate", "Reachable"]
+}
+/// Identifies a five-cell divider whose cells are each made entirely of hyphens.
+fn is_register_divider(cells: &[&str]) -> bool {
+    cells.iter().all(|cell| {
+        cell.strip_prefix('-')
+            .is_some_and(|rest| rest.bytes().all(|byte| byte == b'-'))
+    })
+}
+/// Parses a verdict cell; for example, `Held` becomes `Verdict::Held`.
+fn parse_verdict(value: &str) -> Result<Verdict, ParseError> {
+    match value {
+        "Falsified" => Ok(Verdict::Falsified),
+        "Held" => Ok(Verdict::Held),
+        _ => Err(ParseError::UnknownVerdict {
+            found: value.to_owned(),
+        }),
+    }
+}
+/// Parses an exit cell; for example, `E3 ship macro` becomes `Exit::E3`.
+fn parse_exit(value: &str) -> Result<Exit, ParseError> {
+    match value {
+        "E1 ship nothing" => Ok(Exit::E1),
+        "E2 ship conventions only" => Ok(Exit::E2),
+        "E3 ship macro" => Ok(Exit::E3),
+        _ => Err(ParseError::UnknownExit {
+            found: value.to_owned(),
+        }),
+    }
+}
+/// Parses reachability; for example, `no` becomes `false`.
+fn parse_reachability(value: &str, line: usize) -> Result<bool, ParseError> {
+    match value {
+        "yes" => Ok(true),
+        "no" => Ok(false),
+        _ => Err(ParseError::MalformedRow { line }),
+    }
+}
+/// Validates register coverage; for example, duplicate verdict pairs are rejected.
+pub(super) fn check_totality(rows: &[Row]) -> Result<(), String> {
+    check_ambiguous_four_row_register(rows)?;
+    check_missing_verdict_combination(rows)?;
+    check_register_row_count(rows)
+}
+/// Rejects four rows with a duplicate pair; for example, Falsified/Held appears twice.
+fn check_ambiguous_four_row_register(rows: &[Row]) -> Result<(), String> {
+    let duplicate = verdict_combinations().into_iter().rfind(|(b1, b2)| {
+        rows.iter()
+            .filter(|row| row.b1 == *b1 && row.b2 == *b2)
+            .count()
+            > 1
+    });
+    match (rows.len(), duplicate) {
+        (4, Some((b1, b2))) => Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: ambiguous {b1:?}/{b2:?}. Repair: keep exactly \
+             one row for that combination."
+        )),
+        _ => Ok(()),
+    }
+}
+/// Rejects absent verdict pairs; for example, a missing Held/Held pair fails first.
+fn check_missing_verdict_combination(rows: &[Row]) -> Result<(), String> {
+    let missing = verdict_combinations()
+        .into_iter()
+        .rfind(|(b1, b2)| !rows.iter().any(|row| row.b1 == *b1 && row.b2 == *b2));
+    if let Some((b1, b2)) = missing {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: missing {b1:?}/{b2:?}. Repair: add that verdict \
+             combination."
+        ));
+    }
+    Ok(())
+}
+/// Rejects the wrong row count; for example, a fifth register row is invalid.
+fn check_register_row_count(rows: &[Row]) -> Result<(), String> {
+    if rows.len() == 4 {
+        return Ok(());
+    }
+    Err(
+        "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
+         provide one row for each B1/B2 verdict combination."
+            .to_owned(),
+    )
+}
+/// Enforces dominance and reachability; for example, Falsified/Held stays unreachable.
+pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
+    if let Some(row) = rows
+        .iter()
+        .find(|row| row.b1 == Verdict::Falsified && row.exit != Exit::E1)
+    {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} selects {:?}. Repair: a falsified B1 \
+             must select E1 ship nothing.",
+            row.b1, row.b2, row.exit
+        ));
+    }
+    if let Some(row) = rows
+        .iter()
+        .find(|row| is_unreachable_dominance_row(row) && row.reachable)
+    {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked unreachable. Repair: \
+             set its Reachable cell to no.",
+            row.b1, row.b2
+        ));
+    }
+    if let Some(row) = rows
+        .iter()
+        .find(|row| !is_unreachable_dominance_row(row) && !row.reachable)
+    {
+        return Err(format!(
+            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked reachable. Repair: set \
+             its Reachable cell to yes.",
+            row.b1, row.b2
+        ));
+    }
+    Ok(())
+}
+/// Validates source evidence; for example, fabricated ADR citations are rejected.
+pub(super) fn check_quoted_clauses(
+    adr: &str,
+    design: &str,
+    terms: &str,
+    context: &str,
+) -> Result<(), String> {
+    let folded_design = fold_whitespace(design);
+    for clause in quoted_clauses(adr)? {
+        if !folded_design.contains(&clause) {
+            return Err(format!(
+                "docs/design.md no longer contains {clause:?}. Repair: update ADR 003 and its \
+                 contract together."
+            ));
+        }
+    }
+    if !has_table_bet(design, "B1") || !has_table_bet(design, "B2") {
+        return Err(
+            "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
+             or revise ADR 003."
+                .to_owned(),
+        );
+    }
+    split_case::check_split_case_amendments(design, terms)?;
+    if !context.contains("### v0.1 exit") {
+        return Err(
+            "docs/context.md lacks the v0.1 exit glossary entry. Repair: define the term beside \
+             the bet register."
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+/// Validates gate bindings; for example, a renumbered roadmap task is rejected.
+pub(super) fn check_gate_bindings(rows: &[Row], adr: &str, roadmap: &str) -> Result<(), String> {
+    check_gate_tasks(adr, roadmap)?;
+    check_row_gates(rows)
+}
+/// Resolves each ADR gate; for example, G2 must retain task 3.1.3.
+fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
+    for (gate, task) in GATES {
+        if gate_task(adr, gate).as_deref() != Some(task) {
+            return Err(format!(
+                "docs/adr-003-v0-1-exit-register.md: {gate} must bind roadmap task {task}. \
+                 Repair: restore the gate table binding."
+            ));
+        }
+        if !roadmap
+            .lines()
+            .any(|line| line.trim_start().starts_with(&format!("- [ ] {task}.")))
+        {
+            return Err(format!(
+                "docs/roadmap.md: task {task} is absent or already ticked. Repair: retain the \
+                 live, unticked gate named by ADR 003."
+            ));
+        }
+    }
+    Ok(())
+}
+/// Validates row gates; for example, E3 must select G3 rather than G1.
+fn check_row_gates(rows: &[Row]) -> Result<(), String> {
+    for row in rows {
+        if !GATES.iter().any(|(gate, _)| *gate == row.gate) {
+            return Err(format!(
+                "docs/adr-003-v0-1-exit-register.md: row uses unknown gate {}. Repair: use G1, \
+                 G2, or G3.",
+                row.gate
+            ));
+        }
+        let required_gate = required_row_gate(row);
+        if row.gate != required_gate {
+            return Err(format!(
+                "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} with {:?} must use gate \
+                 {required_gate}, not {}. Repair: bind this exit row to {required_gate}.",
+                row.b1, row.b2, row.exit, row.gate
+            ));
+        }
+    }
+    Ok(())
+}
+/// Selects the policy gate; for example, E1 rows use G2.
+const fn required_row_gate(row: &Row) -> &'static str {
+    match row.exit {
+        Exit::E1 => "G2",
+        Exit::E2 | Exit::E3 => "G3",
+    }
+}
+fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }
+fn is_unreachable_dominance_row(row: &Row) -> bool {
+    row.b1 == Verdict::Falsified && row.b2 == Verdict::Held
+}
+fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
+    let Some((_, after_heading)) = adr.split_once("## Evidence the register preserves") else {
+        return Err(
+            "docs/adr-003-v0-1-exit-register.md lacks its evidence section. Repair: restore the \
+             quoted source clauses."
+                .to_owned(),
+        );
+    };
+    let evidence = after_heading
+        .split_once("\n## ")
+        .map_or(after_heading, |(section, _)| section);
+    let clauses = evidence
+        .split('"')
+        .skip(1)
+        .step_by(2)
+        .map(fold_whitespace)
+        .collect::<Vec<_>>();
+    if clauses.is_empty() {
+        return Err(
+            "docs/adr-003-v0-1-exit-register.md cites no clauses. Repair: quote each load-bearing \
+             source clause in the evidence section."
+                .to_owned(),
+        );
+    }
+    Ok(clauses)
+}
+fn gate_task(adr: &str, gate: &str) -> Option<String> {
+    adr.lines().find_map(|line| {
+        let cells = line
+            .trim()
+            .trim_matches('|')
+            .split('|')
+            .map(str::trim)
+            .collect::<Vec<_>>();
+        match cells.as_slice() {
+            [found_gate, task, _] if *found_gate == gate => Some((*task).to_owned()),
+            _ => None,
+        }
+    })
+}
+fn has_table_bet(design: &str, bet: &str) -> bool {
+    design
+        .split_once("### 11.1 Bet register")
+        .is_some_and(|(_, after_heading)| {
+            let section = after_heading
+                .split_once("\n### ")
+                .map_or(after_heading, |(section, _)| section);
+            section.lines().any(|line| {
+                line.trim()
+                    .trim_matches('|')
+                    .split('|')
+                    .next()
+                    .is_some_and(|cell| cell.trim() == bet)
+            })
+        })
+}
+const fn verdict_combinations() -> [(Verdict, Verdict); 4] {
+    [
+        (Verdict::Falsified, Verdict::Falsified),
+        (Verdict::Falsified, Verdict::Held),
+        (Verdict::Held, Verdict::Falsified),
+        (Verdict::Held, Verdict::Held),
+    ]
+}
