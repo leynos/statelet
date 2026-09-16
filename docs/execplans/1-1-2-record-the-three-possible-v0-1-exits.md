@@ -695,11 +695,11 @@ Findings from the planning pass, carried forward:
   mutate an ADR gate-table identifier to `G9` with the register rows unchanged.
 
 - Decision D17: preserve the generic extra-row error while reporting missing
-  and duplicate verdict combinations first. Rationale: a four-row register
-  with a missing combination needs a verdict-specific repair message, whereas
-  a fifth row with all four combinations present is an excess-row problem and
-  must retain the cardinality guidance. Date/Author: 2026-09-04,
-  implementing agent.
+  and duplicate verdict combinations first. Rationale: a four-row register with
+  a missing combination needs a verdict-specific repair message, whereas a
+  fifth row with all four combinations present is an excess-row problem and
+  must retain the cardinality guidance. Date/Author: 2026-09-04, implementing
+  agent.
 
 ## Outcomes & retrospective
 
@@ -711,8 +711,8 @@ delivery suite and final CodeRabbit review are green.
 The implementation confirmed that a document contract needs syntax and policy
 to stay separate: enforcing dominance in the parser would have made its test
 vacuous. It also confirmed that strict module-size and branch-count limits
-improve the test's boundary: the parent names scenarios, while its private child
-owns pure parser and policy work.
+improve the test's boundary: the parent names scenarios, while its private
+child owns pure parser and policy work.
 
 EP-M4 closed three review-identified gaps without changing the document model:
 reachability is now a dominance policy, citations come from ADR 003 itself, and
@@ -733,8 +733,8 @@ mapping remains intentional. The stale property-test, docstring-coverage, and
 EP-M7 completed three further contract-test refinements: the quoted-clause
 control now asserts its exact missing-source error, totality reports a missing
 verdict combination before cardinality while retaining the generic extra-row
-error, and the gate contract mutates an ADR gate-table identifier to prove
-that the table is read. Focused red and green controls, the full deterministic
+error, and the gate contract mutates an ADR gate-table identifier to prove that
+the table is read. Focused red and green controls, the full deterministic
 suite, and the required CodeRabbit review all passed, with zero findings.
 
 ## Verification plan

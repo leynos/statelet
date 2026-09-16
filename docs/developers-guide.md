@@ -29,7 +29,7 @@ root. `make coverage` uses `cargo llvm-cov` with `lld`.
 The generated `Makefile` exposes these public targets:
 
 - `make all` runs formatting checks, linting, and tests.
-- `make check-fmt` verifies Rust formatting.
+- `make check-fmt` verifies Rust formatting and Markdown formatting.
 - `make lint` runs rustdoc, Clippy, and Whitaker with warnings denied.
 - `make test` runs `cargo nextest run` when cargo-nextest is installed and
   falls back to `cargo test` otherwise. All projects also run doctests.
@@ -53,14 +53,14 @@ container-backed checks in parallel.
 
 `tests/v0_1_exit_register_contract.rs` owns the integration-test scenarios for
 ADR 003. Its private `tests/v0_1_exit_register_contract/support.rs` child owns
-only the pure Markdown parser and policy predicates used by those scenarios. Its
-private `tests/v0_1_exit_register_contract/support/split_case.rs` child, called
-only by `support.rs`, owns the R1 companion-document split-case policy. Its
-private `tests/v0_1_exit_register_contract/fixtures.rs` child owns the canonical
-valid-register fixture shared by the integration scenarios. Its private
-`tests/v0_1_exit_register_contract/regression_controls.rs` child owns edge-case
-parser and citation scenarios. Keep these modules test-only: do not reuse them
-from runtime code or other document contracts. A future contract
+only the pure Markdown parser and policy predicates used by those scenarios.
+Its private `tests/v0_1_exit_register_contract/support/split_case.rs` child,
+called only by `support.rs`, owns the R1 companion-document split-case policy.
+Its private `tests/v0_1_exit_register_contract/fixtures.rs` child owns the
+canonical valid-register fixture shared by the integration scenarios. Its
+private `tests/v0_1_exit_register_contract/regression_controls.rs` child owns
+edge-case parser and citation scenarios. Keep these modules test-only: do not
+reuse them from runtime code or other document contracts. A future contract
 with different document grammar should own its own parser, policy, and
 regression boundary rather than extending these children.
 
@@ -90,10 +90,11 @@ with the first cross target rather than now.
 
 Coverage generation uses `lld` because LLVM coverage tooling expects
 LLVM-compatible linker behaviour, and it overrides the codegen backend, for the
-reason set out under [the codegen-backend
-standard](#the-codegen-backend-standard). `-Cinstrument-coverage` is an LLVM
-feature that Cranelift does not implement, so with the dev profile's Cranelift
-backend in force `cargo llvm-cov` stops at the first crate:
+reason set out under
+[the codegen-backend standard](#the-codegen-backend-standard).
+`-Cinstrument-coverage` is an LLVM feature that Cranelift does not implement,
+so with the dev profile's Cranelift backend in force `cargo llvm-cov` stops at
+the first crate:
 
 ```text
 error: `-Cinstrument-coverage` is LLVM specific and not supported by Cranelift
@@ -134,15 +135,15 @@ keyed on the `x86_64-unknown-linux-gnu` triple until #61 widened it, which had
 left other Linux architectures on the default linker.
 
 The `DEV_FAST_CONFIG` variable names that fragment, defaulting to
-`tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly
-with `--config "$(DEV_FAST_CONFIG)"`. Cargo never auto-discovers this
-fragment; it takes effect only when a target invokes it directly, so other
-`make` targets are unaffected.
+`tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly with
+`--config "$(DEV_FAST_CONFIG)"`. Cargo never auto-discovers this fragment; it
+takes effect only when a target invokes it directly, so other `make` targets
+are unaffected.
 
-Using the fragment requires a nightly toolchain, because the Cranelift
-codegen backend is unstable. On Linux it also requires the mold linker on
-`PATH`; the fragment gates the linker flag behind a `target_os = "linux"`
-`cfg` table, so other platforms fall back to their default linker.
+Using the fragment requires a nightly toolchain, because the Cranelift codegen
+backend is unstable. On Linux it also requires the mold linker on `PATH`; the
+fragment gates the linker flag behind a `target_os = "linux"` `cfg` table, so
+other platforms fall back to their default linker.
 
 ### The codegen-backend standard
 

@@ -178,8 +178,8 @@ implementing agent updates checkboxes with timestamps as stages complete.
 - Observation: review found that the ADR's market summary had no source
   citations, its competing-crate claim reached into ADR 001, and the embedded
   ADR had drifted from the delivered ADR's relative link. Impact: added ordered
-  footnotes from Appendix A, limited the claim to crates named in this ADR,
-  and synchronized the embedded artefact without changing the decision.
+  footnotes from Appendix A, limited the claim to crates named in this ADR, and
+  synchronized the embedded artefact without changing the decision.
 - Observation: the original link loop only printed `BROKEN` and could still
   exit successfully because the pipeline ran in a subshell. Impact: the
   validator now tracks failures explicitly and exits non-zero; the ExecPlan
@@ -239,10 +239,10 @@ implementing agent updates checkboxes with timestamps as stages complete.
   removes a drift hazard between two copies. Date/Author: 2026-06-24, planning
   agent (post-review revision).
 - Decision: retain the accepted marker-only decision and repair only its
-  evidence and validation mechanics. Rationale: ordered Appendix A footnotes,
-  a claim scoped to the competing crates named in this ADR, exact-once
-  sentence validation, and a failing link check improve traceability without
-  creating new product scope. Date/Author: 2026-08-17, review follow-up.
+  evidence and validation mechanics. Rationale: ordered Appendix A footnotes, a
+  claim scoped to the competing crates named in this ADR, exact-once sentence
+  validation, and a failing link check improve traceability without creating
+  new product scope. Date/Author: 2026-08-17, review follow-up.
 - Decision: record the three reconnaissance examples in ADR 002 as validation
   evidence. Rationale: concrete downstream seams make the scope boundary
   falsifiable while preserving user-owned dispatch, events, storage, and graph
@@ -467,8 +467,8 @@ make check-fmt    2>&1 | tee /tmp/check-fmt-statelet-adr002.out
 make nixie        2>&1 | tee /tmp/nixie-statelet-adr002.out
 ```
 
-Stage D — resolve every relative link in each touched file (covering inline
-and reference-style links, anchor-only links, non-`.md` relative targets, and
+Stage D — resolve every relative link in each touched file (covering inline and
+reference-style links, anchor-only links, non-`.md` relative targets, and
 `#fragment` resolution against the target's own headings), including the
 roadmap link and the ADR's own outbound link to ADR 001, not only links *into*
 the new ADR. Any `BROKEN` line is a failure:
@@ -536,8 +536,8 @@ fi
 echo "link check complete (no BROKEN lines above means pass)"
 ```
 
-The validator was exercised against a scratch fixture file covering every
-link form, confirming each previously missed form now fails and no valid form
+The validator was exercised against a scratch fixture file covering every link
+form, confirming each previously missed form now fails and no valid form
 regresses; the run exited non-zero, preserving the broken-link failure
 behaviour. Link syntax inside inline code spans — such as the examples in the
 table below — is excluded, so the plan's own fixture table does not trip the
@@ -601,9 +601,9 @@ Acceptance is behavioural and observable without any runtime code:
 - Reachability: `docs/contents.md` lists ADR 002 in "Decision records";
   `docs/design.md` and `docs/terms-of-reference.md` cite it; the link check
   resolves every relative link in all touched files — inline, reference-style,
-  and anchor-only links, non-`.md` relative targets, and `#fragment`
-  resolution against the target's own headings — including `roadmap.md` and
-  the ADR's outbound link to ADR 001, and prints no `BROKEN` line.
+  and anchor-only links, non-`.md` relative targets, and `#fragment` resolution
+  against the target's own headings — including `roadmap.md` and the ADR's
+  outbound link to ADR 001, and prints no `BROKEN` line.
 - Roadmap closure: `docs/roadmap.md` item 1.1.1 shows `[x]` and links the
   accepted ADR.
 - Gates: `make markdownlint` reports no errors; `make check-fmt` is clean;
@@ -1092,30 +1092,30 @@ Signposted documentation and skills for the implementer:
   The plan status is now COMPLETE; no implementation work remains.
 - 2026-08-14: corrected five US-spelling occurrences to the repository's
   required Oxford British `artefact` after the post-rebase spelling gate
-  reported them. This terminology-only repair does not change the completed
-  ADR decision.
+  reported them. This terminology-only repair does not change the completed ADR
+  decision.
 - 2026-08-17: review follow-up added ordered Appendix A footnotes for the
-  market count and six capability categories, limited the competing-crate
-  claim to this ADR, strengthened `check_adr` and the relative-link validator,
-  and synchronized the embedded ADR's ADR 001 link. These are traceability and
+  market count and six capability categories, limited the competing-crate claim
+  to this ADR, strengthened `check_adr` and the relative-link validator, and
+  synchronized the embedded ADR's ADR 001 link. These are traceability and
   validation repairs only, not new product scope; `make markdownlint` and
   `make nixie` passed after the spelling correction.
 - 2026-08-17: added validated `mdtablefix`, `wireframe`, and `ddlint`
   reconnaissance examples to ADR 002 and synchronized the embedded artefact.
-  The examples preserve the marker-only decision: they test conventions,
-  a fallible handwritten boundary, and an intentional non-adoption case rather
+  The examples preserve the marker-only decision: they test conventions, a
+  fallible handwritten boundary, and an intentional non-adoption case rather
   than decide the macro or add framework responsibilities.
 - 2026-08-20: review follow-up hardened `check_adr` so `SENTENCE` is the
   complete decision sentence, including its leading subject and terminal full
   stop, and so both matched streams strip Markdown emphasis markers and fold
   whitespace. This closes a gap where a sentence with a different subject or
-  emphasis-wrapped text could otherwise satisfy the predicate. Validation
-  prose was updated to match; the ADR decision wording is unchanged.
+  emphasis-wrapped text could otherwise satisfy the predicate. Validation prose
+  was updated to match; the ADR decision wording is unchanged.
 - 2026-08-21: broadened the Stage D link validator to resolve reference-style
-  and anchor-only links, non-`.md` relative targets, and `#fragment`
-  resolution against the target's own headings, alongside the inline `.md`
-  form it already checked; recorded the fixture cases exercised against it.
-  Corrected the grammar of the 2026-08-20 revision-note entry. The extractor
-  also excludes inline code spans, so documented link examples are not
-  mistaken for live links. This is a validation-mechanics and editorial
-  repair only; it adds no product scope.
+  and anchor-only links, non-`.md` relative targets, and `#fragment` resolution
+  against the target's own headings, alongside the inline `.md` form it already
+  checked; recorded the fixture cases exercised against it. Corrected the
+  grammar of the 2026-08-20 revision-note entry. The extractor also excludes
+  inline code spans, so documented link examples are not mistaken for live
+  links. This is a validation-mechanics and editorial repair only; it adds no
+  product scope.

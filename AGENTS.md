@@ -381,20 +381,18 @@ collaboration.
 
 ## Fast development builds
 
-Cranelift with the mold linker is the standard backend for development,
-test, lint, and proof builds, and `.cargo/config.toml` configures it for
-the dev profile so Cargo applies it to every such build. Release builds
-use LLVM, because `--release` selects a profile that file does not
-configure. Coverage runs must use LLVM too, because
-`-Cinstrument-coverage` is LLVM-specific, so they override the backend
-for their own invocation.
+Cranelift with the mold linker is the standard backend for development, test,
+lint, and proof builds, and `.cargo/config.toml` configures it for the dev
+profile so Cargo applies it to every such build. Release builds use LLVM,
+because `--release` selects a profile that file does not configure. Coverage
+runs must use LLVM too, because `-Cinstrument-coverage` is LLVM-specific, so
+they override the backend for their own invocation.
 
 An earlier version of this section said the opposite: that the Cranelift
-configuration must never be copied into `.cargo/config.toml`. That rule
-was in error and is withdrawn (#60).
+configuration must never be copied into `.cargo/config.toml`. That rule was in
+error and is withdrawn (#60).
 
 `make dev-build` and `make dev-test` pass `tools/dev-fast/config.toml`
-explicitly with `--config`. That fragment now sets the same backend and
-the same `cfg(target_os = "linux")` linker selection as
-`.cargo/config.toml`. Both require a nightly toolchain and, on Linux, a
-`mold` binary on the `PATH`.
+explicitly with `--config`. That fragment now sets the same backend and the same
+`cfg(target_os = "linux")` linker selection as `.cargo/config.toml`. Both
+require a nightly toolchain and, on Linux, a `mold` binary on the `PATH`.
