@@ -6,7 +6,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Conformance basis`, and `Verification plan` must be kept up to date as work
 proceeds.
 
-Status: DRAFT
+Status: APPROVED
 
 ## Purpose / big picture
 
@@ -170,9 +170,11 @@ amended with explicit rename support. This plan does not argue that case. It
 builds an instrument that could overturn it, and asserts the instrument retains
 a verdict capable of doing so.
 
-### Open questions for the approval gate
+### Approval-gate decisions
 
-Five decisions need settling before implementation. Each is separable.
+Five decisions were referred to the approval gate. All five were settled on
+2026-09-18, each as recommended; the reasoning is retained because it explains
+why the artefacts have the shape they do. Nothing below is still open.
 
 **Q0 — is the reframing in "Findings one and two" accepted?** The roadmap names
 a field "optional identifier need" and a field "metrics cardinality". This plan
@@ -183,7 +185,7 @@ distinct names the annotated code can emit*, used as an admissibility gate
 rather than as a verdict axis. Both readings are defensible and both are
 consequential: the first is what makes the label-stability case recordable, the
 second is what makes the procedure terminate. Neither is the naive reading.
-Recommended: accept; this is the substance of the task. See D4 and D11.
+**Decided: accepted.** This is the substance of the task. See D4, D11 and D17.
 
 **Q1 — how should this question be made evidence-gated in `docs/design.md`?**
 
@@ -219,8 +221,8 @@ task prepares — is conspicuously absent from it. One bullet closes that:
   notes defined in ADR 004.
 ```
 
-Recommended: **add the §14 bullet in this task; raise B7 separately, using the
-row above.**
+**Decided: add the §14 bullet in this task; raise B7 separately, using the row
+above.**
 
 The §14 bullet is one line and verified inert. The existing contract touches
 §14 only as a relocation anchor — `tests/v0_1_exit_register_contract.rs:142` and
@@ -242,8 +244,8 @@ reports 40 passed. So B7 is deliverable; it is simply upstream design prose
 that roadmap task 1.1.3 did not ask for, and the pre-drafted row makes the
 follow-up mechanical rather than a research task.
 
-**Q2 — should the template be a separate file from the ADR?** Recommended:
-**yes**, with the template *generated* from the ADR rather than hand-maintained
+**Q2 — should the template be a separate file from the ADR?** **Decided: yes**,
+with the template *generated* from the ADR rather than hand-maintained
 alongside it (see `INV-TEMPLATE`). Their lifecycles differ: an ADR is frozen, a
 template is copied at least three times, and filling a form inside an accepted
 ADR would mean editing the ADR. Roadmap task 1.2.3 adds a sibling benchmark
@@ -252,8 +254,8 @@ hand-maintained drift edge that would otherwise be the main argument against
 two files.
 
 **Q3 — should `rstest-bdd` and `proptest` be added as dev-dependencies?**
-Recommended: **no, both declined.** Measured: the current `Cargo.lock` resolves
-45 packages; a probe lockfile with `rstest 0.27` plus `rstest-bdd 0.6` and
+**Decided: no, both declined.** Measured: the current `Cargo.lock` resolves 45
+packages; a probe lockfile with `rstest 0.27` plus `rstest-bdd 0.6` and
 `rstest-bdd-macros 0.6` resolves **185**. That is a fourfold dependency-graph
 increase — pulling in `tokio`, `fluent`, `i18n-embed`, `rust-embed`, and
 `serde_json` — on a crate whose `src/lib.rs` is twelve lines, to express four
@@ -273,7 +275,7 @@ Gherkin mechanically.
 **Q4 — may this plan add pointers to roadmap tasks 2.2.1, 2.2.2, and 3.1.2, and
 to design §12?** Without them a Phase 2 engineer will not find the template:
 task 2.2.1 cites only design §12, which would not mention it. The edits add one
-`- See ...` bullet each and renumber nothing. Recommended: yes.
+`- See ...` bullet each and renumber nothing. **Decided: yes.**
 
 ### Files this plan reads or writes
 
@@ -387,8 +389,9 @@ outcome, and a reviewer should approve it on that understanding.
    modified.** If an edit to `docs/design.md`, `docs/context.md`, or
    `docs/roadmap.md` breaks that contract, revert the edit; do not adapt the
    other contract.
-5. **No `docs/design.md` §11.1 edit** unless Q1 is accepted, and then only
-   within the width budget in Q1.
+5. **No `docs/design.md` §11.1 edit.** Q1 was settled the other way: the §14
+   bullet is added instead, and bet B7 is a separate change. The width budget
+   recorded in Q1 binds that separate change, not this one.
 6. **No roadmap renumbering.** Tasks 2.2.3, 3.1.3, and 4.3.1 are gate targets
    of the existing contract. This plan's own gates bind by task *title*, not
    number, and therefore add no new frozen numbers.
@@ -401,8 +404,8 @@ outcome, and a reviewer should approve it on that understanding.
 
 1. **Scope.** Touching a file not listed under "Files this plan reads or
    writes" stops the work.
-2. **Dependencies.** Any dependency addition stops the work; Q3 declined both
-   candidates.
+2. **Dependencies.** Any dependency addition stops the work; Q3 was settled
+   by declining both candidates.
 3. **Upstream prose.** Adding a pointer to an upstream document is in scope.
    Changing a requirement, a bet, or a success criterion is not.
 4. **Iterations.** If a contract test still fails after four repair attempts,
@@ -456,8 +459,9 @@ outcome, and a reviewer should approve it on that understanding.
 ## Progress
 
 - [ ] Stage A — orient and confirm the conformance basis (no changes).
-- [ ] EP-M1 — ADR 004 exists and its three registers are guarded.
-- [ ] EP-M2 — the template is generated and a worked example is committed.
+- [ ] EP-M1 — ADR 004 exists and both its registers are guarded.
+- [ ] EP-M2 — the template matches the status register; ADR 004 carries the
+      illustrative example.
 - [ ] EP-M3 — gates and anchors are guarded.
 - [ ] EP-M4 — companion documentation is coherent and discoverable.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked.
@@ -519,8 +523,9 @@ derivable from the repository alone, and each changed the design.
   installs no recorder, so the literal reading is unanswerable and the field
   would read "not exercised" every time. The chosen reading is determinable
   from the state type and still detects the dangerous case of a name
-  synthesized from data. Raised at the approval gate as Q0 because it
-  reinterprets a roadmap-named field. Date/Author: 2026-09-18, planning agent.
+  synthesized from data. Referred to the approval gate as Q0 because it
+  reinterprets a roadmap-named field, and accepted there on 2026-09-18.
+  Date/Author: 2026-09-18, planning agent.
 
 - D5: Name the verdict axis by the requirement (`Property required`), not by
   the existence of a consumer. Rationale: `wireframe`'s Stateright model is a
@@ -637,6 +642,16 @@ derivable from the repository alone, and each changed the design.
   property that does not depend on padding. Date/Author: 2026-09-18, planning
   agent, after design review.
 
+- D17: The plan was approved on 2026-09-18 with all five referred decisions
+  settled as recommended — Q0 accepted, Q1 taking the `docs/design.md` §14
+  bullet in this task with bet B7 deferred to a separate change, Q2 keeping two
+  files, Q3 declining both dev-dependencies, and Q4 adding the discoverability
+  pointers. Rationale: recorded here so that a later reader can tell which
+  parts of the design were chosen by the planning agent and which were ratified
+  by the approving authority, and so that reopening any of them is visibly a
+  change of decision rather than a fresh choice. Date/Author: 2026-09-18,
+  approved by the project owner.
+
 ## Outcomes & retrospective
 
 To be completed at EP-M5. Before setting this plan to `COMPLETE`, reconcile
@@ -662,8 +677,8 @@ trim. Typed mappers convert rows to register types; policy predicates operate
 on typed rows. A failure is therefore attributable to one layer.
 
 `ParseError` is keyed on a `Register` token rather than on a document string,
-because ADR 004 carries three registers and a message must say *which*. The
-token yields document, begin marker, end marker, and section name through
+because ADR 004 carries more than one register and a message must say *which*.
+The token yields document, begin marker, end marker, and section name through
 `const fn` accessors, which is what makes every asserted repair message
 derivable. Note also that the existing implementation's `line` field is
 block-relative, not file-relative; this plan's messages say "row N of the
@@ -883,8 +898,8 @@ Behavioural coverage is delivered as scenario-named `rstest` cases over the
 committed worked example and its four mutations — `committed_notes_are_usable`
 and the `INV-FILLED` controls constitute the fill-and-gate workflow. The
 `docs/developers-guide.md` addition carries the prose walkthrough. If the
-dependency cost in Q3 is later judged acceptable, these convert to Gherkin
-mechanically.
+dependency cost declined under Q3 is later judged acceptable, these convert to
+Gherkin mechanically.
 
 ## Plan of work
 
@@ -923,15 +938,15 @@ go green in turn, committing at each coherent point.
 ### Stage D — sync and delivery (EP-M4, EP-M5)
 
 Apply the documentation sync map, including the discoverability pointers under
-Q4. Run every gate sequentially, obtain review, tick the roadmap, and set this
-plan to `COMPLETE`.
+Q4, which was approved. Run every gate sequentially, obtain review, tick the
+roadmap, and set this plan to `COMPLETE`.
 
 ## Milestones and plateaus
 
 ### EP-M1 — the decision record exists and its registers are guarded
 
-- **Outcome**: ADR 004 exists with three registers; `INV-CRITERION`,
-  `INV-REGISTERS`, `INV-EXCLUSION`, and `INV-AGGREGATE` green.
+- **Outcome**: ADR 004 exists with its status and aggregation registers;
+  `INV-CRITERION`, `INV-REGISTERS`, `INV-EXCLUSION`, and `INV-AGGREGATE` green.
 - **Requirements**: the decision half of `ROADMAP-1.1.3`; `TDD-6.1-stable-id`;
   `TDD-6.2-no-speculative-api`.
 - **Acceptance**: `make test` passes; every negative control asserts a specific
@@ -942,7 +957,7 @@ plan to `COMPLETE`.
 - **Remaining gaps**: no template, no committed note.
 - **Compatibility decision**: none. Nothing is released; `src/` is a stub.
 
-### EP-M2 — the template is generated and a worked example exists
+### EP-M2 — the template matches the register and the example exists
 
 - **Outcome**: the template's fields match the status register and every cell
   holds `TBD`; ADR 004 carries an illustrative worked example marked as
@@ -976,7 +991,7 @@ plan to `COMPLETE`.
 
 - **Outcome**: the sync map is applied; a Phase 2 engineer starting from
   roadmap task 2.2.1 reaches the template in one hop.
-- **Requirements**: `AGENTS.md`'s documentation obligation; Q4.
+- **Requirements**: `AGENTS.md`'s documentation obligation; the Q4 pointers.
 - **Acceptance**: `make markdownlint`, `make nixie`, `make check-fmt` pass, and
   `make test` still passes **including** the pre-existing exit-register
   contract, which reads three of the documents being edited.
@@ -1127,8 +1142,8 @@ outcomes.
 2. `docs/design.md`: add both new documents to the companion list; add one
    sentence at the end of §6.1 pointing to ADR 004 and the template; add one
    sentence at the end of §12 pointing to the template, because §12 is what
-   roadmap task 2.2.1 cites. Under Q1, add the `StateName` return-shape bullet
-   to §14 "Deferred decisions" — verified inert, because the existing contract
+   roadmap task 2.2.1 cites. Per Q1, add the `StateName` return-shape bullet to
+   §14 "Deferred decisions" — verified inert, because the existing contract
    reads §14 only as a heading-string relocation anchor. Update "Last
    substantive revision". No §11.1 edit — see Q1 and D12.
 3. `docs/terms-of-reference.md`: add both documents to the companion list and
@@ -1142,7 +1157,7 @@ outcomes.
    Deliberately *not* made `INV-ANCHORS` targets: welding glossary entries to
    the test suite buys little and taxes every future edit.
 5. `docs/roadmap.md`: tick task 1.1.3 and append the ADR link to its success
-   bullet. Under Q4, add one `- See docs/phase-2-validation-note-template.md.`
+   bullet. Per Q4, add one `- See docs/phase-2-validation-note-template.md.`
    bullet to tasks 2.2.1, 2.2.2, and 3.1.2. Renumber nothing.
 6. `docs/users-guide.md` "Current status": one sentence recording that the
    `StateName` return type is not yet settled and that no identifier will be
@@ -1484,3 +1499,10 @@ re-permits in tests.
   - The aggregation register's outcomes are now explicitly conditional on
     publication proceeding, so they cannot read as contradicting ADR 003's
     exit E1.
+- 2026-09-18, approved. Status moved from `DRAFT` to `APPROVED`. All five
+  referred decisions were settled as recommended and the "Open questions"
+  section became "Approval-gate decisions"; its reasoning is retained because
+  it explains the shape of the artefacts, but nothing in it remains open. The
+  constraint forbidding a `docs/design.md` §11.1 edit is now unconditional, and
+  the §14 bullet is in scope. No implementation has started: `Progress` is
+  unchanged and Stage A has not run.
