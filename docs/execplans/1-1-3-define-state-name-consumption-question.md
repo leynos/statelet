@@ -51,7 +51,7 @@ the suite exercises a filled note and not merely an empty form.
 
 Observable acceptance: from a clean checkout, `make test` passes and reports
 the new integration-test binary `state_name_consumption_contract`. Deleting the
-`Insufficient` row from the verdict register, adding a residual `TBD` to the
+`Insufficient` row from the status register, adding a residual `TBD` to the
 committed worked example, or renaming a field in one document but not the
 other, each makes `make test` fail with a message naming the file and the
 repair.
@@ -185,17 +185,17 @@ consequential: the first is what makes the label-stability case recordable, the
 second is what makes the procedure terminate. Neither is the naive reading.
 Recommended: accept; this is the substance of the task. See D4 and D11.
 
-**Q1 — should a bet B7 be added to `docs/design.md` §11.1?**
+**Q1 — how should this question be made evidence-gated in `docs/design.md`?**
 
-`docs/design.md` §11.1 holds a table named the bet register. It has six rows,
-B1 to B6, each naming a claim the design is betting on, a confidence, and the
-evidence that would settle it. The section states its own rule: "Each bet must
-have an evidence-producing gate before the affected API is published."
+Two upstream registers could carry it, and the plan's first two drafts
+considered only one of them.
 
-By that rule a bet is missing. Whether `StateName`'s return type is a
-sufficient state identity is a claim of exactly that kind, affecting exactly
-such an API, and no row covers it. "B7" is this plan's name for the row that
-would close the gap. It does not exist anywhere yet; the proposal is:
+`docs/design.md` §11.1 holds a table named the bet register: six rows, B1 to
+B6, each naming a claim the design is betting on, a confidence, and the
+evidence that would settle it. The section states its own rule — "Each bet must
+have an evidence-producing gate before the affected API is published" — and by
+that rule a bet is missing. "B7" is this plan's name for the row that would
+close the gap. It does not exist anywhere yet; the proposal is:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -207,35 +207,40 @@ would close the gap. It does not exist anywhere yet; the proposal is:
 
 *Table 1: The proposed bet B7, sized to the existing column widths.*
 
-Recommended: **no in this task, but on scope grounds only — the safety
-objection is discharged.**
+`docs/design.md` §14 "Deferred decisions" is the second candidate, and the
+better fit. It is introduced as "The implementation should resolve these before
+publishing v0.1"; it already carries a `StateName` item, on whether the derive
+follows the `macros` feature; and the return shape — the very decision this
+task prepares — is conspicuously absent from it. One bullet closes that:
 
-The hazard is real and worth stating, because it is invisible on inspection.
+```markdown
+- Whether `StateName` returns `&'static str`, or a value carrying a stronger
+  stability guarantee, as decided by roadmap task 3.2.1 from the validation
+  notes defined in ADR 004.
+```
+
+Recommended: **add the §14 bullet in this task; raise B7 separately, using the
+row above.**
+
+The §14 bullet is one line and verified inert. The existing contract touches
+§14 only as a relocation anchor — `tests/v0_1_exit_register_contract.rs:142` and
+`regression_controls.rs:16` substitute on the heading string
+`"## 14. Deferred decisions"` — so adding a bullet beneath that heading changes
+nothing it reads.
+
+B7 is deferred on scope rather than safety, and the safety objection raised in
+review is discharged. The hazard is real and invisible on inspection:
 `tests/v0_1_exit_register_contract.rs:119-126` and `:274-290` embed the §11.1
-B1 row byte-exactly, including its trailing pad spaces, and use it with
-`DESIGN.replace(...)`. `mdtablefix` canonicalizes every column to
-`max(content) + 2`. The current maxima are 3, 77, 10 and 93 characters, so a
-row exceeding any of them repads the entire table, turns that `replace` into a
-no-op, silently disarms two controls, and fails a contract this plan is
-forbidden to modify.
-
-Both halves of that claim were measured against the real repository rather than
-reasoned about. Inserting a B7 row with a 37-character Confidence cell and
-running `make fmt` repads the table and grows the B1 row from 197 to 224 bytes.
-Inserting the fitted row above — 67, 6 and 89 characters — and running
-`make fmt` leaves every pre-existing row byte-identical, and `make test` then
-reports 40 passed. The fitted row is safe by construction, not merely believed
-to be.
-
-What remains is scope. §11.1 is upstream design prose and roadmap task 1.1.3
-asks for an instrument, not a design amendment; ADR 004 plus the §6.1 pointer
-already give the gate its anchor, so B7 improves discoverability rather than
-correctness. That is a thin reason to decline, and the recommendation is
-correspondingly marginal: accepting Q1 costs one verified-inert line, and a
-reviewer who would rather close §11.1's gap now should say so.
-
-Whichever way it goes, the fitted row and the width budget are recorded here so
-that whoever picks this up does not rediscover either.
+B1 row byte-exactly including its trailing pad spaces and use it with
+`DESIGN.replace(...)`, while `mdtablefix` canonicalizes every column to
+`max(content) + 2`. Current maxima are 3, 77, 10 and 93 characters. Both halves
+were measured against the real repository rather than reasoned about: a B7 row
+with a 37-character Confidence cell plus `make fmt` repads the table and grows
+the B1 row from 197 to 224 bytes, whereas the fitted row above — 67, 6 and 89
+characters — leaves every pre-existing row byte-identical and `make test` then
+reports 40 passed. So B7 is deliverable; it is simply upstream design prose
+that roadmap task 1.1.3 did not ask for, and the pre-drafted row makes the
+follow-up mechanical rather than a research task.
 
 **Q2 — should the template be a separate file from the ADR?** Recommended:
 **yes**, with the template *generated* from the ADR rather than hand-maintained
@@ -277,7 +282,6 @@ Written (new):
 - `docs/adr-004-state-name-consumption-evidence.md`
 - `docs/phase-2-validation-note-template.md`
 - `docs/validation-notes/README.md`
-- `docs/validation-notes/example-continuation-mode.md` (the worked example)
 - `tests/state_name_consumption_contract.rs`
 - `tests/state_name_consumption_contract/types.rs`
 - `tests/state_name_consumption_contract/parse.rs`
@@ -352,13 +356,13 @@ Upstream artefacts and revisions at the time of writing:
 Traced items:
 
 ```plaintext
-ROADMAP-1.1.3-success -> EP-M1 -> ADR-004 field register -> tests::success_criterion_still_maps
-TDD-6.1-stable-id     -> EP-M1 -> ADR-004 verdict register -> tests::verdict_register_matches_fixture
+ROADMAP-1.1.3-success -> EP-M1 -> ADR-004 status register -> tests::success_criterion_still_maps
+TDD-6.1-stable-id     -> EP-M1 -> ADR-004 status register -> tests::status_register_matches_fixture
 TDD-6.1-default-str   -> EP-M1 -> ADR-004 R-DEFAULT -> tests::default_survives_without_a_required_property
 TDD-6.1-cardinality   -> EP-M1 -> ADR-004 admissibility -> tests::unbounded_names_block_admissibility
 TDD-6.2-no-speculative-api -> ADR-004 rationale -> EP-M1 -> tests::quoted_passages_still_resolve
 ADR-002-wireframe-labels -> Finding four -> EP-M1 -> tests::quoted_passages_still_resolve
-TDD-9-transition-fields -> field tracing-use -> EP-M2 -> docs/validation-notes/example-continuation-mode.md
+TDD-9-transition-fields -> field tracing-use -> EP-M2 -> ADR-004 worked example
 ROADMAP-2.2.1/2.2.2/3.1.2 -> gates S1..S3 -> EP-M3 -> tests::gate_titles_resolve
 ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3 -> tests::aggregation_register_is_total
 ```
@@ -406,7 +410,7 @@ outcome, and a reviewer should approve it on that understanding.
 5. **Size.** The module split is pre-declared below rather than discovered; if
    any of `types.rs`, `parse.rs`, or `policy.rs` passes 300 lines, stop and
    re-plan the split.
-6. **Ambiguity.** If the verdict register admits a second defensible reading,
+6. **Ambiguity.** If the status register admits a second defensible reading,
    stop and present both.
 7. **Gate time.** If `make lint` or `make test` exceeds twenty minutes, stop
    and report.
@@ -525,12 +529,15 @@ derivable from the repository alone, and each changed the design.
   carry its own test. Date/Author: 2026-09-18, planning agent, after design
   review.
 
-- D6: Use identical tokens in the field register and the verdict register.
-  Rationale: with `None observed / Named consumer` against `Absent / Present`,
-  no document records which maps to which, so a "bijection" check degrades to a
-  hard-coded translation table — a control tautological with its own constant.
-  Identical tokens make the correspondence real. Date/Author: 2026-09-18,
-  planning agent, after design review.
+- D6: Use one token vocabulary across the whole record. **Superseded by D13**,
+  which achieves this by merging the registers rather than by keeping two in
+  step. Rationale: with `None observed / Named consumer` against
+  `Absent / Present`, no document records which maps to which, so a "bijection"
+  check degrades to a hard-coded translation table — a control tautological
+  with its own constant. The second draft accepted this decision and then
+  violated it anyway, which is the evidence that two registers cannot reliably
+  be kept in step by intent. Date/Author: 2026-09-18, planning agent, after
+  design review.
 
 - D7: Bind gates by roadmap task *title fragment*, not task number.
   Rationale: the existing contract requires bound tasks to be present and
@@ -572,19 +579,63 @@ derivable from the repository alone, and each changed the design.
   will collide with the closed vocabulary. Date/Author: 2026-09-18, planning
   agent, after design review.
 
-- D12: Decline Q1 — do not add bet B7 to `docs/design.md` §11.1 in this task.
-  Rationale: the observation that §11.1 lacks a bet for this question is sound,
-  and Q1 records a fitted row measured to be inert, so the work is not lost.
-  The safety objection raised in review is discharged: an oversized row does
-  repad the table and break two controls, but the fitted row does not, and
-  `make fmt` plus `make test` were run against the real repository to prove
-  both. What remains is that the edit is upstream design prose on a Phase 1
-  task, so the decision is marginal and is flagged as such at the approval gate
-  rather than presented as clear-cut. Note that the wording proposed in this
-  plan's first draft is stale: it said "Two validation notes" where the gate
-  table names three recording gates, and it was written against the superseded
-  named-consumer axis. Q1 carries the corrected wording. Date/Author:
+- D12: On Q1, add the `docs/design.md` §14 bullet in this task and raise bet
+  B7 separately, using the row drafted in Q1. Rationale: §14 "Deferred
+  decisions" is a better fit than §11.1 — it is literally the list of decisions
+  to resolve before publishing v0.1, it already carries a `StateName` item, and
+  the return shape is absent from it. The bullet is one line and verified
+  inert, because the existing contract reads §14 only as a heading-string
+  relocation anchor. B7 remains worth filing, and its safety objection is
+  discharged by measurement, but it is upstream design prose this task did not
+  ask for. Note that the wording proposed in this plan's first draft is stale:
+  it said "Two validation notes" where the gate table names three recording
+  gates, and it was written against the superseded named-consumer axis. Q1
+  carries the corrected wording. Date/Author: 2026-09-18, planning agent, after
+  design review.
+
+- D13: Merge the field register, its admissibility column, and the verdict
+  register into one status register keyed on `(Field, Status)`. Rationale: the
+  second draft's field register recorded which *field* gates admissibility but
+  never which *status* blocks, so `resolve_note` had to hardcode
+  `Not a named type` and `Unbounded`. That is exactly the constant tautological
+  with its own control that D6 removed from the verdict axis, reintroduced one
+  level down. The second draft also violated D6 outright: its field register
+  said `None / Property required` while its verdict axis said `No / Yes`, and
+  its blocking status was written `Not a type` in one table and
+  `Not a named type` in an invariant — mismatches that byte-exact fixtures
+  would have frozen into the contract. One table with one vocabulary makes both
+  admissibility and verdict derivable from the document. Date/Author:
   2026-09-18, planning agent, after design review.
+
+- D14: `state-display-name` records the enumerated set of returned strings.
+  Rationale: the second draft's statuses recorded only whether a named type
+  existed, so the note never captured the actual labels. That left
+  `metrics-cardinality: Bounded` as an unaudited assertion by the note's
+  author, and meant a reviewer at task 3.2.1 would decide the fate of a
+  `&'static str` without seeing a single string. It also failed the roadmap
+  noun it was mapped to. Enumerating the names makes the cardinality bound
+  derivable and gives Finding one's stability argument concrete labels.
+  Date/Author: 2026-09-18, planning agent, after design review.
+
+- D15: `INV-FILLED` keys on a `<!-- state-name-note -->` marker, not on a glob,
+  and an empty `docs/validation-notes/` is not a failure. Rationale: the
+  directory is shared. Roadmap task 1.2.3's benchmark note, task 2.2.3's exit
+  note, and task 3.1.3's decision note are all validation notes and none is a
+  `StateName` note; a glob would make each one's arrival a build failure.
+  Separately, the second draft required a filled note to be committed now as
+  the suite's accepting witness — but no honest note can exist before task
+  2.2.1 has annotated anything, so its citations would have been fabricated
+  while modelling the standard for Phase 2. The witness is a string fixture;
+  the illustrative example lives in ADR 004 marked as illustration.
+  Date/Author: 2026-09-18, planning agent, after design review.
+
+- D16: `INV-TEMPLATE` compares parsed values, not bytes.
+  Rationale: the second draft rendered the template and asserted byte equality,
+  which would have required the renderer to reproduce `mdtablefix`'s
+  `max(content) + 2` canonicalization at test time, with no "format then copy"
+  escape. That welded the suite to a third-party padding algorithm to guard a
+  property that does not depend on padding. Date/Author: 2026-09-18, planning
+  agent, after design review.
 
 ## Outcomes & retrospective
 
@@ -630,7 +681,7 @@ formatter by running `make fmt` before fixtures are written and by
 - **Obligation**: roadmap task 1.1.3's success bullet resolves verbatim
   (whitespace-folded) in `docs/roadmap.md`, and each of its four nouns — state
   display name, identifier need, metrics cardinality, tracing use — maps to
-  exactly one field identifier in ADR 004's field register.
+  exactly one field identifier in ADR 004's status register.
 - **Method**: parameterized test, one case per noun.
 - **Rationale**: this is the one thing the task is graded on, and no other
   invariant touches it. It is also the cheapest in the set.
@@ -640,34 +691,41 @@ formatter by running `make fmt` before fixtures are written and by
   the clause. Without the second control the check passes vacuously against an
   absent bullet.
 
-### INV-TEMPLATE — the blank form is generated, not maintained
+### INV-TEMPLATE — the blank form matches the register it instantiates
 
-- **Obligation**: `docs/phase-2-validation-note-template.md`'s note register is
-  byte-equal to the register rendered from ADR 004's field register by
-  `render_blank_note`.
-- **Method**: exact equality with `pretty_assertions::assert_eq!`.
-- **Rationale**: this single check subsumes field-set equality, field ordering,
-  and the requirement that every cell ships unfilled, and it deletes a parser.
-  It is the schema-versus-instance edge, which is the thing most likely to rot,
-  because the two files will be edited months apart.
-- **Artefact**: test `template_is_the_rendered_blank_note`.
-- **Non-vacuity**: three controls. A template with a field removed, with a
-  field reordered, and with `Bounded` pre-filled in a status cell must each
-  fail with a diff naming the row. `render_blank_note` returning an empty
-  string must fail against the live template, which closes the hole where two
-  empty values compare equal.
+- **Obligation**: the field identifiers in
+  `docs/phase-2-validation-note-template.md`'s note register equal the distinct
+  field identifiers of ADR 004's status register, in first-appearance order,
+  and every status and evidence cell in the template holds the literal `TBD`.
+- **Method**: parse both, compare typed values with
+  `pretty_assertions::assert_eq!`.
+- **Rationale**: this is the schema-versus-instance edge, and it is the thing
+  most likely to rot, because the two files will be edited months apart. The
+  comparison is deliberately *semantic* rather than byte-exact. The second
+  draft rendered the template from the register and asserted byte equality,
+  which would have required `render_blank_note` to reproduce `mdtablefix`'s
+  `max(content) + 2` column canonicalization — an external formatting rule this
+  plan lists as an axiom, with no "run `make fmt`, then copy" escape available
+  because generation happens at test time. That coupled the suite to a
+  third-party padding algorithm forever, to guard a property that does not
+  depend on padding.
+- **Artefact**: test `template_matches_the_status_register`.
+- **Non-vacuity**: four controls. A template with a field removed, with a field
+  added, with fields reordered, and with `Bounded` pre-filled in a status cell
+  must each fail with a diff naming the row. An empty template register must
+  yield `EmptyRegister`, not a vacuously equal pair of empty vectors.
 
-### INV-REGISTERS — the three registers match their fixtures exactly
+### INV-REGISTERS — both registers match their fixtures exactly
 
-- **Obligation**: the field, verdict, and aggregation registers parsed from
+- **Obligation**: the status register and the aggregation register parsed from
   ADR 004 equal their fixture literals in `fixtures.rs`.
 - **Method**: exact equality per register.
-- **Rationale**: at two and three rows, equality against a literal is a
-  stronger and more readable check than a family of policy predicates, and a
-  `pretty_assertions` diff names the changed cell better than any bespoke
-  message. It subsumes totality and row cardinality.
-- **Artefact**: tests `field_register_matches_fixture`,
-  `verdict_register_matches_fixture`, `aggregation_register_matches_fixture`.
+- **Rationale**: equality against a literal is a stronger and more readable
+  check than a family of policy predicates, and a `pretty_assertions` diff
+  names the changed cell better than any bespoke message. It subsumes totality
+  and row cardinality.
+- **Artefact**: tests `status_register_matches_fixture` and
+  `aggregation_register_matches_fixture`.
 - **Non-vacuity**: an empty register must yield `EmptyRegister` naming the
   register, not a vacuously equal pair of empty vectors; a register whose
   delimiters are absent must yield `MissingDelimiters` naming the register and
@@ -676,8 +734,9 @@ formatter by running `make fmt` before fixtures are written and by
 
 ### INV-EXCLUSION — the default holds without a required property, and can fall
 
-- **Obligation**: no verdict-register row whose `Property required` cell is
-  `No` selects `Insufficient`; and at least one row selects `Insufficient`.
+- **Obligation**: in the status register, no row contributing `Insufficient`
+  belongs to a field other than `identifier-need`; and at least one row
+  contributes `Insufficient`.
 - **Method**: two predicates over the typed verdict rows.
 - **Rationale**: `INV-REGISTERS` pins the live document, so these are
   *implied* for it. They are not redundant against the real threat model: an
@@ -701,11 +760,13 @@ formatter by running `make fmt` before fixtures are written and by
 
 ### INV-ADMISSIBILITY — an unusable note yields no verdict and names its blocker
 
-- **Obligation**: a note whose `state-display-name` is `Not a named type`, or
-  whose `metrics-cardinality` is `Unbounded`, resolves to `Not resolved` and
-  reports the blocking field.
-- **Method**: parameterized test over fixture notes, one case per blocking
-  status, plus one admissible control.
+- **Obligation**: a note selecting any status whose register row says
+  `Admissible: no` resolves to `Not resolved` and reports the blocking field
+  and status. The blocking set is read from the status register, never
+  hardcoded in Rust.
+- **Method**: parameterized test over fixture notes, one case per row the
+  register marks inadmissible, enumerated from the register itself so a new
+  blocking status cannot be added without a case, plus one admissible control.
 - **Rationale**: this is where cardinality belongs. The first state Phase 2
   meets is `ProcessBuffer`'s `bool in_table`, which is not a named type at all,
   and ADR 002 confirms that is the present shape of `mdtablefix`. A vocabulary
@@ -716,21 +777,32 @@ formatter by running `make fmt` before fixtures are written and by
   check cannot pass by blocking everything; and a blocked note must name the
   specific field, so it cannot pass by reporting a generic failure.
 
-### INV-FILLED — every committed note is a usable note
+### INV-FILLED — every committed StateName note is a usable note
 
-- **Obligation**: every `docs/validation-notes/*.md` except `README.md` parses,
-  contains no residual `TBD`, uses only statuses admissible for its field,
-  carries a citation-shaped evidence cell for every field, and resolves.
-- **Method**: a test enumerating the directory and asserting per file.
-- **Rationale**: without this the suite checks the mould and never the casting.
-  Ten invariants over a blank form supply false authority to a reviewer at
-  3.2.1 who sees a green suite and infers the evidence was audited.
-- **Artefact**: test `committed_notes_are_usable`.
-- **Non-vacuity**: the committed worked example is the accepting witness, so
-  the test cannot pass over an empty directory — an empty directory is itself a
-  failure. Four rejecting controls, as string fixtures: residual `TBD`; a
-  status outside the field's vocabulary; an evidence cell that is prose rather
-  than a citation; and a status and evidence that contradict.
+- **Obligation**: every file under `docs/validation-notes/` that declares a
+  `<!-- state-name-note -->` marker parses, contains no residual `TBD`, uses
+  only statuses admissible for its field per the status register, carries a
+  citation-shaped evidence cell for every field, and resolves. Files without
+  the marker are ignored.
+- **Method**: a directory scan keyed on the marker, asserting per matching
+  file.
+- **Rationale**: keying on a declared marker rather than on `*.md` matters more
+  than it looks. `docs/validation-notes/` is not this task's namespace to
+  claim: roadmap task 1.2.3 produces a *benchmark* note with four different
+  fields, task 2.2.3's note chooses one of ADR 003's three exits, and task
+  3.1.3's cites both validation examples. None is a `StateName` note. A glob
+  would turn the arrival of any of them into a build failure — the same hazard
+  D7 removed from the gates, one level down.
+- **Artefact**: test `committed_state_name_notes_are_usable`.
+- **Non-vacuity**: the accepting witness is a string fixture, not a committed
+  file, so the test cannot pass merely because the directory is empty — and an
+  empty directory is explicitly *not* a failure, because no note can honestly
+  exist until task 2.2.1 has annotated something. Five rejecting controls, all
+  string fixtures: residual `TBD`; a status outside the field's register
+  vocabulary; an evidence cell that is prose rather than a citation; a status
+  and evidence that contradict; and a file carrying the marker but missing a
+  field. A sixth control asserts that a benchmark-shaped note *without* the
+  marker is ignored rather than rejected.
 
 ### INV-AGGREGATE — the rule for reading several notes is total
 
@@ -841,12 +913,12 @@ its body.
 
 ### Stage C — green (EP-M1, EP-M2, EP-M3)
 
-Insert the three registers into ADR 004. Run `make fmt` first so `mdtablefix`
-sets column widths, then copy the formatted rows into `fixtures.rs`; writing
-fixtures before formatting is what makes them drift. Generate the template from
-the field register and commit it. Write and commit the worked example. Add the
-gate table and the evidence section. Observe each invariant go green in turn,
-committing at each coherent point.
+Insert the status register and the aggregation register into ADR 004. Run
+`make fmt` first so `mdtablefix` sets column widths, then copy the formatted
+rows into `fixtures.rs`; writing fixtures before formatting is what makes them
+drift. Then proceed to Step 6 for the template and the illustrative example,
+and Step 7 for the gate table and the evidence section. Observe each invariant
+go green in turn, committing at each coherent point.
 
 ### Stage D — sync and delivery (EP-M4, EP-M5)
 
@@ -872,16 +944,17 @@ plan to `COMPLETE`.
 
 ### EP-M2 — the template is generated and a worked example exists
 
-- **Outcome**: the template is byte-equal to the rendered blank note; a worked
-  example is committed; `INV-TEMPLATE`, `INV-ADMISSIBILITY`, and `INV-FILLED`
-  green.
+- **Outcome**: the template's fields match the status register and every cell
+  holds `TBD`; ADR 004 carries an illustrative worked example marked as
+  non-evidence; `INV-TEMPLATE`, `INV-ADMISSIBILITY`, and `INV-FILLED` green.
 - **Requirements**: the instrument half of `ROADMAP-1.1.3` — the roadmap's
   literal success criterion.
 - **Acceptance**: `make test` passes; and a manual check that filling the
   template for `ContinuationMode` yields a verdict derivable from ADR 004
   alone, without a judgement call.
-- **Conformance check**: template generated not hand-maintained; the worked
-  example uses only admissible statuses and citation-shaped evidence.
+- **Conformance check**: template fields derived from the status register; the
+  illustrative example uses only admissible statuses and is marked as
+  illustration; `docs/validation-notes/` holds no fabricated evidence.
 - **Recovery**: additive.
 - **Remaining gaps**: gates and anchors unbound.
 - **Compatibility decision**: none.
@@ -964,9 +1037,9 @@ make test 2>&1 | tee /tmp/test-statelet-red-$(git branch --show-current).out
 Expected transcript fragment:
 
 ```plaintext
-docs/adr-004-state-name-consumption-evidence.md: no field register found
-between <!-- field-register:begin --> and <!-- field-register:end -->.
-Repair: add the register block to the Field register section.
+docs/adr-004-state-name-consumption-evidence.md: no status register found
+between <!-- status-register:begin --> and <!-- status-register:end -->.
+Repair: add the register block to the Status register section.
 ```
 
 Every register-dependent test fails with `MissingDelimiters` naming its own
@@ -982,17 +1055,24 @@ make fmt
 make test 2>&1 | tee /tmp/test-statelet-green-$(git branch --show-current).out
 ```
 
-Insert the three registers, run `make fmt` so `mdtablefix` canonicalizes column
-widths to `max(content) + 2`, then copy the formatted rows into `fixtures.rs`.
-Running `make fmt` after writing fixtures would change documents under a green
-test. Commit.
+Insert the status register and the aggregation register, run `make fmt` so
+`mdtablefix` canonicalizes column widths to `max(content) + 2`, then copy the
+formatted rows into `fixtures.rs`. Running `make fmt` after writing fixtures
+would change documents under a green test. Commit.
 
-### Step 6 — generate the template and write the worked example
+### Step 6 — write the template and the illustrative example
 
-Render the blank note from the field register, commit it as the template, then
-fill it for `ContinuationMode` per ADR 002's sketch and commit it to
-`docs/validation-notes/example-continuation-mode.md`. Run `make fmt` and
-`make test`. Commit.
+Write `docs/phase-2-validation-note-template.md` from the status register's
+field list, with `TBD` in every cell. Add the illustrative worked example to
+ADR 004 as a fenced block under a heading that marks it explicitly as
+illustration and not evidence. Run `make fmt` and `make test`. Commit.
+
+`docs/validation-notes/` stays empty except for its `README.md` until task
+2.2.1 fills the first note. That is deliberate: a note committed now could only
+cite work that has not happened, so it would either carry fabricated citations
+while serving as the suite's accepting witness, or it would mean task 1.1.3 had
+quietly done task 2.2.2's observation. The suite's witness is a string fixture
+instead.
 
 ### Step 7 — gate table and quoted evidence
 
@@ -1047,8 +1127,10 @@ outcomes.
 2. `docs/design.md`: add both new documents to the companion list; add one
    sentence at the end of §6.1 pointing to ADR 004 and the template; add one
    sentence at the end of §12 pointing to the template, because §12 is what
-   roadmap task 2.2.1 cites. Update "Last substantive revision". No §11.1 edit
-   — see Q1 and D12.
+   roadmap task 2.2.1 cites. Under Q1, add the `StateName` return-shape bullet
+   to §14 "Deferred decisions" — verified inert, because the existing contract
+   reads §14 only as a heading-string relocation anchor. Update "Last
+   substantive revision". No §11.1 edit — see Q1 and D12.
 3. `docs/terms-of-reference.md`: add both documents to the companion list and
    ADR 004 to §10.2. Update "Last substantive revision".
 4. `docs/context.md`: add two glossary entries. **State identifier** — "a
@@ -1056,9 +1138,9 @@ outcomes.
    distinct from a state name, which is a human-readable label." **Validation
    note** — "the record a validation task produces, instantiated from
    `docs/phase-2-validation-note-template.md` and committed to
-   `docs/validation-notes/`." Deliberately *not* made `INV-ANCHORS` targets:
-   welding glossary entries to the test suite buys little and taxes every
-   future edit.
+   `docs/validation-notes/` carrying the marker its contract test keys on."
+   Deliberately *not* made `INV-ANCHORS` targets: welding glossary entries to
+   the test suite buys little and taxes every future edit.
 5. `docs/roadmap.md`: tick task 1.1.3 and append the ADR link to its success
    bullet. Under Q4, add one `- See docs/phase-2-validation-note-template.md.`
    bullet to tasks 2.2.1, 2.2.2, and 3.1.2. Renumber nothing.
@@ -1097,10 +1179,9 @@ cases).
 `pretty_assertions::assert_eq!`. A control asserting only `is_err()` does not
 discharge its obligation and must be rewritten.
 
-**Manual acceptance.** Read
-`docs/validation-notes/example-continuation-mode.md` and ADR 004's verdict
-register, and nothing else. The verdict must be derivable without a judgement
-call. If it is not, the instrument has failed regardless of the tests.
+**Manual acceptance.** Read ADR 004's illustrative worked example and its
+status register, and nothing else. The verdict must be derivable without a
+judgement call. If it is not, the instrument has failed regardless of the tests.
 
 Quality criteria: every gate in Step 9 green; every invariant with a passing
 test and a failing control; `make lint` reporting no clippy or Whitaker finding
@@ -1130,42 +1211,50 @@ Transcripts are appended here as steps complete. The register drafts below are
 narrower than 120 columns so that they do not breach `MD013`'s
 `code_block_line_length` when previewed inside a fence.
 
-### The field register
+### The status register
 
-Between `<!-- field-register:begin -->` and `<!-- field-register:end -->`:
+This one table replaces the separate field register, its admissibility column,
+and the two-row verdict register that the second draft carried. Keying on
+`(Field, Status)` makes both admissibility and verdict *derivable from the
+document*, where the earlier shape left the blocking statuses hardcoded in Rust
+— the same "constant tautological with its own control" defect that D6 removed
+from the verdict axis, reintroduced one level down.
 
-```markdown
-| Field               | Statuses                    | Gates admissibility |
-| ------------------- | --------------------------- | ------------------- |
-| state-display-name  | Named type / Not a type     | yes                 |
-| identifier-need     | None / Property required    | no                  |
-| metrics-cardinality | Bounded / Unbounded         | yes                 |
-| tracing-use         | Full / Partial / None       | no                  |
-```
-
-*Table 2: The four fields a validation note records, and which of them gate
-whether the note is usable evidence.*
-
-ADR 004's prose states, per field, what the evidence cell must contain. For
-`identifier-need` that is the enumerated set of consumers considered — tracing
-subscriber, metrics recorder or its documented absence, any model checker, and
-generated documentation — and, where a property is required, which of equality,
-stability across releases, ordering, or compact encoding the variant-name
-`&'static str` fails to supply.
-
-### The verdict register
-
-Between `<!-- verdict-register:begin -->` and `<!-- verdict-register:end -->`:
+Between `<!-- status-register:begin -->` and `<!-- status-register:end -->`:
 
 ```markdown
-| Property required | Verdict      | Action                              |
-| ----------------- | ------------ | ----------------------------------- |
-| No                | Sufficient   | Keep the default; carry to 3.2.1    |
-| Yes               | Insufficient | Record property and consumer        |
+| Field               | Status            | Admissible | Contributes  |
+| ------------------- | ----------------- | ---------- | ------------ |
+| state-display-name  | Enumerated        | yes        | nothing      |
+| state-display-name  | Not a named type  | no         | nothing      |
+| identifier-need     | None              | yes        | Sufficient   |
+| identifier-need     | Property required | yes        | Insufficient |
+| metrics-cardinality | Bounded           | yes        | nothing      |
+| metrics-cardinality | Unbounded         | no         | nothing      |
+| tracing-use         | Full              | yes        | nothing      |
+| tracing-use         | Partial           | yes        | nothing      |
+| tracing-use         | None              | yes        | nothing      |
 ```
 
-*Table 3: How an admissible note resolves. Cardinality is absent by design; it
-gates admissibility and never the verdict.*
+*Table 2: Every admissible status for every field, whether it blocks the note,
+and what it contributes to the verdict. A note is admissible when no cell it
+selects is `Admissible: no`; its verdict is the single non-`nothing`
+contribution.*
+
+`state-display-name` is `Enumerated` only when the note lists the actual
+strings each annotated state can return. That is what the roadmap noun "state
+display name" asks for, and the second draft did not deliver it: its statuses
+recorded only whether a named type existed, so `metrics-cardinality: Bounded`
+was an unaudited assertion and a reviewer at task 3.2.1 would decide the fate
+of a `&'static str` without ever seeing the strings. With the names enumerated,
+the cardinality bound is derivable from the note rather than asserted by its
+author, and Finding one's stability case can be argued against concrete labels.
+
+The evidence cell for `identifier-need` must list the consumers considered —
+tracing subscriber, metrics recorder or its documented absence, any model
+checker, and generated documentation — and, where a property is required, name
+which of equality, stability across releases, ordering, or compact encoding the
+variant-name `&'static str` fails to supply.
 
 ### The aggregation register
 
@@ -1173,14 +1262,16 @@ Between `<!-- aggregation-register:begin -->` and
 `<!-- aggregation-register:end -->`:
 
 ```markdown
-| Admissible notes | Any insufficient | Outcome at task 3.2.1            |
+| Admissible notes | Any insufficient | Outcome if publication proceeds  |
 | ---------------- | ---------------- | -------------------------------- |
 | None             | n/a              | Blocked: no admissible evidence  |
 | One or more      | No               | Ratify the current return type   |
 | One or more      | Yes              | Amend design 6.1 before publish  |
 ```
 
-*Table 4: How task 3.2.1 reads the committed notes together.*
+*Table 3: How task 3.2.1 reads the committed notes together. Every outcome is
+conditional on publication: if ADR 003's gate G2 has already selected exit E1,
+Statelet ships nothing and no return type is ratified.*
 
 ### The gate table
 
@@ -1195,7 +1286,7 @@ Between `<!-- gate-table:begin -->` and `<!-- gate-table:end -->`:
 | S4   | Finalize the `StateName` return shape  | Decides         |
 ```
 
-*Table 5: Gates, bound by task title rather than task number so that completing
+*Table 4: Gates, bound by task title rather than task number so that completing
 a gate does not break the build.*
 
 ### ADR 004's section order
@@ -1209,11 +1300,13 @@ Per `docs/documentation-style-guide.md`, with custom sections in the slot ADR
 ## Decision drivers
 ## Options considered          -> with a numbered comparison table
 ## Decision outcome / proposed direction
-## Field register              -> delimited
-## Admissibility               -> prose, per blocking status, with the owner
-                                  of an upstream repair named
-## Verdict register            -> delimited
+## Status register             -> delimited; every (field, status) pair, its
+                                  admissibility and its contribution
+## Admissibility               -> prose reading of the register, naming the
+                                  owner of an upstream repair
 ## Aggregation register        -> delimited
+## Worked example              -> illustrative fenced note, marked explicitly
+                                  as illustration and not as evidence
 ## Gates                       -> delimited
 ## Evidence the record preserves -> delimited; three clauses
 ## Goals and non-goals
@@ -1255,7 +1348,7 @@ every repair message derivable:
 
 ```rust,ignore
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum Register { Field, Verdict, Aggregation, Gates, Note }
+pub(crate) enum Register { Status, Aggregation, Gates, Note }
 
 impl Register {
     pub(crate) const fn document(self) -> &'static str;
@@ -1277,11 +1370,10 @@ pub(crate) enum ParseError {
 ```rust,ignore
 pub(crate) fn parse_table(source: &str, register: Register)
     -> Result<Vec<Vec<String>>, ParseError>;
-pub(crate) fn field_rows(adr: &str) -> Result<Vec<FieldRow>, ParseError>;
-pub(crate) fn verdict_rows(adr: &str) -> Result<Vec<VerdictRow>, ParseError>;
+pub(crate) fn status_rows(adr: &str) -> Result<Vec<StatusRow>, ParseError>;
 pub(crate) fn aggregation_rows(adr: &str) -> Result<Vec<AggRow>, ParseError>;
 pub(crate) fn note_rows(note: &str) -> Result<Vec<NoteRow>, ParseError>;
-pub(crate) fn render_blank_note(fields: &[FieldRow]) -> String;
+pub(crate) fn field_order(rows: &[StatusRow]) -> Vec<String>;
 ```
 
 `policy.rs` owns the predicates. Sources are bundled into one struct because
@@ -1296,19 +1388,23 @@ pub(crate) struct Sources<'a> {
     pub(crate) adr_002: &'a str,
 }
 
-pub(crate) fn check_success_criterion(fields: &[FieldRow], roadmap: &str)
+pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str)
     -> Result<(), String>;
-pub(crate) fn check_exclusions(rows: &[VerdictRow]) -> Result<(), String>;
+pub(crate) fn check_exclusions(rows: &[StatusRow]) -> Result<(), String>;
 pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String>;
-pub(crate) fn resolve_note(fields: &[FieldRow], note: &[NoteRow])
+pub(crate) fn resolve_note(rows: &[StatusRow], note: &[NoteRow])
     -> Result<Resolution, String>;
 pub(crate) fn check_quoted_clauses(sources: &Sources<'_>) -> Result<(), String>;
 pub(crate) fn check_gate_titles(adr: &str, roadmap: &str) -> Result<(), String>;
 ```
 
-`Resolution` is `Sufficient`, `Insufficient`, or `NotResolved { blocker }`, and
-carries a `Display` impl, because `Debug` would print `NotResolved` where the
-documents say `Not resolved`.
+`Resolution` is `Sufficient`, `Insufficient`, or
+`NotResolved { field, status }`, and carries a `Display` impl, because `Debug`
+would print `NotResolved` where the documents say `Not resolved`. Note that
+`resolve_note` takes the status register as an argument: admissibility and
+verdict are both *derived* from the document, so adding a blocking status to
+ADR 004 changes behaviour without a Rust edit. Nothing about the vocabulary is
+hardcoded.
 
 Every policy function returns `Result<(), String>` whose `Err` is the exact
 repair message a control asserts. Nothing panics on a document defect;
@@ -1322,8 +1418,8 @@ re-permits in tests.
 - 2026-09-18, first draft. Two documents, a two-axis sufficiency register, ten
   invariants, and three approval-gate questions including the addition of
   `proptest` and `rstest-bdd`.
-- 2026-09-18, second draft after a six-lens design review. Substantive changes,
-  each traceable to a finding:
+- 2026-09-18, second draft after five of six review lenses reported.
+  Substantive changes, each traceable to a finding:
   - The verdict axis now records a required *property*, not an operation a
     string cannot perform. The first draft could not have recorded the most
     likely real finding — that variant-name `&'static str` is not stable across
@@ -1362,3 +1458,29 @@ re-permits in tests.
     216-column fenced previews would have failed `make markdownlint`.
   - Corrected facts: `src/lib.rs` is twelve lines; the repository root is no
     longer given as an absolute worktree path.
+- 2026-09-18, third draft after the sixth review lens — alternatives —
+  reported. It argued for collapsing to a single document; that carrier change
+  was declined, because the template's copy ergonomics are worth one file and
+  the drift it would have removed is removed instead by D16. Every other
+  finding was adopted:
+  - The field and verdict registers merged into one status register, so
+    admissibility and verdict are derived from the document rather than
+    hardcoded. This also repaired two token mismatches the second draft had
+    introduced against its own D6. See D13.
+  - `state-display-name` now enumerates the returned strings, which the second
+    draft never captured, leaving the cardinality bound unaudited. See D14.
+  - `INV-FILLED` keys on a marker rather than a glob, so the shared
+    `docs/validation-notes/` directory does not turn a later benchmark or exit
+    note into a build failure. See D15.
+  - The committed worked example was withdrawn: no honest note can cite work
+    that has not happened, so it would have been fabricated evidence serving as
+    the suite's accepting witness. The illustration moved into ADR 004 and the
+    witness became a fixture. See D15.
+  - `INV-TEMPLATE` compares parsed values rather than bytes, removing a
+    dependency on `mdtablefix`'s padding algorithm. See D16.
+  - Q1 was reframed: `docs/design.md` §14 is a better mechanism than §11.1, and
+    its bullet is added in this task. Bet B7 is drafted, measured inert, and
+    deferred to a separate change. See D12.
+  - The aggregation register's outcomes are now explicitly conditional on
+    publication proceeding, so they cannot read as contradicting ADR 003's
+    exit E1.
