@@ -458,7 +458,13 @@ outcome, and a reviewer should approve it on that understanding.
 
 ## Progress
 
-- [ ] Stage A — orient and confirm the conformance basis (no changes).
+- [x] Stage A — orient and confirm the conformance basis (no changes).
+      Confirmed 2026-09-19: branch
+      `1-1-3-define-state-name-consumption-question`, clean tree at `6e4b532`,
+      green `make test` (40 nextest cases and one doctest), roadmap task 1.1.3
+      unticked, and all three `INV-ANCHORS` clauses present in their named
+      sections. No repository artefact changed; this tick and the timestamp
+      are the only diff.
 - [ ] EP-M1 — ADR 004 exists and both its registers are guarded.
 - [ ] EP-M2 — the template matches the status register; ADR 004 carries the
       illustrative example.
