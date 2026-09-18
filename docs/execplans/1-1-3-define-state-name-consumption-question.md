@@ -185,17 +185,57 @@ consequential: the first is what makes the label-stability case recordable, the
 second is what makes the procedure terminate. Neither is the naive reading.
 Recommended: accept; this is the substance of the task. See D4 and D11.
 
-**Q1 — should a bet B7 be added to `docs/design.md` §11.1?** Recommended: **no,
-raise separately.** §11.1's own rule ("Each bet must have an evidence-producing
-gate before the affected API is published") does imply a missing bet, and that
-observation is worth an issue. But the edit is not safe as ordinary scope.
-`tests/v0_1_exit_register_contract.rs:119-126` and `:274-290` hardcode the
-§11.1 B1 row byte-exactly, including its ten trailing pad spaces. `mdtablefix`
-canonicalizes each column to `max(content) + 2`, so a B7 row whose Confidence
-cell exceeds 10 characters or whose Evidence cell exceeds 93 characters repads
-the whole table, turns `DESIGN.replace(...)` into a no-op, and fails two
-controls in a contract this plan is forbidden to modify. B7 is deliverable only
-within that width budget; recording the budget here is the useful part.
+**Q1 — should a bet B7 be added to `docs/design.md` §11.1?**
+
+`docs/design.md` §11.1 holds a table named the bet register. It has six rows,
+B1 to B6, each naming a claim the design is betting on, a confidence, and the
+evidence that would settle it. The section states its own rule: "Each bet must
+have an evidence-producing gate before the affected API is published."
+
+By that rule a bet is missing. Whether `StateName`'s return type is a
+sufficient state identity is a claim of exactly that kind, affecting exactly
+such an API, and no row covers it. "B7" is this plan's name for the row that
+would close the gap. It does not exist anywhere yet; the proposal is:
+
+<!-- markdownlint-disable MD013 -->
+
+```markdown
+| B7  | Variant-name `&'static str` is a sufficient state identity for v0.1 | Medium | Every admissible validation note records no required property the default fails to supply |
+```
+
+<!-- markdownlint-enable MD013 -->
+
+*Table 1: The proposed bet B7, sized to the existing column widths.*
+
+Recommended: **no in this task, but on scope grounds only — the safety
+objection is discharged.**
+
+The hazard is real and worth stating, because it is invisible on inspection.
+`tests/v0_1_exit_register_contract.rs:119-126` and `:274-290` embed the §11.1
+B1 row byte-exactly, including its trailing pad spaces, and use it with
+`DESIGN.replace(...)`. `mdtablefix` canonicalizes every column to
+`max(content) + 2`. The current maxima are 3, 77, 10 and 93 characters, so a
+row exceeding any of them repads the entire table, turns that `replace` into a
+no-op, silently disarms two controls, and fails a contract this plan is
+forbidden to modify.
+
+Both halves of that claim were measured against the real repository rather than
+reasoned about. Inserting a B7 row with a 37-character Confidence cell and
+running `make fmt` repads the table and grows the B1 row from 197 to 224 bytes.
+Inserting the fitted row above — 67, 6 and 89 characters — and running
+`make fmt` leaves every pre-existing row byte-identical, and `make test` then
+reports 40 passed. The fitted row is safe by construction, not merely believed
+to be.
+
+What remains is scope. §11.1 is upstream design prose and roadmap task 1.1.3
+asks for an instrument, not a design amendment; ADR 004 plus the §6.1 pointer
+already give the gate its anchor, so B7 improves discoverability rather than
+correctness. That is a thin reason to decline, and the recommendation is
+correspondingly marginal: accepting Q1 costs one verified-inert line, and a
+reviewer who would rather close §11.1's gap now should say so.
+
+Whichever way it goes, the fitted row and the width budget are recorded here so
+that whoever picks this up does not rediscover either.
 
 **Q2 — should the template be a separate file from the ADR?** Recommended:
 **yes**, with the template *generated* from the ADR rather than hand-maintained
@@ -532,12 +572,19 @@ derivable from the repository alone, and each changed the design.
   will collide with the closed vocabulary. Date/Author: 2026-09-18, planning
   agent, after design review.
 
-- D12: Decline Q1 rather than accept it with a width budget.
+- D12: Decline Q1 — do not add bet B7 to `docs/design.md` §11.1 in this task.
   Rationale: the observation that §11.1 lacks a bet for this question is sound,
-  but the edit is upstream scope on a Phase 1 task and carries a verified
-  breakage path through a contract this plan may not modify. Raising it as a
-  separate issue costs nothing and keeps this change revertible as a unit.
-  Date/Author: 2026-09-18, planning agent, after design review.
+  and Q1 records a fitted row measured to be inert, so the work is not lost.
+  The safety objection raised in review is discharged: an oversized row does
+  repad the table and break two controls, but the fitted row does not, and
+  `make fmt` plus `make test` were run against the real repository to prove
+  both. What remains is that the edit is upstream design prose on a Phase 1
+  task, so the decision is marginal and is flagged as such at the approval gate
+  rather than presented as clear-cut. Note that the wording proposed in this
+  plan's first draft is stale: it said "Two validation notes" where the gate
+  table names three recording gates, and it was written against the superseded
+  named-consumer axis. Q1 carries the corrected wording. Date/Author:
+  2026-09-18, planning agent, after design review.
 
 ## Outcomes & retrospective
 
@@ -1096,7 +1143,7 @@ Between `<!-- field-register:begin -->` and `<!-- field-register:end -->`:
 | tracing-use         | Full / Partial / None       | no                  |
 ```
 
-*Table 1: The four fields a validation note records, and which of them gate
+*Table 2: The four fields a validation note records, and which of them gate
 whether the note is usable evidence.*
 
 ADR 004's prose states, per field, what the evidence cell must contain. For
@@ -1117,7 +1164,7 @@ Between `<!-- verdict-register:begin -->` and `<!-- verdict-register:end -->`:
 | Yes               | Insufficient | Record property and consumer        |
 ```
 
-*Table 2: How an admissible note resolves. Cardinality is absent by design; it
+*Table 3: How an admissible note resolves. Cardinality is absent by design; it
 gates admissibility and never the verdict.*
 
 ### The aggregation register
@@ -1133,7 +1180,7 @@ Between `<!-- aggregation-register:begin -->` and
 | One or more      | Yes              | Amend design 6.1 before publish  |
 ```
 
-*Table 3: How task 3.2.1 reads the committed notes together.*
+*Table 4: How task 3.2.1 reads the committed notes together.*
 
 ### The gate table
 
@@ -1148,7 +1195,7 @@ Between `<!-- gate-table:begin -->` and `<!-- gate-table:end -->`:
 | S4   | Finalize the `StateName` return shape  | Decides         |
 ```
 
-*Table 4: Gates, bound by task title rather than task number so that completing
+*Table 5: Gates, bound by task title rather than task number so that completing
 a gate does not break the build.*
 
 ### ADR 004's section order
