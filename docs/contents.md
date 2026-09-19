@@ -14,6 +14,22 @@ set.
 - [Documentation style guide](documentation-style-guide.md) defines the
   spelling, structure, Markdown, Architecture Decision Record (ADR), Request
   for Comments (RFC), and roadmap conventions used by this documentation set.
+- [Phase 2 validation note template](phase-2-validation-note-template.md) is
+  the blank form a Phase 2 engineer copies to record a `StateName` consumption
+  observation; it is the schema ADR 004's rule reads, not design material.
+- [Validation notes](validation-notes/README.md) is the directory those filled
+  forms are committed to, and explains how a note is named and marked.
+
+## Execution plans
+
+- [`docs/execplans/`](execplans/) holds the living design-and-delivery
+  documents written before larger tasks:
+  - [Record the transition-boundary scope decision as an ADR](execplans/1-1-1-record-the-transition-boundary-scope-decision-as-an-adr.md)
+    carries ADR 002 from its question to its acceptance criteria.
+  - [Record the three possible v0.1 exits](execplans/1-1-2-record-the-three-possible-v0-1-exits.md)
+    carries ADR 003 and the exit register that selects among them.
+  - [Define the `StateName` consumption question](execplans/1-1-3-define-state-name-consumption-question.md)
+    carries ADR 004 and the contract test that guards it.
 
 ## Product and design
 
@@ -36,6 +52,9 @@ set.
   framework responsibilities.
 - [ADR 003: Record the v0.1 exit register](adr-003-v0-1-exit-register.md)
   defines every v0.1 release scope and the evidence gate that selects it.
+- [ADR 004: Define the StateName consumption evidence](adr-004-state-name-consumption-evidence.md)
+  defines what a `StateName` consumption observation records and the rule that
+  reads one note, or several, into an outcome at task 3.2.1.
 
 ## Rust reference material
 

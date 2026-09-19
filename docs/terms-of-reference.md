@@ -14,8 +14,10 @@ Companion documents:
 - `docs/adr-001-proving-ground-candidates.md`
 - `docs/adr-002-transition-boundary-scope.md`
 - `docs/adr-003-v0-1-exit-register.md`
+- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/phase-2-validation-note-template.md`
 
-Last substantive revision: 2026-08-22
+Last substantive revision: 2026-09-19
 
 ## 1. Background and motivation
 
@@ -355,6 +357,9 @@ Competing alternatives:
 
 - [ADR 003: Record the v0.1 exit register](adr-003-v0-1-exit-register.md).
 - [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md).
+- [ADR 004: Define the StateName consumption evidence](adr-004-state-name-consumption-evidence.md),
+  with the [validation note template](phase-2-validation-note-template.md) it
+  is instantiated from.
 - ADR: Macro-first versus trait-first API shape.
 - ADR: Default dependency and feature policy for tracing.
 - ADR: Whether v0.1 includes diagram or test metadata.
