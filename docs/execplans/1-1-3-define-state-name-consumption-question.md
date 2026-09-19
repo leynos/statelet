@@ -556,9 +556,9 @@ outcome, and a reviewer should approve it on that understanding.
       are the only diff.
 - [x] Step 2 — ADR 004, the notes-directory `README.md`, and the template's
       home are committed. Ticked retroactively on 2026-09-19: ADR 004 (322
-      lines, four empty delimiter pairs per D19) and `docs/validation-notes/README.md`
-      landed in `65b59c5`. The template itself belongs to Step 6 and is not yet
-      written.
+      lines, four empty delimiter pairs per D19) and
+      `docs/validation-notes/README.md` landed in `65b59c5`. The template
+      itself belongs to Step 6 and is not yet written.
 - [x] Q5 settled 2026-09-19 — path-scoped `dylint.toml` exemption; D18 lifted
       by D20; constraint 10 added; `dylint.toml` and `notes.rs` added to the
       file list. This tick and D20 are the only diff of the resumption commit.
@@ -583,8 +583,17 @@ outcome, and a reviewer should approve it on that understanding.
 - [x] EP-M2 — the template matches the status register; ADR 004 carries the
       illustrative example.
 - [x] EP-M3 — gates and anchors are guarded.
-- [ ] EP-M4 — companion documentation is coherent and discoverable. Step 8
-      remains: the eight-item sync map is not yet applied.
+- [x] Step 8 — the eight-item sync map is applied and committed as `1e1afd7`.
+      Every companion document named in `Conformance basis` now points at
+      ADR 004, the template or the notes directory, and every Step 8 gate was
+      verified green before the commit. The roadmap's task 1.1.3 is ticked, and
+      the two crossing guards that could have objected — the success-criterion
+      `contains` check and the exit register's `GATES` list, which does not name
+      1.1.3 — were both checked first.
+- [x] EP-M4 — companion documentation is coherent and discoverable. Steps 8 and
+      9's first run are recorded above; the nine `make lint` findings it
+      surfaced are fixed and committed as `5bae2c1`, and the rerun is with
+      `scrutineer`.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked.
 
 Timestamps are added as each item completes.
@@ -717,11 +726,18 @@ design.
   line, not as a substring. Evidence: `docs/validation-notes/README.md`
   documents the marker inside a code span, so a substring test read the README
   as a committed note and then rejected it for carrying no note register.
-  Impact: the marker must be a line of its own. The trigger is gone, but the
-  same function's error message still names `Register::Note.document()` — the
-  template — rather than the file actually read, which is a second defect of
-  the same shape as the one above and is noted here rather than fixed, because
-  no input reaches it now.
+  Impact: the marker must be a line of its own. A residual defect of the same
+  shape remains, and is noted here rather than fixed: `parse_table` names
+  `Register::Note.document()` — the template — inside the message it produces
+  while reading a note, so a malformed committed note composes as
+  `2.2.1-mdtablefix.md: docs/phase-2-validation-note-template.md: no note
+  register found ...`. The caller's `{name}: ` prefix still leads with the file
+  to open, and no input reaches it today: `docs/validation-notes/` holds only
+  its README, whose marker sits inside a code span rather than on a line of its
+  own, so the scan yields no notes. The first note to arrive malformed will
+  read oddly, and repairing that means giving the message a name for the
+  document being read rather than a fixed path — a change to `parse_table`'s
+  error construction, not to a document.
 
 - Observation: a register's header row participates in row identification, so a
   header reproduced inexactly is reported far from the edit that caused it.
@@ -742,16 +758,49 @@ design.
   ```` ```markdown ````, which satisfies MD025 and has the incidental virtue of
   making the copy boundary visible to the reader.
 
-- Observation: every evidence cell needs its citation, including the cells that
-  record an absence or a completeness. Evidence: the fixture gave
+- Observation: a cell recording that no consumer exists is still an observation,
+  and it still needs to say where it was made. Evidence: the fixture gave
   `identifier-need` and `tracing-use` prose cells — "subscriber, metrics, model
   checker and generated documentation considered" and "emits
   `transition.state.before`" — and every note-derived assertion failed on the
   citation check before reaching the property under test. Impact: both cells now
   carry a `<repo>@<sha>:<path>` citation alongside their prose. ADR 004 requires
-  a citation of every field, and the requirement is doing its job: a cell
-  recording that no consumer exists is still an observation, and it still needs
-  to say where it was made.
+  a citation of every field, including one whose status is `None`, and the
+  requirement is doing its job.
+
+- Observation: `clippy.toml`'s `allow-expect-in-tests` reaches `#[test]` bodies
+  and not the helper functions they call. Evidence: Step 9's first `make lint`
+  run failed with nine findings, two of them `expect_used` on `.expect()` calls
+  sitting in `fn blocked_by(...) -> Result<Resolution, String>` and
+  `fn gate_table_fragment(gate: &str) -> String` — both helper functions called
+  from tests, neither a test itself. The flag is documented as allowing `expect`
+  in tests; its actual scope is the `#[test]`-annotated item. Impact: both
+  helpers now return `Result` and report the parse failure in the caller's error
+  channel, which is also the better behaviour — the failure they would have
+  panicked on is a real answer, and it belongs where the caller can name the
+  fixture it came from. Recorded because the flag's scope is invisible at the
+  call site: a helper that `expect`s compiles, reads as test code, and fails
+  only at the gate.
+
+- Observation: `make lint` runs clippy before Whitaker, so a clippy failure
+  leaves the `dylint.toml` exemption entirely unexercised. Evidence: the first
+  Step 9 run aborted at clippy with nine errors, and the log contains zero
+  matches for `whitaker`, `no_std_fs`, or `dylint` — the exemption added under
+  D20 had never been validated by a gate run at any point before Step 9's
+  second attempt. Impact: none for this plan, since the second run exercises it;
+  recorded because it means "`make lint` is green" is *not* evidence that a
+  lint exemption works, and the plan's quality criterion assumed it was.
+
+- Observation: an unread note is an unguarded note, and nothing reports it.
+  Evidence: the scan selected candidate files with
+  `entry.file_name().ends_with(".md")`, which clippy flagged as a case-sensitive
+  extension comparison. The flagged form is not merely untidy: a note committed
+  as `2.2.1-mdtablefix.MD` would be skipped silently, and no check would notice,
+  because a skipped note produces exactly the same result as no note at all —
+  an empty vector and a passing scan. Impact: the extension is now compared
+  case-insensitively, off the path rather than off the file name's tail.
+  Recorded because the failure mode is silence, which is the one direction the
+  scan's own design makes invisible.
 
 ## Decision log
 
@@ -1023,6 +1072,20 @@ design.
   match its document is indistinguishable in the diff from a fixture edited to
   match a defect, and the distinction is the whole value of the contract.
   Date/Author: 2026-09-19, implementing agent, after the Step 7 gate.
+
+- D25: The nine `make lint` findings from Step 9's first run are fixed in the
+  contract's own source, with no `#[allow]` added and no exemption widened.
+  Rationale: the findings were genuine defects of the code that carried them,
+  and two of them named the dangerous direction rather than the untidy one — the
+  case-sensitive extension comparison would have skipped an unread note
+  silently, and the two `expect` calls sat in helpers whose failure belongs in
+  the caller's error channel. The `dylint.toml` exemption is unchanged. Recorded
+  because the first `make lint` run is also the first run in which Whitaker
+  executed at all: clippy runs first in `make lint`, so the exemption's
+  behaviour is not merely unvalidated until a clippy-clean run exists — it is
+  *unexecuted*, and an earlier green claim from a partial gate would have been
+  true of a gate that never reached the lint it names. Date/Author: 2026-09-19,
+  implementing agent, after the Step 9 rerun was dispatched.
 
 ## Outcomes & retrospective
 
