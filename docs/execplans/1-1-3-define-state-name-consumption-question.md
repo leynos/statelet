@@ -6,8 +6,9 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Conformance basis`, and `Verification plan` must be kept up to date as work
 proceeds.
 
-Status: BLOCKED — a filesystem-lint deviation needs a decision before Step 3
-can proceed. See Q5 and D18.
+Status: IN PROGRESS — resumed 2026-09-19 after the approval gate settled Q5.
+The filesystem-lint deviation is accepted in the path-scoped form; see Q5, D18,
+and D20. Stage A and the two documents in Step 2 are done.
 
 ## Purpose / big picture
 
@@ -278,10 +279,12 @@ to design §12?** Without them a Phase 2 engineer will not find the template:
 task 2.2.1 cites only design §12, which would not mention it. The edits add one
 `- See ...` bullet each and renumber nothing. **Decided: yes.**
 
-**Q5 — how should the notes-directory scan read a note's contents?** **Referred
-2026-09-19; awaiting direction.** This question was not in the planning phase's
-set because the review lens that examined the scan concluded it was a read-only
-`camino` operation. Measurement says otherwise.
+**Q5 — how should the notes-directory scan read a note's contents?** **Decided
+2026-09-19: Option A, a path-scoped `dylint.toml` exclusion.** The approving
+authority directed the path-scoped form in preference to the crate-wide one.
+Recorded in D20. This question was not in the planning phase's set because the
+review lens that examined the scan concluded it was a read-only `camino`
+operation. Measurement says otherwise.
 
 `INV-FILLED` requires the contract test to enumerate `docs/validation-notes/`,
 select the files declaring `<!-- state-name-note -->`, and check each one's
@@ -289,8 +292,8 @@ contents: no residual `TBD`, admissible statuses, citation-shaped evidence
 cells, no missing field. Enumeration is settled and measured clean —
 `Utf8Path::read_dir_utf8()` plus `Utf8DirEntry::file_name()` passed `whitaker`
 under `-D warnings`, and `include_str!` remains available for the fixed-path
-documents. The *content* read of an enumerated file is the problem, and it has
-no clean answer:
+documents. The *content* read of an enumerated file is the problem, and it had
+no answer that was free of a standing constraint:
 
 - `camino` cannot read contents. Measured: `grep read_to_string` over
   `camino-1.2.5/src/lib.rs` returns nothing. `camino` is a path type, not a
@@ -339,13 +342,20 @@ Two remedies are viable, and each breaches a standing constraint:
   marker design was chosen to avoid (D15). Listed here so the rejection is
   visible rather than implicit.
 
-Option A is recommended. It is the smaller breach of the two live options: one
-new file, no dependency change, and the exemption is named and path-scoped
-rather than crate-wide. Option B is the more principled remedy against the
-lint's own stated intent, and would be preferable if a `cap-std` dev-dependency
-is acceptable for other reasons — but it is a dependency decision that the plan
-was approved without, and Q3 shows this project weighs those carefully rather
-than by default.
+Option A was recommended and is adopted. It is the smaller breach of the two
+live options: one new file, no dependency change, and the exemption is named
+and path-scoped rather than crate-wide. Option B is the more principled remedy
+against the lint's own stated intent, and would be preferable if a `cap-std`
+dev-dependency is acceptable for other reasons — but it is a dependency
+decision that the plan was approved without, and Q3 shows this project weighs
+those carefully rather than by default.
+
+The exemption is narrowed further than the option text above proposes. The
+module that reads file contents will be named for its single job and the
+`excluded_paths` entry will name that module alone, so the exemption covers the
+one function that needs it rather than the whole test crate. Every other module
+of the contract test — the parsers, the policies, the fixtures — remains under
+the lint, and so does every other test crate in the workspace.
 
 ### Files this plan reads or writes
 
@@ -354,10 +364,14 @@ Written (new):
 - `docs/adr-004-state-name-consumption-evidence.md`
 - `docs/phase-2-validation-note-template.md`
 - `docs/validation-notes/README.md`
+- `dylint.toml` — the path-scoped `no_std_fs_operations` exemption settled as Q5
+  option A and ratified in D20. One entry, naming the single module that reads
+  a note's contents; rationale comment required, per the Whitaker convention.
 - `tests/state_name_consumption_contract.rs`
 - `tests/state_name_consumption_contract/types.rs`
 - `tests/state_name_consumption_contract/parse.rs`
 - `tests/state_name_consumption_contract/policy.rs`
+- `tests/state_name_consumption_contract/notes.rs`
 - `tests/state_name_consumption_contract/fixtures.rs`
 
 Written (modified): `docs/design.md`, `docs/terms-of-reference.md`,
@@ -469,6 +483,11 @@ outcome, and a reviewer should approve it on that understanding.
    complexity under 9, at most 4 arguments, nesting under 4.
 8. **British English, Oxford spelling** in all new prose.
 9. **No fenced-block line over 120 columns**, no prose line over 80.
+10. **The filesystem exemption is confined to one module.** `dylint.toml`
+    exempts `state_name_consumption_contract::notes` and nothing else. No other
+    module of the contract test, and no other test crate, may call `std::fs`.
+    If a second module needs the exemption, that is a scope change and stops the
+    work.
 
 ## Tolerances (exception triggers)
 
@@ -535,6 +554,14 @@ outcome, and a reviewer should approve it on that understanding.
       unticked, and all three `INV-ANCHORS` clauses present in their named
       sections. No repository artefact changed; this tick and the timestamp
       are the only diff.
+- [x] Step 2 — ADR 004, the notes-directory `README.md`, and the template's
+      home are committed. Ticked retroactively on 2026-09-19: ADR 004 (322
+      lines, four empty delimiter pairs per D19) and `docs/validation-notes/README.md`
+      landed in `65b59c5`. The template itself belongs to Step 6 and is not yet
+      written.
+- [x] Q5 settled 2026-09-19 — path-scoped `dylint.toml` exemption; D18 lifted
+      by D20; constraint 10 added; `dylint.toml` and `notes.rs` added to the
+      file list. This tick and D20 are the only diff of the resumption commit.
 - [ ] EP-M1 — ADR 004 exists and both its registers are guarded.
 - [ ] EP-M2 — the template matches the status register; ADR 004 carries the
       illustrative example.
@@ -572,7 +599,20 @@ design.
   `read_to_string`. So the scan must either (a) take a `dylint.toml` exclusion,
   adding a configuration file the plan's file list does not include, or (b) add
   `cap-std` as a dev-dependency and read through `cap_std::fs::Dir`, which
-  measured at 45 → 84 packages. Both breach a constraint; see Q5 and D18.
+  measured at 45 → 84 packages. Both breach a constraint. **Resolved
+  2026-09-19: option (a), in the path-scoped form**, so the exemption names one
+  module rather than a whole crate; see Q5 and D20. Corroborating measurement
+  worth keeping: the attribute-suppression failure is **suite-wide, not
+  specific to this lint**. A probe carrying
+  `#[allow(module_must_have_inner_docs)]` — a different lint in the same suite,
+  needing no filesystem access — was also denied, at both item and crate scope.
+  And plain `cargo clippy` reports `no_std_fs_operations` as an unknown lint,
+  indistinguishable from a bogus name in the same position, which confirms the
+  lint is registered only under the dylint driver and that the denial is real
+  behaviour rather than a name-resolution artefact. The practical consequence
+  is that the `addressing-whitaker-findings` skill's statement that crate-level
+  `excluded_crates` is the *only* working escape hatch is too narrow: path
+  scope works and is strictly narrower.
 
 - Observation: `mdtablefix` merges an empty delimiter pair onto one line.
   Evidence: on the first `make fmt` run, ADR 004's four delimiter pairs were
@@ -763,19 +803,21 @@ design.
   change of decision rather than a fresh choice. Date/Author: 2026-09-18,
   approved by the project owner.
 
-- D18: **BLOCKED — referred to the approval gate as Q5.** The notes-directory
-  scan needs a file *content* read, which `camino` cannot perform and Whitaker
-  forbids in test crates, in a form no Rust attribute can suppress. Measured
-  2026-09-19; the evidence is in `Surprises & discoveries` and the options are
-  in Q5. Rationale for stopping rather than choosing: both remedies breach a
-  standing constraint — option (a) adds a file outside this plan's "Files this
-  plan reads or writes" list, option (b) adds a dev-dependency against
-  constraint 3 and the settled Q3 precedent, which declined two dependencies on
-  a measured 45 → 185 graph increase. The plan's own tolerance rule 2 states
-  that any dependency addition stops the work, and its exception procedure
-  requires an explicit direction rather than a workaround. No artefact has been
-  fabricated to route around the finding: the contract test is not yet written,
-  so nothing depends on the choice. Date/Author: 2026-09-19, implementing agent.
+- D18: **Blocked on 2026-09-19; lifted by D20 the same day. Superseded in
+  outcome by D20, retained as the record of why the work stopped.** The
+  notes-directory scan needs a file *content* read, which `camino` cannot
+  perform and Whitaker forbids in test crates, in a form no Rust attribute can
+  suppress. Measured 2026-09-19; the evidence is in `Surprises & discoveries`
+  and the options are in Q5. Rationale for stopping rather than choosing: both
+  remedies breach a standing constraint — option (a) adds a file outside this
+  plan's "Files this plan reads or writes" list, option (b) adds a
+  dev-dependency against constraint 3 and the settled Q3 precedent, which
+  declined two dependencies on a measured 45 → 185 graph increase. The plan's
+  own tolerance rule 2 states that any dependency addition stops the work, and
+  its exception procedure requires an explicit direction rather than a
+  workaround. No artefact has been fabricated to route around the finding: the
+  contract test is not yet written, so nothing depends on the choice.
+  Date/Author: 2026-09-19, implementing agent.
 
 - D19: Introduce each delimiter pair together with its register content, not
   before it. Rationale: `mdtablefix` merges adjacent delimiter comments onto
@@ -784,6 +826,30 @@ design.
   `Surprises & discoveries`. This is a mechanical change to the order of two
   steps; it alters no requirement and no architecture. Date/Author: 2026-09-19,
   implementing agent.
+
+- D20: **Q5 is settled as option A — a path-scoped `dylint.toml` exemption —
+  and D18's block is lifted.** The approving authority directed the
+  `excluded_paths` form explicitly, in preference to the crate-wide
+  `excluded_crates` form the first draft of Q5 named. Rationale:
+  `excluded_paths` is the narrower instrument — it exempts one named module and
+  its descendants rather than a whole test crate, so the parsers, policies,
+  fixtures, and `INV-*` checks of this contract test all remain under the lint.
+  That property is what makes the exemption acceptable despite the plan having
+  been approved without it: the deviation introduces a new tracked file and a
+  visible exemption in the enforcing configuration, but it does not withdraw
+  lint coverage from the code that carries this task's logic. Measured working
+  on 2026-09-19 in the form `excluded_paths = ["<crate>::<module>"]`; see
+  `Surprises & discoveries`. Impact on the approved plan: `dylint.toml` joins
+  "Files this plan reads or writes", a new constraint 10 confines the exemption
+  to one module, the test module set grows by `notes.rs` (its own module,
+  precisely so that the exempted path is one module and not the crate), and
+  Q5's option B (`cap-std`) is declined, leaving constraint 3 and D9's
+  dependency position exactly as approved. This also settles a second-order
+  point worth recording: the `addressing-whitaker-findings` skill asserts that
+  crate-level `excluded_crates` is the *only* working escape hatch, which the
+  measurement contradicts. The skill is corrected as a separate change; this
+  plan records the measurement rather than the skill's claim. Date/Author:
+  2026-09-19, approved by the project owner; recorded by the implementing agent.
 
 ## Outcomes & retrospective
 
@@ -1167,14 +1233,25 @@ tree is clean, and every test passes across the five existing binaries.
 ### Step 2 — create the documents and the notes directory
 
 Create `docs/adr-004-state-name-consumption-evidence.md` and
-`docs/phase-2-validation-note-template.md` with full prose and delimiter
-comments but no tables, and `docs/validation-notes/README.md`. This step
-precedes the test because `include_str!` needs the files to exist.
+`docs/phase-2-validation-note-template.md` with full prose, and
+`docs/validation-notes/README.md`. This step precedes the test because
+`include_str!` needs the files to exist.
+
+**Done 2026-09-19, with one departure from the step as written.** The step
+originally asked for "delimiter comments but no tables". `make fmt` merges an
+adjacent, empty delimiter pair onto a single line, which would have made Step 4
+fail with `EmptyRegister` rather than the predicted `MissingDelimiters`; see
+D19 and `Surprises & discoveries`. ADR 004 was therefore committed with its
+four delimiter pairs *empty and merged*, and the registers arrive with their
+delimiters in Step 5.
 
 ### Step 3 — write the contract test in full
 
-Create the five test files described in `Interfaces and dependencies`,
-including every negative control, before any register exists.
+Create the six test files described in `Interfaces and dependencies`, including
+every negative control, before any register exists. Create `dylint.toml` first,
+with the single path-scoped exemption defined in D20: without it the `notes.rs`
+module fails `make lint`, and creating it now keeps the exemption visible from
+the moment the code that needs it exists rather than retro-fitted at delivery.
 
 ### Step 4 — observe red
 
@@ -1298,11 +1375,12 @@ outcomes.
    already tells consumers the project may ship nothing.
 7. `docs/developers-guide.md`: a subsection recording what is machine-checked,
    that `tests/state_name_consumption_contract.rs` is the guard, which edits
-   break it by design and how to repair them, and — most importantly for a
-   Phase 2 engineer — that filling a note means copying the template into
+   break it by design and how to repair them, that `notes.rs` is the one module
+   carrying a `no_std_fs_operations` exemption and why, and — most importantly
+   for a Phase 2 engineer — that filling a note means copying the template into
    `docs/validation-notes/<task>-<subject>.md` and committing it, never editing
    the template.
-8. `docs/repository-layout.md`: note the new test files and
+8. `docs/repository-layout.md`: note the new test files, `dylint.toml`, and
    `docs/validation-notes/`.
 
 ## Validation and acceptance
@@ -1333,8 +1411,13 @@ judgement call. If it is not, the instrument has failed regardless of the tests.
 
 Quality criteria: every gate in Step 9 green; every invariant with a passing
 test and a failing control; `make lint` reporting no clippy or Whitaker finding
-and no `#[allow]` added; `make audit` reporting no advisory. Performance is not
-applicable — there is no runtime code.
+and no `#[allow]` added; `make audit` reporting no advisory. The single
+Whitaker exemption is the `dylint.toml` entry itself, is path-scoped to
+`notes.rs`, and is required to be visible in that file with its rationale — an
+exemption recorded in configuration is auditable in a way an in-source
+`#[allow]` is not, which is the one thing this deviation buys in exchange for
+the constraint it breaches. Performance is not applicable — there is no runtime
+code.
 
 ## Idempotence and recovery
 
@@ -1471,7 +1554,23 @@ this section as it is drafted, so that this plan ends the task self-contained.
 
 No dependency change. The existing dev-dependencies — `camino`, `googletest`,
 `pretty_assertions`, `rstest`, `toml` — are sufficient. `camino` supplies the
-notes-directory scan, following `tests/dev_fast_contract.rs:19`.
+notes-directory scan *enumeration*, following `tests/dev_fast_contract.rs:19`.
+
+One module, and only one, steps outside that dependency set. `notes.rs` reads
+the contents of each enumerated note through `std::fs`, and is exempted by name
+in the root `dylint.toml`:
+
+```toml
+[no_std_fs_operations]
+# `notes.rs` enumerates `docs/validation-notes/` and reads each note's text at
+# run time. The note set is deliberately open -- a Phase 2 engineer adds a note
+# months from now and its arrival must not require a Rust edit -- so the
+# contents cannot be embedded with `include_str!`. `camino` enumerates but has
+# no content-read API, and this plan's constraint 3 forbids adding `cap-std` as
+# a dev-dependency. The exemption is path-scoped to this one module so that the
+# parsers, policies, and fixtures of the same test crate remain under the lint.
+excluded_paths = ["state_name_consumption_contract::notes"]
+```
 
 ### Test module shape
 
@@ -1479,10 +1578,15 @@ The split is pre-declared rather than discovered, because the existing
 `support.rs` needed 385 lines for one parser and four checks, and this contract
 has more of both. `self_named_module_files` is denied, so children are included
 with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
+`notes.rs` is a sibling module for the same reason, and its distinct name is
+also what makes the `excluded_paths` entry one module wide rather than
+crate-wide.
 
 ```rust,ignore
 #[path = "state_name_consumption_contract/fixtures.rs"]
 mod fixtures;
+#[path = "state_name_consumption_contract/notes.rs"]
+mod notes;
 #[path = "state_name_consumption_contract/parse.rs"]
 mod parse;
 #[path = "state_name_consumption_contract/policy.rs"]
@@ -1490,6 +1594,17 @@ mod policy;
 #[path = "state_name_consumption_contract/types.rs"]
 mod types;
 ```
+
+`notes.rs` is the only module calling `std::fs`, and it does exactly two things:
+
+```rust,ignore
+/// Every committed note declaring the `state-name-note` marker, with its text.
+pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<(String, String)>;
+```
+
+It returns the file name and the file's contents, and decides nothing. Whether
+a note is *admissible* is `policy.rs`'s question, and that module stays under
+the lint. The exemption therefore covers reading, not judging.
 
 `types.rs` owns the tokens and the error. `Register` is the key that makes
 every repair message derivable:
