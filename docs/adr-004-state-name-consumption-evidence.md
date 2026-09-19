@@ -121,7 +121,19 @@ is *admissible* when no cell it selects has `Admissible: no`. A note's
 cells select; a note selecting two different contributions is contradictory and
 is rejected rather than resolved.
 
-<!-- status-register:begin --> <!-- status-register:end -->
+<!-- status-register:begin -->
+| Field               | Status            | Admissible | Contributes  |
+| ------------------- | ----------------- | ---------- | ------------ |
+| state-display-name  | Enumerated        | yes        | nothing      |
+| state-display-name  | Not a named type  | no         | nothing      |
+| identifier-need     | None              | yes        | Sufficient   |
+| identifier-need     | Property required | yes        | Insufficient |
+| metrics-cardinality | Bounded           | yes        | nothing      |
+| metrics-cardinality | Unbounded         | no         | nothing      |
+| tracing-use         | Full              | yes        | nothing      |
+| tracing-use         | Partial           | yes        | nothing      |
+| tracing-use         | None              | yes        | nothing      |
+<!-- status-register:end -->
 
 *Table 2: Every admissible status for every field, whether it blocks the note,
 and what it contributes to the verdict.*
@@ -182,7 +194,13 @@ Three notes reach task 3.2.1, from roadmap tasks 2.2.1, 2.2.2 and 3.1.2. The
 register below maps every reachable state of that multiset to exactly one
 outcome.
 
-<!-- aggregation-register:begin --> <!-- aggregation-register:end -->
+<!-- aggregation-register:begin -->
+| Admissible notes | Any insufficient | Outcome if publication proceeds |
+| ---------------- | ---------------- | ------------------------------- |
+| None             | n/a              | Blocked: no admissible evidence |
+| One or more      | No               | Ratify the current return type  |
+| One or more      | Yes              | Amend design 6.1 before publish |
+<!-- aggregation-register:end -->
 
 *Table 3: How task 3.2.1 reads the committed notes together. Every outcome is
 conditional on publication proceeding: if ADR 003's gate G2 has already
@@ -227,7 +245,14 @@ task *title* rather than task number, so that completing a gate does not break
 the build. Gate S4 is the decision gate: it consumes the notes and records the
 outcome.
 
-<!-- gate-table:begin --> <!-- gate-table:end -->
+<!-- gate-table:begin -->
+| Gate | Roadmap task title fragment           |
+| ---- | ------------------------------------- |
+| S1   | Annotate `mdtablefix` `ProcessBuffer` |
+| S2   | Annotate `mdtablefix` continuation    |
+| S3   | Apply the conventions-only baseline   |
+| S4   | Finalize the `StateName` return shape |
+<!-- gate-table:end -->
 
 *Table 4: Gates bound to roadmap tasks by title.*
 
@@ -237,7 +262,18 @@ The rule above rests on three statements in other documents. They are quoted
 here, and `tests/state_name_consumption_contract.rs` checks that each still
 resolves, whitespace-folded, within its named section of its source document.
 
-<!-- evidence:begin --> <!-- evidence:end -->
+<!-- evidence:begin -->
+
+*"The default remains `&'static str` until a real example consumes something
+stronger" — design `6.1 State naming`.*
+
+*"backed by observed example consumption, not anticipation" — roadmap
+`3.2.1. Finalize the StateName return shape`.*
+
+*"production logs, tests, and the model the same" — adr-002
+`wireframe: primary proving ground`.*
+
+<!-- evidence:end -->
 
 ## Goals and non-goals
 
