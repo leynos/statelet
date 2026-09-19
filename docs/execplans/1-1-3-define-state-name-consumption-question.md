@@ -373,6 +373,12 @@ Written (new):
 - `tests/state_name_consumption_contract/policy.rs`
 - `tests/state_name_consumption_contract/notes.rs`
 - `tests/state_name_consumption_contract/fixtures.rs`
+- `tests/state_name_consumption_contract/clauses.rs`, `registers.rs` — the two
+  modules D21 records as a deviation from this list's first draft.
+- `tests/state_name_consumption_contract/anchor_scenarios.rs`,
+  `note_scenarios.rs`, `register_scenarios.rs`, `scan_scenarios.rs` — the four
+  scenario modules D26 records, split from the crate root so the 400-line cap
+  binds every part of the contract alike.
 
 Written (modified): `docs/design.md`, `docs/terms-of-reference.md`,
 `docs/context.md`, `docs/roadmap.md`, `docs/contents.md`, `docs/users-guide.md`,
@@ -594,6 +600,16 @@ outcome, and a reviewer should approve it on that understanding.
       9's first run are recorded above; the nine `make lint` findings it
       surfaced are fixed and committed as `5bae2c1`, and the rerun is with
       `scrutineer`.
+- [x] CodeRabbit pass one (F1, F2, F9) — the live-document needle guard and the
+      roadmap's template link are fixed and committed as `956c912`, on top of
+      the plan's mdtablefix reflow and MD038 fix.
+- [x] CodeRabbit pass one (F3, F4, F5/F7, F6/F8) — the blocking findings are
+      actioned: the scan is fallible and names the path it could not read; the
+      citation predicate parses the whole `<repo>@<sha>:<path>` shape; the
+      788-line root is split into four scenario modules; and a contradictory
+      note is rejected rather than resolved, with `INV-CONSISTENCY` and its
+      controls added to this plan. All 43 contract scenarios pass. Recorded as
+      D26.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked.
 
 Timestamps are added as each item completes.
@@ -802,6 +818,37 @@ design.
   case-insensitively, off the path rather than off the file name's tail.
   Recorded because the failure mode is silence, which is the one direction the
   scan's own design makes invisible.
+
+- Observation: a negative control can be defeated by the fixture it mutates, and
+  the defeat is silent in the same direction as the defect it tests for. Three
+  of the fixes in D26 hit this. `is_citation_shaped`'s message promised
+  `<repo>@<sha>:<path>` while the predicate accepted any token containing an
+  `@`, so `#[case::citation_without_a_path]` adds no coverage the old predicate
+  lacked — it would have passed for the wrong reason, asserting a message about
+  a shape nothing checked. The contradiction control's first draft asserted a
+  message naming the same field twice, because I attributed a second decisive
+  status to a field whose contribution the note did not select. And the
+  `blocked_notes_resolve_to_not_resolved` control's middle case used a status
+  the register does not define, so it failed on the *vocabulary* check rather
+  than the admissibility check it exists to exercise. Impact: the contradiction
+  control now asserts its register is still accepted by every document-level
+  check before asserting the rejection, and carries two controls proving the
+  register still resolves an agreeing note and still blocks on an inadmissible
+  cell — so a guard rejecting every multi-decisive note fails, and one reaching
+  the contradiction branch before the admissibility branch also fails.
+  Recorded because the plan's own non-vacuity rule is what caught all three,
+  and because "the control passes" was, in each case, not evidence until the
+  control's precondition had been shown to hold.
+
+- Observation: the 400-line cap is not a style preference; it caught a real
+  defect in the review. Evidence: the crate root had reached 788 lines against
+  AGENTS.md's cap, and both CodeRabbit findings that flagged it (F5 and F7)
+  named the same number. The plan's own constraint 7 repeats the cap, so the
+  contract was in breach of a constraint it declared. Impact: the scenarios are
+  now four child modules, and the root is 87 lines. Recorded because the breach
+  was invisible in every gate: `make test` passed, `make check-fmt` passed, and
+  the file's own module doc never mentioned its size. Only a review that counts
+  found it, which is the argument for the review existing.
 
 ## Decision log
 
@@ -1088,6 +1135,49 @@ design.
   true of a gate that never reached the lint it names. Date/Author: 2026-09-19,
   implementing agent, after the Step 9 rerun was dispatched.
 
+- D26: **The first CodeRabbit pass over the contract found nine issues; four
+  were blocking, and the fixes are recorded here.** F1/F9 (a live-document
+  needle that `mdtablefix --wrap` can split) and F2 (an undeclared
+  `docs/phase-2-validation-note-template.md` link in the roadmap) were fixed
+  and committed before this entry; the remaining four are these. **F3**:
+  `committed_notes` discarded read and enumeration failures, so an unreadable
+  note was skipped silently — the exact hazard `notes.rs`'s own doc comment
+  names, one level down from the marker rule. Both the scan and the read now
+  return `Result`, an absent directory still yields no notes, and
+  `scan_scenarios.rs` forces the read failure by passing a directory where a
+  file is expected. Failing on permissions instead would have required a write
+  from a module constraint 10 does not exempt, and would pass vacuously where
+  the suite runs as root. **F4**: `is_citation_shaped` accepted any token
+  containing an `@`, while its message promises `<repo>@<sha>:<path>`; the
+  predicate now parses the full shape with all three components non-empty, and
+  `#[case::citation_without_a_path]` is the eighth rejection case.
+  **F5/F7**: the crate root had reached 788 lines against AGENTS.md's 400-line
+  cap. It is now 87 lines, with the scenarios in four child modules
+  (`anchor_scenarios.rs` 223, `note_scenarios.rs` 271, `register_scenarios.rs`
+  284, `scan_scenarios.rs` 135). The four classes were chosen so each owns a
+  question rather than a slice of the file: what the *template and roadmap*
+  say, what a *note* says, what the *register* says, and what the *scan* reads.
+  **F6/F8**: `contribution` collapsed two different non-`nothing` contributions
+  into the stronger one, resolving exactly the note ADR 004 says "is rejected
+  rather than resolved" — and resolving it silently, toward the verdict that
+  overturns the default. It now returns the rejection, and
+  `contradictory_notes_are_rejected` proves both halves: a register with a
+  second decisive field is still a working register when its cells agree, still
+  blocks on an inadmissible cell, and *rejects* when they contradict.
+  Tolerance 5's 300-line trigger was reached twice while fixing these —
+  `policy.rs` at 319 and the root at 788 — and met both times by re-planning
+  the split rather than by tolerating the growth, per D21's precedent. The
+  register-consistency checks (`check_exclusions`, `check_vocabulary`) moved
+  from `policy.rs` to `registers.rs` because both are claims about the
+  *register* rather than about a note read through it, which also answers F6/F8
+  at the right level: the guard against contradiction belongs with the note,
+  and the guard that the register has one power to overturn the default belongs
+  with the register. No requirement, register field, repair-message obligation,
+  or shipped document changed; `docs/repository-layout.md` and
+  `docs/developers-guide.md` were updated because both enumerate the child
+  modules. Date/Author: 2026-09-20, implementing agent, actioning the review the
+  scrutineer returned after D25.
+
 ## Outcomes & retrospective
 
 To be completed at EP-M5. Before setting this plan to `COMPLETE`, reconcile
@@ -1098,7 +1188,7 @@ record a purely mechanical difference in `Decision log`.
 
 ## Verification plan
 
-This change adds no runtime behaviour. It introduces nine non-trivial
+This change adds no runtime behaviour. It introduces ten non-trivial
 propositions about documents and their relationships, and every one is
 checkable.
 
@@ -1227,6 +1317,34 @@ formatter by running `make fmt` before fixtures are written and by
   check cannot pass by blocking everything; and a blocked note must name the
   specific field, so it cannot pass by reporting a generic failure.
 
+### INV-CONSISTENCY — a contradictory note is rejected, not resolved
+
+- **Obligation**: a note selecting two different non-`nothing` contributions
+  yields an error naming both fields and both contributions, rather than
+  resolving to either one. ADR 004 states the rule in the paragraph before the
+  status register: a note's contribution is "the single non-`nothing` value
+  among the contributions its cells select", and "a note selecting two
+  different contributions is contradictory and is rejected rather than
+  resolved".
+- **Method**: a fixture register carrying a second decisive status, plus a note
+  selecting both it and the live register's own decisive status; the control
+  asserts the exact rejection message.
+- **Rationale**: the code collapsed the pair into `Insufficient`, which resolves
+  exactly the note the ADR says to refuse — and resolves it silently, in the
+  direction that overturns the default. The pair is unreachable through the live
+  register, which is precisely why the guard must exist: nothing else in the
+  suite would notice the rule being dropped. A register where a second field
+  contributes `Sufficient` passes every document-level check there is — its
+  vocabulary is still closed, exactly one row selects `Insufficient`, and the
+  default can still fall — so only a note-level guard notices that reading a
+  note through it has become contradictory.
+- **Artefact**: test `contradictory_notes_are_rejected`.
+- **Non-vacuity**: the control's register differs from the live one by one
+  contribution cell, and its note from the accepting witness by one decisive
+  cell, so a rejection for any other reason — an unknown field, an inadmissible
+  status, a non-citation — fails the control's own preconditions rather than
+  passing it.
+
 ### INV-FILLED — every committed StateName note is a usable note
 
 - **Obligation**: every file under `docs/validation-notes/` that declares a
@@ -1247,12 +1365,18 @@ formatter by running `make fmt` before fixtures are written and by
 - **Non-vacuity**: the accepting witness is a string fixture, not a committed
   file, so the test cannot pass merely because the directory is empty — and an
   empty directory is explicitly *not* a failure, because no note can honestly
-  exist until task 2.2.1 has annotated something. Five rejecting controls, all
+  exist until task 2.2.1 has annotated something. Eight rejecting cases, all
   string fixtures: residual `TBD`; a status outside the field's register
-  vocabulary; an evidence cell that is prose rather than a citation; a status
-  and evidence that contradict; and a file carrying the marker but missing a
-  field. A sixth control asserts that a benchmark-shaped note *without* the
-  marker is ignored rather than rejected.
+  vocabulary; an evidence cell that is prose rather than a citation; a citation
+  missing its path; an `identifier-need` cell naming no consumer; a status and
+  evidence that contradict; a file carrying the marker but missing a field; and
+  a file carrying it with its fields reordered. A ninth control sits outside
+  the table: a status borrowed from a field the register defines under another.
+  Four controls cover the scan itself: a benchmark-shaped note *without* the
+  marker is ignored rather than rejected; a note without the marker still
+  parses, so that control isolates the marker; a directory passed where a note
+  is expected is an error naming the path rather than a silent skip; and a root
+  with no notes directory yields no notes rather than failing.
 
 ### INV-AGGREGATE — the rule for reading several notes is total
 
@@ -1330,7 +1454,7 @@ binary and no externally observable workflow beyond `make test`, which is
 itself the acceptance command.
 
 Behavioural coverage is delivered as scenario-named `rstest` cases over the
-committed worked example and its seven documented defects —
+committed worked example and its eight documented defects —
 `committed_state_name_notes_are_usable` and the `INV-FILLED` controls
 constitute the fill-and-gate workflow. The `docs/developers-guide.md` addition
 carries the prose walkthrough. If the dependency cost declined under Q3 is later
@@ -1832,24 +1956,37 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
-The split as delivered is seven modules: the five below, plus `clauses.rs` for
+The split as delivered is eleven modules: the five below, plus `clauses.rs` for
 quoted-clause resolution and `registers.rs` for the roadmap binding and the
-cross-register checks. Each module owns one invariant class, and the two
-additions keep `policy.rs` from carrying three unrelated ones; see D21.
+cross-register checks (D21), and four scenario modules — `anchor_scenarios.rs`,
+`note_scenarios.rs`, `register_scenarios.rs`, `scan_scenarios.rs` — that hold
+the contract's tests rather than a share of the crate root (D26). Each module
+owns one invariant class. The first two additions keep `policy.rs` from
+carrying three unrelated ones; the scenario modules exist because the root file
+had reached 788 lines against AGENTS.md's 400-line cap, and because a scenario
+module per invariant class keeps every file small enough to stay there.
 
 ```rust,ignore
+#[path = "state_name_consumption_contract/anchor_scenarios.rs"]
+mod anchor_scenarios;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
 #[path = "state_name_consumption_contract/fixtures.rs"]
 mod fixtures;
+#[path = "state_name_consumption_contract/note_scenarios.rs"]
+mod note_scenarios;
 #[path = "state_name_consumption_contract/notes.rs"]
 mod notes;
 #[path = "state_name_consumption_contract/parse.rs"]
 mod parse;
 #[path = "state_name_consumption_contract/policy.rs"]
 mod policy;
+#[path = "state_name_consumption_contract/register_scenarios.rs"]
+mod register_scenarios;
 #[path = "state_name_consumption_contract/registers.rs"]
 mod registers;
+#[path = "state_name_consumption_contract/scan_scenarios.rs"]
+mod scan_scenarios;
 #[path = "state_name_consumption_contract/types.rs"]
 mod types;
 ```
@@ -1858,12 +1995,22 @@ mod types;
 
 ```rust,ignore
 /// Every committed note declaring the `state-name-note` marker, with its text.
-pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<CommittedNote>;
+pub(crate) fn committed_notes(root: &Utf8Path) -> Result<Vec<CommittedNote>, String>;
 ```
 
 It returns the file name and the file's contents, and decides nothing. Whether
 a note is *admissible* is `policy.rs`'s question, and that module stays under
 the lint. The exemption therefore covers reading, not judging.
+
+The result is fallible, and that is the point of F3's fix: an *absent*
+directory yields an empty vector, because no honest note can exist before task
+2.2.1 annotates one, but a present directory that cannot be enumerated or whose
+file cannot be read is an error naming the path. Discarding that error would
+skip a note silently, and a skipped note is indistinguishable from no note at
+all — the defect the marker's line-of-its-own rule exists to prevent, one level
+down. `scan_scenarios.rs` carries the control, passing a directory where a file
+is expected, so the failure is forced without any module outside the exemption
+having to write to disk.
 
 `types.rs` owns the tokens and the error. `Register` is the key that makes
 every repair message derivable:
