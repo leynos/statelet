@@ -2,11 +2,14 @@
 //!
 //! The status register records vocabulary; this module checks that the
 //! aggregation register speaks it, that the gate table resolves to live tasks,
-//! and that the acceptance criterion the task is graded on still maps.
+//! and that the acceptance criterion the task is graded on still maps. It also
+//! owns the status register's internal consistency — that its vocabulary is
+//! closed and that the default can still fall — because both are claims about
+//! the *register*, not about any note read through it.
 
 use super::{
     parse::gate_rows,
-    policy::{IDENTIFIER_NEED, INSUFFICIENT, NOTHING},
+    policy::{IDENTIFIER_NEED, INSUFFICIENT, NOTHING, PROPERTY_REQUIRED, SUFFICIENT},
     types::{AggRow, StatusRow},
 };
 
@@ -195,6 +198,83 @@ pub(crate) fn check_gate_titles(adr: &str, roadmap: &str) -> Result<(), String> 
                 ));
             }
         }
+    }
+    Ok(())
+}
+
+/// Checks that the default holds without a required property, and that it can
+/// still fall.
+///
+/// An `Insufficient` contribution is the register's one power to overturn
+/// `&'static str`, so it is confined to a single field *and* a single status: a
+/// second form of sufficient cause would let a later edit make some other
+/// observation decisive without that being visible as a decision.
+///
+/// `INV-REGISTERS` pins the live document, so both halves are implied for it.
+/// They are not redundant against the real threat model: an editor who changes
+/// ADR 004 and updates the fixture in the same commit keeps that check green and
+/// trips these.
+pub(crate) fn check_exclusions(rows: &[StatusRow]) -> Result<(), String> {
+    for row in rows.iter().filter(|row| row.contributes == INSUFFICIENT) {
+        let cause = if row.field == IDENTIFIER_NEED {
+            PROPERTY_REQUIRED
+        } else {
+            return Err(format!(
+                "docs/adr-004-state-name-consumption-evidence.md: field {} status {} selects \
+                 {INSUFFICIENT}. Repair: only a recorded required property may overturn the \
+                 &'static str default.",
+                row.field, row.status
+            ));
+        };
+        if row.status != cause {
+            return Err(format!(
+                "docs/adr-004-state-name-consumption-evidence.md: field {} status {} selects \
+                 {INSUFFICIENT}. Repair: only the {cause} status may overturn the &'static str \
+                 default.",
+                row.field, row.status
+            ));
+        }
+    }
+    if !rows.iter().any(|row| row.contributes == INSUFFICIENT) {
+        return Err(
+            "docs/adr-004-state-name-consumption-evidence.md: no row selects Insufficient. \
+             Repair: a register that cannot overturn the default is not a decision procedure."
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
+/// Checks that the register's vocabulary is closed, that an inadmissible cell
+/// contributes nothing, and that a note's verdict is unambiguous.
+pub(crate) fn check_vocabulary(rows: &[StatusRow]) -> Result<(), String> {
+    for row in rows {
+        if ![NOTHING, SUFFICIENT, INSUFFICIENT].contains(&row.contributes.as_str()) {
+            return Err(format!(
+                "docs/adr-004-state-name-consumption-evidence.md: status {} contributes {:?}. \
+                 Repair: use {NOTHING}, {SUFFICIENT} or {INSUFFICIENT}.",
+                row.status, row.contributes
+            ));
+        }
+        if !row.admissible && row.contributes != NOTHING {
+            return Err(format!(
+                "docs/adr-004-state-name-consumption-evidence.md: inadmissible status {} still \
+                 contributes {}. Repair: an inadmissible cell blocks the note, so it contributes \
+                 {NOTHING}.",
+                row.status, row.contributes
+            ));
+        }
+    }
+    let deciding = rows
+        .iter()
+        .filter(|row| row.admissible && row.contributes == INSUFFICIENT)
+        .count();
+    if deciding != 1 {
+        return Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: {deciding} admissible rows select \
+             {INSUFFICIENT}. Repair: exactly one admissible row may overturn the default, so that \
+             a note's verdict is unambiguous."
+        ));
     }
     Ok(())
 }

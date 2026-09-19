@@ -13,7 +13,7 @@
 
 use std::fs;
 
-use camino::{Utf8DirEntry, Utf8Path};
+use camino::Utf8Path;
 
 /// The directory holding committed validation notes.
 const NOTES_DIR: &str = "docs/validation-notes";
@@ -44,19 +44,34 @@ pub(crate) struct CommittedNote {
 /// honest note can exist until task 2.2.1 has annotated something, so an empty
 /// directory is not a failure. The suite's accepting witness is a string
 /// fixture instead.
-pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<CommittedNote> {
+///
+/// A *present* directory that cannot be enumerated or whose file cannot be read
+/// is a different thing, and is an error naming the path. Discarding it would
+/// skip the note silently, and a skipped note is indistinguishable from no note
+/// at all — the same defect the marker's line-of-its-own rule exists to avoid,
+/// one level down.
+pub(crate) fn committed_notes(root: &Utf8Path) -> Result<Vec<CommittedNote>, String> {
     let directory = root.join(NOTES_DIR);
-    let Ok(entries) = directory.read_dir_utf8() else {
-        return Vec::new();
-    };
-    let mut found = entries
-        .filter_map(Result::ok)
-        .map(Utf8DirEntry::into_path)
-        .filter(|path| has_markdown_extension(path.as_path()))
-        .filter_map(|path| read_marked_note(&path))
-        .collect::<Vec<CommittedNote>>();
+    if !directory.exists() {
+        return Ok(Vec::new());
+    }
+    let entries = directory
+        .read_dir_utf8()
+        .map_err(|error| format!("{directory}: the notes directory cannot be read: {error}"))?;
+    let mut found = Vec::new();
+    for entry in entries {
+        let entry =
+            entry.map_err(|error| format!("{directory}: an entry cannot be read: {error}"))?;
+        let path = entry.into_path();
+        if !has_markdown_extension(path.as_path()) {
+            continue;
+        }
+        if let Some(note) = read_marked_note(&path)? {
+            found.push(note);
+        }
+    }
     found.sort_by(|left, right| left.file_name.cmp(&right.file_name));
-    found
+    Ok(found)
 }
 
 /// Whether a path names a Markdown file.
@@ -77,13 +92,25 @@ fn has_markdown_extension(path: &Utf8Path) -> bool {
 /// directory's own `README.md` documents the marker inside a code span, and a
 /// substring test would read the README as a note and then reject it for lacking
 /// a note register.
-fn read_marked_note(path: &Utf8Path) -> Option<CommittedNote> {
-    let text = fs::read_to_string(path).ok()?;
+///
+/// The read failure travels as an error rather than as `None`, because `None`
+/// means "this file is not a `StateName` note" and a failed read is not that.
+/// Returning `None` there would let a note that exists, declares the marker and
+/// cannot be read be treated as a note that does not exist.
+///
+/// Crate-visible so this branch has a control. Forcing a read failure by
+/// permissions would need a write from a module the `dylint.toml` exemption
+/// does not cover, and would pass vacuously wherever the suite runs as root;
+/// the control passes a directory instead, which is present by construction and
+/// cannot be read as a file.
+pub(crate) fn read_marked_note(path: &Utf8Path) -> Result<Option<CommittedNote>, String> {
+    let text = fs::read_to_string(path)
+        .map_err(|error| format!("{path}: the note cannot be read: {error}"))?;
     if !text.lines().any(|line| line.trim() == MARKER) {
-        return None;
+        return Ok(None);
     }
-    Some(CommittedNote {
-        file_name: path.file_name()?.to_owned(),
-        text,
-    })
+    let Some(file_name) = path.file_name().map(str::to_owned) else {
+        return Err(format!("{path}: the note's file name cannot be read"));
+    };
+    Ok(Some(CommittedNote { file_name, text }))
 }

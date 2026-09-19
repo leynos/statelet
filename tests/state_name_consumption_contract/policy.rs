@@ -1,11 +1,14 @@
-//! The rules a note is read by: admissibility, verdict, and the register's own
-//! consistency.
+//! The rules a note is read by: admissibility, verdict, and the obligations
+//! each of its cells carries.
 //!
 //! Nothing here panics on a document defect. `unwrap_used` and
 //! `indexing_slicing` are denied, so parsing uses `split_once`, slice patterns,
 //! `get` and `let ... else`. The vocabulary is never hardcoded: the blocking set
 //! and the verdict both come from ADR 004's status register, so adding a status
 //! is a documentation edit.
+//!
+//! The register's own consistency — that its vocabulary is closed and that the
+//! default can still fall — is `registers.rs`'s question, not this module's.
 
 use super::types::{NoteRow, Resolution, StatusRow, field_order};
 
@@ -39,7 +42,7 @@ pub(crate) fn resolve_note(rows: &[StatusRow], note: &[NoteRow]) -> Result<Resol
             status: blocked.status.clone(),
         });
     }
-    Ok(contribution(rows, note))
+    contribution(rows, note)
 }
 
 /// Checks that a note carries one row per register field, in register order.
@@ -71,95 +74,49 @@ fn is_blocked(rows: &[StatusRow], note: &NoteRow) -> bool {
         .any(|row| row.field == note.field && row.status == note.status && !row.admissible)
 }
 
-/// Reduces an admissible note's cells to a verdict.
-fn contribution(rows: &[StatusRow], note: &[NoteRow]) -> Resolution {
-    let mut verdict = Resolution::Sufficient;
+/// Reduces an admissible note's cells to a verdict, rejecting a contradictory
+/// note rather than resolving it.
+///
+/// ADR 004 defines a note's contribution as "the single non-`nothing` value
+/// among the contributions its cells select", and says that a note selecting
+/// two different contributions "is contradictory and is rejected rather than
+/// resolved". Collapsing the pair into the stronger contribution would resolve
+/// exactly the note the rule says to refuse, and would do it silently.
+///
+/// The pair is unreachable through the live register, whose only decisive
+/// status sits on `identifier-need`; the guard is here because the register is
+/// a document, and a future edit that adds a second decisive status must meet a
+/// rejection rather than a verdict.
+fn contribution(rows: &[StatusRow], note: &[NoteRow]) -> Result<Resolution, String> {
+    let mut selected: Option<(&str, &str)> = None;
     for row in note {
-        let selected = rows
+        let Some(status) = rows
             .iter()
-            .find(|status| status.field == row.field && status.status == row.status);
-        if selected.is_some_and(|status| status.contributes == INSUFFICIENT) {
-            verdict = Resolution::Insufficient;
-        }
-    }
-    verdict
-}
-
-/// Checks that the default holds without a required property, and that it can
-/// still fall.
-///
-/// An `Insufficient` contribution is the register's one power to overturn
-/// `&'static str`, so it is confined to a single field *and* a single status: a
-/// second form of sufficient cause would let a later edit make some other
-/// observation decisive without that being visible as a decision.
-///
-/// `INV-REGISTERS` pins the live document, so both halves are implied for it.
-/// They are not redundant against the real threat model: an editor who changes
-/// ADR 004 and updates the fixture in the same commit keeps that check green and
-/// trips these.
-pub(crate) fn check_exclusions(rows: &[StatusRow]) -> Result<(), String> {
-    for row in rows.iter().filter(|row| row.contributes == INSUFFICIENT) {
-        let cause = if row.field == IDENTIFIER_NEED {
-            PROPERTY_REQUIRED
-        } else {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: field {} status {} selects \
-                 {INSUFFICIENT}. Repair: only a recorded required property may overturn the \
-                 &'static str default.",
-                row.field, row.status
-            ));
+            .find(|status| status.field == row.field && status.status == row.status)
+        else {
+            continue;
         };
-        if row.status != cause {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: field {} status {} selects \
-                 {INSUFFICIENT}. Repair: only the {cause} status may overturn the &'static str \
-                 default.",
-                row.field, row.status
-            ));
+        if status.contributes == NOTHING {
+            continue;
+        }
+        match selected {
+            None => selected = Some((status.contributes.as_str(), row.field.as_str())),
+            Some((contributes, _)) if contributes == status.contributes => {}
+            Some((contributes, chosen)) => {
+                return Err(format!(
+                    "a StateName note selects {contributes} in field {chosen:?} and {} in field \
+                     {:?}; a note is read as the single non-{NOTHING} contribution its cells \
+                     select, and two different contributions are contradictory. Repair: leave one \
+                     cell decisive and make the other contribute {NOTHING}.",
+                    status.contributes, row.field
+                ));
+            }
         }
     }
-    if !rows.iter().any(|row| row.contributes == INSUFFICIENT) {
-        return Err(
-            "docs/adr-004-state-name-consumption-evidence.md: no row selects Insufficient. \
-             Repair: a register that cannot overturn the default is not a decision procedure."
-                .to_owned(),
-        );
-    }
-    Ok(())
-}
-
-/// Checks that the register's vocabulary is closed, that an inadmissible cell
-/// contributes nothing, and that a note's verdict is unambiguous.
-pub(crate) fn check_vocabulary(rows: &[StatusRow]) -> Result<(), String> {
-    for row in rows {
-        if ![NOTHING, SUFFICIENT, INSUFFICIENT].contains(&row.contributes.as_str()) {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: status {} contributes {:?}. \
-                 Repair: use {NOTHING}, {SUFFICIENT} or {INSUFFICIENT}.",
-                row.status, row.contributes
-            ));
-        }
-        if !row.admissible && row.contributes != NOTHING {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: inadmissible status {} still \
-                 contributes {}. Repair: an inadmissible cell blocks the note, so it contributes \
-                 {NOTHING}.",
-                row.status, row.contributes
-            ));
-        }
-    }
-    let deciding = rows
-        .iter()
-        .filter(|row| row.admissible && row.contributes == INSUFFICIENT)
-        .count();
-    if deciding != 1 {
-        return Err(format!(
-            "docs/adr-004-state-name-consumption-evidence.md: {deciding} admissible rows select \
-             {INSUFFICIENT}. Repair: exactly one admissible row may overturn the default, so that \
-             a note's verdict is unambiguous."
-        ));
-    }
-    Ok(())
+    Ok(match selected {
+        Some((contributes, _)) if contributes == INSUFFICIENT => Resolution::Insufficient,
+        _ => Resolution::Sufficient,
+    })
 }
 
 /// Checks a note's cells independently of its verdict: residual placeholders,
@@ -227,10 +184,30 @@ fn check_identifier_need_evidence(note: &[NoteRow]) -> Result<(), String> {
 }
 
 /// Whether a cell cites the revision it was observed against.
-fn is_citation_shaped(evidence: &str) -> bool {
-    evidence
-        .split_whitespace()
-        .any(|word| word.starts_with('`') && word.ends_with('`') && word.contains('@'))
+///
+/// The message names `<repo>@<sha>:<path>`, so the predicate admits exactly that
+/// shape and no weaker one. A check reading only "some word contains an `@`"
+/// accepts `repo@revision` with no path and even a bare `@`, which is the defect
+/// the message would then be promising something it never checked. Each of the
+/// three components must also be non-empty: `@sha:path` and `repo@:path` are
+/// citations of nothing.
+fn is_citation_shaped(evidence: &str) -> bool { evidence.split_whitespace().any(is_citation) }
+
+/// Whether one whitespace-delimited word is a complete citation.
+fn is_citation(word: &str) -> bool {
+    let Some(inner) = word
+        .strip_prefix('`')
+        .and_then(|rest| rest.strip_suffix('`'))
+    else {
+        return false;
+    };
+    let Some((repo, rest)) = inner.split_once('@') else {
+        return false;
+    };
+    let Some((revision, path)) = rest.split_once(':') else {
+        return false;
+    };
+    !repo.is_empty() && !revision.is_empty() && !path.is_empty()
 }
 
 /// Whether a cell names one of the consumers ADR 004's search set lists, or
