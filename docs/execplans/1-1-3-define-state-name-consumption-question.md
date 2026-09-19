@@ -562,11 +562,29 @@ outcome, and a reviewer should approve it on that understanding.
 - [x] Q5 settled 2026-09-19 — path-scoped `dylint.toml` exemption; D18 lifted
       by D20; constraint 10 added; `dylint.toml` and `notes.rs` added to the
       file list. This tick and D20 are the only diff of the resumption commit.
-- [ ] EP-M1 — ADR 004 exists and both its registers are guarded.
-- [ ] EP-M2 — the template matches the status register; ADR 004 carries the
+- [x] Steps 3 and 4 — the contract test's seven files and the `dylint.toml`
+      exemption are written, and red is observed and recorded before any
+      register content exists. Twenty of the 39 scenarios pass at that point —
+      every one an accepting or structural control — and the 19 that fail do so
+      with `MissingDelimiters` naming their own register, with
+      `quoted_passages_still_resolve` failing on the empty-clause-list control
+      and `unmarked_notes_are_ignored` passing throughout. That is the Step 4
+      prediction exactly as D22 corrects it. Transcript:
+      `/tmp/red-statelet-1-1-3-define-state-name-consumption-question.out`.
+- [x] Steps 5 to 7 — both ADR registers, the template, the illustrative
+      example, the gate table and the evidence section are in place and
+      formatted. All 39 contract scenarios pass, alongside the pre-existing
+      nextest cases and the doctest: `make test` reports
+      `79 tests run: 79 passed, 0 skipped`, and `make fmt` completes with
+      `Summary: 0 error(s)` and is idempotent. Committed as `261ebc3`; the six
+      latent contract defects found on the way are in
+      `Surprises & discoveries` and D23/D24.
+- [x] EP-M1 — ADR 004 exists and both its registers are guarded.
+- [x] EP-M2 — the template matches the status register; ADR 004 carries the
       illustrative example.
-- [ ] EP-M3 — gates and anchors are guarded.
-- [ ] EP-M4 — companion documentation is coherent and discoverable.
+- [x] EP-M3 — gates and anchors are guarded.
+- [ ] EP-M4 — companion documentation is coherent and discoverable. Step 8
+      remains: the eight-item sync map is not yet applied.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked.
 
 Timestamps are added as each item completes.
