@@ -385,8 +385,15 @@ fn note_cells_reject_a_status_borrowed_from_another_field() -> Result<(), String
 }
 
 /// Presents a note to the register with one cell replaced by a blocking one.
+///
+/// Fallible rather than `expect`ing: `clippy.toml` sets
+/// `allow-expect-in-tests`, which reaches `#[test]` bodies and not the helpers
+/// they call, so a helper that panics on a parse failure is a lint error. It is
+/// also the better behaviour — the parse failure it would have panicked on is a
+/// real answer, and it belongs in the caller's error channel with the fixture
+/// named.
 fn blocked_by(rows: &[StatusRow], blocking: &StatusRow) -> Result<Resolution, String> {
-    let note = note_rows(&state_name_note()).expect("the fixture note parses");
+    let note = note_rows(&state_name_note()).map_err(|error| error.to_string())?;
     let mutated = note
         .iter()
         .map(|cell| {
@@ -505,29 +512,49 @@ fn committed_state_name_note_is_usable() -> Result<(), String> {
 }
 
 /// Ignores a note without the marker rather than reading its fields as a
-/// StateName note's.
+/// `StateName` note's.
 ///
 /// This is the accepting end of `INV-FILLED`'s marker control. The note is
 /// well-formed Markdown and parses like any other; the marker is what makes it
-/// a StateName note, and the scan reads the marker rather than globbing the
+/// a `StateName` note, and the scan reads the marker rather than globbing the
 /// directory, so a note belonging to roadmap task 1.2.3 cannot fail this
 /// suite's checks by arriving.
+///
+/// The assertions return through the error channel rather than panicking, so
+/// that every way this control can fail names the artefact it read.
 #[test]
 fn unmarked_notes_are_ignored() -> Result<(), String> {
     let unmarked = note_rows(&state_name_note().replace(notes::MARKER, ""))
         .map_err(|error| error.to_string())?;
-    assert_eq!(unmarked.len(), 4, "the note itself is still well-formed");
-    assert!(!benchmark_note().contains(notes::MARKER));
+    if unmarked.len() != 4 {
+        return Err(format!(
+            "the note without its marker no longer parses as a four-row table; it yields {} rows. \
+             Repair: keep the fixture note well-formed so the control isolates the marker.",
+            unmarked.len()
+        ));
+    }
+    if benchmark_note().contains(notes::MARKER) {
+        return Err(
+            "the benchmark note carries the StateName marker, so the control cannot show that an \
+             unmarked note is ignored."
+                .to_owned(),
+        );
+    }
     // `docs/validation-notes/README.md` *mentions* the marker inside a code
     // span. A scan reading the marker as a substring would treat the README as
     // a note and then reject it for carrying no note register; a scan reading
     // it as a line of its own does not.
-    assert!(
-        !committed_notes(&workspace_root())
-            .iter()
-            .any(|note| note.file_name == "README.md"),
-        "the README documents the marker without declaring it"
-    );
+    if committed_notes(&workspace_root())
+        .iter()
+        .any(|note| note.file_name == "README.md")
+    {
+        return Err(
+            "docs/validation-notes/README.md was read as a committed note. It documents the \
+             marker inside a code span without declaring it, so the scan must match the marker as \
+             a line of its own."
+                .to_owned(),
+        );
+    }
     Ok(())
 }
 
@@ -684,7 +711,7 @@ fn gate_titles_resolve(
     #[case] fragment: &str,
     #[case] failure: Option<&str>,
 ) -> Result<(), String> {
-    let mutated = gate_table().replace(&gate_table_fragment(gate), fragment);
+    let mutated = gate_table().replace(&gate_table_fragment(gate)?, fragment);
     let row = gate_rows(&mutated)
         .map_err(|error| error.to_string())?
         .into_iter()
@@ -703,12 +730,17 @@ fn gate_titles_resolve(
 
 /// The fragment the fixture gate table ships for one gate, so that a case can
 /// replace it without the table being written out twice.
-fn gate_table_fragment(gate: &str) -> String {
-    gate_rows(&gate_table())
-        .expect("the fixture gate table parses")
+///
+/// Fallible rather than `expect`ing, for the reason given on `blocked_by`. An
+/// absent gate is not a fixture defect either: `gate_titles_resolve` asserts the
+/// fragment it receives after calling this, so returning an empty string for an
+/// unnamed gate keeps the case's own assertion as the place the failure lands.
+fn gate_table_fragment(gate: &str) -> Result<String, String> {
+    Ok(gate_rows(&gate_table())
+        .map_err(|error| error.to_string())?
         .into_iter()
         .find(|row| row.gate == gate)
-        .map_or_else(String::new, |row| row.fragment)
+        .map_or_else(String::new, |row| row.fragment))
 }
 
 /// Checks the acceptance criterion the task is graded on still resolves.
