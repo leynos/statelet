@@ -731,13 +731,14 @@ design.
   `Register::Note.document()` — the template — inside the message it produces
   while reading a note, so a malformed committed note composes as
   `2.2.1-mdtablefix.md: docs/phase-2-validation-note-template.md: no note
-  register found ...`. The caller's `{name}: ` prefix still leads with the file
-  to open, and no input reaches it today: `docs/validation-notes/` holds only
-  its README, whose marker sits inside a code span rather than on a line of its
-  own, so the scan yields no notes. The first note to arrive malformed will
-  read oddly, and repairing that means giving the message a name for the
-  document being read rather than a fixed path — a change to `parse_table`'s
-  error construction, not to a document.
+  register found …`.
+  The caller's `{name}:` prefix still leads with the file to open, and no
+  input reaches it today: `docs/validation-notes/` holds only its README, whose
+  marker sits inside a code span rather than on a line of its own, so the scan
+  yields no notes. The first note to arrive malformed will read oddly, and
+  repairing that means giving the message a name for the document being read
+  rather than a fixed path — a change to `parse_table`'s error construction,
+  not to a document.
 
 - Observation: a register's header row participates in row identification, so a
   header reproduced inexactly is reported far from the edit that caused it.
@@ -1162,8 +1163,8 @@ formatter by running `make fmt` before fixtures are written and by
 - **Artefact**: test `template_matches_the_status_register`.
 - **Non-vacuity**: four controls. A template with a field removed, with a field
   added, with fields reordered, and with `Bounded` pre-filled in a status cell
-  must each fail with a diff naming the row. An empty template register must
-  yield `EmptyRegister`, not a vacuously equal pair of empty vectors.
+  must each fail with a diff naming the row. An emptied template register must
+  yield `MissingDelimiters`, not a vacuously equal pair of empty vectors.
 
 ### INV-REGISTERS — both registers match their fixtures exactly
 
@@ -1176,11 +1177,10 @@ formatter by running `make fmt` before fixtures are written and by
   and row cardinality.
 - **Artefact**: tests `status_register_matches_fixture` and
   `aggregation_register_matches_fixture`.
-- **Non-vacuity**: an empty register must yield `EmptyRegister` naming the
-  register, not a vacuously equal pair of empty vectors; a register whose
-  delimiters are absent must yield `MissingDelimiters` naming the register and
-  both markers; an unrecognized token must yield `UnknownToken` naming the
-  column.
+- **Non-vacuity**: a register whose delimiters are absent, or whose block holds
+  no data row, must yield `MissingDelimiters` naming the register and both
+  markers, not a vacuously equal pair of empty vectors; an unrecognized token
+  must yield `UnknownToken` naming the column.
 
 ### INV-EXCLUSION — the default holds without a required property, and can fall
 
@@ -1330,11 +1330,11 @@ binary and no externally observable workflow beyond `make test`, which is
 itself the acceptance command.
 
 Behavioural coverage is delivered as scenario-named `rstest` cases over the
-committed worked example and its four mutations — `committed_notes_are_usable`
-and the `INV-FILLED` controls constitute the fill-and-gate workflow. The
-`docs/developers-guide.md` addition carries the prose walkthrough. If the
-dependency cost declined under Q3 is later judged acceptable, these convert to
-Gherkin mechanically.
+committed worked example and its seven documented defects —
+`committed_state_name_notes_are_usable` and the `INV-FILLED` controls
+constitute the fill-and-gate workflow. The `docs/developers-guide.md` addition
+carries the prose walkthrough. If the dependency cost declined under Q3 is later
+judged acceptable, these convert to Gherkin mechanically.
 
 ## Plan of work
 
@@ -1483,11 +1483,12 @@ delimiters in Step 5.
 
 ### Step 3 — write the contract test in full
 
-Create the six test files described in `Interfaces and dependencies`, including
-every negative control, before any register exists. Create `dylint.toml` first,
-with the single path-scoped exemption defined in D20: without it the `notes.rs`
-module fails `make lint`, and creating it now keeps the exemption visible from
-the moment the code that needs it exists rather than retro-fitted at delivery.
+Create the seven-file contract described in `Interfaces and dependencies`,
+including every negative control, before any register exists. Create
+`dylint.toml` first, with the single path-scoped exemption defined in D20:
+without it the `notes.rs` module fails `make lint`, and creating it now keeps
+the exemption visible from the moment the code that needs it exists rather than
+retro-fitted at delivery.
 
 ### Step 4 — observe red
 
@@ -1634,20 +1635,21 @@ outcomes.
 ## Validation and acceptance
 
 **Red evidence.** Before the registers exist, `make test` fails with
-`MissingDelimiters` naming each register, an empty-notes-directory failure, and
-an empty-evidence-section failure. Not a panic, not an index-out-of-bounds, not
-a bare `assertion failed`.
+`MissingDelimiters` naming each register and an empty-clause-list failure on the
+evidence section. Not a panic, not an index-out-of-bounds, not a bare
+`assertion failed`. An empty notes directory passes, deliberately: see
+`INV-FILLED` and D22.
 
 **Green evidence.** After Step 7, `make test` passes and the binary
-`state_name_consumption_contract` reports at least:
-`success_criterion_still_maps` (four cases),
-`template_is_the_rendered_blank_note`, `field_register_matches_fixture`,
-`verdict_register_matches_fixture`, `aggregation_register_matches_fixture`,
+`state_name_consumption_contract` reports every scenario named in the
+`Verification plan`, including:
+`success_criterion_still_maps`, `template_matches_the_status_register`,
+`status_register_matches_fixture`, `aggregation_register_matches_fixture`,
 `default_survives_without_a_required_property`,
-`register_can_select_insufficient`, `blocked_notes_resolve_to_not_resolved`
-(three cases), `committed_notes_are_usable`, `aggregation_register_is_total`
-(three cases), `quoted_passages_still_resolve`, and `gate_titles_resolve` (four
-cases).
+`register_can_select_insufficient`, `blocked_notes_resolve_to_not_resolved`,
+`committed_state_name_note_is_usable`,
+`committed_state_name_notes_are_usable`, `aggregation_register_is_total`,
+`quoted_passages_still_resolve`, and `gate_titles_resolve`.
 
 **Negative-control evidence.** Every control asserts an exact message with
 `pretty_assertions::assert_eq!`. A control asserting only `is_err()` does not
@@ -1830,7 +1832,14 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
+The split as delivered is seven modules: the five below, plus `clauses.rs` for
+quoted-clause resolution and `registers.rs` for the roadmap binding and the
+cross-register checks. Each module owns one invariant class, and the two
+additions keep `policy.rs` from carrying three unrelated ones; see D21.
+
 ```rust,ignore
+#[path = "state_name_consumption_contract/clauses.rs"]
+mod clauses;
 #[path = "state_name_consumption_contract/fixtures.rs"]
 mod fixtures;
 #[path = "state_name_consumption_contract/notes.rs"]
@@ -1839,6 +1848,8 @@ mod notes;
 mod parse;
 #[path = "state_name_consumption_contract/policy.rs"]
 mod policy;
+#[path = "state_name_consumption_contract/registers.rs"]
+mod registers;
 #[path = "state_name_consumption_contract/types.rs"]
 mod types;
 ```
@@ -1847,7 +1858,7 @@ mod types;
 
 ```rust,ignore
 /// Every committed note declaring the `state-name-note` marker, with its text.
-pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<(String, String)>;
+pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<CommittedNote>;
 ```
 
 It returns the file name and the file's contents, and decides nothing. Whether
@@ -1858,19 +1869,20 @@ the lint. The exemption therefore covers reading, not judging.
 every repair message derivable:
 
 ```rust,ignore
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum Register { Status, Aggregation, Gates, Note }
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(crate) enum Register { Status, Aggregation, Gates, Note, Evidence }
 
 impl Register {
     pub(crate) const fn document(self) -> &'static str;
     pub(crate) const fn begin(self) -> &'static str;
     pub(crate) const fn end(self) -> &'static str;
     pub(crate) const fn section(self) -> &'static str;
+    pub(crate) const fn label(self) -> &'static str;
 }
 
 pub(crate) enum ParseError {
     MissingDelimiters { register: Register },
-    EmptyRegister { register: Register },
+    MissingSection { register: Register },
     MalformedRow { register: Register, row: usize },
     UnknownToken { register: Register, column: &'static str, found: String },
 }
