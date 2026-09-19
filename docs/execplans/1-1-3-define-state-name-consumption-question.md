@@ -6,7 +6,8 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Conformance basis`, and `Verification plan` must be kept up to date as work
 proceeds.
 
-Status: APPROVED
+Status: BLOCKED — a filesystem-lint deviation needs a decision before Step 3
+can proceed. See Q5 and D18.
 
 ## Purpose / big picture
 
@@ -277,6 +278,75 @@ to design §12?** Without them a Phase 2 engineer will not find the template:
 task 2.2.1 cites only design §12, which would not mention it. The edits add one
 `- See ...` bullet each and renumber nothing. **Decided: yes.**
 
+**Q5 — how should the notes-directory scan read a note's contents?** **Referred
+2026-09-19; awaiting direction.** This question was not in the planning phase's
+set because the review lens that examined the scan concluded it was a read-only
+`camino` operation. Measurement says otherwise.
+
+`INV-FILLED` requires the contract test to enumerate `docs/validation-notes/`,
+select the files declaring `<!-- state-name-note -->`, and check each one's
+contents: no residual `TBD`, admissible statuses, citation-shaped evidence
+cells, no missing field. Enumeration is settled and measured clean —
+`Utf8Path::read_dir_utf8()` plus `Utf8DirEntry::file_name()` passed `whitaker`
+under `-D warnings`, and `include_str!` remains available for the fixed-path
+documents. The *content* read of an enumerated file is the problem, and it has
+no clean answer:
+
+- `camino` cannot read contents. Measured: `grep read_to_string` over
+  `camino-1.2.5/src/lib.rs` returns nothing. `camino` is a path type, not a
+  capability handle; it exposes only `read_dir` and metadata queries.
+- `std::fs` is denied in test crates by `no_std_fs_operations`, and — measured
+  on 2026-09-19 — **no Rust attribute suppresses it**: not item-level
+  `#[allow]`, not item-level `#[expect]` (which additionally raises
+  `unfulfilled_lint_expectations`), and not a crate-level `#![allow]`. Only
+  `dylint.toml` suppresses it. See `Surprises & discoveries` for the probe
+  matrix.
+- `include_str!` cannot serve an enumerated file. It needs a literal path at
+  compile time, and the file set is deliberately open: a Phase 2 engineer adds
+  a note months from now, and its arrival must not require a Rust edit.
+  `concat!` with a `macro_rules!` name argument does work — probed and clean —
+  but it still requires the list of names to be known at compile time, which is
+  the property the scan exists to avoid.
+
+Two remedies are viable, and each breaches a standing constraint:
+
+- **Option A — a `dylint.toml` exclusion, scoped by path.** Create
+  `dylint.toml` at the workspace root with
+  `[no_std_fs_operations] excluded_paths = ["state_name_consumption_contract::notes"]`,
+  and read through `std::fs` inside that one module. Measured working, in both
+  the crate-wide and the path-scoped form, the latter being the narrower one.
+  Cost: one new tracked file that this plan's "Files this plan reads or writes"
+  list does not contain, plus a permanent, visible exemption in the very
+  configuration that enforces the estate's filesystem policy. The lint stays
+  active everywhere else. It sets a precedent each future contract test can
+  cite, so the exemption generalizes rather than remaining exceptional.
+- **Option B — add `cap-std` as a dev-dependency**, and read through
+  `cap_std::fs::Dir` (`read_to_string` at `fs_utf8/dir.rs:264`), which is what
+  the lint's own diagnostic message and `users-guide.md` instruct. Measured
+  cost: **45 → 84 packages** in a probe lockfile built from this repository's
+  real dev-dependency set. Breaches constraint 3 ("No dependency change.
+  `Cargo.toml` and `Cargo.lock` are untouched") and contradicts the settled Q3
+  precedent, which declined `rstest-bdd` and `proptest` on a 45 → 185 increase.
+  At 39 added packages this is not the same order, but it is the same kind of
+  decision, and Q3's reasoning was about a twelve-line `src/lib.rs` paying an
+  estate-wide cost. Also note `cap-std`'s `camino` feature pulls `camino`
+  itself, so the existing direct dependency would need an eye kept on it.
+- **Option C — keep the scan read-only in the material sense and require
+  `include_str!`.** Every note would be embedded at compile time and the scan
+  would verify that the compiled-in set matches the directory. Rejected on
+  inspection: it inverts the requirement. A new note would fail to compile
+  until someone edited Rust, which is exactly the coupling `INV-FILLED`'s
+  marker design was chosen to avoid (D15). Listed here so the rejection is
+  visible rather than implicit.
+
+Option A is recommended. It is the smaller breach of the two live options: one
+new file, no dependency change, and the exemption is named and path-scoped
+rather than crate-wide. Option B is the more principled remedy against the
+lint's own stated intent, and would be preferable if a `cap-std` dev-dependency
+is acceptable for other reasons — but it is a dependency decision that the plan
+was approved without, and Q3 shows this project weighs those carefully rather
+than by default.
+
 ### Files this plan reads or writes
 
 Written (new):
@@ -476,8 +546,43 @@ Timestamps are added as each item completes.
 
 ## Surprises & discoveries
 
-Four findings from the planning phase are recorded here because none is
-derivable from the repository alone, and each changed the design.
+Findings from the planning phase and from implementation are recorded here
+because none is derivable from the repository alone, and each changed the
+design.
+
+- Observation: Whitaker's `no_std_fs_operations` lint denies `std::fs` in
+  integration-test crates, and **cannot be suppressed by any Rust attribute**.
+  Evidence, measured on 2026-09-19 against `whitaker` with
+  `DYLINT_LIBRARY_PATH` set to the installed suite. A one-line probe test
+  calling `std::fs::read_to_string` was denied in every attribute form tried:
+  item-level `#[allow(no_std_fs_operations)]`, item-level `#[expect(...)]`
+  (which *also* raised `unfulfilled_lint_expectations`, because the `expect`
+  suppressed nothing), and crate-level `#![allow(no_std_fs_operations)]` as the
+  first line of the file. Only a `dylint.toml` entry suppressed it, and both
+  forms worked: `excluded_crates = ["probe_std_fs"]` and the narrower
+  `excluded_paths = ["probe_std_fs::notes"]`. The lint's own
+  `crates/no_std_fs_operations/ui/` fixtures contain no suppression test, and
+  the `users-guide.md` claim that "a standard `#[allow(no_std_fs_operations)]`
+  attribute on the item or module also works" did not hold for an integration
+  test. This is why the claim is recorded as measured behaviour rather than as
+  a reading of the documentation. Impact: this plan's notes-directory scan
+  needs a file *content* read, and neither remaining mechanism is free.
+  `camino` enumerates (`read_dir_utf8`, `Utf8DirEntry::file_name`) but has **no
+  content-read API** — `grep` over `camino-1.2.5/src/lib.rs` finds no
+  `read_to_string`. So the scan must either (a) take a `dylint.toml` exclusion,
+  adding a configuration file the plan's file list does not include, or (b) add
+  `cap-std` as a dev-dependency and read through `cap_std::fs::Dir`, which
+  measured at 45 → 84 packages. Both breach a constraint; see Q5 and D18.
+
+- Observation: `mdtablefix` merges an empty delimiter pair onto one line.
+  Evidence: on the first `make fmt` run, ADR 004's four delimiter pairs were
+  each rewritten from two adjacent lines into a single line carrying both
+  comments (`<!-- status-register:begin --> <!-- status-register:end -->`).
+  Impact: the plan's Step 2 ("delimiter comments but no register tables") would
+  have produced `EmptyRegister` rather than the `MissingDelimiters` that Step 4
+  predicts, because the merged line is non-empty but yields no rows. Decision:
+  introduce each delimiter pair together with its content, in Step 5, so that
+  Step 4's predicted red state holds.
 
 - Observation: the question is about *stability*, not about *numbers*.
   Evidence: `docs/roadmap.md:204` asks whether "a stable identifier is needed";
@@ -657,6 +762,28 @@ derivable from the repository alone, and each changed the design.
   by the approving authority, and so that reopening any of them is visibly a
   change of decision rather than a fresh choice. Date/Author: 2026-09-18,
   approved by the project owner.
+
+- D18: **BLOCKED — referred to the approval gate as Q5.** The notes-directory
+  scan needs a file *content* read, which `camino` cannot perform and Whitaker
+  forbids in test crates, in a form no Rust attribute can suppress. Measured
+  2026-09-19; the evidence is in `Surprises & discoveries` and the options are
+  in Q5. Rationale for stopping rather than choosing: both remedies breach a
+  standing constraint — option (a) adds a file outside this plan's "Files this
+  plan reads or writes" list, option (b) adds a dev-dependency against
+  constraint 3 and the settled Q3 precedent, which declined two dependencies on
+  a measured 45 → 185 graph increase. The plan's own tolerance rule 2 states
+  that any dependency addition stops the work, and its exception procedure
+  requires an explicit direction rather than a workaround. No artefact has been
+  fabricated to route around the finding: the contract test is not yet written,
+  so nothing depends on the choice. Date/Author: 2026-09-19, implementing agent.
+
+- D19: Introduce each delimiter pair together with its register content, not
+  before it. Rationale: `mdtablefix` merges adjacent delimiter comments onto
+  one line, so Step 2's delimiters-without-tables would have produced
+  `EmptyRegister` and falsified Step 4's `MissingDelimiters` prediction. See
+  `Surprises & discoveries`. This is a mechanical change to the order of two
+  steps; it alters no requirement and no architecture. Date/Author: 2026-09-19,
+  implementing agent.
 
 ## Outcomes & retrospective
 
