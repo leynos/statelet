@@ -649,6 +649,92 @@ design.
   `max(content) + 2`. Impact: Q1 carries a width budget, and the plan's first
   draft asserted a safety property it had verified against the wrong function.
 
+- Observation: a control that mutates a document is only as good as its needle,
+  and a line break can split one. Evidence, in two forms. First, against a
+  *live* document: `mdtablefix --wrap` reflows prose and moves its line breaks,
+  so a `.replace` needle spanning a wrap point stops matching at the moment the
+  document is formatted. The control then asserts a failure that the check no
+  longer produces, and passes for the wrong reason or fails for a confusing
+  one. This happened three times in Step 7's `quoted_passages_still_resolve`
+  alone — the needle shrank from `"consumes something stronger"` to
+  `"consumes something"` (which produced the nonsense clause "made-up clause
+  stronger") to the single word `stronger` — and four of the seven
+  `committed_state_name_notes_are_rejected` cases failed the same way, their
+  needles split by the source's own line continuations inside a `format!`
+  string. Impact: two remedies, both now in the contract. Every control over a
+  live document routes through a `mutated(source, needle, replacement)` helper
+  that asserts the needle is present before substituting, which turns a silent
+  no-op into a loud failure naming the reflow that broke it. And the fixture
+  tables are assembled from `[...].join("\n")` arrays of `#[rustfmt::skip]`'d
+  row constants, so a note in a rejecting case is built from whole rows rather
+  than by excising text from an assembled one, and no needle has to survive a
+  line break at all.
+
+- Observation: the contract's own total-cover check could not see past its first
+  matching row. Evidence: `aggregation_register_is_total` selected its row with
+  `rows.iter().find(|row| row.admissible_notes == notes).filter(|row| notes ==
+  "None" || row.any_insufficient == insufficient)`.
+  `find` returns the first row whose first column matches, and `filter`
+  applied to a single `Option` can never reconsider that choice, so for
+  `One or more` notes the second column was never examined and the assertion
+  could only be satisfied by whichever row happened to come first. Impact: the
+  two conditions are now one predicate. This was a defect in the *check*, not
+  in the document — and a check that cannot fail for the reason it names is
+  precisely the vacuity this plan's verification section exists to prevent,
+  which is why it is recorded here rather than silently repaired.
+
+- Observation: the quoted-clause resolver compared a clause's attribution word
+  against a file path. Evidence: `SOURCES` held `("design", "docs/design.md")`,
+  and the lookup was `position(|(_, path)| *path == document)` — comparing the
+  name the ADR uses, `design`, against the path it stands for. Every
+  well-formed clause was rejected. A second defect sat in the same function:
+  `resolve_clause` split the attribution on its first space *before* stripping
+  the code spans, so `` `design` `6.1 State naming` `` yielded the document
+  `` `6.1 ``. Impact: the lookup is keyed on the attribution name, the spans
+  are stripped before the split, and the failure message now names the *file*
+  the reader must open rather than the attribution word, because the two differ
+  by a path.
+
+- Observation: the marker that identifies a validation note must be matched as a
+  line, not as a substring. Evidence: `docs/validation-notes/README.md`
+  documents the marker inside a code span, so a substring test read the README
+  as a committed note and then rejected it for carrying no note register.
+  Impact: the marker must be a line of its own. The trigger is gone, but the
+  same function's error message still names `Register::Note.document()` — the
+  template — rather than the file actually read, which is a second defect of
+  the same shape as the one above and is noted here rather than fixed, because
+  no input reaches it now.
+
+- Observation: a register's header row participates in row identification, so a
+  header reproduced inexactly is reported far from the edit that caused it.
+  Evidence: `parse.rs::expected_header` recognized `| ... | Outcome |` while
+  the live aggregation table's third column is headed
+  `Outcome if publication proceeds`. The mismatched header is not structural,
+  so it is parsed as a data row and then rejected as malformed several checks
+  later. Impact: the exact header is now carried in one place in the contract,
+  with a doc comment stating why. The same hazard caught the status register,
+  where the fixture's row said `Overridden` for a field the live document
+  records as `Not a named type`.
+
+- Observation: an embedded note's H1 collides with the host document's.
+  Evidence: `make fmt` failed with `MD025/single-title/single-h1` on
+  `docs/phase-2-validation-note-template.md`, which embedded a complete note —
+  including its `# Validation note: ...` heading — as literal Markdown, and a
+  document may carry only one H1. Impact: the copyable form is fenced as
+  ```` ```markdown ````, which satisfies MD025 and has the incidental virtue of
+  making the copy boundary visible to the reader.
+
+- Observation: every evidence cell needs its citation, including the cells that
+  record an absence or a completeness. Evidence: the fixture gave
+  `identifier-need` and `tracing-use` prose cells — "subscriber, metrics, model
+  checker and generated documentation considered" and "emits
+  `transition.state.before`" — and every note-derived assertion failed on the
+  citation check before reaching the property under test. Impact: both cells now
+  carry a `<repo>@<sha>:<path>` citation alongside their prose. ADR 004 requires
+  a citation of every field, and the requirement is doing its job: a cell
+  recording that no consumer exists is still an observation, and it still needs
+  to say where it was made.
+
 ## Decision log
 
 - D1: Define "validation note" as the record a validation task produces,
@@ -850,6 +936,75 @@ design.
   measurement contradicts. The skill is corrected as a separate change; this
   plan records the measurement rather than the skill's claim. Date/Author:
   2026-09-19, approved by the project owner; recorded by the implementing agent.
+
+- D21: The contract test is six modules plus the crate root, not the five
+  modules "Interfaces and dependencies" declares, and `Register` gains a fifth
+  variant `Evidence`. Rationale: two boundaries the plan drew in the abstract
+  proved wrong against the code. First, `policy.rs` reached 597 lines — a
+  module owning the note verdict, the register's consistency *and* the quoted
+  clauses — which breached tolerance 5's 300-line trigger for a named module
+  had the split been kept. The re-planned split gives each module one invariant
+  class rather than an even share of the text: `policy.rs` keeps admissibility
+  and verdict, `clauses.rs` takes quoted-clause resolution, and `registers.rs`
+  takes the roadmap binding and the cross-register checks. Second, the quoted
+  clauses are a delimited register like the other four, so
+  `check_quoted_clauses` needs a `Register` token to say which document and
+  section it failed in; a fifth variant is cheaper and more honest than a
+  second parallel error type. Both changes are internal to the test crate.
+  Neither alters a requirement, a register's field set, a repair message's
+  obligation, or any document this plan ships, and tolerance 5's *purpose* — no
+  module growing past 300 lines unnoticed — is met with margin. A third,
+  smaller narrowing is recorded here rather than as its own entry: the plan's
+  `EmptyRegister` variant was dropped in favour of `MissingDelimiters`, because
+  an empty block and an absent one demand the same repair and a distinct
+  message would have been a third way to fail at the same thing. Date/Author:
+  2026-09-19, implementing agent.
+
+- D22: Step 4's red-state prediction is corrected: `INV-FILLED` passes an empty
+  notes directory rather than failing it, and the plan as drafted said the
+  opposite. Rationale: the drafted sentence contradicted `INV-FILLED`'s own
+  non-vacuity clause, which states that the accepting witness is a string
+  fixture *so that* the check cannot pass merely because the directory is
+  empty, and that an empty directory is explicitly not a failure because no
+  honest note can exist before task 2.2.1 has annotated anything. One of the
+  two had to give: either the check demands a committed note, or the red step
+  expects a pass. The check is the load-bearing half — demanding a note now
+  would mean demanding a fabricated citation, which is the failure D15 already
+  removed once from this design. Correcting the prose rather than the code
+  keeps the acceptance criterion honest and leaves `INV-FILLED`'s non-vacuity
+  resting on the seven rejecting controls, where D15 put it. This is a
+  mechanical correction to a prediction, not a change to a requirement or to an
+  architecture. Date/Author: 2026-09-19, implementing agent.
+
+- D23: Fixture tables are assembled from row constants, and every control over a
+  live document routes through a `mutated()` helper that refuses to apply a
+  needle the document no longer contains. Rationale: the two halve the same
+  hazard from opposite ends. The `mutated()` guard makes a stale needle loud,
+  and the row constants mean the controls that mutate *fixtures* never need a
+  needle long enough to be fragile in the first place — a rejecting case builds
+  a note from the rows it wants, rather than excising a phrase from a note that
+  was assembled for a different purpose. Both were forced by measurement rather
+  than foreseen: `mdtablefix --wrap` moved a line break under three successive
+  needles in a single control. This is a test-internal restructuring. It changes
+  no requirement, no register, no document this plan ships, and no repair
+  message's obligation — the messages the controls assert are the messages the
+  tests carry either way. Date/Author: 2026-09-19, implementing agent, after the
+  Step 7 gate.
+
+- D24: The status and aggregation fixtures track the live documents' exact
+  spellings, and the note fixtures carry a citation in every evidence cell.
+  Rationale: both were the contract disagreeing with the document it guards
+  rather than a document defect, and in both cases the contract was wrong.
+  `status_register()` said `Overridden` where the ADR says `Not a named type`,
+  and the aggregation header omitted `if publication proceeds`. The first had
+  been introduced deliberately, to dodge a mutation collision with the
+  `| Enumerated |` row; the collision is real but the remedy was misdirected —
+  the control that needed the dodge now mutates the row constant directly, so
+  the collision is dodged without the fixture diverging from the document it
+  mirrors. Recorded rather than silently corrected because a fixture edited to
+  match its document is indistinguishable in the diff from a fixture edited to
+  match a defect, and the distinction is the whole value of the contract.
+  Date/Author: 2026-09-19, implementing agent, after the Step 7 gate.
 
 ## Outcomes & retrospective
 
@@ -1268,10 +1423,22 @@ Repair: add the register block to the Status register section.
 ```
 
 Every register-dependent test fails with `MissingDelimiters` naming its own
-register. `INV-FILLED` fails because `docs/validation-notes/` holds no note, and
-`INV-ANCHORS` fails because the evidence section is empty — the latter is the
-empty-clause-list control doing its job, and it is the reason that control
-exists.
+register, and `INV-ANCHORS` fails because the evidence section is empty — the
+latter is the empty-clause-list control doing its job, and it is the reason
+that control exists.
+
+`INV-FILLED` does **not** fail, and this corrects the prediction above as first
+drafted. An earlier draft of this step said the directory scan fails because
+`docs/validation-notes/` holds no note, which contradicted `INV-FILLED`'s own
+non-vacuity clause three hundred lines earlier: the accepting witness is a
+string fixture precisely so that the check cannot pass merely because the
+directory is empty, and an empty directory is explicitly *not* a failure,
+because no honest note can exist before task 2.2.1. A red step that demanded
+one would have demanded a fabricated observation. `INV-FILLED`'s red evidence
+is the seven rejecting controls in `committed_state_name_notes_are_rejected`,
+which fail at Step 4 for the same `MissingDelimiters` reason as every other
+register-dependent scenario, plus `unmarked_notes_are_ignored`, which passes
+throughout and is the accepting end of its marker control. See D22.
 
 ### Step 5 — insert the registers, format, then fixture
 
