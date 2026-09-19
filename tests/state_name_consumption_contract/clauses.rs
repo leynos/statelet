@@ -160,7 +160,7 @@ fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
         .filter_map(|paragraph| {
             paragraph
                 .strip_prefix('*')
-                .and_then(|paragraph| paragraph.strip_suffix('*'))
+                .and_then(|inner| inner.strip_suffix('*'))
                 .map(str::to_owned)
         })
         .collect::<Vec<String>>();
@@ -198,10 +198,14 @@ pub(crate) fn resolve_clause(clause: &str) -> Result<(String, String, String), S
     let (text, attribution) = after_open
         .split_once('"')
         .ok_or_else(|| attributed("a closing double quote"))?;
-    let (_, named) = attribution
+    let (_, attributed_to) = attribution
         .split_once('—')
         .ok_or_else(|| attributed("naming its source after an em dash"))?;
-    let named = named.trim().trim_end_matches('.').trim().replace('`', "");
+    let named = attributed_to
+        .trim()
+        .trim_end_matches('.')
+        .trim()
+        .replace('`', "");
     let (document, section) = named
         .split_once(' ')
         .ok_or_else(|| attributed("both a document and a section"))?;

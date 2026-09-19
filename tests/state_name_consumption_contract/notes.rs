@@ -13,7 +13,7 @@
 
 use std::fs;
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::{Utf8DirEntry, Utf8Path};
 
 /// The directory holding committed validation notes.
 const NOTES_DIR: &str = "docs/validation-notes";
@@ -51,11 +51,24 @@ pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<CommittedNote> {
     };
     let mut found = entries
         .filter_map(Result::ok)
-        .filter(|entry| entry.file_name().ends_with(".md"))
-        .filter_map(|entry| read_marked_note(entry.into_path()))
+        .map(Utf8DirEntry::into_path)
+        .filter(|path| has_markdown_extension(path.as_path()))
+        .filter_map(|path| read_marked_note(&path))
         .collect::<Vec<CommittedNote>>();
     found.sort_by(|left, right| left.file_name.cmp(&right.file_name));
     found
+}
+
+/// Whether a path names a Markdown file.
+///
+/// Asked of the path's *extension* rather than of its final characters, so that
+/// the comparison is case-insensitive: a note committed as `2.2.1-mdtablefix.MD`
+/// is still a note, and an `ends_with(".md")` test would silently skip it.
+/// Skipping is the dangerous direction here — an unread note is an unguarded
+/// note, and nothing reports it.
+fn has_markdown_extension(path: &Utf8Path) -> bool {
+    path.extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("md"))
 }
 
 /// Reads one file, returning it only when it declares the marker.
@@ -64,8 +77,8 @@ pub(crate) fn committed_notes(root: &Utf8Path) -> Vec<CommittedNote> {
 /// directory's own `README.md` documents the marker inside a code span, and a
 /// substring test would read the README as a note and then reject it for lacking
 /// a note register.
-fn read_marked_note(path: Utf8PathBuf) -> Option<CommittedNote> {
-    let text = fs::read_to_string(&path).ok()?;
+fn read_marked_note(path: &Utf8Path) -> Option<CommittedNote> {
+    let text = fs::read_to_string(path).ok()?;
     if !text.lines().any(|line| line.trim() == MARKER) {
         return None;
     }
