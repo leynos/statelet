@@ -624,9 +624,40 @@ outcome, and a reviewer should approve it on that understanding.
       citation predicate parses the whole `<repo>@<sha>:<path>` shape; the
       788-line root is split into four scenario modules; and a contradictory
       note is rejected rather than resolved, with `INV-CONSISTENCY` and its
-      controls added to this plan. All 43 contract scenarios pass. Recorded as
+      controls added to this plan. All 47 contract cases pass. Recorded as
       D26.
-- [ ] EP-M5 — delivery: full gates, review, roadmap ticked.
+- [x] CodeRabbit post-fix review — sixteen findings actioned on 2026-09-20;
+      four code findings and six documentation findings were real, two pairs
+      contradicted each other and the contradiction was settled by a `rustc`
+      probe rather than by preference, and two findings were falsified against
+      primary sources. Recorded as D28.
+- [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
+      done: re-gated 2026-09-20 at `26da23f` after the post-fix round, all
+      seven gates pass sequentially, **including the Whitaker leg** that the
+      previous run never reached (D25's failure mode), and the transcripts
+      follow this list. The review half is not: the last round returned sixteen
+      findings, so EP-M5's stated bar — "a zero-finding independent review" —
+      requires one further CodeRabbit pass over the commit that actions them.
+      It is deliberately left unticked rather than ticked against a review that
+      has not happened.
+
+The gate set, run one gate at a time from the repository root at revision
+`26da23f`. `make lint`'s log is the load-bearing one: the `whitaker` line
+appears with `EXIT_STATUS=0`, which is the evidence the earlier run could not
+supply.
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   clippy clean; whitaker clean
+make test                         exit 0   87 tests run: 87 passed, 0 skipped
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 dependencies scanned, no advisories
+make test-workflow-contracts      exit 0   6 passed
+```
+
+Each gate's log is at
+`/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`.
 
 Timestamps are added as each item completes.
 
@@ -865,6 +896,39 @@ design.
   was invisible in every gate: `make test` passed, `make check-fmt` passed, and
   the file's own module doc never mentioned its size. Only a review that counts
   found it, which is the argument for the review existing.
+
+- Observation: a review is an input to be verified, not an authority — a
+  sixteen-finding round disagreed with itself, and two of its findings were
+  falsified against primary sources. Evidence: finding 2 asked for the
+  classifier's euphemism to be *documented* (write down that an honest `None`
+  cell must avoid five keywords, "including negations") while finding 15 asked
+  for the classifier to be *fixed* so a negated claim is not read as an
+  assertion. The two cannot both be satisfied. A `rustc` probe settled it by
+  measurement: against the unmodified predicate,
+  `names_a_property("no stability requirement was observed")` returned `true`,
+  so an honest note recording the property's *absence* was rejected for
+  disagreeing with its own status — and the live fixture passes only because
+  its wording ("records no unmet property") happens to avoid all five
+  keywords, which is precisely the euphemism finding 2 wanted written into the
+  rules. Separately, finding 4 (`major`) claimed `dylint.toml`'s
+  `excluded_paths` is unsupported; Whitaker's own source tree carries
+  `config_deserializes_excluded_paths`, `config_rejects_invalid_excluded_paths`
+  and `legacy_config_without_excluded_paths_still_parses`, plus user
+  documentation, so the key is supported configuration and the finding is
+  false. Finding 5 claimed the ADR date's trailing full stop breaches the
+  format; the style guide's own ADR template shows `YYYY-MM-DD.` and both
+  pre-existing accepted ADRs carry it. And finding 8 asked for citations on
+  Prometheus and OpenTelemetry claims that ADR 004 never makes — they appear
+  only in this plan — so it was partly fabricated; the two claims the ADR does
+  make were each verified against live rustdoc and then cited. Impact: the
+  third obligation now states the rule the code actually enforces, the negated
+  forms have a three-case regression, and two falsifications are recorded with
+  their counter-evidence rather than actioned. Recorded because a round that
+  counts defects correctly can still be wrong about any individual one, and
+  because the one finding of the round that no review made — the
+  `clippy::shadow-reuse` error in `is_negated` — came from `make lint`, which
+  is the argument for the deterministic gates being run *before* the review is
+  requested rather than instead of it.
 
 - Observation: `make check-fmt` is not satisfied by prose a human has wrapped
   *below* 80 columns; `mdtablefix --wrap` fills prose to 80 and will reflow
@@ -1259,6 +1323,42 @@ design.
   changed; the diff is whitespace inside one paragraph of this plan.
   Date/Author: 2026-09-20, implementing agent, after the EP-M5 re-gate.
 
+- D28: The post-fix review round returned sixteen findings, and six of them
+  are **duplicates or falsified**, so the round is recorded as much for what
+  it did not require as for what it did. Four code findings were real: the
+  unreachable `cells.is_empty()` guard in `parse.rs` (removed, with the
+  `offset` it existed to report, so `row_from_line` is infallible by
+  construction and says why); the `names_a_property` false-rejection of an
+  honest negative; the `clippy::shadow-reuse` error `make lint` surfaced in
+  `is_negated`, which had escaped the review entirely and is the round's one
+  **gate** finding rather than a review finding; and the hard-coded "15" in
+  the ambiguity control, which reintroduced the roadmap-freezing breakage
+  that binding gates by fragment exists to prevent. Six documentation
+  findings were real: the worked example's two uncited cells, the
+  aggregation register's unstated treatment of a rejected note, the third
+  obligation's silence on negation, the two uncited standard-library claims,
+  the template's vague filename guidance, and this plan's own overstated
+  no-write claim. Two pairs contradicted each other and the contradiction
+  was resolved by measurement rather than preference: finding two asked for
+  the classifier's euphemism **to be documented**, finding fifteen asked for
+  the classifier **to be fixed**; a `rustc` probe showed the predicate
+  false-rejects "no stability requirement was observed", so the classifier
+  was fixed and the ADR prose then made to match it. Two findings were
+  falsified against primary sources: `dylint.toml`'s `excluded_paths` is
+  supported configuration with its own test suite in Whitaker's source, not
+  an unsupported key, and the ADR date's trailing full stop reproduces the
+  style guide's own ADR template and both pre-existing accepted ADRs. One
+  finding was partly fabricated: it asked for references on Prometheus and
+  OpenTelemetry claims that ADR 004 never makes — they are in this plan —
+  and the two claims the ADR does make were cited as `[^1]`–`[^3]`.
+  No requirement, register field, register row, gate binding, invariant, or
+  repair message changed. Three of the six documentation findings added
+  prose that a *reader* of the contract needs and that no check reads, which
+  is the class of edit most likely to drift; each states a rule the code
+  already enforces rather than a new one. Date/Author: 2026-09-20,
+  implementing agent, actioning the review the scrutineer returned after
+  D27.
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -1281,11 +1381,12 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every entry in `Surprises & discoveries` was checked against the artefacts
-named in `Conformance basis`. All twenty were accounted for; the disposition
-of each follows. The last two were recorded during the EP-M5 gate run itself
-and are mechanical — one is a prose-wrapping rule, the other a correction to
-how this plan had been probing the formatter — so neither bears on any upstream
-artefact.
+named in `Conformance basis`. All twenty-one were accounted for; the disposition
+of each follows. Three were recorded during or after the EP-M5 gate runs. Two
+of those are mechanical — one is a prose-wrapping rule, the other a correction
+to how this plan had been probing the formatter — and the third is the
+post-fix review round's falsification record, so none of the three bears on any
+upstream artefact.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -1316,6 +1417,13 @@ artefact.
   *file layout* (D26), not the invariants, the register, any repair message's
   obligation, or any shipped document other than the two that enumerate child
   modules.
+- The post-fix round (D28) changed no requirement, register field, register row,
+  gate binding, invariant or repair message. Four of its findings repaired code
+  the plan had already specified — an unreachable guard, a false rejection, a
+  hard-coded roadmap count — and six added prose that states a rule the code
+  already enforces. Its falsification record, and the count corrections it
+  forced in this plan's own transcripts, are corrections *to this plan* rather
+  than to anything upstream.
 
 **No effect on the conformance basis.**
 
@@ -1359,10 +1467,13 @@ predicate for whether it can fail is a different exercise from reading it for
 what it asserts.
 
 **Two counts that are easy to conflate, and both are needed.** Nextest reports
-collected *cases*; the plan names *scenarios*. `rstest` expands three of them,
-so 43 cases across 29 functions. A gate that silently stopped collecting a
+collected *cases*; the plan names *scenarios*. `rstest` expands four of them,
+so 47 cases across 31 functions. A gate that silently stopped collecting a
 scenario would move the case total without moving the scenario list, and only
-the case total notices. This plan now records both.
+the case total notices. This plan now records both, which is why the figures
+here moved when the post-fix round added a parameterized regression: the
+scenario count and the case count are two different numbers, and the round
+changed both.
 
 **The 400-line cap earns its keep.** It was breached invisibly: `make test`
 passed, `make check-fmt` passed, and the file's own module doc never mentioned
@@ -2156,8 +2267,11 @@ this section as it is drafted, so that this plan ends the task self-contained.
 
 ### Step 9 gate transcripts
 
-Run at revision `aebe29d`, sequentially, one gate at a time. Each command is
-the one Step 9 names, and each log is the one that command wrote.
+First run at revision `aebe29d`, then re-run after the post-fix round at
+`26da23f` — the revision below. Both runs were sequential, one gate at a time,
+and each command is the one Step 9 names. The figures throughout are the
+second run's, which is the one that exercised the tree being delivered; only
+the first run is where the `clippy::shadow-reuse` red appeared.
 
 `make check-fmt` — exit 0:
 
@@ -2182,7 +2296,7 @@ Checking with toolchain `nightly-2026-05-28`
 `make test` — exit 0, `cargo nextest run`:
 
 ```plaintext
-Summary [   0.047s] 83 tests run: 83 passed, 0 skipped
+Summary [   0.049s] 87 tests run: 87 passed, 0 skipped
 ```
 
 Doctests, in the same run:
@@ -2192,14 +2306,18 @@ test src/lib.rs - greet (line 8) ... ok
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
-Eighty-three includes this contract's twenty-nine scenarios, alongside the
-existing suites. Twenty-nine functions occupy forty-three collected cases,
-because `rstest` expands three of them: `gate_titles_resolve` into six
-(one per gate plus the ambiguity control), `aggregation_register_is_total`
-into three (one per reachable state of the note multiset), and
-`committed_state_name_notes_are_rejected` into eight (one per documented note
-defect). The two totals are both worth recording: forty-three is what the suite
-must report, and twenty-nine is how many scenarios the `Verification plan`
+Eighty-seven includes this contract's thirty-one scenarios, alongside the
+existing suites — twenty-seven cases in the exit-register contract, seven in
+the codegen-backend contract, three in `dev_fast_contract`, two in the coverage
+contract and one in the stub, across six further binaries. Thirty-one functions
+occupy forty-seven collected cases, because `rstest` expands four of them:
+`gate_titles_resolve` into six (one per gate plus the ambiguity control),
+`aggregation_register_is_total` into three (one per reachable state of the note
+multiset), `committed_state_name_notes_are_rejected` into eight (one per
+documented note defect), and
+`negated_property_claims_do_not_disagree_with_none` into three (one per negated
+form). The two totals are both worth recording: forty-seven is what the suite
+must report, and thirty-one is how many scenarios the `Verification plan`
 names.
 
 `make markdownlint` — exit 0:
