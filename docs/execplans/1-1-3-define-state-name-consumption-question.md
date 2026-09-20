@@ -448,16 +448,32 @@ Upstream artefacts and revisions at the time of writing:
 Traced items:
 
 ```plaintext
-ROADMAP-1.1.3-success -> EP-M1 -> ADR-004 status register -> tests::success_criterion_still_maps
-TDD-6.1-stable-id     -> EP-M1 -> ADR-004 status register -> tests::status_register_matches_fixture
-TDD-6.1-default-str   -> EP-M1 -> ADR-004 R-DEFAULT -> tests::default_survives_without_a_required_property
-TDD-6.1-cardinality   -> EP-M1 -> ADR-004 admissibility -> tests::unbounded_names_block_admissibility
-TDD-6.2-no-speculative-api -> ADR-004 rationale -> EP-M1 -> tests::quoted_passages_still_resolve
-ADR-002-wireframe-labels -> Finding four -> EP-M1 -> tests::quoted_passages_still_resolve
+ROADMAP-1.1.3-success -> EP-M1 -> ADR-004 status register
+                      -> anchor_scenarios::success_criterion_still_maps
+TDD-6.1-stable-id     -> EP-M1 -> ADR-004 status register
+                      -> register_scenarios::status_register_matches_fixture
+TDD-6.1-default-str   -> EP-M1 -> ADR-004 R-DEFAULT
+                      -> register_scenarios::default_survives_without_a_required_property
+TDD-6.1-cardinality   -> EP-M1 -> ADR-004 admissibility
+                      -> register_scenarios::register_confines_insufficient_to_the_required_property,
+                         note_scenarios::blocked_notes_resolve_to_not_resolved
+TDD-6.2-no-speculative-api -> ADR-004 rationale -> EP-M1
+                      -> anchor_scenarios::quoted_passages_still_resolve
+ADR-002-wireframe-labels -> Finding four -> EP-M1
+                      -> anchor_scenarios::quoted_passages_still_resolve
 TDD-9-transition-fields -> field tracing-use -> EP-M2 -> ADR-004 worked example
-ROADMAP-2.2.1/2.2.2/3.1.2 -> gates S1..S3 -> EP-M3 -> tests::gate_titles_resolve
-ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3 -> tests::aggregation_register_is_total
+ROADMAP-2.2.1/2.2.2/3.1.2 -> gates S1..S3 -> EP-M3
+                      -> anchor_scenarios::gate_titles_resolve
+ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
+                      -> register_scenarios::aggregation_register_is_total
 ```
+
+Each leaf names its module as well as its test, because the contract is
+eleven modules and two of its scenario names differ by one letter:
+`note_scenarios::committed_state_name_note_is_usable` is the accepting
+witness, and `scan_scenarios::committed_state_name_notes_are_usable` is the
+committed-note scan. A bare `tests::` prefix would leave a reader to grep for
+which of the two a line meant.
 
 This plan does not deviate from ADR 002 or ADR 003. ADR 002's non-goals leave
 the identifier question open and ADR 001's outstanding decisions name it; this
@@ -1087,9 +1103,11 @@ design.
   would mean demanding a fabricated citation, which is the failure D15 already
   removed once from this design. Correcting the prose rather than the code
   keeps the acceptance criterion honest and leaves `INV-FILLED`'s non-vacuity
-  resting on the seven rejecting controls, where D15 put it. This is a
+  resting on the rejecting controls, where D15 put it. This is a
   mechanical correction to a prediction, not a change to a requirement or to an
-  architecture. Date/Author: 2026-09-19, implementing agent.
+  architecture. Date/Author: 2026-09-19, implementing agent. Count corrected
+  from seven to eight by D26, which added
+  `#[case::citation_without_a_path]`; the reasoning above is unaffected.
 
 - D23: Fixture tables are assembled from row constants, and every control over a
   live document routes through a `mutated()` helper that refuses to apply a
@@ -1226,7 +1244,7 @@ formatter by running `make fmt` before fixtures are written and by
 - **Method**: parameterized test, one case per noun.
 - **Rationale**: this is the one thing the task is graded on, and no other
   invariant touches it. It is also the cheapest in the set.
-- **Artefact**: test `success_criterion_still_maps`.
+- **Artefact**: test `anchor_scenarios::success_criterion_still_maps`.
 - **Non-vacuity**: a fixture register with `tracing-use` removed must fail
   naming the unmapped noun; a roadmap whose bullet is reworded must fail naming
   the clause. Without the second control the check passes vacuously against an
@@ -1250,7 +1268,7 @@ formatter by running `make fmt` before fixtures are written and by
   because generation happens at test time. That coupled the suite to a
   third-party padding algorithm forever, to guard a property that does not
   depend on padding.
-- **Artefact**: test `template_matches_the_status_register`.
+- **Artefact**: test `anchor_scenarios::template_matches_the_status_register`.
 - **Non-vacuity**: four controls. A template with a field removed, with a field
   added, with fields reordered, and with `Bounded` pre-filled in a status cell
   must each fail with a diff naming the row. An emptied template register must
@@ -1265,8 +1283,8 @@ formatter by running `make fmt` before fixtures are written and by
   check than a family of policy predicates, and a `pretty_assertions` diff
   names the changed cell better than any bespoke message. It subsumes totality
   and row cardinality.
-- **Artefact**: tests `status_register_matches_fixture` and
-  `aggregation_register_matches_fixture`.
+- **Artefact**: tests `register_scenarios::status_register_matches_fixture`
+  and `register_scenarios::aggregation_register_matches_fixture`.
 - **Non-vacuity**: a register whose delimiters are absent, or whose block holds
   no data row, must yield `MissingDelimiters` naming the register and both
   markers, not a vacuously equal pair of empty vectors; an unrecognized token
@@ -1286,17 +1304,22 @@ formatter by running `make fmt` before fixtures are written and by
   away. The second half is the guard against a degenerate register: this plan's
   own analysis expects the default to survive, which is exactly the pressure
   that produces an instrument incapable of the inconvenient answer.
-- **Artefact**: tests `default_survives_without_a_required_property` and
-  `register_can_select_insufficient`.
-- **Non-vacuity**: a fixture-plus-document pair edited together so that
-  `Property required: No` selects `Insufficient` must fail with
-  `docs/adr-004-state-name-consumption-evidence.md: row "No" selects
-  Insufficient. Repair: only a recorded required property may overturn the
-  &'static str default.`
-  A pair in which the `Yes` row is softened to `Sufficient` — which violates
-  nothing else — must fail with
-  `… no row selects Insufficient. Repair: a register that cannot overturn
-  the default is not a decision procedure.`
+- **Artefact**: tests
+  `register_scenarios::default_survives_without_a_required_property` and
+  `register_scenarios::register_can_select_insufficient`.
+- **Non-vacuity**: a fixture-plus-document pair edited together so that a
+  status other than `Property required` selects `Insufficient` must fail with
+  `docs/adr-004-state-name-consumption-evidence.md: field identifier-need status
+  None selects Insufficient. Repair: only the Property required status may
+  overturn the &'static str default.`
+  A pair in which the `Property required` row is softened to `Sufficient` —
+  which violates nothing else — must fail with
+  `docs/adr-004-state-name-consumption-evidence.md: no row selects Insufficient.
+  Repair: a register that cannot overturn the default is not a decision
+  procedure.`
+  A third control separates the two branches of the same check: a status
+  selectable as `Insufficient` from a *field* other than `identifier-need` must
+  fail naming that field and status.
 
 ### INV-ADMISSIBILITY — an unusable note yields no verdict and names its blocker
 
@@ -1641,10 +1664,12 @@ string fixture precisely so that the check cannot pass merely because the
 directory is empty, and an empty directory is explicitly *not* a failure,
 because no honest note can exist before task 2.2.1. A red step that demanded
 one would have demanded a fabricated observation. `INV-FILLED`'s red evidence
-is the seven rejecting controls in `committed_state_name_notes_are_rejected`,
-which fail at Step 4 for the same `MissingDelimiters` reason as every other
-register-dependent scenario, plus `unmarked_notes_are_ignored`, which passes
-throughout and is the accepting end of its marker control. See D22.
+is the `committed_state_name_notes_are_rejected` cases — seven when this step
+was written, eight as delivered (F4 added
+`#[case::citation_without_a_path]`) — which fail at Step 4 for the same
+`MissingDelimiters` reason as every other register-dependent scenario, plus
+`unmarked_notes_are_ignored`, which passes throughout and is the accepting end
+of its marker control. See D22 and D26.
 
 ### Step 5 — insert the registers, format, then fixture
 
@@ -1766,14 +1791,25 @@ evidence section. Not a panic, not an index-out-of-bounds, not a bare
 
 **Green evidence.** After Step 7, `make test` passes and the binary
 `state_name_consumption_contract` reports every scenario named in the
-`Verification plan`, including:
-`success_criterion_still_maps`, `template_matches_the_status_register`,
-`status_register_matches_fixture`, `aggregation_register_matches_fixture`,
-`default_survives_without_a_required_property`,
-`register_can_select_insufficient`, `blocked_notes_resolve_to_not_resolved`,
-`committed_state_name_note_is_usable`,
-`committed_state_name_notes_are_usable`, `aggregation_register_is_total`,
-`quoted_passages_still_resolve`, and `gate_titles_resolve`.
+`Verification plan`. Named with their modules, because two of them differ by
+one letter and the contract is eleven modules:
+`anchor_scenarios::success_criterion_still_maps`,
+`anchor_scenarios::template_matches_the_status_register`,
+`anchor_scenarios::quoted_passages_still_resolve`,
+`anchor_scenarios::gate_titles_resolve`,
+`register_scenarios::status_register_matches_fixture`,
+`register_scenarios::aggregation_register_matches_fixture`,
+`register_scenarios::default_survives_without_a_required_property`,
+`register_scenarios::register_can_select_insufficient`,
+`register_scenarios::aggregation_register_is_total`,
+`note_scenarios::blocked_notes_resolve_to_not_resolved`,
+`note_scenarios::contradictory_notes_are_rejected`,
+`note_scenarios::committed_state_name_note_is_usable`,
+`scan_scenarios::committed_state_name_notes_are_usable`.
+
+The acceptance command is unchanged: `make test` exits 0 and the counted test
+total matches the suite's length, so a scenario that silently stopped being
+collected fails here.
 
 **Negative-control evidence.** Every control asserts an exact message with
 `pretty_assertions::assert_eq!`. A control asserting only `is_err()` does not
@@ -1923,6 +1959,95 @@ Per `docs/documentation-style-guide.md`, with custom sections in the slot ADR
 
 The full prose of both new documents is written during Stage B and appended to
 this section as it is drafted, so that this plan ends the task self-contained.
+
+### Step 9 gate transcripts
+
+Run at revision `aebe29d`, sequentially, one gate at a time. Each command is
+the one Step 9 names, and each log is the one that command wrote.
+
+`make check-fmt` — exit 0:
+
+```plaintext
+cargo fmt --all -- --check
+mdtablefix --check --git --include-untracked --wrap --renumber --breaks --ellipsis --fences
+28 files left unchanged.
+```
+
+`make lint` — exit 0. The `whitaker` line matters as much as the exit code:
+until it appears, the run has only proved clippy clean, and D25 was recorded
+precisely because a clippy failure once stopped the lint suite before Whitaker
+ran:
+
+```plaintext
+RUSTFLAGS="-D warnings " whitaker --all -- --all-targets --all-features
+Checking with toolchain `nightly-2026-05-28`
+    Checking statelet v0.1.0 (...worktrees/99bdf268-...)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.23s
+```
+
+`make test` — exit 0, `cargo nextest run`:
+
+```plaintext
+Summary [   0.047s] 83 tests run: 83 passed, 0 skipped
+```
+
+Doctests, in the same run:
+
+```plaintext
+test src/lib.rs - greet (line 8) ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+```
+
+Eighty-three includes this contract's twenty-nine scenarios, alongside the
+existing suites. Twenty-nine functions occupy forty-three collected cases,
+because `rstest` expands three of them: `gate_titles_resolve` into six
+(one per gate plus the ambiguity control), `aggregation_register_is_total`
+into three (one per reachable state of the note multiset), and
+`committed_state_name_notes_are_rejected` into eight (one per documented note
+defect). The two totals are both worth recording: forty-three is what the suite
+must report, and twenty-nine is how many scenarios the `Verification plan`
+names.
+
+`make markdownlint` — exit 0:
+
+```plaintext
+Linting: 29 file(s)
+Summary: 0 error(s)
+```
+
+`make nixie` — exit 0:
+
+```plaintext
+🧜‍♀️✨ All diagrams validated successfully!
+```
+
+`make audit` — exit 0:
+
+```plaintext
+    Loaded 1251 security advisories (from /home/leynos/.cargo/advisory-db)
+    Updating crates.io index
+    Scanning Cargo.lock for vulnerabilities (45 crate dependencies)
+```
+
+No advisory line follows, which is the passing shape: `cargo audit` prints
+each finding it has and prints nothing when it finds none.
+
+`make test-workflow-contracts` — exit 0:
+
+```plaintext
+6 passed in 0.02s
+```
+
+Two warnings appear in `make lint` and `make test` output and neither is a
+finding: `cargo::redundant_homepage` and its companion note, both about
+`Cargo.toml`'s `homepage` key. They are generated by the manifest-carrying
+commands rather than by this change — `Cargo.toml` is untouched by it — and
+they are warnings under a `-D warnings` flag only for `rustc`/`clippy`
+invocations, not for the cargo manifest parse that emits them.
+
+`make check-fmt`'s "28 files left unchanged" is likewise a count of tracked
+Markdown files, reported by `mdtablefix`; it is the passing form of the check,
+not a partial run.
 
 ## Interfaces and dependencies
 
