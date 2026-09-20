@@ -13,8 +13,12 @@ for another.
 
 ## Writing a note
 
-1. Copy `docs/phase-2-validation-note-template.md` into this directory and
-   rename it after the task that produced it.
+1. Create a file here named `<task>-<subject>.md` after the task that produced
+   the note and the subject it observed — `2.2.1-mdtablefix-processbuffer.md`,
+   for example. Copy the fenced block from
+   `docs/phase-2-validation-note-template.md` into it, marker comment and all,
+   rather than the whole template file: the prose around that block is
+   instructions for the person filling the form, not part of the note.
 2. Fill every cell. A cell that still reads `TBD` is an incomplete note and
    will fail the contract test that owns it.
 3. Cite where each observation was made, as `<repo>@<sha>:<path>`. A status

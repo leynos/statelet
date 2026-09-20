@@ -48,15 +48,18 @@ Third, the rule for reading several notes *together* is also written down.
 Three notes reach task 3.2.1, from tasks 2.2.1, 2.2.2, and 3.1.2. A rule that
 resolves one note and says nothing about three is total over the wrong domain.
 
-Fourth, all of it is machine-checked, including a committed worked example, so
-the suite exercises a filled note and not merely an empty form.
+Fourth, all of it is machine-checked, including a filled note, so the suite
+exercises a completed form and not merely a blank one. The filled note is a
+string fixture rather than a committed file: no honest note can cite work that
+has not happened, so a committed example would have been fabricated evidence
+serving as the suite's accepting witness. ADR 004's worked example is therefore
+an *illustration* — marked as one, and not machine-checked.
 
 Observable acceptance: from a clean checkout, `make test` passes and reports
-the new integration-test binary `state_name_consumption_contract`. Deleting the
-`Insufficient` row from the status register, adding a residual `TBD` to the
-committed worked example, or renaming a field in one document but not the
-other, each makes `make test` fail with a message naming the file and the
-repair.
+the new integration-test binary `state_name_consumption_contract`. Mutating the
+status register so that it no longer selects `Insufficient`, leaving a residual
+`TBD` in a note fixture, or renaming a field in one document but not the other,
+each makes `make test` fail with a message naming the file and the repair.
 
 This task adds no runtime code. `src/` is untouched.
 
@@ -268,8 +271,8 @@ same file, so it proves `parse ∘ render = id` for a renderer no document uses,
 while the failure class that actually bit roadmap task 1.1.2 was *malformed*
 input. Five named handwritten controls cover that class exactly, with no
 dependency. The behavioural coverage the governing instruction asks for is
-delivered as scenario-named `rstest` cases over the committed worked example
-and its mutations, which exercise the same workflow; `docs/developers-guide.md`
+delivered as scenario-named `rstest` cases over the filled-note fixture and its
+eight documented defects, which exercise the same `docs/developers-guide.md`
 carries the prose walkthrough. This is a proportionality judgement, not a
 refusal — if the dependency cost is acceptable, the scenarios convert to
 Gherkin mechanically.
@@ -537,8 +540,8 @@ outcome, and a reviewer should approve it on that understanding.
   citation of the shape `<repo>@<sha>:<path>` and is checked for it;
   `identifier-need` requires an enumerated *consumers considered* list, so
   "none required" carries a search set rather than being a bare negative
-  existential; the committed worked example shows what an adequate cell looks
-  like.
+  existential; ADR 004's illustrative worked example shows what an adequate
+  cell looks like.
 
 - Risk: the admissibility blocker "repair the state names" names work in
   `mdtablefix` or `wireframe`, repositories this roadmap does not own.
@@ -631,6 +634,16 @@ outcome, and a reviewer should approve it on that understanding.
       contradicted each other and the contradiction was settled by a `rustc`
       probe rather than by preference, and two findings were falsified against
       primary sources. Recorded as D28.
+- [x] CodeRabbit review two — nine findings in seven locations returned
+      2026-09-20; six adopted, all documentation, and one declined as an
+      invariant conflation. The round found no code defect, and its two
+      `major` findings were the same one: this plan promising a committed
+      worked example that D15 had already withdrawn. Recorded as D29. The
+      review examined revision `aff4760` rather than the `2c11bf8` it was
+      asked for, because the branch advanced twice while it ran; findings were
+      therefore re-audited against HEAD before being adopted, which caught one
+      proposed edit — to the `Revision note` — that would have falsified a
+      chronological record.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
       done: re-gated 2026-09-20 at `26da23f` after the post-fix round, all
       seven gates pass sequentially, **including the Whitaker leg** that the
@@ -982,6 +995,10 @@ design.
   register and checked by byte equality. Rationale: differing lifecycles argue
   for two files; generation removes the hand-maintained drift edge that argues
   against them. One parser fewer. Date/Author: 2026-09-18, planning agent.
+  **The byte-equality half is superseded by D16**, which compares parsed values
+  instead; the two-documents half stands. Retained as written because the draft
+  it records was drafted that way, and because D16's rationale refers back to
+  it.
 
 - D3: Separate admissibility from verdict; the verdict register has one axis.
   Rationale: a two-axis register spent two of its four cells on "naming
@@ -1359,6 +1376,50 @@ design.
   implementing agent, actioning the review the scrutineer returned after
   D27.
 
+- D29: The review after D28 returned nine findings in seven distinct
+  locations — two locations were each reported twice, by different analysers,
+  at different severities — and **six of the seven were adopted**, all
+  documentation. One was a `major` pair about the same defect: this plan's
+  acceptance criterion still promised a *committed* worked example and a test
+  that mutates it, a shape D15 withdrew before the plan was approved, because
+  no honest note can cite work that has not happened. The task's own
+  contribution summary said the same, so both were reconciled to what shipped:
+  a string fixture is the accepting witness and ADR 004's example is an
+  illustration. The same stale shape survived in four places the review did not
+  name — the `rstest-bdd` refusal (Q3), the evidence-fabrication risk, "What
+  was delivered", and the verification plan's "Methods chosen and refused" —
+  each of which a reader would have taken as a statement about the shipped
+  artefact, and each corrected to the fixture and the illustration. Two
+  occurrences were deliberately left as written: the Revision note's
+  second-draft bullets, which are a *chronological record* of a draft that did
+  say "committed worked example" and whose withdrawal the third-draft bullet
+  three entries later records. Rewriting those would destroy the record of what
+  changed and why, which is the same distinction that kept D2 on the page.
+  Also adopted: D2's byte-equality half marked as superseded by
+  D16, in the form D18 already uses, rather than left to read as a live
+  contradiction; the "seven-file contract" instruction updated to the eleven
+  child modules that shipped; Stage B's red-state prediction corrected to match
+  D22, which had corrected the same claim further down the plan but not where
+  it was first made; the notes-directory README's "copy the template file"
+  instruction replaced with the block-and-marker it must copy, since the file's
+  surrounding prose is not part of a note and the two instructions disagreed;
+  and the ADR's stable-identifier paragraph corrected on a **measured**
+  objection — it implied an `as` cast on a fieldless enum yields a stable
+  number, and a probe showed one variant casting to `2`, then `3` after an
+  insertion, then `0` after a reorder, so only explicitly assigned
+  discriminants under a primitive `repr` are durable. One finding was declined:
+  it asked `committed_state_name_notes_are_usable` to aggregate resolutions
+  across the notes it scans, which would fold `INV-AGGREGATE` into `INV-FILLED`
+  and make the scan's outcome depend on how many notes happen to be committed
+  — a property belonging to neither invariant, and one the aggregation register
+  already covers exhaustively through `aggregation_register_is_total`'s three
+  parameterized cases. `INV-FILLED` stays per-note. The round is recorded here
+  because the `major` pair is the plan's own prose drifting from the design it
+  describes, and because the accepted ADR change is a *correction to a shipped
+  decision record*, caught by measurement rather than by reading it again.
+  Date/Author: 2026-09-20, implementing agent, actioning the review the
+  scrutineer returned after D28.
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -1371,7 +1432,7 @@ is itself checked, so the instrument is bound to the sentence that grades it.
 
 The task's stated purpose was to make task 3.2.1's instruction executable. A
 Phase 2 engineer now has a form to fill, a rule that turns the filled form into
-a verdict, and a committed worked example showing what an adequate evidence
+a verdict, and an illustrative worked example showing what an adequate evidence
 cell looks like. What does **not** exist, deliberately, is the verdict itself:
 ADR 004 records evidence and the rule for reading it, and leaves "is
 `&'static str` sufficient?" to task 3.2.1. Constraint 2 forbids the answer, and
@@ -1382,11 +1443,13 @@ selection rather than as prose.
 
 Every entry in `Surprises & discoveries` was checked against the artefacts
 named in `Conformance basis`. All twenty-one were accounted for; the disposition
-of each follows. Three were recorded during or after the EP-M5 gate runs. Two
-of those are mechanical — one is a prose-wrapping rule, the other a correction
-to how this plan had been probing the formatter — and the third is the
-post-fix review round's falsification record, so none of the three bears on any
-upstream artefact.
+of each follows. Three were recorded during or after the EP-M5 gate runs: a
+prose-wrapping rule, a correction to how this plan had been probing the
+formatter, and the post-fix review round's falsification record. None bears on
+any upstream artefact, and the second review round — recorded as D29 rather
+than here, because its findings are decisions rather than observations — forced
+one upstream correction of its own, to ADR 004's stable-identifier paragraph,
+which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -1776,7 +1839,7 @@ binary and no externally observable workflow beyond `make test`, which is
 itself the acceptance command.
 
 Behavioural coverage is delivered as scenario-named `rstest` cases over the
-committed worked example and its eight documented defects —
+filled-note fixture and its eight documented defects —
 `committed_state_name_notes_are_usable` and the `INV-FILLED` controls
 constitute the fill-and-gate workflow. The `docs/developers-guide.md` addition
 carries the prose walkthrough. If the dependency cost declined under Q3 is later
@@ -1799,8 +1862,11 @@ but **no register tables**, and create `docs/validation-notes/README.md` with
 an empty directory otherwise. The documents must exist before the test compiles
 — `include_str!` of a missing file is a compile error, not a test failure.
 Write the contract test in full. Run `make test` and observe the red state:
-`MissingDelimiters` naming each register, and `INV-FILLED` failing because the
-directory holds no note. Record the transcript.
+`MissingDelimiters` naming each register, plus the empty-clause-list failure of
+`INV-ANCHORS`. `INV-FILLED` does **not** fail, and the prediction that it would
+is corrected by D22 below — an empty `docs/validation-notes/` is a pass, because
+no honest note can exist before task 2.2.1 has annotated something. Record the
+transcript.
 
 Do not use an expected-failure marker. `AGENTS.md` requires every commit to
 pass the gates, so the red state is observed within a session and not
@@ -1929,8 +1995,9 @@ delimiters in Step 5.
 
 ### Step 3 — write the contract test in full
 
-Create the seven-file contract described in `Interfaces and dependencies`,
-including every negative control, before any register exists. Create
+Create the contract described in `Interfaces and dependencies` — eleven child
+modules, of which four are the scenario modules — including every negative
+control, before any register exists. Create
 `dylint.toml` first, with the single path-scoped exemption defined in D20:
 without it the `notes.rs` module fails `make lint`, and creating it now keeps
 the exemption visible from the moment the code that needs it exists rather than
