@@ -842,7 +842,7 @@ design.
   `@`, so `#[case::citation_without_a_path]` adds no coverage the old predicate
   lacked — it would have passed for the wrong reason, asserting a message about
   a shape nothing checked. The contradiction control's first draft asserted a
-  message naming the same field twice, because I attributed a second decisive
+  message naming the same field twice, because it attributed a second decisive
   status to a field whose contribution the note did not select. And the
   `blocked_notes_resolve_to_not_resolved` control's middle case used a status
   the register does not define, so it failed on the *vocabulary* check rather
@@ -871,9 +871,10 @@ design.
   anything narrower. Evidence: `make check-fmt` failed on this plan at the
   paragraph introducing the traced-items table —
   `docs/execplans/1-1-3-...md +4 -4`, `1 file would be reformatted` — and every
-  offending line was mine, added in the same commit. Measuring rather than
-  guessing was the point here, because my first two explanations of it were
-  both wrong. The line lengths were `71, 66, 70, 75, 77, 30`; a greedy fill at
+  offending line belonged to the paragraph added in the same commit. Measuring
+  rather than guessing was the point here, because the first two explanations
+  of the cause were both wrong. The line lengths were `71, 66, 70, 75, 77, 30`;
+  a greedy fill at
   80 over the same words yields `78, 59, 79, 77, 80, 17`. So the formatter is
   not narrower than `MD013` — it is exactly as wide, and it pulls words *up*
   from the short lines rather than breaking any. A paragraph whose lines merely
@@ -892,16 +893,16 @@ design.
   because `--diff` does not enable `--wrap`; the rule flags are separate and
   must be repeated. Evidence: while investigating the entry above, three
   successive `mdtablefix --diff <file>` probes reported "1 file left unchanged"
-  for input that the real gate rejects, which sent me to a bisect by prefix
-  length before the discrepancy was found to be in my invocation rather than in
+  for input that the real gate rejects, which prompted a bisect by prefix
+  length before the discrepancy was located in the invocation rather than in
   the file. Re-running with `$(MDTABLEFIX_RULES)` reproduced the gate's finding
   immediately and at every prefix length. The `--check` form behaves the same
   way: it checks only the rules it is given. Impact: none on any artefact; the
   document was already correct. Recorded because it is the same class of error
   as the vacuous controls this plan's `Verification plan` was written to
-  prevent — a check that cannot fail for the reason it names — and I made it
-  three times in a row against a tool I was using specifically to decide
-  whether a gate result was real. The remedy is the same as for the controls:
+  prevent — a check that cannot fail for the reason it names — and it was made
+  three times in a row against the tool being used to decide whether a gate
+  result was real. The remedy is the same as for the controls:
   run the probe with the same arguments as the thing being investigated, not
   with arguments that merely look equivalent.
 
@@ -1250,7 +1251,7 @@ design.
   `make fmt` repairs it silently, the temptation is to file the red as noise —
   and the standing instruction requires the deterministic gates to be green
   before a review is requested, which a docs-only diff does not exempt itself
-  from. Two by-products are recorded under `Surprises & discoveries`: my first
+  from. Two by-products are recorded under `Surprises & discoveries`: the first
   two explanations of the cause were both wrong, and three `mdtablefix --diff`
   probes said "unchanged" for input the gate rejects, because `--diff` does not
   imply `--wrap` and the rule flags must be repeated on the probe. No
@@ -2031,7 +2032,13 @@ The one hazard is Step 8's edits to `docs/design.md`, `docs/context.md`, and
 pre-existing contract fails, revert the single offending edit rather than
 adapting that contract.
 
-No directory outside `/tmp` and `target/` is written.
+The contract test writes nothing: it reads through `include_str!` and one
+read-only directory scan, so no step that runs it can dirty the tree. The plan
+itself writes exactly what "Files this plan reads or writes" lists, and nothing
+else: new files under `docs/` and `tests/state_name_consumption_contract/`,
+`dylint.toml`, and one-line edits to the eight documents named there. Nothing
+outside the repository is written except under `/tmp`, which holds gate logs and
+scratch, and `target/`, which holds build output.
 
 ## Artefacts and notes
 
