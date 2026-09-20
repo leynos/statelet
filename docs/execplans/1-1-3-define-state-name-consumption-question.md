@@ -2306,10 +2306,14 @@ test src/lib.rs - greet (line 8) ... ok
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
-Eighty-seven includes this contract's thirty-one scenarios, alongside the
-existing suites — twenty-seven cases in the exit-register contract, seven in
-the codegen-backend contract, three in `dev_fast_contract`, two in the coverage
-contract and one in the stub, across six further binaries. Thirty-one functions
+Eighty-seven is this contract's forty-seven cases plus forty from the five
+pre-existing test binaries — twenty-seven in the exit-register contract, seven
+in the codegen-backend contract, three in `dev_fast_contract`, two in the
+coverage contract and one in the stub. Nextest counts a seventh binary because
+the lib target is one of them and it collects no tests, which is why the
+banner's figure is one higher than the number of binaries that report results.
+
+Thirty-one functions
 occupy forty-seven collected cases, because `rstest` expands four of them:
 `gate_titles_resolve` into six (one per gate plus the ambiguity control),
 `aggregation_register_is_total` into three (one per reachable state of the note
