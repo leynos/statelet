@@ -127,6 +127,59 @@ fn empty_evidence_block(adr: &str) -> String {
     format!("{head}{begin}\n\n{end}{tail}")
 }
 
+/// The number of roadmap lines naming a fragment, counted as the check counts.
+fn roadmap_fragment_matches(fragment: &str) -> usize {
+    ROADMAP
+        .lines()
+        .filter(|line| line.contains(fragment))
+        .count()
+}
+
+/// The ambiguity failure, with its count taken from the live roadmap.
+///
+/// A literal count would freeze the roadmap. Binding gates by fragment exists
+/// so that completing a bound task or renumbering the roadmap does not break
+/// the build; a literal "15" reintroduces exactly that breakage one line later,
+/// and fails for a reason a reader would have to diff two documents to see.
+///
+/// Deriving it costs something, and the cost is worth naming: because this
+/// helper counts the way the check counts, the *number* in the message can no
+/// longer disagree with `check_gate_titles`, so that one digit is no longer
+/// independently pinned. What remains pinned is everything the control is for —
+/// that the fragment still matches more than one line (asserted separately by
+/// `the_ambiguity_fragment_still_matches_many_lines`, so this control cannot
+/// quietly decay into a single match and pass), that the check rejects rather
+/// than accepts, and that it takes the ambiguous branch rather than the
+/// "no task" one. The counting *method* is pinned too: were the check to count
+/// tasks rather than lines, the number would differ and this assertion would
+/// fail.
+fn ambiguous_fragment_message(gate: &str, fragment: &str) -> String {
+    let matches = roadmap_fragment_matches(fragment);
+    format!(
+        "docs/roadmap.md: gate {gate} names task fragment {fragment:?}, which matches {matches} \
+         tasks. Repair: use a fragment specific to one task."
+    )
+}
+
+/// Holds the ambiguity control's precondition: its fragment matches many lines.
+///
+/// The control asserts an exact message, and that message is now derived from
+/// the live roadmap, so it cannot fail merely because the number moved. What it
+/// *must* still fail on is the precondition that there is an ambiguity to
+/// demonstrate at all. Without this, a roadmap edit leaving one "baseline" line
+/// would turn `#[case::ambiguous]` into a test of nothing: the check would
+/// accept the fragment, the case would fail for an unrelated reason, and the
+/// only thing the suite would be saying is that the fixture went stale.
+#[test]
+fn the_ambiguity_fragment_still_matches_many_lines() {
+    let matches = roadmap_fragment_matches("baseline");
+    assert!(
+        matches > 1,
+        "the ambiguity control's fragment matches {matches} roadmap line(s), so its case proves \
+         nothing about ambiguity. Repair: choose a fragment the live roadmap still repeats."
+    );
+}
+
 /// Resolves each gate's title fragment to exactly one live roadmap task, and
 /// rejects a fragment matching none and one matching many.
 #[rstest]
@@ -140,20 +193,14 @@ fn empty_evidence_block(adr: &str) -> String {
     Some(
         "docs/roadmap.md: gate S4 names task fragment \"Do the thing\", which matches no task. \
          Repair: restore that task's title, or revise ADR 004's gate table."
+            .to_owned()
     )
 )]
-#[case::ambiguous(
-    "S3",
-    "baseline",
-    Some(
-        "docs/roadmap.md: gate S3 names task fragment \"baseline\", which matches 15 tasks. \
-         Repair: use a fragment specific to one task."
-    )
-)]
+#[case::ambiguous("S3", "baseline", Some(ambiguous_fragment_message("S3", "baseline")))]
 fn gate_titles_resolve(
     #[case] gate: &str,
     #[case] fragment: &str,
-    #[case] failure: Option<&str>,
+    #[case] failure: Option<String>,
 ) -> Result<(), String> {
     let mutated = gate_table().replace(&gate_table_fragment(gate)?, fragment);
     let row = gate_rows(&mutated)
@@ -164,10 +211,7 @@ fn gate_titles_resolve(
     assert_eq!(row.fragment, fragment);
     match failure {
         None => assert_eq!(check_gate_titles(&mutated, ROADMAP), Ok(())),
-        Some(expected) => assert_eq!(
-            check_gate_titles(&mutated, ROADMAP),
-            Err(expected.to_owned())
-        ),
+        Some(expected) => assert_eq!(check_gate_titles(&mutated, ROADMAP), Err(expected)),
     }
     Ok(())
 }

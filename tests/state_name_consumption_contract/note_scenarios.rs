@@ -269,6 +269,41 @@ fn contradictory_notes_are_rejected() -> Result<(), String> {
     Ok(())
 }
 
+/// Accepts a `None` cell that names a property in order to *deny* it.
+///
+/// The agreement rule reads a status against the properties its evidence
+/// names, and a cell recording `None` says so by naming the property nobody
+/// asked for. A substring test cannot tell naming-to-assert from
+/// naming-to-deny, so it rejects every negative phrased as anything other than
+/// silence — leaving an engineer no way to record one except by not mentioning
+/// the property at all. The rule would then be demanding a euphemism rather
+/// than agreement, and punishing the more informative note.
+#[rstest]
+#[case::negated_stability(
+    "the subscriber and the metrics recorder were both considered; no stability requirement was \
+     observed; `mdtablefix@abc1234:src/process.rs`"
+)]
+#[case::negated_ordering(
+    "subscriber, metrics and documentation considered; none of them need ordering; \
+     `mdtablefix@abc1234:src/process.rs`"
+)]
+#[case::negated_equality(
+    "no consumer needs equality of identifiers; `mdtablefix@abc1234:src/process.rs`"
+)]
+fn negated_property_claims_do_not_disagree_with_none(#[case] evidence: &str) -> Result<(), String> {
+    let rows = live_status()?;
+    let note = note_with_rows(&[
+        STATE_DISPLAY_NAME_ROW,
+        &format!("| identifier-need | None | {evidence} |"),
+        METRICS_CARDINALITY_ROW,
+        TRACING_USE_ROW,
+    ]);
+    let cells = note_rows(&note).map_err(|error| error.to_string())?;
+    check_note_cells(&rows, &cells)?;
+    assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
+    Ok(())
+}
+
 /// Accepts the fixture note as the suite's accepting witness.
 #[test]
 fn committed_state_name_note_is_usable() -> Result<(), String> {

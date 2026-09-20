@@ -165,9 +165,12 @@ an observation rather than a bare negative existential.
 Third, the evidence cell for `identifier-need` agrees with its status about
 whether a property is required. A cell that names one of equality, stability
 across releases, ordering, or compact encoding must accompany the status that
-records a required property, and a cell that names none must not. A status and
-an evidence cell that disagree are rejected, because the disagreement is the
-one defect a reader cannot see.
+records a required property, and a cell that names none must not. A property
+named only to deny it is not a claim: "no stability requirement was observed"
+belongs with the status that records none, because it is a more informative way
+of saying so than silence, and the rule must not demand a euphemism in place of
+agreement. A status and an evidence cell that disagree are rejected, because
+the disagreement is the one defect a reader cannot see.
 
 ## Admissibility
 
@@ -206,6 +209,14 @@ outcome.
 conditional on publication proceeding: if ADR 003's gate G2 has already
 selected exit E1, Statelet ships nothing and no return type is ratified.*
 
+The first column counts *contributing* notes rather than every committed one. A
+note rejected as contradictory contributes nothing, exactly as a blocked note
+does, so neither is counted: a contradiction is a defect to repair in the note
+that carries it, not a verdict, and reading it as evidence either way would
+credit the multiset with a decision no note made. If every note is blocked or
+rejected, no note contributes and the first row applies, which is what that row
+is for.
+
 ## Worked example (illustration, not evidence)
 
 The block below shows a filled note as it would be committed by roadmap task
@@ -227,9 +238,9 @@ Roadmap task: 2.2.1.
 | Field | Status | Evidence |
 | --- | --- | --- |
 | state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`, `LineMode` |
-| identifier-need | None | subscriber, metrics, model, docs; no unmet property |
+| identifier-need | None | `mdtablefix@abc1234:src/process.rs`, subscriber, metrics and docs; no unmet property |
 | metrics-cardinality | Bounded | `mdtablefix@abc1234:src/process.rs`, three names |
-| tracing-use | Full | emits `transition.state.before` |
+| tracing-use | Full | `mdtablefix@abc1234:src/process.rs`, emits `transition.state.before` |
 <!-- note-register:end -->
 
 ## Observations
@@ -297,20 +308,20 @@ stronger" — design `6.1 State naming`.*
 - A stable numeric identifier is not available for free.
   `std::mem::discriminant` does not qualify: the standard library documents
   that the discriminant of an enum variant may change if the enum definition
-  changes, and transmuting `Discriminant<T>` to a primitive is undefined
-  behaviour. A stable numeric value is reachable only through an `as` cast on a
-  fieldless enum, or through an explicit `#[repr(u8)]`-style representation.
-  Any such value must be hand-assigned, which means new public API and a new
-  obligation on every user of the derive: a durable value they must not
-  renumber. This is the cost that the verdict has to justify, and it is a cost
-  the string default does not incur.
-- A numeric identifier cannot reduce metric cardinality. `StateName` is a total
-  function from a state to a label, and any identifier is a total function from
-  the same state to a value. Substituting one for the other relabels the same
-  domain, so the number of distinct values an observability backend sees is
-  unchanged. Cardinality is a property of the value set, not of the type that
-  represents it, which is why it gates admissibility and never decides the
-  verdict.
+  changes,[^1] and transmuting `Discriminant<T>` to a primitive is undefined
+  behaviour.[^1] A stable numeric value is reachable only through an `as` cast
+  on a fieldless enum, or through an explicit `#[repr(u8)]`-style
+  representation.[^2] Any such value must be hand-assigned, which means new
+  public API and a new obligation on every user of the derive: a durable value
+  they must not renumber. This is the cost that the verdict has to justify, and
+  it is a cost the string default does not incur.
+- A numeric identifier cannot reduce metric cardinality.[^3] `StateName` is a
+  total function from a state to a label, and any identifier is a total
+  function from the same state to a value. Substituting one for the other
+  relabels the same domain, so the number of distinct values an observability
+  backend sees is unchanged. Cardinality is a property of the value set, not of
+  the type that represents it, which is why it gates admissibility and never
+  decides the verdict.
 - A note can be written from the type declaration rather than from observation:
   ninety seconds of reading an enum, dressed as evidence. The mitigation is
   procedural and partly machine-checked: every evidence cell must be a citation
@@ -356,3 +367,10 @@ terminate. Cardinality is a property of the value set, names synthesized from
 data are an upstream defect, and neither is a statement about the return type.
 Placing both on the verdict axis spent half the domain on "cannot answer",
 which is why this record gates them instead.
+
+[^1]: `std::mem::discriminant` documentation, accessed 2026-09-20:
+    `https://doc.rust-lang.org/std/mem/fn.discriminant.html`
+[^2]: The Rust Reference, "Enumerations", accessed 2026-09-20:
+    `https://doc.rust-lang.org/reference/items/enumerations.html`
+[^3]: Prometheus documentation, "Metric and label naming", accessed
+    2026-09-20: `https://prometheus.io/docs/practices/naming/`

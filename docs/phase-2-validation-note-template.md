@@ -1,9 +1,10 @@
 # Phase 2 validation note template
 
 This is the blank form for a `StateName` consumption observation. Copy the
-block below into a new file in `docs/validation-notes/`, rename it after the
-task that produced the note, fill every cell, and commit it with the work it
-describes.
+block below into a new file in `docs/validation-notes/`, named
+`<task>-<subject>.md` after the task that produced the note and the subject it
+observed — `2.2.1-mdtablefix-processbuffer.md`, for example — fill every cell,
+and commit it with the work it describes.
 
 The form is not documentation of a decision. It is the schema of one, and it is
 machine-checked: `tests/state_name_consumption_contract.rs` reads this file,
@@ -55,7 +56,10 @@ of `None`: the absence of a need is itself an observation, and it has a place.
   return, so that the cardinality bound below is derivable from the note rather
   than asserted by its author. A field recording only whether a named type
   exists is not admissible, because a reviewer deciding the fate of a
-  `&'static str` would never see the strings.
+  `&'static str` would never see the strings. Neither is a cell whose evidence
+  is the citation alone: `mdtablefix@abc1234:src/process.rs` on its own says
+  where an observation was made and never what was observed. The citation is
+  required here as it is everywhere, and here it is not sufficient.
 - `identifier-need` names at least one consumer drawn from the search set — the
   tracing subscriber, the metrics recorder or its documented absence, any model
   checker, and generated documentation — or states that none of them exist. The

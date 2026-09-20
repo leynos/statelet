@@ -231,16 +231,66 @@ fn names_a_consumer(evidence: &str) -> bool {
     .any(|consumer| lowered.contains(consumer))
 }
 
+/// The four properties ADR 004 admits, as its third obligation names them.
+const PROPERTIES: [&str; 5] = [
+    "equality",
+    "stability",
+    "stable",
+    "ordering",
+    "compact encoding",
+];
+
+/// How many words before a keyword are searched for a negation.
+///
+/// Four rather than the three English usually needs, so that "none of them
+/// need ordering" is read as the negative it is. Widening it further starts to
+/// suppress genuine claims — "no crash was observed; requires stable ordering"
+/// survives at four and not at much more.
+const NEGATION_WINDOW: usize = 4;
+
 /// Whether a cell names one of the four properties ADR 004 admits.
+///
+/// A keyword counts only when the cell *asserts* it. "no stability requirement
+/// was observed" is an honest `None` cell — the property is named precisely to
+/// record that nobody asked for it — and a bare substring test reads the word
+/// "stability" and rejects the note for disagreeing with its own status. That
+/// leaves an engineer no way to record a negative except by not mentioning the
+/// property at all, which punishes the more informative note; the rule would be
+/// demanding a euphemism rather than agreement.
+///
+/// The negation is therefore looked for in the words just before the keyword,
+/// which is where English puts it, and never across a clause break, so a
+/// negation in one clause cannot silence an assertion in the next. It is a
+/// bounded heuristic rather than a parse, and deliberately a loose one: its
+/// failure mode on unusual phrasing is to accept a note a stricter reader would
+/// reject, which leaves the judgement where ADR 004 puts it — with the reviewer
+/// at task 3.2.1 — instead of failing an honest note on its wording.
 fn names_a_property(evidence: &str) -> bool {
     let lowered = evidence.to_lowercase();
-    [
-        "equality",
-        "stability",
-        "stable",
-        "ordering",
-        "compact encoding",
-    ]
-    .iter()
-    .any(|property| lowered.contains(property))
+    PROPERTIES.iter().any(|property| {
+        lowered
+            .match_indices(property)
+            .any(|(index, _)| !is_negated(lowered.get(..index).unwrap_or_default()))
+    })
+}
+
+/// Whether the words just before a keyword negate it.
+fn is_negated(before: &str) -> bool {
+    const NEGATIONS: [&str; 5] = ["no", "not", "never", "without", "none"];
+    before
+        .rsplit(['.', ';', ','])
+        .next()
+        .unwrap_or(before)
+        .split_whitespace()
+        .rev()
+        .take(NEGATION_WINDOW)
+        .any(|word| {
+            // Punctuation is stripped because the word being tested arrives with
+            // whatever a writer put beside it: "no," and "not." are the ordinary
+            // forms. An apostrophe is kept, so that "doesn't" survives to the
+            // `n't` test below rather than being cut at the contraction.
+            let bare = word
+                .trim_matches(|character: char| !character.is_alphanumeric() && character != '\'');
+            NEGATIONS.contains(&bare) || bare.ends_with("n't")
+        })
 }

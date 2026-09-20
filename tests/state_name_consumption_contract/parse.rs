@@ -26,9 +26,8 @@ pub(crate) fn parse_table(
     };
     let rows = block
         .lines()
-        .enumerate()
-        .filter_map(|(offset, line)| row_from_line(line, offset, register).transpose())
-        .collect::<Result<Vec<_>, _>>()?;
+        .filter_map(|line| row_from_line(line, register))
+        .collect::<Vec<_>>();
     if rows.is_empty() {
         Err(ParseError::MissingDelimiters { register })
     } else {
@@ -55,33 +54,33 @@ fn section_body(source: &str, register: Register) -> Result<&str, ParseError> {
 /// The literal that ends a register's section: the next top-level heading.
 const NEXT_SECTION: &str = "\n## ";
 
-/// Converts one table line into trimmed cells.
+/// Converts one table line into trimmed cells, or `None` for a structural row
+/// or non-table prose.
 ///
-/// Returns `Ok(None)` for a structural row or non-table prose.
-fn row_from_line(
-    line: &str,
-    offset: usize,
-    register: Register,
-) -> Result<Option<Vec<String>>, ParseError> {
+/// Infallible by construction, and the infallibility is the point: any line
+/// beginning with a pipe yields at least one cell, because `split('|')` on any
+/// string yields at least one element — `"||"` yields `[""]`. A row cannot
+/// therefore be too malformed to parse *here*; it can only carry the wrong
+/// number of cells for its register, which the typed mapper rejects several
+/// checks later with the register named. A guard for an empty cell list would
+/// be unreachable, and a branch that cannot be taken is not a check.
+///
+/// The `offset` the caller once passed is gone with it: its only use was the
+/// row number in that unreachable error.
+fn row_from_line(line: &str, register: Register) -> Option<Vec<String>> {
     let trimmed = line.trim();
     if !trimmed.starts_with('|') {
-        return Ok(None);
+        return None;
     }
     let cells = trimmed
         .trim_matches('|')
         .split('|')
         .map(|cell| cell.trim().to_owned())
         .collect::<Vec<String>>();
-    if cells.is_empty() {
-        return Err(ParseError::MalformedRow {
-            register,
-            row: offset + 1,
-        });
-    }
     if is_structural_row(&cells, register) {
-        return Ok(None);
+        return None;
     }
-    Ok(Some(cells))
+    Some(cells)
 }
 
 /// Identifies the header row or the divider row of the named register.
