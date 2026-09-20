@@ -60,7 +60,7 @@ pub(crate) fn aggregation_register() -> String {
         AGGREGATION_HEADING,
         "",
         "<!-- aggregation-register:begin -->",
-        "| Admissible notes | Any insufficient | Outcome if publication proceeds |",
+        "| Contributing notes | Any insufficient | Outcome if publication proceeds |",
         "| --- | --- | --- |",
         "| None | n/a | Blocked: no admissible evidence |",
         "| One or more | No | Ratify the current return type |",

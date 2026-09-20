@@ -142,7 +142,7 @@ fn aggregation_register_is_total(
     let row = rows
         .iter()
         .find(|row| {
-            row.admissible_notes == notes
+            row.contributing_notes == notes
                 && (notes == "None" || row.any_insufficient == insufficient)
         })
         .expect("the aggregation register must cover every reachable state");
@@ -161,7 +161,7 @@ fn aggregation_register_rejects_an_outcome_that_does_not_match() {
     assert_eq!(
         check_aggregation_total(&rows),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: none admissible notes with any \
+            "docs/adr-004-state-name-consumption-evidence.md: none contributing notes with any \
              insufficient n/a yields \"Ratify the current return type\" where it must Blocked. \
              Repair: a register that does not Blocked there is not a decision procedure."
                 .to_owned()
@@ -179,8 +179,8 @@ fn aggregation_register_rejects_a_missing_state() {
         check_aggregation_total(&rows),
         Err(
             "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
-             cover none admissible notes with any insufficient n/a. Repair: add that row; it must \
-             Blocked."
+             cover none contributing notes with any insufficient n/a. Repair: add that row; it \
+             must Blocked."
                 .to_owned()
         )
     );

@@ -162,6 +162,23 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
     "a StateName note records evidence for field \"metrics-cardinality\" that is not a citation of \
      the shape <repo>@<sha>:<path>. Repair: cite the revision the observation was made against."
 )]
+#[case::consumer_named_only_in_the_citation(
+    note_with_rows(&[STATE_DISPLAY_NAME_ROW,
+                     "| identifier-need | None | `mdtablefix@abc1234:src/tracing.rs` |",
+                     METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
+    "a StateName note's identifier-need cell names no consumer from the search set. Repair: name \
+     the tracing subscriber, the metrics recorder or its documented absence, a model checker, or \
+     generated documentation — or state that none exist."
+)]
+#[case::property_named_only_in_the_citation(
+    note_with_rows(&[STATE_DISPLAY_NAME_ROW,
+                     "| identifier-need | Property required | the subscriber was considered; \
+                      `mdtablefix@abc1234:src/stability.rs` |",
+                     METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
+    "a StateName note records identifier-need: Property required but its evidence names none of \
+     equality, stability across releases, ordering, or compact encoding. Repair: name the \
+     property the variant-name &'static str fails to supply."
+)]
 fn committed_state_name_notes_are_rejected(
     #[case] note: String,
     #[case] expected: &str,

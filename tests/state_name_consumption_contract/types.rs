@@ -149,7 +149,7 @@ pub(crate) struct StatusRow {
 /// One row of ADR 004's aggregation register.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct AggRow {
-    pub(crate) admissible_notes: String,
+    pub(crate) contributing_notes: String,
     pub(crate) any_insufficient: String,
     pub(crate) outcome: String,
 }
@@ -160,6 +160,28 @@ pub(crate) struct GateRow {
     pub(crate) gate: String,
     /// A roadmap task *title* fragment, not a task number.
     pub(crate) fragment: String,
+}
+
+/// One numbered task record of `docs/roadmap.md`.
+///
+/// The record is the unit both roadmap-bound checks read. A check over raw
+/// document lines cannot tell a task from the prose between tasks, so a
+/// fragment naming a phase heading or a sentence in a task's rationale would
+/// satisfy it — the wrong answer stated confidently. Segmentation is what makes
+/// "matches no task" mean what it says.
+///
+/// The record spans its title line and every following indented line, which is
+/// how the roadmap is written: a task's sub-bullets and its wrapped
+/// continuation lines are indented beneath it, and the first unindented line
+/// ends it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct TaskRecord {
+    /// The task number as the roadmap writes it, such as `2.2.1`.
+    pub(crate) number: String,
+    /// The title line's text after the checkbox and the number.
+    pub(crate) title: String,
+    /// Every line the record owns, folded: title and body alike.
+    pub(crate) text: String,
 }
 
 /// One field of a validation note, with its observed status and its citation.

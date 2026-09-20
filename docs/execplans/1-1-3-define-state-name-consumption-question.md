@@ -382,6 +382,9 @@ Written (new):
   `note_scenarios.rs`, `register_scenarios.rs`, `scan_scenarios.rs` — the four
   scenario modules D26 records, split from the crate root so the 400-line cap
   binds every part of the contract alike.
+- `tests/state_name_consumption_contract/roadmap.rs`, `claims.rs` — the two
+  modules D30 records, split out of `parse.rs` and `policy.rs` respectively
+  when both passed tolerance 5's 300-line trigger.
 
 Written (modified): `docs/design.md`, `docs/terms-of-reference.md`,
 `docs/context.md`, `docs/roadmap.md`, `docs/contents.md`, `docs/users-guide.md`,
@@ -471,8 +474,8 @@ ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
                       -> register_scenarios::aggregation_register_is_total
 ```
 
-Each leaf names its module as well as its test, because the contract is eleven
-modules and two of its scenario names differ by one letter:
+Each leaf names its module as well as its test, because the contract is
+thirteen modules and two of its scenario names differ by one letter:
 `note_scenarios::committed_state_name_note_is_usable` is the accepting witness,
 and `scan_scenarios::committed_state_name_notes_are_usable` is the
 committed-note scan. A bare `tests::` prefix would leave a reader to grep for
@@ -644,13 +647,25 @@ outcome, and a reviewer should approve it on that understanding.
       therefore re-audited against HEAD before being adopted, which caught one
       proposed edit — to the `Revision note` — that would have falsified a
       chronological record.
+- [x] CodeRabbit review three — eight findings in five distinct subjects
+      returned 2026-09-21, each reported twice at differing severities. All
+      five adopted: the plan's gate-table snippet reduced to the two columns
+      `gate_rows` reads; `names_a_consumer` and `names_a_property` given
+      `narrative_text`, so a citation's path can no longer satisfy either
+      obligation; the two roadmap-bound checks moved to a `task_records`
+      grammar, with three prose controls added and the Red replay captured;
+      the aggregation header corrected to `Contributing notes`; and the
+      Option C rationale corrected to name the fixture the register is pinned
+      by. Recorded as D30. The re-split those fixes forced — `claims.rs` out
+      of `policy.rs`, the task grammar out of `parse.rs` into `roadmap.rs` —
+      is D30's largest change and answers tolerance 5's 300-line trigger.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
       done: re-gated 2026-09-20 at `26da23f` after the post-fix round, all
       seven gates pass sequentially, **including the Whitaker leg** that the
       previous run never reached (D25's failure mode), and the transcripts
-      follow this list. The review half is not: the last round returned sixteen
+      follow this list. The review half is not: the third round returned eight
       findings, so EP-M5's stated bar — "a zero-finding independent review" —
-      requires one further CodeRabbit pass over the commit that actions them.
+      requires a further CodeRabbit pass over the commit that actions them.
       It is deliberately left unticked rather than ticked against a review that
       has not happened.
 
@@ -983,7 +998,34 @@ design.
   run the probe with the same arguments as the thing being investigated, not
   with arguments that merely look equivalent.
 
-## Decision log
+- Observation: both roadmap-bound checks matched raw document lines, so
+  **three kinds of prose resolved as if they named a task**. Evidence: a
+  fragment naming the phase heading "kill gates", a task's link text
+  (`adr-004-state-name-consumption-evidence.md`), and one of its sub-bullets
+  (`Requires 1.1.2`) each satisfied a line scan — and the doc comment on
+  `check_success_criterion` already claimed the criterion was read "inside a
+  *task record*", while the code read the document. The gap was not a wrong
+  answer so much as an unfalsifiable one: the check reported success for a
+  fragment that named no task at all, which is the wrong answer stated
+  confidently. Fixing it forced a second discovery about *span*: the same
+  fragment resolves to a different count depending on whether the unit is the
+  title or the whole record. Measured against the live roadmap, "baseline"
+  names **3 titles** and **6 records**, and the four gate fragments each name
+  exactly 1 title. ADR 004 settles which is right — the gates bind "by task
+  *title* rather than task number", and Table 4 is headed "Gates bound to
+  roadmap tasks by title" — so a gate fragment is matched against the title,
+  while the success criterion, a body bullet, is matched against the record's
+  text. Impact: two modules moved (`roadmap.rs` for the grammar and both
+  checks), one new module exists (`claims.rs`), and the contract is thirteen
+  modules. Tolerance 5's three named modules are all clear of its 300-line
+  trigger, and every module is under AGENTS.md's 400-line cap; the largest is
+  `anchor_scenarios.rs` at 392, which the 400-line cap binds and tolerance 5
+  does not. Recorded because the *title-versus-record*
+  distinction is exactly the kind a reader would assume was arbitrary, and the
+  reason it is not is a sentence in the ADR the check is bound to — which is
+  also why the ambiguity control's derived count reads 3 where the old line
+  scan read 15. The old count was not merely larger; it was counting something
+  the ADR never bound.
 
 - D1: Define "validation note" as the record a validation task produces,
   instantiated from the template and committed to `docs/validation-notes/`.
@@ -1418,7 +1460,64 @@ design.
   describes, and because the accepted ADR change is a *correction to a shipped
   decision record*, caught by measurement rather than by reading it again.
   Date/Author: 2026-09-20, implementing agent, actioning the review the
-  scrutineer returned after D28.
+  scrutineer returned after D28. Count of eleven corrected to thirteen by D30,
+  which added `roadmap.rs` and `claims.rs`; the reasoning above is unaffected.
+
+- D30: **The third CodeRabbit pass returned eight findings in five
+  distinct subjects, and all five were adopted** — each reported twice, by
+  different analysers, at a `major` and a `minor` severity. The round is worth
+  recording precisely because the duplication is structural rather than
+  accidental, and because two of the five forced a re-split under tolerance 5.
+  **Subject one** (plan, `major`/`minor`): this plan's own gate-table snippet
+  still carried the three-column `Role` shape, while `parse::gate_rows` reads
+  two cells and `fixtures::gate_table` defines two. The snippet is a *copy* of
+  the ADR's table, so it had drifted from the document it illustrates; it now
+  has the two columns and the repadded divider ADR 004 and the fixture both
+  carry. **Subject two** (`policy.rs`, `major`): `names_a_consumer` and
+  `names_a_property` scanned the whole evidence cell, including the citation,
+  so a note could satisfy the consumer obligation by citing `src/tracing.rs`
+  and the property obligation by citing `src/stability.rs` — reading the
+  *citation* as the claim. Both now read `narrative_text`, which filters
+  `is_citation` words out first, and two new cases,
+  `consumer_named_only_in_the_citation` and `property_named_only_in_the_citation`,
+  reject exactly that. **Subject three** (`registers.rs`, `major`): the two
+  roadmap-bound checks matched raw document lines, so a fragment naming the
+  "kill gates" phase heading, a task's link text, or one of its sub-bullets
+  resolved as if it named a task. This is the finding the round's Red evidence
+  is about: with the line scan restored, four cases fail — the three new prose
+  controls and the ambiguity count — and the captured diff shows the old check
+  answering `Ok(())` where the message "matches no task" was required, and
+  `matches 15 tasks` where the record count is 3. Both checks now read
+  `task_records`, and the ADR's own wording settles the span: gates bind "by
+  task *title*", Table 4 says "bound to roadmap tasks by title", so a gate
+  fragment is matched against the title while the success criterion — a body
+  bullet — is matched against the record's text. **Subjects four and five**
+  (ADR 004, `major`/`minor` each): the aggregation register's first column was
+  headed `Admissible notes` while the prose beside it counts *contributing*
+  notes, and the Option C rationale claimed "adding a status is a documentation
+  edit" without noting that `fixtures.rs` pins the register row for row. The
+  header is now `Contributing notes`, and the rationale says the register is the
+  semantic source of truth *and* that the fixture moves in the same change, so
+  the edit is a documentation edit rather than an unaccompanied one. The re-split
+  is the round's largest change and belongs here rather than only in the entry
+  that records the trigger: subjects two and three pushed `policy.rs` to 316
+  lines and `parse.rs` to 307, both past tolerance 5's 300-line trigger, so the
+  split was re-planned rather than tolerated — D21's and D26's precedent, twice
+  invoked before and invoked again here. `claims.rs` takes what an evidence
+  cell *says* (`is_citation_shaped`, `names_a_consumer`, `names_a_property`,
+  `narrative_text`) and `policy.rs` keeps what those answers *oblige*; the
+  roadmap's task-record grammar moved out of `parse.rs` into `roadmap.rs`, which
+  is its only consumer, leaving `parse.rs` with the delimited-table syntax its
+  own module doc claims ("one delimited-table syntax function") and no other
+  document's grammar. The contract is thirteen modules; tolerance 5's three —
+  `types.rs`, `parse.rs`, `policy.rs` — are the ones it bounds, and all three
+  are clear of the 300-line trigger, `policy.rs` at 189 and `parse.rs` at 220.
+  No requirement, register
+  field, register row, gate binding, invariant, or repair-message obligation
+  changed; `docs/developers-guide.md`, `docs/repository-layout.md` and the
+  plan's own module enumerations were updated because all three list the child
+  modules. Date/Author: 2026-09-21, implementing agent, actioning the review the
+  scrutineer returned after D29.
 
 ## Outcomes & retrospective
 
@@ -1427,7 +1526,7 @@ design.
 Roadmap task 1.1.3 is ticked and linked. ADR 004 defines the `StateName`
 consumption evidence; `docs/phase-2-validation-note-template.md` is the form a
 Phase 2 engineer copies; `tests/state_name_consumption_contract.rs` and its
-eleven child modules guard both against drift. The task's own success criterion
+thirteen child modules guard both against drift. The task's own success criterion
 is itself checked, so the instrument is bound to the sentence that grades it.
 
 The task's stated purpose was to make task 3.2.1's instruction executable. A
@@ -1442,14 +1541,15 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every entry in `Surprises & discoveries` was checked against the artefacts
-named in `Conformance basis`. All twenty-one were accounted for; the disposition
-of each follows. Three were recorded during or after the EP-M5 gate runs: a
+named in `Conformance basis`. All twenty-two were accounted for; the disposition
+of each follows. Four were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
-formatter, and the post-fix review round's falsification record. None bears on
-any upstream artefact, and the second review round — recorded as D29 rather
-than here, because its findings are decisions rather than observations — forced
-one upstream correction of its own, to ADR 004's stable-identifier paragraph,
-which is dispositioned below.
+formatter, the post-fix review round's falsification record, and the
+record-versus-line discovery that closed the third round's `major` subject.
+None bears on any upstream artefact, and the second review round — recorded as
+D29 rather than here, because its findings are decisions rather than
+observations — forced one upstream correction of its own, to ADR 004's
+stable-identifier paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -1487,6 +1587,14 @@ which is dispositioned below.
   already enforces. Its falsification record, and the count corrections it
   forced in this plan's own transcripts, are corrections *to this plan* rather
   than to anything upstream.
+- The third round (D30) likewise changed no requirement, register field,
+  register row, gate binding, invariant or repair message. Three of its five
+  subjects repaired code the plan had already specified — the citation-reading
+  keyword scan, the line-scanning roadmap checks, and the plan's own stale
+  gate-table snippet — and two corrected ADR 004's wording to match the rule
+  its prose already stated. The re-split those repairs forced is a `file
+  layout` change, as D26's was, and the ADR corrections amend a document this
+  task owns rather than an upstream one.
 
 **No effect on the conformance basis.**
 
@@ -1600,17 +1708,28 @@ formatter by running `make fmt` before fixtures are written and by
 ### INV-CRITERION — the acceptance criterion still resolves
 
 - **Obligation**: roadmap task 1.1.3's success bullet resolves verbatim
-  (whitespace-folded) in `docs/roadmap.md`, and each of its four nouns — state
-  display name, identifier need, metrics cardinality, tracing use — maps to
-  exactly one field identifier in ADR 004's status register.
-- **Method**: parameterized test, one case per noun.
+  (whitespace-folded) inside a *task record* of `docs/roadmap.md`, and each of
+  its four nouns — state display name, identifier need, metrics cardinality,
+  tracing use — maps to exactly one field identifier in ADR 004's status
+  register.
+- **Method**: the check runs over the parsed task records, with one rejection
+  case per unmapped noun plus a reworded-roadmap control.
 - **Rationale**: this is the one thing the task is graded on, and no other
-  invariant touches it. It is also the cheapest in the set.
-- **Artefact**: test `anchor_scenarios::success_criterion_still_maps`.
+  invariant touches it. It is also the cheapest in the set — but the *record*
+  span is not decoration: the criterion is a sentence in the task's own success
+  bullet, so the same sentence in the page's introduction, a phase's framing
+  prose, or another task's rationale is not the criterion. A check over the
+  whole document cannot make that distinction and would report the criterion as
+  intact while the task it grades had lost it.
+- **Artefact**: test `anchor_scenarios::success_criterion_still_maps`, with the
+  region control in `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion`.
 - **Non-vacuity**: a fixture register with `tracing-use` removed must fail
   naming the unmapped noun; a roadmap whose bullet is reworded must fail naming
-  the clause. Without the second control the check passes vacuously against an
-  absent bullet.
+  the clause; and the region control plants an identical sentence in the
+  introduction, breaks the task's own copy, and asserts the check still fails —
+  after first asserting that exactly one copy of the clause survives, so a
+  control with no surviving copy cannot pass by proving nothing about where the
+  clause lives.
 
 ### INV-TEMPLATE — the blank form matches the register it instantiates
 
@@ -1750,13 +1869,15 @@ formatter by running `make fmt` before fixtures are written and by
 - **Non-vacuity**: the accepting witness is a string fixture, not a committed
   file, so the test cannot pass merely because the directory is empty — and an
   empty directory is explicitly *not* a failure, because no note can honestly
-  exist until task 2.2.1 has annotated something. Eight rejecting cases, all
+  exist until task 2.2.1 has annotated something. Ten rejecting cases, all
   string fixtures: residual `TBD`; a status outside the field's register
   vocabulary; an evidence cell that is prose rather than a citation; a citation
-  missing its path; an `identifier-need` cell naming no consumer; a status and
-  evidence that contradict; a file carrying the marker but missing a field; and
-  a file carrying it with its fields reordered. A ninth control sits outside
-  the table: a status borrowed from a field the register defines under another.
+  missing its path; an `identifier-need` cell naming no consumer; a consumer
+  named only inside the citation; a status and evidence that contradict; a
+  property named only inside the citation; a file carrying the marker but
+  missing a field; and a file carrying it with its fields reordered. An
+  eleventh control sits outside the table: a status borrowed from a field the
+  register defines under another.
   Four controls cover the scan itself: a benchmark-shaped note *without* the
   marker is ignored rather than rejected; a note without the marker still
   parses, so that control isolates the marker; a directory passed where a note
@@ -1810,20 +1931,35 @@ formatter by running `make fmt` before fixtures are written and by
 
 ### INV-GATES — every gate names exactly one live roadmap task
 
-- **Obligation**: each gate's task-title fragment matches exactly one task in
-  `docs/roadmap.md`, and the fragment is specific enough that no other task
-  matches.
-- **Method**: parameterized test, one case per gate.
+- **Obligation**: each gate's task-title fragment matches exactly one task
+  *title* in `docs/roadmap.md`, and the fragment is specific enough that no
+  other title matches. A fragment that appears in the document but in no title
+  — in a phase heading, a link, or a sub-bullet — matches no task and must be
+  reported as such.
+- **Method**: parameterized test, one case per gate, plus a control for each
+  way a fragment can fail: unresolved, ambiguous, and three prose shapes.
 - **Rationale**: a gate pointing nowhere is an instrument with no consumer.
   Binding by title rather than number is deliberate: it keeps the reference
   meaningful without freezing task numbers and without breaking the build on
-  the day a bound task is legitimately completed.
-- **Artefact**: test `gate_titles_resolve`.
-- **Non-vacuity**: a fragment matching two tasks must fail as ambiguous; a
+  the day a bound task is legitimately completed. The *title* is the span ADR
+  004 names — the gates bind "by task title rather than task number", and Table
+  4 is "gates bound to roadmap tasks by title" — so matching the whole record
+  would accept a fragment naming a sub-bullet or a link, which names no task at
+  all. Reading raw document lines is weaker still, and would resolve the "kill
+  gates" phase heading as a task.
+- **Artefact**: test `gate_titles_resolve`, nine cases;
+  `the_deceiving_fragments_still_appear_outside_task_titles` holds the prose
+  controls' precondition against the live roadmap.
+- **Non-vacuity**: a fragment matching two titles must fail as ambiguous; a
   fragment matching none must fail as unresolved. Note that gate S3's natural
   fragment overlaps task 3.1.2 on the single word "wireframe", so the fragment
   is the longer "Apply the conventions-only baseline"; the ambiguity control is
-  what makes that choice checkable rather than assumed.
+  what makes that choice checkable rather than assumed. The three prose
+  controls would all pass vacuously if their fragments stopped appearing in the
+  live roadmap, which is what the precondition test prevents: it asserts each
+  fragment is still present in the document *and* still absent from every
+  title, so a roadmap edit that retires one fails the precondition rather than
+  silently emptying the control.
 
 ### Methods chosen and refused
 
@@ -1995,7 +2131,7 @@ delimiters in Step 5.
 
 ### Step 3 — write the contract test in full
 
-Create the contract described in `Interfaces and dependencies` — eleven child
+Create the contract described in `Interfaces and dependencies` — thirteen child
 modules, of which four are the scenario modules — including every negative
 control, before any register exists. Create
 `dylint.toml` first, with the single path-scoped exemption defined in D20:
@@ -2158,7 +2294,7 @@ evidence section. Not a panic, not an index-out-of-bounds, not a bare
 **Green evidence.** After Step 7, `make test` passes and the binary
 `state_name_consumption_contract` reports every scenario named in the
 `Verification plan`. Named with their modules, because two of them differ by
-one letter and the contract is eleven modules:
+one letter and the contract is thirteen modules:
 `anchor_scenarios::success_criterion_still_maps`,
 `anchor_scenarios::template_matches_the_status_register`,
 `anchor_scenarios::quoted_passages_still_resolve`,
@@ -2275,11 +2411,11 @@ Between `<!-- aggregation-register:begin -->` and
 `<!-- aggregation-register:end -->`:
 
 ```markdown
-| Admissible notes | Any insufficient | Outcome if publication proceeds  |
-| ---------------- | ---------------- | -------------------------------- |
-| None             | n/a              | Blocked: no admissible evidence  |
-| One or more      | No               | Ratify the current return type   |
-| One or more      | Yes              | Amend design 6.1 before publish  |
+| Contributing notes | Any insufficient | Outcome if publication proceeds  |
+| ------------------ | ---------------- | -------------------------------- |
+| None               | n/a              | Blocked: no admissible evidence  |
+| One or more        | No               | Ratify the current return type   |
+| One or more        | Yes              | Amend design 6.1 before publish  |
 ```
 
 *Table 3: How task 3.2.1 reads the committed notes together. Every outcome is
@@ -2291,12 +2427,12 @@ Statelet ships nothing and no return type is ratified.*
 Between `<!-- gate-table:begin -->` and `<!-- gate-table:end -->`:
 
 ```markdown
-| Gate | Roadmap task title fragment           | Role            |
-| ---- | ------------------------------------- | --------------- |
-| S1   | Annotate `mdtablefix` `ProcessBuffer`  | Records a note  |
-| S2   | Annotate `mdtablefix` continuation     | Records a note  |
-| S3   | Apply the conventions-only baseline    | Records a note  |
-| S4   | Finalize the `StateName` return shape  | Decides         |
+| Gate | Roadmap task title fragment           |
+| ---- | ------------------------------------- |
+| S1   | Annotate `mdtablefix` `ProcessBuffer` |
+| S2   | Annotate `mdtablefix` continuation    |
+| S3   | Apply the conventions-only baseline   |
+| S4   | Finalize the `StateName` return shape |
 ```
 
 *Table 4: Gates, bound by task title rather than task number so that completing
@@ -2393,6 +2529,24 @@ form). The two totals are both worth recording: forty-seven is what the suite
 must report, and thirty-one is how many scenarios the `Verification plan`
 names.
 
+The two counts above are the revision that produced those transcripts, and
+`mdtablefix` rewraps prose but does not restate it: a quoted transcript keeps
+the figures its run reported. The delivered revision's figures are these.
+Thirty-three functions occupy fifty-four collected cases, because `rstest`
+still expands four of them, two of them further than before:
+`gate_titles_resolve` into nine (one per binding gate, plus the unresolved,
+the ambiguity, and the three prose controls),
+`committed_state_name_notes_are_rejected` into ten (one per documented note
+defect), `aggregation_register_is_total` into three (one per reachable state of
+the note multiset), and `negated_property_claims_do_not_disagree_with_none`
+into three (one per negated form). Twenty-nine functions contribute one case
+each, and the four expanding ones contribute twenty-five. The two totals are
+worth recording for the same reason as before — fifty-four is what the suite
+must report, and thirty-three is how many scenarios the `Verification plan`
+names — and the reason they moved is worth recording too: three of the added
+cases guard a distinction the check could not make before, so the count is
+evidence that the controls exist rather than that the file grew.
+
 `make markdownlint` — exit 0:
 
 ```plaintext
@@ -2466,19 +2620,25 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
-The split as delivered is eleven modules: the five below, plus `clauses.rs` for
-quoted-clause resolution and `registers.rs` for the roadmap binding and the
-cross-register checks (D21), and four scenario modules — `anchor_scenarios.rs`,
-`note_scenarios.rs`, `register_scenarios.rs`, `scan_scenarios.rs` — that hold
-the contract's tests rather than a share of the crate root (D26). Each module
-owns one invariant class. The first two additions keep `policy.rs` from
-carrying three unrelated ones; the scenario modules exist because the root file
-had reached 788 lines against AGENTS.md's 400-line cap, and because a scenario
-module per invariant class keeps every file small enough to stay there.
+The split as delivered is thirteen modules: the five below, plus `clauses.rs`
+for quoted-clause resolution and `registers.rs` for the cross-register checks
+(D21), four scenario modules — `anchor_scenarios.rs`, `note_scenarios.rs`,
+`register_scenarios.rs`, `scan_scenarios.rs` — that hold the contract's tests
+rather than a share of the crate root (D26), `roadmap.rs` for the roadmap's
+task-record grammar and the two checks that bind it (D30), and `claims.rs` for
+what an evidence cell says, as against what `policy.rs` decides it obliges
+(D30). Each module owns one invariant class. The first two additions keep
+`policy.rs` from carrying three unrelated ones; the scenario modules exist
+because the root file had reached 788 lines against AGENTS.md's 400-line cap,
+and because a scenario module per invariant class keeps every file small enough
+to stay there. The last two answer tolerance 5's 300-line trigger, which both
+`policy.rs` and `parse.rs` passed once the roadmap bindings landed (D30).
 
 ```rust,ignore
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
 mod anchor_scenarios;
+#[path = "state_name_consumption_contract/claims.rs"]
+mod claims;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
 #[path = "state_name_consumption_contract/fixtures.rs"]
@@ -2495,6 +2655,8 @@ mod policy;
 mod register_scenarios;
 #[path = "state_name_consumption_contract/registers.rs"]
 mod registers;
+#[path = "state_name_consumption_contract/roadmap.rs"]
+mod roadmap;
 #[path = "state_name_consumption_contract/scan_scenarios.rs"]
 mod scan_scenarios;
 #[path = "state_name_consumption_contract/types.rs"]
@@ -2545,7 +2707,8 @@ pub(crate) enum ParseError {
 }
 ```
 
-`parse.rs` owns one syntax function plus typed mappers:
+`parse.rs` owns one syntax function plus typed mappers, and `field_order` sits
+with the tokens it orders:
 
 ```rust,ignore
 pub(crate) fn parse_table(source: &str, register: Register)
@@ -2553,12 +2716,23 @@ pub(crate) fn parse_table(source: &str, register: Register)
 pub(crate) fn status_rows(adr: &str) -> Result<Vec<StatusRow>, ParseError>;
 pub(crate) fn aggregation_rows(adr: &str) -> Result<Vec<AggRow>, ParseError>;
 pub(crate) fn note_rows(note: &str) -> Result<Vec<NoteRow>, ParseError>;
+
+// types.rs
 pub(crate) fn field_order(rows: &[StatusRow]) -> Vec<String>;
 ```
 
-`policy.rs` owns the predicates. Sources are bundled into one struct because
-`clippy.toml` sets `too-many-arguments-threshold = 4`, and
-`needless_pass_by_value` is denied, so it is passed by reference:
+`claims.rs` owns the predicates over an evidence cell's text —
+`is_citation_shaped`, `names_a_consumer`, `names_a_property` and the
+`narrative_text` they share — and `policy.rs` owns the obligations they answer.
+The checks that bind two documents to each other live one module per binding:
+`clauses.rs` for the quoted clauses, `registers.rs` for the aggregation
+register and the status register's own consistency, and `roadmap.rs` for the
+gate table and the success criterion — with the roadmap's task-record grammar
+beside them, because nothing else reads it.
+
+`Sources` bundles the four documents because `clippy.toml` sets
+`too-many-arguments-threshold = 4`, and `needless_pass_by_value` is denied, so
+it is passed by reference:
 
 ```rust,ignore
 pub(crate) struct Sources<'a> {
@@ -2568,14 +2742,22 @@ pub(crate) struct Sources<'a> {
     pub(crate) adr_002: &'a str,
 }
 
+// roadmap.rs
 pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str)
     -> Result<(), String>;
+pub(crate) fn check_gate_titles(adr: &str, roadmap: &str) -> Result<(), String>;
+pub(crate) fn task_records(roadmap: &str) -> Vec<TaskRecord>;
+
+// registers.rs
 pub(crate) fn check_exclusions(rows: &[StatusRow]) -> Result<(), String>;
 pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String>;
+
+// clauses.rs
+pub(crate) fn check_quoted_clauses(sources: &Sources<'_>) -> Result<(), String>;
+
+// policy.rs
 pub(crate) fn resolve_note(rows: &[StatusRow], note: &[NoteRow])
     -> Result<Resolution, String>;
-pub(crate) fn check_quoted_clauses(sources: &Sources<'_>) -> Result<(), String>;
-pub(crate) fn check_gate_titles(adr: &str, roadmap: &str) -> Result<(), String>;
 ```
 
 `Resolution` is `Sufficient`, `Insufficient`, or
@@ -2586,7 +2768,7 @@ verdict are both *derived* from the document, so adding a blocking status to
 ADR 004 changes behaviour without a Rust edit. Nothing about the vocabulary is
 hardcoded.
 
-Every policy function returns `Result<(), String>` whose `Err` is the exact
+Every check function returns `Result<(), String>` whose `Err` is the exact
 repair message a control asserts. Nothing panics on a document defect;
 `unwrap_used` and `indexing_slicing` are denied, so parsing uses `split_once`,
 slice patterns, `get`, and `let ... else`. `option_if_let_else` is denied, so

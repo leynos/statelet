@@ -18,10 +18,15 @@
 //! `register_scenarios.rs` (register parsing and consistency) and
 //! `scan_scenarios.rs` (the directory scan over committed notes). Each module
 //! owns one invariant class, and each is a child rather than a share of this
-//! file so that the 400-line cap binds every part of the contract alike.
+//! file so that the 400-line cap binds every part of the contract alike. The
+//! non-scenario modules divide the same way: `claims.rs` reads what a cell
+//! says, `policy.rs` decides what that obliges, and `registers.rs`,
+//! `clauses.rs` and `roadmap.rs` own one bound document each.
 
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
 mod anchor_scenarios;
+#[path = "state_name_consumption_contract/claims.rs"]
+mod claims;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
 #[path = "state_name_consumption_contract/fixtures.rs"]
@@ -38,6 +43,8 @@ mod policy;
 mod register_scenarios;
 #[path = "state_name_consumption_contract/registers.rs"]
 mod registers;
+#[path = "state_name_consumption_contract/roadmap.rs"]
+mod roadmap;
 #[path = "state_name_consumption_contract/scan_scenarios.rs"]
 mod scan_scenarios;
 #[path = "state_name_consumption_contract/types.rs"]
@@ -63,6 +70,16 @@ const EMPTY_CLAUSE_LIST: &str = "docs/adr-004-state-name-consumption-evidence.md
 
 /// Parses the live status register, from which most scenarios read vocabulary.
 fn live_status() -> Result<Vec<StatusRow>, String> { status_rows_or_error(ADR) }
+
+/// Folds a string's whitespace runs to single spaces.
+///
+/// Every check that resolves a phrase written by hand needs this, and all of
+/// them need the *same* folding: a phrase that resolves folded in one check but
+/// unfolded in another reports a line break as evidence of drift. `mdtablefix
+/// --wrap` rewraps each document at its own column, so a phrase quoted from a
+/// source and the same phrase looked for in one arrive with different breaks.
+/// One definition, here, is what keeps the several folders from disagreeing.
+fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }
 
 /// The workspace root, derived from the manifest directory so the scan works
 /// regardless of the runner's working directory.

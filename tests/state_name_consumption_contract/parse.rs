@@ -5,6 +5,10 @@
 //! `*_rows` mapper knows one register's vocabulary. A failure therefore names
 //! its layer — a malformed row is a syntax defect, an unknown token is a
 //! vocabulary defect.
+//!
+//! Every register this module reads is a *delimited table* in a Markdown
+//! document. The roadmap is not: its task-record grammar is `roadmap.rs`'s, read
+//! by nothing else, and lives with the checks that consume it.
 
 use super::types::{AggRow, GateRow, NoteRow, ParseError, Register, StatusRow};
 
@@ -99,7 +103,7 @@ fn expected_header(register: Register) -> Vec<String> {
     let columns: &[&str] = match register {
         Register::Status => &["Field", "Status", "Admissible", "Contributes"],
         Register::Aggregation => &[
-            "Admissible notes",
+            "Contributing notes",
             "Any insufficient",
             "Outcome if publication proceeds",
         ],
@@ -140,14 +144,14 @@ pub(crate) fn status_rows(adr: &str) -> Result<Vec<StatusRow>, ParseError> {
 pub(crate) fn aggregation_rows(adr: &str) -> Result<Vec<AggRow>, ParseError> {
     let mut rows = Vec::new();
     for (offset, cells) in parse_table(adr, Register::Aggregation)?.iter().enumerate() {
-        let [admissible_notes, any_insufficient, outcome] = cells.as_slice() else {
+        let [contributing_notes, any_insufficient, outcome] = cells.as_slice() else {
             return Err(ParseError::MalformedRow {
                 register: Register::Aggregation,
                 row: offset + 1,
             });
         };
         rows.push(AggRow {
-            admissible_notes: admissible_notes.clone(),
+            contributing_notes: contributing_notes.clone(),
             any_insufficient: any_insufficient.clone(),
             outcome: outcome.clone(),
         });
