@@ -121,8 +121,8 @@ exemption is confined to `notes.rs` so that every parser, policy predicate and
 invariant check in this contract stays under the lint. The exemption carries
 its rationale in the `dylint.toml` comment beside it.
 
-`camino` enumerates the directory (`read_dir_utf8`, `Utf8DirEntry::file_name`)
-but cannot read a file's contents, so the content read is the one operation
+`camino` enumerates the directory (`read_dir_utf8`) and yields a path per
+entry, but has no content-read API, so the content read is the one operation
 that needs `std::fs`.
 
 ### Filling a note
