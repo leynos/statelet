@@ -1198,11 +1198,132 @@ design.
 
 ## Outcomes & retrospective
 
-To be completed at EP-M5. Before setting this plan to `COMPLETE`, reconcile
-every entry in `Surprises & discoveries` against the artefacts in
-`Conformance basis`: amend `docs/design.md` §6.1 if a discovery falsifies its
-premise, amend ADR 001's outstanding decision if this work resolves it, and
-record a purely mechanical difference in `Decision log`.
+### What was delivered
+
+Roadmap task 1.1.3 is ticked and linked. ADR 004 defines the `StateName`
+consumption evidence; `docs/phase-2-validation-note-template.md` is the form a
+Phase 2 engineer copies; `tests/state_name_consumption_contract.rs` and its
+eleven child modules guard both against drift. The task's own success criterion
+is itself checked, so the instrument is bound to the sentence that grades it.
+
+The task's stated purpose was to make task 3.2.1's instruction executable. A
+Phase 2 engineer now has a form to fill, a rule that turns the filled form into
+a verdict, and a committed worked example showing what an adequate evidence
+cell looks like. What does **not** exist, deliberately, is the verdict itself:
+ADR 004 records evidence and the rule for reading it, and leaves "is
+`&'static str` sufficient?" to task 3.2.1. Constraint 2 forbids the answer, and
+the aggregation register is shaped so that the answer arrives as a row
+selection rather than as prose.
+
+### Reconciliation of discoveries against the conformance basis
+
+Every entry in `Surprises & discoveries` was checked against the artefacts
+named in `Conformance basis`. The result, by disposition:
+
+**Falsified an upstream premise; upstream amended in this task.**
+
+- The `mdtablefix` empty-delimiter-merge, the §11.1 repadding hazard, the
+  needle-versus-reflow finding, and the H1 collision all bear on
+  `docs/design.md` §11.1 and on how the two new documents are formatted. None
+  falsifies §6.1's premise — that `&'static str` is the default until a real
+  example consumes something stronger — and §6.1 is therefore unchanged except
+  for the pointer sentence Step 8 added. The §11.1 hazard was *avoided* rather
+  than amended: constraint 5 forbids touching that table, and bet B7 is
+  deferred to a separate change precisely so the repadding trap is met with the
+  width budget Q1 recorded rather than by accident.
+
+**Mechanical differences, recorded in `Decision log`.**
+
+- The `no_std_fs_operations` suppression measurements (D18, D20) changed which
+  mechanism the exemption uses, not what any document requires.
+- The `allow-expect-in-tests` scope finding and the `make lint` ordering
+  finding changed two helper signatures and the order of evidence collection
+  (D25). No requirement moved.
+- The contract-internal defects — `find`-then-`filter`, the attribution-versus-
+  path comparison, the header-row identification, the missing-citation cells —
+  were defects in checks the plan had already specified. Each was repaired
+  toward the plan's stated intent, and each is recorded rather than silently
+  fixed because a check that cannot fail for the reason it names is the vacuity
+  the `Verification plan` exists to prevent.
+- The 400-line breach and the CodeRabbit findings that surfaced it changed the
+  *file layout* (D26), not the invariants, the register, any repair message's
+  obligation, or any shipped document other than the two that enumerate child
+  modules.
+
+**No effect on the conformance basis.**
+
+- The stability-not-numbers reading (D4), the `std::mem::discriminant` finding,
+  and the cardinality finding (D11, D17) were settled at the approval gate as
+  Q0. They shaped the register before it was written; the register as delivered
+  matches the approved reading, so nothing upstream needs amending.
+
+### Upstream artefacts left alone, and why
+
+- **`docs/design.md` §11.1** is byte-identical to its pre-task state except for
+  the added §14 bullet elsewhere in the file. The bet table gains no row.
+- **ADR 001's outstanding decision** is *not* resolved by this work, which is
+  the point: task 1.1.3 prepares the evidence 3.2.1 will read. ADR 001 needs no
+  amendment, and none was made.
+- **`docs/terms-of-reference.md`** is untouched. No TOR assumption was
+  falsified — the findings above concern how the repository's own tooling
+  behaves, not what the project is for.
+- **ADR 002 and ADR 003** are untouched, per constraint 4. Finding four is
+  recorded *inside* ADR 004, and the exit register's gate list does not name
+  1.1.3, which was checked before Step 8 rather than after.
+
+### Lessons
+
+Four, each of which cost something measurable.
+
+**A passing control is not evidence until its precondition is shown to hold.**
+Three of D26's fixes failed on this, and the failure is silent in the same
+direction as the defect under test: an unsatisfiable needle makes a negative
+control assert a message for a defect it no longer introduces, and the test
+goes on passing. The remedies now in the contract — the `mutated()` guard that
+refuses a stale needle, and the contradiction control's three supporting
+assertions that its register is still usable — are the general form: assert the
+precondition, then assert the rejection.
+
+**A check can be vacuous without being empty.** `find`-then-`filter` selected
+the first matching row and then could not reconsider it, so the assertion could
+only be satisfied by whichever row came first. The check had a name, a message
+and a passing case, and could not fail for the reason it named. Reading a
+predicate for whether it can fail is a different exercise from reading it for
+what it asserts.
+
+**Two counts that are easy to conflate, and both are needed.** Nextest reports
+collected *cases*; the plan names *scenarios*. `rstest` expands three of them,
+so 43 cases across 29 functions. A gate that silently stopped collecting a
+scenario would move the case total without moving the scenario list, and only
+the case total notices. This plan now records both.
+
+**The 400-line cap earns its keep.** It was breached invisibly: `make test`
+passed, `make check-fmt` passed, and the file's own module doc never mentioned
+its size. Only the review counted. A size constraint is a proxy for a property
+that the gates do not otherwise observe, which is exactly when a proxy is worth
+having and exactly when it looks like bureaucracy.
+
+### Residual gaps, stated rather than implied
+
+- **`parse_table` names a fixed path in a message about a variable file.** A
+  malformed committed note composes as
+  `2.2.1-mdtablefix.md: docs/phase-2-validation-note-template.md: no note
+  register found …`. No input reaches it today — the notes directory holds only
+  a README whose marker sits inside a code span — and the caller's `{name}:`
+  prefix still leads with the file to open. Repairing it means giving the
+  message a name for the document being read; recorded in `Surprises &
+  discoveries` rather than fixed, because it is a change to error construction
+  rather than to a document.
+- **The gate table binds by title fragment, not by task number.** Completing a
+  bound task therefore does not break the build, which is intended; the cost is
+  that a *reworded* title breaks it, and the ambiguity control is what makes
+  that failure legible rather than mysterious.
+- **The three `docs/validation-notes/` notes this contract expects** — 1.2.3's
+  benchmark note, 2.2.3's exit note, 3.1.3's decision note — do not exist yet.
+  The marker rule means their arrival is not a build failure, and the scan's
+  accepting witness is a string fixture rather than a committed file, so none
+  of them is required for this task. The first malformed `StateName` note is
+  the first real exercise of the filler's side of the workflow.
 
 ## Verification plan
 
