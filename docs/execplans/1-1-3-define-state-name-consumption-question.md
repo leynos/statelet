@@ -2290,13 +2290,15 @@ ran:
 RUSTFLAGS="-D warnings " whitaker --all -- --all-targets --all-features
 Checking with toolchain `nightly-2026-05-28`
     Checking statelet v0.1.0 (...worktrees/99bdf268-...)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.23s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.40s
+EXIT_STATUS=0
 ```
 
 `make test` — exit 0, `cargo nextest run`:
 
 ```plaintext
-Summary [   0.049s] 87 tests run: 87 passed, 0 skipped
+    Starting 87 tests across 7 binaries
+    Summary [   0.049s] 87 tests run: 87 passed, 0 skipped
 ```
 
 Doctests, in the same run:
