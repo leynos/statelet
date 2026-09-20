@@ -1,31 +1,19 @@
-//! Checks that bind ADR 004's registers to the roadmap and to each other.
+//! Checks that bind ADR 004's registers to each other.
 //!
 //! The status register records vocabulary; this module checks that the
-//! aggregation register speaks it, that the gate table resolves to live tasks,
-//! and that the acceptance criterion the task is graded on still maps. It also
-//! owns the status register's internal consistency — that its vocabulary is
-//! closed and that the default can still fall — because both are claims about
-//! the *register*, not about any note read through it.
+//! aggregation register speaks it, and owns the status register's internal
+//! consistency — that its vocabulary is closed and that the default can still
+//! fall — because both are claims about the *register*, not about any note read
+//! through it. The two checks that bind ADR 004 to `docs/roadmap.md` live in
+//! `roadmap.rs` instead: both read the roadmap as *task records*, which is a
+//! different job from reading a register, and neither is a claim about the
+//! register at all.
 
 use super::{
-    parse::gate_rows,
+    fold_whitespace,
     policy::{IDENTIFIER_NEED, INSUFFICIENT, NOTHING, PROPERTY_REQUIRED, SUFFICIENT},
     types::{AggRow, StatusRow},
 };
-
-/// The four roadmap nouns of task 1.1.3's success criterion, and the register
-/// field each must map to.
-const CRITERION_NOUNS: [(&str, &str); 4] = [
-    ("state display name", "state-display-name"),
-    ("optional identifier need", IDENTIFIER_NEED),
-    ("metrics cardinality", "metrics-cardinality"),
-    ("tracing use", "tracing-use"),
-];
-
-/// The clause `docs/roadmap.md` must still carry for the criterion to resolve.
-const SUCCESS_CRITERION_CLAUSE: &str = "the Phase 2 validation note template has fields for state \
-                                        display name, optional identifier need, metrics \
-                                        cardinality, and tracing use";
 
 /// The clause the deferred-decisions item in `docs/design.md` must carry.
 const DEFERRED_CLAUSE: &str =
@@ -41,31 +29,10 @@ const AGGREGATION_STATES: [(&str, &str, &str); 3] = [
     ("One or more", "Yes", "Amend"),
 ];
 
-/// Checks that roadmap task 1.1.3's success bullet still resolves and that each
-/// of its four nouns maps to exactly one register field.
-pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str) -> Result<(), String> {
-    if !fold(roadmap).contains(&fold(SUCCESS_CRITERION_CLAUSE)) {
-        return Err(format!(
-            "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: restore \
-             {SUCCESS_CRITERION_CLAUSE:?}, or revise this contract together with the task."
-        ));
-    }
-    for (noun, field) in CRITERION_NOUNS {
-        if !rows.iter().any(|row| row.field == field) {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: no status-register field maps \
-                 the criterion noun {noun:?}. Repair: add the {field} field, or reword the \
-                 roadmap task."
-            ));
-        }
-    }
-    Ok(())
-}
-
 /// Checks that `docs/design.md` §6.1 still carries the clause the whole
 /// instrument exists to defer to.
 pub(crate) fn check_deferred_clause(design: &str) -> Result<(), String> {
-    if !fold(design).contains(&fold(DEFERRED_CLAUSE)) {
+    if !fold_whitespace(design).contains(&fold_whitespace(DEFERRED_CLAUSE)) {
         return Err(format!(
             "docs/design.md §6.1 no longer contains {DEFERRED_CLAUSE:?}. Repair: restore the \
              default's deferral, or revise ADR 004 and its contract together."
@@ -86,7 +53,7 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
             [row] if row.outcome.starts_with(expected) => {}
             [row] => {
                 return Err(format!(
-                    "docs/adr-004-state-name-consumption-evidence.md: {} admissible notes with \
+                    "docs/adr-004-state-name-consumption-evidence.md: {} contributing notes with \
                      any insufficient {} yields {:?} where it must {expected}. Repair: a register \
                      that does not {expected} there is not a decision procedure.",
                     notes.to_lowercase(),
@@ -97,7 +64,7 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
             [] => {
                 return Err(format!(
                     "docs/adr-004-state-name-consumption-evidence.md: the aggregation register \
-                     does not cover {} admissible notes with any insufficient {}. Repair: add \
+                     does not cover {} contributing notes with any insufficient {}. Repair: add \
                      that row; it must {expected}.",
                     notes.to_lowercase(),
                     insufficient.to_lowercase()
@@ -106,7 +73,7 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
             _ => {
                 return Err(format!(
                     "docs/adr-004-state-name-consumption-evidence.md: the aggregation register is \
-                     ambiguous for {} admissible notes with any insufficient {}. Repair: keep \
+                     ambiguous for {} contributing notes with any insufficient {}. Repair: keep \
                      exactly one row for that state.",
                     notes.to_lowercase(),
                     insufficient.to_lowercase()
@@ -127,7 +94,7 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
 
 /// Whether an aggregation row covers one reachable state.
 fn matches_state(row: &AggRow, notes: &str, insufficient: &str) -> bool {
-    row.admissible_notes == notes && (notes == "None" || row.any_insufficient == insufficient)
+    row.contributing_notes == notes && (notes == "None" || row.any_insufficient == insufficient)
 }
 
 /// Checks that the aggregation register's preconditions are reachable, and that
@@ -137,11 +104,11 @@ pub(crate) fn check_aggregation_vocabulary(
     aggregation: &[AggRow],
 ) -> Result<(), String> {
     for row in aggregation {
-        if !["None", "One or more"].contains(&row.admissible_notes.as_str()) {
+        if !["None", "One or more"].contains(&row.contributing_notes.as_str()) {
             return Err(format!(
                 "docs/adr-004-state-name-consumption-evidence.md: the aggregation register names \
-                 {:?} admissible notes. Repair: use None or One or more.",
-                row.admissible_notes
+                 {:?} contributing notes. Repair: use None or One or more.",
+                row.contributing_notes
             ));
         }
         if !["n/a", "No", "Yes"].contains(&row.any_insufficient.as_str()) {
@@ -151,7 +118,7 @@ pub(crate) fn check_aggregation_vocabulary(
                 row.any_insufficient
             ));
         }
-        if row.admissible_notes == "None" && row.any_insufficient != "n/a" {
+        if row.contributing_notes == "None" && row.any_insufficient != "n/a" {
             return Err(format!(
                 "docs/adr-004-state-name-consumption-evidence.md: the no-evidence row cannot be \
                  qualified by {:?}. Repair: use n/a, because no note exists to insufficient it.",
@@ -170,34 +137,6 @@ pub(crate) fn check_aggregation_vocabulary(
              would no longer be a verdict."
                 .to_owned(),
         );
-    }
-    Ok(())
-}
-
-/// Checks each gate's title fragment against `docs/roadmap.md`.
-pub(crate) fn check_gate_titles(adr: &str, roadmap: &str) -> Result<(), String> {
-    for row in gate_rows(adr).map_err(|error| error.to_string())? {
-        let matches = roadmap
-            .lines()
-            .filter(|line| line.contains(&row.fragment))
-            .count();
-        match matches {
-            1 => {}
-            0 => {
-                return Err(format!(
-                    "docs/roadmap.md: gate {} names task fragment {:?}, which matches no task. \
-                     Repair: restore that task's title, or revise ADR 004's gate table.",
-                    row.gate, row.fragment
-                ));
-            }
-            _ => {
-                return Err(format!(
-                    "docs/roadmap.md: gate {} names task fragment {:?}, which matches {matches} \
-                     tasks. Repair: use a fragment specific to one task.",
-                    row.gate, row.fragment
-                ));
-            }
-        }
     }
     Ok(())
 }
@@ -278,6 +217,3 @@ pub(crate) fn check_vocabulary(rows: &[StatusRow]) -> Result<(), String> {
     }
     Ok(())
 }
-
-/// Folds a string's whitespace runs to single spaces.
-fn fold(text: &str) -> String { text.split_whitespace().collect::<Vec<_>>().join(" ") }

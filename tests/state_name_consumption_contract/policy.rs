@@ -9,8 +9,13 @@
 //!
 //! The register's own consistency — that its vocabulary is closed and that the
 //! default can still fall — is `registers.rs`'s question, not this module's.
+//! Whether an evidence cell's words name a consumer or a property is
+//! `claims.rs`'s; this module decides what those answers oblige.
 
-use super::types::{NoteRow, Resolution, StatusRow, field_order};
+use super::{
+    claims::{is_citation_shaped, names_a_consumer, names_a_property},
+    types::{NoteRow, Resolution, StatusRow, field_order},
+};
 
 /// The field whose status can overturn the `&'static str` default.
 pub(crate) const IDENTIFIER_NEED: &str = "identifier-need";
@@ -181,116 +186,4 @@ fn check_identifier_need_evidence(note: &[NoteRow]) -> Result<(), String> {
             .to_owned()),
         _ => Ok(()),
     }
-}
-
-/// Whether a cell cites the revision it was observed against.
-///
-/// The message names `<repo>@<sha>:<path>`, so the predicate admits exactly that
-/// shape and no weaker one. A check reading only "some word contains an `@`"
-/// accepts `repo@revision` with no path and even a bare `@`, which is the defect
-/// the message would then be promising something it never checked. Each of the
-/// three components must also be non-empty: `@sha:path` and `repo@:path` are
-/// citations of nothing.
-fn is_citation_shaped(evidence: &str) -> bool { evidence.split_whitespace().any(is_citation) }
-
-/// Whether one whitespace-delimited word is a complete citation.
-fn is_citation(word: &str) -> bool {
-    let Some(inner) = word
-        .strip_prefix('`')
-        .and_then(|rest| rest.strip_suffix('`'))
-    else {
-        return false;
-    };
-    let Some((repo, rest)) = inner.split_once('@') else {
-        return false;
-    };
-    let Some((revision, path)) = rest.split_once(':') else {
-        return false;
-    };
-    !repo.is_empty() && !revision.is_empty() && !path.is_empty()
-}
-
-/// Whether a cell names one of the consumers ADR 004's search set lists, or
-/// states that none exist.
-fn names_a_consumer(evidence: &str) -> bool {
-    let lowered = evidence.to_lowercase();
-    [
-        "subscriber",
-        "tracing",
-        "metrics",
-        "prometheus",
-        "opentelemetry",
-        "recorder",
-        "model checker",
-        "stateright",
-        "documentation",
-        "none exist",
-        "no consumer",
-    ]
-    .iter()
-    .any(|consumer| lowered.contains(consumer))
-}
-
-/// The four properties ADR 004 admits, as its third obligation names them.
-const PROPERTIES: [&str; 5] = [
-    "equality",
-    "stability",
-    "stable",
-    "ordering",
-    "compact encoding",
-];
-
-/// How many words before a keyword are searched for a negation.
-///
-/// Four rather than the three English usually needs, so that "none of them
-/// need ordering" is read as the negative it is. Widening it further starts to
-/// suppress genuine claims — "no crash was observed; requires stable ordering"
-/// survives at four and not at much more.
-const NEGATION_WINDOW: usize = 4;
-
-/// Whether a cell names one of the four properties ADR 004 admits.
-///
-/// A keyword counts only when the cell *asserts* it. "no stability requirement
-/// was observed" is an honest `None` cell — the property is named precisely to
-/// record that nobody asked for it — and a bare substring test reads the word
-/// "stability" and rejects the note for disagreeing with its own status. That
-/// leaves an engineer no way to record a negative except by not mentioning the
-/// property at all, which punishes the more informative note; the rule would be
-/// demanding a euphemism rather than agreement.
-///
-/// The negation is therefore looked for in the words just before the keyword,
-/// which is where English puts it, and never across a clause break, so a
-/// negation in one clause cannot silence an assertion in the next. It is a
-/// bounded heuristic rather than a parse, and deliberately a loose one: its
-/// failure mode on unusual phrasing is to accept a note a stricter reader would
-/// reject, which leaves the judgement where ADR 004 puts it — with the reviewer
-/// at task 3.2.1 — instead of failing an honest note on its wording.
-fn names_a_property(evidence: &str) -> bool {
-    let lowered = evidence.to_lowercase();
-    PROPERTIES.iter().any(|property| {
-        lowered
-            .match_indices(property)
-            .any(|(index, _)| !is_negated(lowered.get(..index).unwrap_or_default()))
-    })
-}
-
-/// Whether the words just before a keyword negate it.
-fn is_negated(before: &str) -> bool {
-    const NEGATIONS: [&str; 5] = ["no", "not", "never", "without", "none"];
-    before
-        .rsplit(['.', ';', ','])
-        .next()
-        .unwrap_or(before)
-        .split_whitespace()
-        .rev()
-        .take(NEGATION_WINDOW)
-        .any(|word| {
-            // Punctuation is stripped because the word being tested arrives with
-            // whatever a writer put beside it: "no," and "not." are the ordinary
-            // forms. An apostrophe is kept, so that "doesn't" survives to the
-            // `n't` test below rather than being cut at the contraction.
-            let bare = word
-                .trim_matches(|character: char| !character.is_alphanumeric() && character != '\'');
-            NEGATIONS.contains(&bare) || bare.ends_with("n't")
-        })
 }

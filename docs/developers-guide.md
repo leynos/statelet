@@ -80,11 +80,15 @@ rows differ. Neither dependency belongs in the runtime crate.
 for [ADR 004](adr-004-state-name-consumption-evidence.md). Its child modules
 each own one invariant class rather than a share of the text: `parse.rs` holds
 the one delimited-table syntax function, `types.rs` the register vocabulary and
-the `ParseError` messages, `policy.rs` admissibility and the note verdict,
-`registers.rs` the roadmap binding, the cross-register checks, and the status
-register's own consistency, `clauses.rs` quoted-clause resolution, `notes.rs`
-the read-only scan of `docs/validation-notes/`, and `fixtures.rs` the row
-constants the negative controls build documents from. The scenarios sit in
+the `ParseError` messages, `claims.rs` what an evidence cell's words say — a
+citation, a consumer, a property — and `policy.rs` what those answers oblige,
+naming admissibility and the note verdict. The checks that bind two documents
+to each other are one module per binding: `clauses.rs` for quoted-clause
+resolution, `registers.rs` for the cross-register checks and the status
+register's own consistency, and `roadmap.rs` for the roadmap's task-record
+grammar, the gate table, and the success criterion. `notes.rs` holds the
+read-only scan of `docs/validation-notes/`, and `fixtures.rs` the row constants
+the negative controls build documents from. The scenarios sit in
 `anchor_scenarios.rs`, `note_scenarios.rs`, `register_scenarios.rs` and
 `scan_scenarios.rs`, one per invariant class, so that the 400-line cap binds
 each part of the contract alike.

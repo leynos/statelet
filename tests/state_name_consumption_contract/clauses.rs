@@ -7,7 +7,10 @@
 //! points from its sources, and clauses that resolve in the source do not
 //! resolve unfolded.
 
-use super::types::{ParseError, Register};
+use super::{
+    fold_whitespace,
+    types::{ParseError, Register},
+};
 
 /// Where each supported source document stands in for a clause's attribution.
 ///
@@ -214,9 +217,4 @@ pub(crate) fn resolve_clause(clause: &str) -> Result<(String, String, String), S
         section.trim().to_owned(),
         fold_whitespace(text),
     ))
-}
-
-/// Folds a string's whitespace runs to single spaces.
-pub(crate) fn fold_whitespace(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }

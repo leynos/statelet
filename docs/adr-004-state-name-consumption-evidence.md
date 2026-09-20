@@ -92,10 +92,14 @@ better placed where they belong: in admissibility.
 Option C keys one register on `(field, status)` and gives each row an
 admissibility flag and a contribution. Both the blocking set and the verdict
 are then derivable from the document rather than hardcoded in the contract
-test, so adding a status is a documentation edit. A second, much smaller
-register maps the states of the note multiset to the outcomes at task 3.2.1,
-because a rule that resolves one note and says nothing about three is total
-over the wrong domain.
+test, so adding a status is a documentation edit: the register is the semantic
+source of truth, and the contract reads it rather than restating it. The
+contract's fixtures do pin the register row for row, so a status added to the
+register is added to the fixture in the same change — the edit is a
+documentation edit, not an *unaccompanied* one. A second, much smaller register
+maps the states of the note multiset to the outcomes at task 3.2.1, because a
+rule that resolves one note and says nothing about three is total over the
+wrong domain.
 
 ## Decision outcome / proposed direction
 
@@ -198,11 +202,11 @@ register below maps every reachable state of that multiset to exactly one
 outcome.
 
 <!-- aggregation-register:begin -->
-| Admissible notes | Any insufficient | Outcome if publication proceeds |
-| ---------------- | ---------------- | ------------------------------- |
-| None             | n/a              | Blocked: no admissible evidence |
-| One or more      | No               | Ratify the current return type  |
-| One or more      | Yes              | Amend design 6.1 before publish |
+| Contributing notes | Any insufficient | Outcome if publication proceeds |
+| ------------------ | ---------------- | ------------------------------- |
+| None               | n/a              | Blocked: no admissible evidence |
+| One or more        | No               | Ratify the current return type  |
+| One or more        | Yes              | Amend design 6.1 before publish |
 <!-- aggregation-register:end -->
 
 *Table 3: How task 3.2.1 reads the committed notes together. Every outcome is
