@@ -468,10 +468,10 @@ ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
                       -> register_scenarios::aggregation_register_is_total
 ```
 
-Each leaf names its module as well as its test, because the contract is
-eleven modules and two of its scenario names differ by one letter:
-`note_scenarios::committed_state_name_note_is_usable` is the accepting
-witness, and `scan_scenarios::committed_state_name_notes_are_usable` is the
+Each leaf names its module as well as its test, because the contract is eleven
+modules and two of its scenario names differ by one letter:
+`note_scenarios::committed_state_name_note_is_usable` is the accepting witness,
+and `scan_scenarios::committed_state_name_notes_are_usable` is the
 committed-note scan. A bare `tests::` prefix would leave a reader to grep for
 which of the two a line meant.
 
@@ -866,6 +866,45 @@ design.
   the file's own module doc never mentioned its size. Only a review that counts
   found it, which is the argument for the review existing.
 
+- Observation: `make check-fmt` is not satisfied by prose a human has wrapped
+  *below* 80 columns; `mdtablefix --wrap` fills prose to 80 and will reflow
+  anything narrower. Evidence: `make check-fmt` failed on this plan at the
+  paragraph introducing the traced-items table —
+  `docs/execplans/1-1-3-...md +4 -4`, `1 file would be reformatted` — and every
+  offending line was mine, added in the same commit. Measuring rather than
+  guessing was the point here, because my first two explanations of it were
+  both wrong. The line lengths were `71, 66, 70, 75, 77, 30`; a greedy fill at
+  80 over the same words yields `78, 59, 79, 77, 80, 17`. So the formatter is
+  not narrower than `MD013` — it is exactly as wide, and it pulls words *up*
+  from the short lines rather than breaking any. A paragraph whose lines merely
+  look conventional fails. Impact: none on the document's content; the reflow
+  is whitespace-only and `make check-fmt` is idempotent afterwards. Recorded
+  because the failure is trivial to misattribute in the other direction: since
+  `make fmt` fixes it silently, the temptation is to treat the red as noise.
+  But a docs-only diff that fails `check-fmt` is exactly what "the gates must
+  succeed before a review is requested" exists to stop, and that instruction's
+  warning against handing a reviewer a deterministic failure applies to prose
+  wrapping as much as to a type error. The practical rule: write prose to a
+  single short line per sentence and let `make fmt` set the wrap, rather than
+  choosing a width by hand.
+
+- Observation: a `mdtablefix` probe run with `--diff` alone is **vacuous**,
+  because `--diff` does not enable `--wrap`; the rule flags are separate and
+  must be repeated. Evidence: while investigating the entry above, three
+  successive `mdtablefix --diff <file>` probes reported "1 file left unchanged"
+  for input that the real gate rejects, which sent me to a bisect by prefix
+  length before the discrepancy was found to be in my invocation rather than in
+  the file. Re-running with `$(MDTABLEFIX_RULES)` reproduced the gate's finding
+  immediately and at every prefix length. The `--check` form behaves the same
+  way: it checks only the rules it is given. Impact: none on any artefact; the
+  document was already correct. Recorded because it is the same class of error
+  as the vacuous controls this plan's `Verification plan` was written to
+  prevent — a check that cannot fail for the reason it names — and I made it
+  three times in a row against a tool I was using specifically to decide
+  whether a gate result was real. The remedy is the same as for the controls:
+  run the probe with the same arguments as the thing being investigated, not
+  with arguments that merely look equivalent.
+
 ## Decision log
 
 - D1: Define "validation note" as the record a validation task produces,
@@ -1196,6 +1235,29 @@ design.
   modules. Date/Author: 2026-09-20, implementing agent, actioning the review the
   scrutineer returned after D25.
 
+- D27: The EP-M5 gate run failed `make check-fmt` on this plan, and the finding
+  is a **prose-wrapping rule rather than a defect**, so the remedy is to state
+  the rule rather than to change a requirement. `mdtablefix --wrap` fills prose
+  to 80 columns, and this plan's paragraph introducing the traced-items table
+  was hand-wrapped to 77 at its longest line. The gate report named
+  `+4 -4` on that paragraph alone, and the measured line lengths before and
+  after (`71, 66, 70, 75, 77, 30` → `78, 59, 79, 77, 80, 17`) show the
+  formatter pulling words *up* rather than breaking lines down: it is exactly
+  as wide as `MD013`, not narrower, and a paragraph whose lines merely look
+  conventional fails. `make fmt` applied the reflow, and `make check-fmt` was
+  then idempotent on a second run. Rationale for recording it at all: the
+  failure is misattributable in the harmless-looking direction — since
+  `make fmt` repairs it silently, the temptation is to file the red as noise —
+  and the standing instruction requires the deterministic gates to be green
+  before a review is requested, which a docs-only diff does not exempt itself
+  from. Two by-products are recorded under `Surprises & discoveries`: my first
+  two explanations of the cause were both wrong, and three `mdtablefix --diff`
+  probes said "unchanged" for input the gate rejects, because `--diff` does not
+  imply `--wrap` and the rule flags must be repeated on the probe. No
+  requirement, register, invariant, repair message, or shipped document
+  changed; the diff is whitespace inside one paragraph of this plan.
+  Date/Author: 2026-09-20, implementing agent, after the EP-M5 re-gate.
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -1218,7 +1280,11 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every entry in `Surprises & discoveries` was checked against the artefacts
-named in `Conformance basis`. The result, by disposition:
+named in `Conformance basis`. All twenty were accounted for; the disposition
+of each follows. The last two were recorded during the EP-M5 gate run itself
+and are mechanical — one is a prose-wrapping rule, the other a correction to
+how this plan had been probing the formatter — so neither bears on any upstream
+artefact.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
