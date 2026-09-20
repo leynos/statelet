@@ -660,24 +660,27 @@ outcome, and a reviewer should approve it on that understanding.
       of `policy.rs`, the task grammar out of `parse.rs` into `roadmap.rs` —
       is D30's largest change and answers tolerance 5's 300-line trigger.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
-      done: re-gated 2026-09-20 at `26da23f` after the post-fix round, all
-      seven gates pass sequentially, **including the Whitaker leg** that the
-      previous run never reached (D25's failure mode), and the transcripts
-      follow this list. The review half is not: the third round returned eight
-      findings, so EP-M5's stated bar — "a zero-finding independent review" —
-      requires a further CodeRabbit pass over the commit that actions them.
-      It is deliberately left unticked rather than ticked against a review that
-      has not happened.
+      done twice over: first at `26da23f` after the post-fix round, then again
+      at `dd5b37c` — the tree D30 delivers — where all seven gates pass
+      sequentially, **including the Whitaker leg** that the earliest run never
+      reached (D25's failure mode). Both transcripts are in `Artefacts and
+      notes`. The review half is not: the third round returned eight findings,
+      so EP-M5's stated bar — "a zero-finding independent review" — requires a
+      fourth CodeRabbit pass, over the commit that actions them. It is
+      deliberately left unticked rather than ticked against a review that has
+      not happened.
 
 The gate set, run one gate at a time from the repository root at revision
-`26da23f`. `make lint`'s log is the load-bearing one: the `whitaker` line
-appears with `EXIT_STATUS=0`, which is the evidence the earlier run could not
-supply.
+`dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
+`whitaker` leg is the last command in that target, so its exit status is the
+leg's, and the `.exit` sidecar records `EXIT_STATUS=0`. The earlier run at
+`26da23f` is transcribed in `Artefacts and notes` alongside this one; its
+smaller test figures are that revision's, not this one's.
 
 ```plaintext
 make check-fmt                    exit 0   28 files left unchanged
-make lint                         exit 0   clippy clean; whitaker clean
-make test                         exit 0   87 tests run: 87 passed, 0 skipped
+make lint                         exit 0   doc + clippy clean; whitaker clean
+make test                         exit 0   94 tests run: 94 passed, 0 skipped
 make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
 make nixie                        exit 0   All diagrams validated successfully
 make audit                        exit 0   45 dependencies scanned, no advisories
@@ -1639,12 +1642,12 @@ what it asserts.
 
 **Two counts that are easy to conflate, and both are needed.** Nextest reports
 collected *cases*; the plan names *scenarios*. `rstest` expands four of them,
-so 47 cases across 31 functions. A gate that silently stopped collecting a
+so 54 cases across 33 functions as delivered — 47 across 31 before the third
+review round added its controls. A gate that silently stopped collecting a
 scenario would move the case total without moving the scenario list, and only
 the case total notices. This plan now records both, which is why the figures
-here moved when the post-fix round added a parameterized regression: the
-scenario count and the case count are two different numbers, and the round
-changed both.
+here moved when reviews added parameterized regressions: the scenario count and
+the case count are two different numbers, and a round can change both.
 
 **The 400-line cap earns its keep.** It was breached invisibly: `make test`
 passed, `make check-fmt` passed, and the file's own module doc never mentioned
@@ -2167,11 +2170,12 @@ directory is empty, and an empty directory is explicitly *not* a failure,
 because no honest note can exist before task 2.2.1. A red step that demanded
 one would have demanded a fabricated observation. `INV-FILLED`'s red evidence
 is the `committed_state_name_notes_are_rejected` cases — seven when this step
-was written, eight as delivered (F4 added
-`#[case::citation_without_a_path]`) — which fail at Step 4 for the same
-`MissingDelimiters` reason as every other register-dependent scenario, plus
+was written, eight after F4 added `#[case::citation_without_a_path]`, and ten
+as delivered once D30 added the two controls for a keyword reachable only
+inside a citation — which fail at Step 4 for the same `MissingDelimiters`
+reason as every other register-dependent scenario, plus
 `unmarked_notes_are_ignored`, which passes throughout and is the accepting end
-of its marker control. See D22 and D26.
+of its marker control. See D22, D26 and D30.
 
 ### Step 5 — insert the registers, format, then fixture
 
@@ -2587,6 +2591,39 @@ invocations, not for the cargo manifest parse that emits them.
 `make check-fmt`'s "28 files left unchanged" is likewise a count of tracked
 Markdown files, reported by `mdtablefix`; it is the passing form of the check,
 not a partial run.
+
+Third run, at revision `dd5b37c` — the tree D30 delivers, and the one the
+fourth review is asked to examine. Sequential, one gate at a time, each logged
+under `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`
+with a sibling `.exit` file naming its status.
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy clean; whitaker leg ran
+make test                         exit 0   94 tests run: 94 passed, 0 skipped
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 dependencies scanned, no advisories
+make test-workflow-contracts      exit 0   6 passed
+```
+
+The `make lint` leg needs the same reading the earlier runs did. The log ends at
+the whitaker line with no per-lint diagnostic, because a lint that does not fire
+prints nothing; what distinguishes "ran and found nothing" from "never ran" is
+that `whitaker` is the *last* command in the target, so the target's exit status
+is the leg's. The `.exit` sidecar records `EXIT_STATUS=0`, and `dylint.toml`
+registers a live lint set with the one path-scoped exemption, so the leg cannot
+have been an empty pass. The two manifest warnings above recur here unchanged:
+they are Cargo's, not this change's, and `Cargo.toml` is untouched.
+
+Three figures moved from the `26da23f` run and each is accounted for: 87 → 94
+collected cases, 31 → 33 functions, and 47 → 54 cases for this contract alone.
+The additions are D30's — `gate_titles_resolve` from six to nine cases (three
+prose controls and the ambiguity control's derived count) and
+`committed_state_name_notes_are_rejected` from eight to ten (a consumer and a
+property each named only inside a citation) — plus the two functions those
+controls hang off. Every module is under the 400-line cap; tolerance 5's three
+named modules are clear of its 300-line trigger at 228, 220 and 189.
 
 ## Interfaces and dependencies
 
