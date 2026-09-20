@@ -194,15 +194,18 @@ fn committed_state_name_notes_are_rejected(
 /// disagreement where the repairable defect is the blocked cell.
 #[test]
 fn contradictory_notes_are_rejected() -> Result<(), String> {
-    let mutated = status_register().replace(
+    let live = status_register();
+    let mutated = live.replace(
         "| metrics-cardinality | Bounded | yes | nothing |",
         "| metrics-cardinality | Bounded | yes | Sufficient |",
     );
-    assert_ne!(
-        mutated,
-        status_register(),
-        "the fixture substitution matched nothing, so the control's register is the live one"
-    );
+    if mutated == live {
+        return Err(
+            "the fixture substitution matched nothing, so the control's register is the live one. \
+             Repair: keep the needle a table row the fixture still carries."
+                .to_owned(),
+        );
+    }
     let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     check_vocabulary(&rows)?;
     check_exclusions(&rows)?;
