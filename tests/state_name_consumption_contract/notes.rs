@@ -60,9 +60,9 @@ pub(crate) fn committed_notes(root: &Utf8Path) -> Result<Vec<CommittedNote>, Str
         .map_err(|error| format!("{directory}: the notes directory cannot be read: {error}"))?;
     let mut found = Vec::new();
     for entry in entries {
-        let entry =
-            entry.map_err(|error| format!("{directory}: an entry cannot be read: {error}"))?;
-        let path = entry.into_path();
+        let path = entry
+            .map_err(|error| format!("{directory}: an entry cannot be read: {error}"))?
+            .into_path();
         if !has_markdown_extension(path.as_path()) {
             continue;
         }
