@@ -125,11 +125,19 @@ If a workflow's behaviour genuinely depends on a feature only present from a
 particular commit onwards, express that as a comment or a changelog note, not
 as a test assertion on the SHA string.
 
+### Security audit ignores
+
+Security audit jobs may set `CARGO_AUDIT_IGNORES` for narrowly scoped RustSec
+advisories that affect unused or tooling-only dependency paths. Keep each
+ignore tied to a documented runtime impact analysis, and remove it when the
+affected dependency leaves the graph or the project starts using the advised
+runtime path.
+
 ## Mutation-testing workflow contract tests
 
 This repository runs scheduled, informational mutation testing through a thin
-caller workflow, [`.github/workflows/mutation-testing.yml`](../.github/workflows/mutation-testing.yml),
-which delegates to the shared reusable workflow
+[caller workflow](../.github/workflows/mutation-testing.yml). It delegates to
+the shared reusable workflow
 `leynos/shared-actions/.github/workflows/mutation-cargo.yml`. The heavy lifting
 — running `cargo-mutants` and summarizing survivors — lives in
 `shared-actions`; this repository carries only declarative configuration. The
@@ -158,14 +166,13 @@ commit SHA, not a particular value, so Dependabot bumps it automatically
 without any accompanying test edit.
 
 Because the caller is configuration rather than code, a contract test in
-[`tests/workflow_contracts/mutation_testing_test.py`](../tests/workflow_contracts/mutation_testing_test.py)
-pins the shape it must uphold, failing the pull request when the caller
-drifts — repointing the pin at a branch, widening the token scope, or
-dropping the linker setup or feature configuration — rather than letting the
-breakage surface only in a scheduled run. The test module self-skips when the
-workflow file is absent, so it does not fail in working copies that omit
-`.github/`. Run it locally with `make test-workflow-contracts`. The test
-validates:
+[mutation_testing_test.py](../tests/workflow_contracts/mutation_testing_test.py)
+pins the shape it must uphold, failing the pull request when the caller drifts
+— repointing the pin at a branch, widening the token scope, or dropping the
+linker setup or feature configuration — rather than letting the breakage
+surface only in a scheduled run. The test module self-skips when the workflow
+file is absent, so it does not fail in working copies that omit `.github/`. Run
+it locally with `make test-workflow-contracts`. The test validates:
 
 - the `uses:` reference targets `mutation-cargo.yml` pinned to a full commit
   SHA;
@@ -178,11 +185,3 @@ validates:
   and
 - the triggers keep the daily schedule and a plain `workflow_dispatch` with no
   legacy branch input.
-
-### Security audit ignores
-
-Security audit jobs may set `CARGO_AUDIT_IGNORES` for narrowly scoped RustSec
-advisories that affect unused or tooling-only dependency paths. Keep each
-ignore tied to a documented runtime impact analysis, and remove it when the
-affected dependency leaves the graph or the project starts using the advised
-runtime path.
