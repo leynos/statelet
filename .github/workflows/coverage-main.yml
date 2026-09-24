@@ -27,8 +27,9 @@ name: Coverage (main)
 # an older pending run rather than queueing behind it. GitHub does not promise
 # to start runs in trigger order, so this is not a guarantee of commit order.
 # A manual re-run of an older run keeps its SHA and its run id: it republishes
-# that commit's coverage to CodeScene, but its baseline cache key already
-# exists, so it replaces no baseline unless the original run saved none.
+# that commit's coverage to CodeScene. Its baseline cache key is the original
+# run's, so it saves a baseline only when that entry is absent: the original
+# run saved none, or the entry has expired or been evicted.
 # Keying the group on the event as well would let a dispatch and a push on
 # main run side by side. A dispatch saves no baseline: generate-coverage saves
 # it only on a push, so after a dispatch replaces a pending push the baseline

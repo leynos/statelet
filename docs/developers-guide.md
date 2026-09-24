@@ -239,14 +239,15 @@ replaces an older pending run rather than queueing behind it. Runs on other
 refs may overlap a `main` run, but the upload's ref conjunct keeps them from
 publishing. GitHub does not promise to start runs in trigger order, so this
 does not guarantee commit order. A manual re-run of an older run keeps its SHA
-and its run id: it republishes that commit's coverage to CodeScene, but its
-baseline cache key already exists, so it replaces no baseline unless the
-original run saved none. Two gaps are known and accepted. A Dependabot pull
-request merged by the automerge workflow with `GITHUB_TOKEN` fires no push, so
-it publishes nothing until the next push to `main` (shared-actions #518). A
-dispatch that replaces a pending push uploads coverage, but `generate-coverage`
-saves the baseline only on a push, so the baseline stays behind until the next
-push (shared-actions #518).
+and its run id: it republishes that commit's coverage to CodeScene. Its
+baseline cache key is the original run's, so it saves a baseline only when that
+entry is absent: the original run saved none, or the entry has expired or been
+evicted. Two gaps are known and accepted. A Dependabot pull request merged by
+the automerge workflow with `GITHUB_TOKEN` fires no push, so it publishes
+nothing until the next push to `main` (shared-actions #518). A dispatch that
+replaces a pending push uploads coverage, but `generate-coverage` saves the
+baseline only on a push, so the baseline stays behind until the next push
+(shared-actions #518).
 
 `make test-workflow-contracts` holds the rule through the `codescene_*` modules
 in `tests/workflow_contracts/`. They prove each clause against breaching
