@@ -240,13 +240,19 @@ def _guard_findings(upload: reading.Step, earlier: list[reading.Step]) -> list[s
     return findings
 
 
-def _rendered_outside_allowance(step: reading.Step) -> str:
-    """Render a step without the one place it may name the token, if any."""
-    remainder = copy.deepcopy(step)
-    if _token_check_id(step) is not None:
-        remainder.pop("run", None)
-    if is_upload_action(step) and isinstance(remainder.get("with"), dict):
-        remainder["with"].pop("access-token", None)
+def _rendered_outside_allowance(workflow: reading.Workflow) -> str:
+    """Render the whole workflow without the two places it may name the token.
+
+    A copy of the whole document is scanned, not only its steps: a job's
+    ``container.env`` or ``services.<id>.env`` hands the token to every step
+    in the job without being any step's ``env``.
+    """
+    remainder = copy.deepcopy(workflow)
+    for step in reading.steps(remainder):
+        if _token_check_id(step) is not None:
+            step.pop("run", None)
+        if is_upload_action(step) and isinstance(step.get("with"), dict):
+            step["with"].pop("access-token", None)
     return reading.rendered(remainder)
 
 
@@ -287,10 +293,7 @@ def _token_findings(workflow: reading.Workflow) -> list[str]:
     )
     if reading.computes_a_secret(reading.rendered(workflow)):
         findings.append("the publisher reaches a secret by a computed name")
-    if any(
-        references_the_secret(_rendered_outside_allowance(step))
-        for step in reading.steps(workflow)
-    ):
+    if references_the_secret(_rendered_outside_allowance(workflow)):
         findings.append(
             f"{ACCESS_TOKEN} is referenced outside the token check and the "
             "upload's access-token"

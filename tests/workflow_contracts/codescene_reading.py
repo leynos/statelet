@@ -85,16 +85,38 @@ def is_workflow(name: str) -> bool:
     return name.lower().endswith(WORKFLOW_EXTENSIONS)
 
 
-def workflows(directory: Path = WORKFLOW_DIR) -> dict[str, Workflow]:
-    """Read every workflow in the directory, failing loudly on an empty one."""
+def workflows(directory: Path) -> dict[str, Workflow]:
+    """Read every workflow in ``directory``, failing loudly on an empty one.
+
+    The directory is the caller's choice; the contract tests pass
+    ``WORKFLOW_DIR``. Every failure is a ``ContractError``, with any
+    ``OSError`` chained, so a directory the contract cannot read never passes
+    as one with nothing to judge.
+
+    Raises:
+        ContractError: when the directory cannot be listed, a workflow cannot
+            be read or parsed, or the directory holds no workflow.
+    """
+    try:
+        paths = sorted(directory.iterdir())
+    except OSError as error:
+        raise ContractError(f"cannot list {directory}: {error}") from error
     found = {
-        path.name: parse(path.name, path.read_text(encoding="utf-8"))
-        for path in sorted(directory.iterdir())
+        path.name: parse(path.name, _read(path))
+        for path in paths
         if is_workflow(path.name)
     }
     if not found:
         raise ContractError(f"no workflows found under {directory}")
     return found
+
+
+def _read(path: Path) -> str:
+    """Return one workflow's text, raising ``ContractError`` when unreadable."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise ContractError(f"cannot read {path}: {error}") from error
 
 
 def _trigger_block(workflow: Workflow) -> object:
@@ -275,8 +297,10 @@ def computes_a_secret(text: str) -> bool:
     ``secrets['CS_' + ...]`` and ``toJSON(secrets)`` hand a step the token
     without spelling it. Every ``secrets`` word is judged by what follows: a
     ``.`` is a named reference, a ``:`` is a YAML key, and a following word
-    is prose. Anything else is a computed or whole-context access.
+    is prose. Anything else is a computed or whole-context access. Actions
+    resolves context names without regard to case, so the scan is folded.
     """
+    text = text.lower()
     start = text.find("secrets")
     while start != -1:
         before = text[start - 1] if start else ""

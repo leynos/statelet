@@ -221,8 +221,9 @@ off. What the split takes off the pull request is the call to the service; the
 CLI archive is already pinned by digest.
 
 `.github/workflows/coverage-main.yml` is the one publisher. It runs on a push to
-`main` and on dispatch, writes the ratchet baseline, and uploads to CodeScene
-only when both hold:
+`main` and on dispatch. A push to `main` writes the ratchet baseline; a
+dispatch reads the stored baseline without advancing it. The workflow uploads
+to CodeScene only when both hold:
 
 - a `Check CodeScene token` step, whose sole command is
   `echo "available=${{ secrets.CS_ACCESS_TOKEN != '' }}" >> "$GITHUB_OUTPUT"`,
@@ -233,16 +234,19 @@ only when both hold:
 The upload passes the token only as `access-token`, never through an `env`: the
 upload action is composite and hands its step's `env` to the nested steps it
 runs. The concurrency group is `${{ github.workflow }}-${{ github.ref }}` and
-never cancels, so runs never overlap and, for triggered runs (push and
-dispatch), uploads land in commit order and the newest baseline wins. A manual
-"Re-run jobs" on an older `main` run is an operator action: it keeps its old
-SHA and republishes that commit's coverage and baseline until the next push
-supersedes it. Two gaps are known and accepted. A Dependabot pull request
-merged by the automerge workflow with `GITHUB_TOKEN` fires no push, so it
-publishes nothing until the next push to `main` (shared-actions #518). A
-dispatch that replaces a pending push uploads the same or a newer commit, but
-`generate-coverage` saves the baseline only on a push, so the baseline stays
-one commit behind until the next push (shared-actions #518).
+never cancels. Runs for the same ref never overlap, and a newer trigger
+replaces an older pending run rather than queueing behind it. Runs on other
+refs may overlap a `main` run, but the upload's ref conjunct keeps them from
+publishing. GitHub does not promise to start runs in trigger order, so this
+does not guarantee commit order. A manual re-run of an older run keeps its SHA
+and its run id: it republishes that commit's coverage to CodeScene, but its
+baseline cache key already exists, so it replaces no baseline unless the
+original run saved none. Two gaps are known and accepted. A Dependabot pull
+request merged by the automerge workflow with `GITHUB_TOKEN` fires no push, so
+it publishes nothing until the next push to `main` (shared-actions #518). A
+dispatch that replaces a pending push uploads coverage, but `generate-coverage`
+saves the baseline only on a push, so the baseline stays behind until the next
+push (shared-actions #518).
 
 `make test-workflow-contracts` holds the rule through the `codescene_*` modules
 in `tests/workflow_contracts/`. They prove each clause against breaching

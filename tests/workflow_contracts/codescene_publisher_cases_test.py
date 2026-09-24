@@ -94,7 +94,9 @@ def test_only_a_push_restricted_to_main_is_the_publisher(
     expected: bool,
 ) -> None:
     """Only a push filtered to the literal ``main`` publishes."""
-    assert rules.publishes_from_main(reading.parse("fixture", source)) is expected
+    assert rules.publishes_from_main(reading.parse("fixture", source)) is expected, (
+        source
+    )
 
 
 PR = "github.event_name == 'workflow_dispatch'"
@@ -181,11 +183,29 @@ def test_a_check_after_the_upload_does_not_guard_it() -> None:
             UPLOAD_NAME + _env_binding("        "),
             ("binds CS_ACCESS_TOKEN", "referenced outside"),
         ),
-        ("jobs:\n", _env_binding("") + "jobs:\n", ("binds CS_ACCESS_TOKEN",)),
+        (
+            "jobs:\n",
+            _env_binding("") + "jobs:\n",
+            ("binds CS_ACCESS_TOKEN", "referenced outside"),
+        ),
         (
             "    steps:\n",
             _env_binding("    ") + "    steps:\n",
-            ("binds CS_ACCESS_TOKEN",),
+            ("binds CS_ACCESS_TOKEN", "referenced outside"),
+        ),
+        (
+            "    steps:\n",
+            "    container:\n      image: x\n"
+            + _env_binding("      ")
+            + "    steps:\n",
+            ("referenced outside",),
+        ),
+        (
+            "    steps:\n",
+            "    services:\n      db:\n        image: x\n"
+            + _env_binding("        ")
+            + "    steps:\n",
+            ("referenced outside",),
         ),
         (
             UPLOAD_NAME,
@@ -195,18 +215,18 @@ def test_a_check_after_the_upload_does_not_guard_it() -> None:
         (
             "jobs:\n",
             REUSABLE + "    with:\n      t: ${{ secrets.CS_ACCESS_TOKEN }}\n",
-            ("reusable workflow",),
+            ("reusable workflow", "referenced outside"),
         ),
         (
             "jobs:\n",
             REUSABLE + "    secrets:\n      T: ${{ secrets.CS_ACCESS_TOKEN }}\n",
-            ("reusable workflow",),
+            ("reusable workflow", "referenced outside"),
         ),
         ("jobs:\n", REUSABLE + "    secrets: inherit\n", ("reusable workflow",)),
         (
             "    steps:\n",
             "    env:\n      cs_access_token: ${{ secrets.cs_access_token }}\n    steps:\n",
-            ("binds CS_ACCESS_TOKEN",),
+            ("binds CS_ACCESS_TOKEN", "referenced outside"),
         ),
         (
             UPLOAD_NAME,
@@ -223,6 +243,8 @@ def test_a_check_after_the_upload_does_not_guard_it() -> None:
         "upload_env",
         "workflow_env",
         "job_env",
+        "container_env",
+        "service_env",
         "run_step",
         "forwarded_as_input",
         "forwarded_by_name",
@@ -235,7 +257,7 @@ def test_a_check_after_the_upload_does_not_guard_it() -> None:
 def test_the_token_travels_only_where_allowed(
     old: str, new: str, expected: tuple[str, ...]
 ) -> None:
-    """No env anywhere, however the name is cased.
+    """No env anywhere, however the name is cased, and no job-level key.
 
     The composite upload hands its step's env to the nested steps it runs.
     """
@@ -323,7 +345,7 @@ def test_quoted_operators_are_not_operators(
 ) -> None:
     """Operators inside quoted literals neither split nor disjoin."""
     parts = rules.conjuncts(condition)
-    assert (None if parts is None else len(parts)) == expected
+    assert (None if parts is None else len(parts)) == expected, parts
 
 
 @pytest.mark.parametrize(
@@ -373,4 +395,5 @@ def test_a_called_baseline_writer_is_counted(prefix: str) -> None:
         "caller.yml": reading.parse("caller", caller),
         "called.yml": reading.parse("called", CALLED_WRITER),
     }
-    assert rules.baseline_writers(every) == ["called.yml", "publisher.yml"]
+    writers = rules.baseline_writers(every)
+    assert writers == ["called.yml", "publisher.yml"], writers
