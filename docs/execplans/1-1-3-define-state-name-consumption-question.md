@@ -706,8 +706,10 @@ outcome, and a reviewer should approve it on that understanding.
       of this plan — so the repair was not the one-word substitution it first
       appeared, and the gate is what found both. Recorded in
       `Surprises & discoveries`. The gate half is re-run green after the
-      repair, over the unchanged Rust diff. A fifth pass over that revision is
-      what EP-M5 now waits on.
+      repair — all seven gates exit 0, `make test` at 96/96 — over the
+      unchanged Rust diff, and the whole round is committed as `03985e8`. A
+      fifth CodeRabbit pass over that commit is what EP-M5 now waits on, and
+      its bar is zero findings.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
