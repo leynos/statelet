@@ -208,6 +208,55 @@ Quoted APIs and identifiers retain their upstream spelling; put them in
 backticks or fenced code blocks where practical rather than adding broad
 word-level exceptions.
 
+## Coverage publication
+
+Main owns both persistent coverage outputs, following concordat's CV-005 rule.
+Pull requests measure coverage in `ci.yml` with `with-ratchet: 'true'` and
+`publish-artefact: 'false'`, so they check the ratchet against the stored
+baseline and do nothing else: no pull request uploads a report, runs
+`cs-coverage`, receives `CS_ACCESS_TOKEN`, or contacts `codescene.io`.
+CodeScene accepts an upload only for an analysed branch, which a pull request
+head is not, and its check mode fails on every project whose coverage gates are
+off. What the split takes off the pull request is the call to the service; the
+CLI archive is already pinned by digest.
+
+`.github/workflows/coverage-main.yml` is the one publisher. It runs on a push to
+`main` and on dispatch. A push to `main` writes the ratchet baseline; a
+dispatch reads the stored baseline without advancing it. The workflow uploads
+to CodeScene only when both hold:
+
+- a `Check CodeScene token` step, whose sole command is
+  `echo "available=${{ secrets.CS_ACCESS_TOKEN != '' }}" >> "$GITHUB_OUTPUT"`,
+  reports the token as set; the expression is evaluated before the shell runs,
+  so the step binds nothing;
+- `github.ref == 'refs/heads/main'`, since a dispatch may name any branch.
+
+The upload passes the token only as `access-token`, never through an `env`: the
+upload action is composite and hands its step's `env` to the nested steps it
+runs. The concurrency group is `${{ github.workflow }}-${{ github.ref }}` and
+never cancels. Runs for the same ref never overlap, and a newer trigger
+replaces an older pending run rather than queueing behind it. Runs on other
+refs may overlap a `main` run, but the upload's ref conjunct keeps them from
+publishing. GitHub does not promise to start runs in trigger order, so this
+does not guarantee commit order. A manual re-run of an older run keeps its SHA
+and its run id: it republishes that commit's coverage to CodeScene. Its
+baseline cache key is the original run's, so it saves a baseline only when that
+entry is absent: the original run saved none, or the entry has expired or been
+evicted. Two gaps are known and accepted. A Dependabot pull request merged by
+the automerge workflow with `GITHUB_TOKEN` fires no push, so it publishes
+nothing until the next push to `main` (shared-actions #518). A dispatch that
+replaces a pending push uploads coverage, but `generate-coverage` saves the
+baseline only on a push, so the baseline stays behind until the next push
+(shared-actions #518).
+
+`make test-workflow-contracts` holds the rule through the `codescene_*` modules
+in `tests/workflow_contracts/`. They prove each clause against breaching
+fixtures as well as against the real workflows: the pull-request clauses run
+over every workflow a pull request can reach through local `uses:` calls, the
+host and token clauses read every scalar in each document, the upload condition
+is split on `&&` with any `||` refused, and workflows are parsed with duplicate
+keys refused.
+
 ## Workflow pins and Dependabot
 
 Dependabot owns the upgrade of GitHub Actions and reusable workflows, including
