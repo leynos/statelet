@@ -685,6 +685,27 @@ outcome, and a reviewer should approve it on that understanding.
       second entry recording that `make spelling` had been skipping 1258 lines
       of this plan — including the `-ise` spelling the gate caught only after
       that span was closed.
+- [x] CodeRabbit review six — four findings in three subjects, returned
+      2026-09-26 over `c9fc559`, the commit review five's actions produced.
+      The freeze held again (`HEAD` and an empty `git status` identical before
+      and after), so this pass is scored too. All three subjects are accepted,
+      and all three are **stale figures or false claims in this plan**, which
+      is the review catching the living document rather than the work: the
+      reconciliation paragraph counted twenty-two observations where the
+      section now holds twenty-four, and named the wrong denominator besides
+      (the section has fifty-six top-level entries, of which thirty-two are
+      `Decision log` records); the delivered `rstest` totals were D31's, not
+      D32's; and the Stage B paragraph claimed the full prose of both new
+      documents was appended to this plan, which it never was. Each figure was
+      **re-measured against the live tree rather than transcribed from the
+      finding**, and the review's own suggested numbers were wrong in two of
+      the three — it read the workspace-wide 99 tests and "five parameterized
+      functions" where the contract binary collects 59 cases across 35
+      functions with six tables, and it offered twenty-four for the first
+      count by counting top-level entries rather than `- Observation:` ones.
+      Recorded as D33: a review's *arithmetic* is a claim like any other, and
+      the useful half of the finding was the pointer to the paragraph, not the
+      replacement text. No `minor` here touched code.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -1800,6 +1821,35 @@ design.
   date's full stop itself, and `markdownlint` reports no error on the file the
   third asks to rewrap.
 
+- D33: **The sixth pass returned four findings in three subjects, all accepted,
+  and all three are stale figures in this plan rather than defects in the
+  work.** The reconciliation paragraph counted twenty-two observations against
+  a section holding twenty-four; the `rstest` totals were D31's, not D32's; and
+  the Stage B paragraph claimed the full prose of both new documents was
+  appended to this plan, while the section in fact holds the registers, the
+  gate table and the section order and no prose at all. Each replacement figure
+  was re-measured against the live tree, and **the review's own numbers were
+  wrong in two of the three**: it read the workspace-wide 99 tests where the
+  contract binary collects 59 across 35 functions with six parameterized
+  tables, and it offered twenty-four for the first count by counting every
+  top-level bullet in the section rather than the `- Observation:` ones — the
+  section's other thirty-two entries were `Decision log` records D1–D32 (D33
+  itself brings the tally to thirty-three). The lesson is D31's, one level
+  down: a review is an input to be verified, and that applies to a review's
+  *arithmetic* as much as to its arguments. The useful half of each finding was
+  the pointer to the paragraph, not the replacement text. The reconciliation
+  paragraph had been corrected by hand in an earlier round and drifted again,
+  so its replacement names the denominator explicitly — "every `- Observation:`
+  entry" — to make the next drift detectable rather than silent. This round's
+  `make markdownlint` then went red, and for the same reason twice over: the
+  gate's `spelling` prerequisite runs **before** the linting step, so the two
+  `-ise` forms the round had just written left the Markdown lint unreached. The
+  word is "parameterized", and the *review* spells it with an `s`, so
+  transcribing its wording carried the reviewer's spelling into the document
+  that quotes it — the same class of defect as D32's, where a quoted command's
+  punctuation arrived with the quote. Date/Author: 2026-09-26, implementing
+  agent, actioning the review the scrutineer returned after D32.
+
 - Observation: **a control written against a token-list predicate can be
   defeated by the predicate's own breadth, and only a Red replay catches it.**
   Evidence: D31's regression for the ADR's "none of them exist" wording was
@@ -1873,16 +1923,20 @@ selection rather than as prose.
 
 ### Reconciliation of discoveries against the conformance basis
 
-Every entry in `Surprises & discoveries` was checked against the artefacts
-named in `Conformance basis`. All twenty-two were accounted for; the
-disposition of each follows. Four were recorded during or after the EP-M5 gate
-runs: a prose-wrapping rule, a correction to how this plan had been probing the
-formatter, the post-fix review round's falsification record, and the
-record-versus-line discovery that closed the third round's `major` subject.
-None bears on any upstream artefact, and the second review round — recorded as
-D29 rather than here, because its findings are decisions rather than
-observations — forced one upstream correction of its own, to ADR 004's
-stable-identifier paragraph, which is dispositioned below.
+Every `- Observation:` entry in `Surprises & discoveries` was checked against
+the artefacts named in `Conformance basis`. All twenty-four were accounted for;
+the disposition of each follows. The section holds fifty-seven top-level
+entries in all; the other thirty-three are `Decision log` records D1–D33, which
+are decisions rather than observations and are dispositioned in their own
+section. Six observations were recorded during or after the EP-M5 gate runs: a
+prose-wrapping rule, a correction to how this plan had been probing the
+formatter, the post-fix review round's falsification record, the
+record-versus-line discovery that closed the third round's `major` subject, and
+the two the fourth and fifth rounds produced. None bears on any upstream
+artefact, and the second review round — recorded as D29 rather than here,
+because its findings are decisions rather than observations — forced one
+upstream correction of its own, to ADR 004's stable-identifier paragraph, which
+is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -1971,14 +2025,18 @@ predicate for whether it can fail is a different exercise from reading it for
 what it asserts.
 
 **Two counts that are easy to conflate, and both are needed.** Nextest reports
-collected *cases*; the plan names *scenarios*. `rstest` expands four of them,
-so 56 cases across 34 functions as delivered — 54 across 33 before D31 added
-its two-wordings control, and 47 across 31 before the third review round added
-its controls. A gate that silently stopped collecting a scenario would move the
-case total without moving the scenario list, and only the case total notices.
-This plan now records both, which is why the figures here moved when reviews
-added parameterized regressions: the scenario count and the case count are two
-different numbers, and a round can change both.
+collected *cases*; the plan names *scenarios*. `rstest` expands six of the
+fourteen scenario functions in the contract binary, so the binary collects 59
+cases across 35 functions as delivered — 56 across 34 before D32 added
+`punctuated_citations_are_accepted` and its three cases. Before D31's
+two-wordings control it was 54 across 33, and before the third review round's
+controls 47 across 31. A gate that silently stopped collecting a scenario would
+move the case total without moving the scenario list, and only the case total
+notices — and the *function* count is a third number again, since a round can
+add a case to an existing table without adding a function. The figures count
+the contract binary rather than the whole workspace, which is the thing this
+plan's milestones name. This plan now records all three, which is why they move
+when reviews add parameterized regressions.
 
 **The 400-line cap earns its keep.** It was breached invisibly: `make test`
 passed, `make check-fmt` passed, and the file's own module doc never mentioned
@@ -2800,8 +2858,17 @@ Per `docs/documentation-style-guide.md`, with custom sections in the slot ADR
 ## Architectural rationale     -> the cardinality argument in full
 ```
 
-The full prose of both new documents is written during Stage B and appended to
-this section as it is drafted, so that this plan ends the task self-contained.
+What this section holds is the *load-bearing content* of both new documents,
+transcribed cell for cell: the status register, the aggregation register, the
+gate table, and the section order above. It is not a copy of either document.
+The prose — the admissibility argument, the cardinality rationale, the worked
+example — is written in Stage B directly into
+`docs/adr-004-state-name-consumption-evidence.md` and
+`docs/phase-2-validation-note-template.md`, and read from there. An earlier
+draft of this paragraph claimed the full prose was "appended to this section as
+it is drafted, so that this plan ends the task self-contained", which was never
+so; the four delimited blocks are what a reader copies from, and the two
+documents are what a reader opens.
 
 ### Step 9 gate transcripts
 
