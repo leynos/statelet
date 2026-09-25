@@ -25,8 +25,22 @@ pub(crate) fn is_citation_shaped(evidence: &str) -> bool {
 }
 
 /// Whether one whitespace-delimited word is a complete citation.
+///
+/// A citation ends the clause that cites it, so it arrives wearing the
+/// punctuation that closed that clause. ADR 004's own worked example writes
+/// "`mdtablefix@abc1234:src/process.rs`, `LineMode`", and an engineer copying
+/// that shape writes a comma; a cell ending its citation with a full stop
+/// writes a full stop. Trailing sentence punctuation is therefore stripped
+/// before the shape is read, or the one shape the document teaches would be the
+/// shape the check refused.
+///
+/// Only *trailing* punctuation is forgiven, and only the three marks that end a
+/// clause. Nothing may precede the opening backtick, so a citation embedded in
+/// a larger word is still not a citation, and a closing backtick inside a path
+/// is still the end of the citation rather than a stray quote.
 fn is_citation(word: &str) -> bool {
-    let Some(inner) = word
+    let trimmed = word.trim_end_matches([',', '.', ';']);
+    let Some(inner) = trimmed
         .strip_prefix('`')
         .and_then(|rest| rest.strip_suffix('`'))
     else {

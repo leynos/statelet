@@ -22,9 +22,12 @@ const DEFERRED_CLAUSE: &str =
 /// The three reachable states of the note multiset, and what each must yield.
 ///
 /// Every outcome is conditional on publication proceeding, so the expected text
-/// is a prefix rather than the whole cell.
+/// is a prefix rather than the whole cell. The three are the verbs the register
+/// itself uses — "Blocked", "Ratify", "Amend" — cut to the verb that introduces
+/// each, so that the repair messages below read as instructions: a register that
+/// does not *block* there, one that does not *ratify*, one that does not *amend*.
 const AGGREGATION_STATES: [(&str, &str, &str); 3] = [
-    ("None", "n/a", "Blocked"),
+    ("None", "n/a", "Block"),
     ("One or more", "No", "Ratify"),
     ("One or more", "Yes", "Amend"),
 ];
@@ -133,7 +136,7 @@ fn check_aggregation_row(row: &AggRow) -> Result<(), String> {
     if row.contributing_notes == "None" && row.any_insufficient != "n/a" {
         return Err(format!(
             "docs/adr-004-state-name-consumption-evidence.md: the no-evidence row cannot be \
-             qualified by {:?}. Repair: use n/a, because no note exists to insufficient it.",
+             qualified by {:?}. Repair: use n/a, because there is no note to be insufficient.",
             row.any_insufficient
         ));
     }

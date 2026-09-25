@@ -68,8 +68,12 @@ of `None`: the absence of a need is itself an observation, and it has a place.
   about whether a property is required: a cell naming equality, stability
   across releases, ordering, or compact encoding belongs with the status
   recording a required property, and a cell naming none must not.
-- `metrics-cardinality` records the number of distinct labels the annotated
-  state can produce.
+- `metrics-cardinality` records whether the number of distinct labels the
+  annotated state can produce is bounded, so its status is `Bounded` or
+  `Unbounded` — never a count. The bound is read off the strings listed under
+  `state-display-name`, which is why that field must enumerate them: a count
+  written here would be an assertion by the note's author that nothing
+  contradicts, and the status register would have nothing to audit.
 - `tracing-use` records how the annotated state names itself in a trace.
 
 ## When a note blocks

@@ -249,8 +249,19 @@ Roadmap task: 2.2.1.
 
 ## Observations
 
-The `bool in_table` local is not a named state type; only `LineMode` was
-annotated for this note. See the upstream issue for the unnamed local.
+The named state this note enumerates is `LineMode`: that is the state task
+2.2.1 annotated, and it is what the `Enumerated` status above covers.
+
+The `bool in_table` local in `ProcessBuffer` is explicitly out of scope here.
+It is not a named type, so it cannot carry a `StateName` implementation, and a
+note whose *subject* were that local would instead record `state-display-name`
+as `Not a named type`, resolve to `Not resolved`, and contribute nothing to the
+verdict. Under *Admissibility* that is an upstream finding, and its repair
+belongs to the phase that owns the annotated code. Recording it here as an
+out-of-scope observation, rather than folding it into the status above, is what
+keeps `Enumerated` an honest claim about the state it names. A note is read
+through *one* subject — the template names the file `<task>-<subject>.md` for
+that reason — and this note's subject is `LineMode`, not the local.
 ```
 
 ## Gates

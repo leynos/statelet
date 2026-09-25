@@ -685,6 +685,31 @@ outcome, and a reviewer should approve it on that understanding.
       second entry recording that `make spelling` had been skipping 1258 lines
       of this plan — including the `-ise` spelling the gate caught only after
       that span was closed.
+- [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
+      `253194b`, the **first pass scored on a frozen revision**: `git status`
+      was empty and `HEAD` unchanged before and after the review, which is the
+      strongest freeze evidence the tool offers (its `review_context` pins the
+      branch and directory but no commit SHA). Eight adopted and three
+      declined. The eight: the template's `metrics-cardinality` bullet, which
+      told an engineer to record a *count* where the register admits only
+      `Bounded`/`Unbounded`; `try_exists` in the notes scan, because `exists`
+      answers `false` for `ENOTDIR` as well as for a genuinely absent
+      directory, so a checkout whose notes were merely unreadable would be read
+      as "no notes"; `declares_marker` extracted as a pure predicate with a
+      three-shape control over it; trailing-punctuation tolerance in
+      `is_citation`, with a `punctuated_citations_are_accepted` case for comma,
+      full stop and semicolon; the `Block` verb prefix in `AGGREGATION_STATES`
+      and the two pinned messages it feeds, because `"it must Blocked"` is
+      ungrammatical beside the already-verbal `Ratify` and `Amend`; and the
+      round's one `major`, ADR 004's worked example, where the register read
+      `Enumerated` while the prose beneath said the state was unnamed — the
+      illustration now names `LineMode` as its single subject and puts `bool
+      in_table` explicitly out of scope, in the `Not a named type` /
+      `Not resolved` terms the status register already defines. The three
+      declines are `docs/roadmap.md` (tick 1.1.3 — reverses D31, whose reading
+      is EP-M5's own bar), the ADR date's full stop (the style guide writes it,
+      and three of four ADRs carry it), and the developers-guide heading number
+      (that guide has no numbered headings). Recorded as D32.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
       done twice over: first at `26da23f` after the post-fix round, then again
       at `dd5b37c` — the tree D30 delivers — where all seven gates pass
@@ -709,7 +734,11 @@ outcome, and a reviewer should approve it on that understanding.
       repair — all seven gates exit 0, `make test` at 96/96 — over the
       unchanged Rust diff, and the whole round is committed as `03985e8`. A
       fifth CodeRabbit pass over that commit is what EP-M5 now waits on, and
-      its bar is zero findings.
+      its bar is zero findings. **That pass has since returned**, and it
+      returned ten — so the bar is not met, and this item stays unticked. The
+      eight findings it did not decline are actioned below and gated; what
+      remains is one further pass over the commit that carries them, which is
+      the only round that can tick this item.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -744,6 +773,36 @@ make test-workflow-contracts      exit 0   6 passed
 
 `make lint`'s Whitaker leg was present and last in both runs, which is what
 makes the target's exit status its evidence rather than the Clippy leg's.
+
+The same set re-run at the revision D32 delivers, after round five's eight
+adopted findings. Its first attempt went **red on two gates**, and the way it
+failed is worth recording: `make check-fmt` aborted at its rustfmt step, so its
+`mdtablefix --check` step **never executed** and the gate's log showed one
+defect where there were two. Fixing only what the log named would have made the
+gate fail again on a second cause it had never reached. `make lint` failed
+likewise at its clippy step and never reached Whitaker. Both unreached legs
+were probed separately — `mdtablefix --check` failing on a prose reflow this
+revision had just written, `whitaker --all` passing in isolation — so the
+repair was scoped by evidence rather than by guesswork. `make test` counts 99
+here, three higher than the `dd5b37c` run: the round adds exactly one control,
+`punctuated_citations_are_accepted`, and its three `#[case]`s are the three
+tests. The `declares_marker` finding added no test — it extracted a predicate
+that three existing controls now call directly — and two tests were rewritten
+in place rather than added.
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy clean; whitaker clean
+make test                         exit 0   99 tests run: 99 passed, 0 skipped; 1 doctest
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 dependencies scanned, no advisories
+make test-workflow-contracts      exit 0   6 passed
+```
+
+Each gate's log is at
+`/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`, run
+sequentially one gate at a time, with an `.out.exit` sidecar per gate.
 
 Each gate's log is at
 `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`.
@@ -1698,6 +1757,48 @@ design.
   review is a claim like any other and needs the primary evidence checked
   against it, which is how D31's subject one was found to have been
   half-recorded and D30's `major`/`minor` pattern found not to generalize.
+
+- D32: **The fifth CodeRabbit pass returned ten findings, and the round is the
+  first scored on a frozen revision.** The four previous rounds could not be
+  scored: two commits landed while the review was reading the branch, so the
+  findings described a tree that no longer existed by the time they arrived.
+  This pass ran with `git status` empty before and after it and `HEAD` at
+  `253194b` both times, which is the strongest freeze evidence available — the
+  NDJSON `review_context` pins the branch, the base branch and the working
+  directory, but carries no commit SHA. **Eight of the ten were adopted and
+  three declined.** Adopted: the template's `metrics-cardinality` bullet (a
+  count, where the register admits only `Bounded`/`Unbounded`); `try_exists` in
+  the notes scan; the `declares_marker` extraction with its three-shape
+  control; trailing-punctuation tolerance in `is_citation`, with a new
+  `punctuated_citations_are_accepted` case for each of comma, full stop and
+  semicolon; the `registers.rs` grammar fix together with the `Block` verb
+  prefix in `AGGREGATION_STATES` and the two pinned messages it feeds; and the
+  `major` on ADR 004's worked example. The count is eight adopted rather than
+  seven because one finding carried two unrelated halves, and the second half
+  was sound: `"it must Blocked"` is ungrammatical, and `Ratify` and `Amend`
+  beside it are already verbs. Both halves are applied. **Declined one**
+  (`docs/roadmap.md`, tick 1.1.3): the finding reverses D31, which adopted
+  round 4's opposite finding for the same line. Both cannot be satisfied. D31's
+  reading is the one EP-M5 states — the tick waits on a zero-finding review —
+  and this pass returned ten findings, so the bar is not met. **Declined two**
+  (`docs/adr-004-…md`, drop the full stop from the date): falsified by
+  measurement. The style guide's own ADR template writes `YYYY-MM-DD.` *with*
+  the stop, and three of the repository's four ADRs carry it (`adr-001`,
+  `adr-002`, `adr-004`); the one that does not, `adr-003`, is also the one
+  whose status line omits its own full stop. The plan's D31 entry already
+  records this exact finding as raised and falsified in round 4. **Declined
+  three** (`docs/developers-guide.md`, number the heading): falsified — that
+  guide has no numbered headings at all, so there is no convention for the
+  finding to follow. The round's remaining finding (`docs/contents.md`,
+  reference-style links) is falsified twice: `markdownlint` reports zero errors
+  on the file because MD013 exempts a line with no whitespace beyond the limit,
+  and the style guide says "Prefer inline links using `[text](url)`".
+  Date/Author: 2026-09-26, implementing agent, actioning the review the
+  scrutineer returned after D31. The ten findings carry three declines across
+  three distinct subjects, and two of the three are conventions the repository
+  does not use rather than defects in the work — the style guide writes the
+  date's full stop itself, and `markdownlint` reports no error on the file the
+  third asks to rewrap.
 
 - Observation: **a control written against a token-list predicate can be
   defeated by the predicate's own breadth, and only a Red replay catches it.**
