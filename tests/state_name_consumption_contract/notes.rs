@@ -21,6 +21,20 @@ const NOTES_DIR: &str = "docs/validation-notes";
 /// The marker a note declares to opt into the `StateName` contract.
 pub(crate) const MARKER: &str = "<!-- state-name-note -->";
 
+/// Whether a note's text *declares* the marker, as opposed to mentioning it.
+///
+/// The marker must be a line of its own, not a substring of prose. This
+/// directory's own `README.md` documents the marker inside a code span, and a
+/// substring test would read the README as a note and then reject it for
+/// lacking a note register.
+///
+/// A pure function of the text, so the rule can be tested against all three
+/// shapes it must tell apart — a declared marker, a note that declares some
+/// other contract's marker, and a marker merely mentioned — without a file
+/// for each. `read_marked_note` is the caller, and the scan scenarios supply
+/// the end-to-end evidence.
+pub(crate) fn declares_marker(text: &str) -> bool { text.lines().any(|line| line.trim() == MARKER) }
+
 /// A note read from disk: its file name and its complete text.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct CommittedNote {
@@ -52,7 +66,18 @@ pub(crate) struct CommittedNote {
 /// one level down.
 pub(crate) fn committed_notes(root: &Utf8Path) -> Result<Vec<CommittedNote>, String> {
     let directory = root.join(NOTES_DIR);
-    if !directory.exists() {
+    // `try_exists` rather than `exists`, because the two differ exactly where
+    // this function must not be silent. `exists()` answers "false" both for a
+    // path that is genuinely absent and for one that cannot be inspected at
+    // all — a component of the path being a regular file yields `ENOTDIR`, and
+    // a permission denial yields `EACCES`. Reading the second as an absent
+    // directory would return "no notes" for a checkout whose notes were merely
+    // unreadable, which is the silent skip this function's own doc comment
+    // exists to refuse, arrived at one step earlier.
+    if !directory
+        .try_exists()
+        .map_err(|error| format!("{directory}: the notes directory cannot be inspected: {error}"))?
+    {
         return Ok(Vec::new());
     }
     let entries = directory
@@ -88,10 +113,9 @@ fn has_markdown_extension(path: &Utf8Path) -> bool {
 
 /// Reads one file, returning it only when it declares the marker.
 ///
-/// The marker must be a line of its own, not a substring of prose. This
-/// directory's own `README.md` documents the marker inside a code span, and a
-/// substring test would read the README as a note and then reject it for lacking
-/// a note register.
+/// The marker rule itself lives in `declares_marker`, so that it can be tested
+/// directly against the three shapes it separates; this function is the one
+/// caller, and adds the read.
 ///
 /// The read failure travels as an error rather than as `None`, because `None`
 /// means "this file is not a `StateName` note" and a failed read is not that.
@@ -106,7 +130,7 @@ fn has_markdown_extension(path: &Utf8Path) -> bool {
 pub(crate) fn read_marked_note(path: &Utf8Path) -> Result<Option<CommittedNote>, String> {
     let text = fs::read_to_string(path)
         .map_err(|error| format!("{path}: the note cannot be read: {error}"))?;
-    if !text.lines().any(|line| line.trim() == MARKER) {
+    if !declares_marker(&text) {
         return Ok(None);
     }
     let Some(file_name) = path.file_name().map(str::to_owned) else {

@@ -27,30 +27,53 @@ use super::{
 /// directory, so a note belonging to roadmap task 1.2.3 cannot fail this
 /// suite's checks by arriving.
 ///
+/// The three shapes are asserted against `declares_marker` directly, one case
+/// each: a note that declares the marker, a note that declares another
+/// contract's, and a mention of the marker inside a code span. The first two
+/// are the fixture and the benchmark note; the third is built here rather than
+/// read from `docs/validation-notes/README.md`, because the rule is a property
+/// of the text and a control that read the live README would fail for a reason
+/// that is not this rule — the file being renamed, or moved.
+///
+/// The live directory is still scanned. That is the end-to-end half: it shows
+/// the rule reaches the real `README.md`, which documents the marker in a code
+/// span, without that file being read as a note.
+///
 /// The assertions return through the error channel rather than panicking, so
 /// that every way this control can fail names the artefact it read.
 #[test]
 fn unmarked_notes_are_ignored() -> Result<(), String> {
-    let unmarked = note_rows(&state_name_note().replace(notes::MARKER, ""))
-        .map_err(|error| error.to_string())?;
-    if unmarked.len() != 4 {
-        return Err(format!(
-            "the note without its marker no longer parses as a four-row table; it yields {} rows. \
-             Repair: keep the fixture note well-formed so the control isolates the marker.",
-            unmarked.len()
-        ));
-    }
-    if benchmark_note().contains(notes::MARKER) {
+    let declared = state_name_note();
+    if !notes::declares_marker(&declared) {
         return Err(
-            "the benchmark note carries the StateName marker, so the control cannot show that an \
-             unmarked note is ignored."
+            "the fixture note no longer declares the marker, so this control cannot show that a \
+             note declaring it is read."
                 .to_owned(),
         );
     }
-    // `docs/validation-notes/README.md` *mentions* the marker inside a code
-    // span. A scan reading the marker as a substring would treat the README as
-    // a note and then reject it for carrying no note register; a scan reading
-    // it as a line of its own does not.
+    let other_contract = benchmark_note();
+    if notes::declares_marker(&other_contract) {
+        return Err(
+            "the benchmark note declares the StateName marker, so it belongs to this contract as \
+             well as its own and the control cannot show that an unmarked note is ignored."
+                .to_owned(),
+        );
+    }
+    // A code span mentioning the marker, worded as `docs/validation-notes/README.md`
+    // words it. A substring test reads this as a declaration; a rule matching a
+    // line of its own does not.
+    let mentioned = format!(
+        "The marker `{}` is what tells the contract this file is a note.\n",
+        notes::MARKER
+    );
+    if notes::declares_marker(&mentioned) {
+        return Err(
+            "a code-span mention of the marker was read as a declaration. A scan matching the \
+             marker as a substring would treat any prose about it as a note and then reject it \
+             for carrying no note register."
+                .to_owned(),
+        );
+    }
     let committed = committed_notes(&workspace_root())?;
     if committed.iter().any(|note| note.file_name == "README.md") {
         return Err(

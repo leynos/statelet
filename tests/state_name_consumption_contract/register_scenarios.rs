@@ -126,7 +126,7 @@ fn aggregation_register_rejects_an_empty_block() {
 /// Covers each reachable state of the note multiset exactly once, and to the
 /// right outcome.
 #[rstest]
-#[case::no_admissible_note("None", "n/a", "Blocked")]
+#[case::no_admissible_note("None", "n/a", "Block")]
 #[case::admissible_and_none_insufficient("One or more", "No", "Ratify")]
 #[case::admissible_and_some_insufficient("One or more", "Yes", "Amend")]
 fn aggregation_register_is_total(
@@ -162,8 +162,8 @@ fn aggregation_register_rejects_an_outcome_that_does_not_match() {
         check_aggregation_total(&rows),
         Err(
             "docs/adr-004-state-name-consumption-evidence.md: none contributing notes with any \
-             insufficient n/a yields \"Ratify the current return type\" where it must Blocked. \
-             Repair: a register that does not Blocked there is not a decision procedure."
+             insufficient n/a yields \"Ratify the current return type\" where it must Block. \
+             Repair: a register that does not Block there is not a decision procedure."
                 .to_owned()
         )
     );
@@ -180,7 +180,7 @@ fn aggregation_register_rejects_a_missing_state() {
         Err(
             "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
              cover none contributing notes with any insufficient n/a. Repair: add that row; it \
-             must Blocked."
+             must Block."
                 .to_owned()
         )
     );

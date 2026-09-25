@@ -359,6 +359,33 @@ fn a_stated_absence_of_consumers_is_usable(#[case] evidence: &str) -> Result<(),
     Ok(())
 }
 
+/// Accepts a citation wearing the punctuation that closed its clause.
+///
+/// A citation ends the clause that cites it, so it arrives with whatever mark
+/// ended that clause. ADR 004's own worked example writes
+/// "`mdtablefix@abc1234:src/process.rs`, `LineMode`", which is the comma case
+/// below: an engineer copying the shape the document teaches writes one, and a
+/// citation that ends its cell wears a full stop or a semicolon instead. All
+/// three name the same revision, so a check that refused them would refuse the
+/// shape the document teaches.
+#[rstest]
+#[case::comma("`mdtablefix@abc1234:src/process.rs`, LineMode")]
+#[case::period("`mdtablefix@abc1234:src/process.rs`. Observed in ProcessBuffer.")]
+#[case::semicolon("`mdtablefix@abc1234:src/process.rs`; three names")]
+fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), String> {
+    let rows = live_status()?;
+    let note = note_with_rows(&[
+        &format!("| state-display-name | Enumerated | {evidence} |"),
+        IDENTIFIER_NEED_ROW,
+        METRICS_CARDINALITY_ROW,
+        TRACING_USE_ROW,
+    ]);
+    let cells = note_rows(&note).map_err(|error| error.to_string())?;
+    check_note_cells(&rows, &cells)?;
+    assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
+    Ok(())
+}
+
 /// Accepts the fixture note as the suite's accepting witness.
 #[test]
 fn committed_state_name_note_is_usable() -> Result<(), String> {
