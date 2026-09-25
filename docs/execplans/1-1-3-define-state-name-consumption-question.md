@@ -748,6 +748,21 @@ makes the target's exit status its evidence rather than the Clippy leg's.
 Each gate's log is at
 `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`.
 
+All eight sidecars read `EXIT=0` at `76601e8`. The three Markdown gates were
+re-run after this document's last edit rather than being carried over: an
+earlier attempt ran `make fmt`/`make check-fmt`/`make markdownlint` with output
+redirected to scratch filenames of its own, which left the canonical paths
+holding a `check-fmt` from before the rewrite, a `markdownlint` `.exit` still
+reading `EXIT=2` from the red attempt, and a five-day-old `spelling` log with
+no sidecar at all. The gates had passed; the *evidence* had not been written
+where the next reader would look for it, which is a different failure and one
+that a green result cannot detect. The five gates not re-run were checked
+against the plan document instead: no Rust source references `docs/execplans/`,
+and no test `include_str!`s it, so `lint`, `test`, `audit` and
+`test-workflow-contracts` cannot read it, and `nixie` — which does visit every
+Markdown file — was re-run to be certain rather than to rely on the file
+holding no Mermaid block.
+
 Timestamps are added as each item completes.
 
 ## Surprises & discoveries
