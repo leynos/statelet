@@ -96,7 +96,7 @@ each part of the contract alike.
 The contract reads ADR 004, the template, `docs/design.md`, `docs/roadmap.md`,
 and `docs/adr-002-transition-boundary-scope.md` with `include_str!` and parses
 them. Four edits break it by design, and each reports where to repair the
-document rather than what the Rust expected:
+document rather than what Rust expects:
 
 - Changing a register's field names, statuses, admissibility flags, or
   contributions. Both the blocking set and the verdict are read from the
