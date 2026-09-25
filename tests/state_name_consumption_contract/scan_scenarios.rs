@@ -90,12 +90,11 @@ fn unmarked_notes_are_ignored() -> Result<(), String> {
 ///
 /// `INV-FILLED`'s third control. The scan's other controls all read a note that
 /// *is* readable, so without this one the module's doc comment — that a failed
-/// read is an error and never `None` — is an unchecked claim. The entry passed
-/// here is a directory, which every filesystem this repository targets refuses
-/// to read as a file.
-///
-/// The path is the fixture's own directory, so the array of argument types a
-/// successful read would require is discarded rather than marshalled.
+/// read is an error and never `None` — is an unchecked claim. The control turns
+/// on the path being an existing directory, which every filesystem this
+/// repository targets refuses to read as a file; that it is the fixture's own
+/// directory is incidental, and chosen so the control cannot pass vacuously
+/// because the path is simply absent.
 #[test]
 fn unreadable_entries_are_an_error_not_a_skip() -> Result<(), String> {
     let directory = workspace_root().join("docs/validation-notes");

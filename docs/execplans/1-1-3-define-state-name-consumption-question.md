@@ -685,6 +685,19 @@ outcome, and a reviewer should approve it on that understanding.
       second entry recording that `make spelling` had been skipping 1258 lines
       of this plan — including the `-ise` spelling the gate caught only after
       that span was closed.
+- [x] CodeRabbit pass over `03985e8` — two findings, both adopted, and the
+      round this checklist had never recorded. Both subjects are in the tree:
+      the `PROPERTIES` doc comment, which said "the four properties ADR 004
+      admits" over an array holding five tokens, now says why the fifth exists;
+      and this plan's ignore-range figures, which cited a next fence, a skipped
+      range and a line count that disagreed, because the first draft was
+      measured in an intermediate uncommitted state no checkout reproduces.
+      Re-measured at `b7adf35`, the span runs from line 853 to line 2111, so
+      1258 lines were skipped rather than 1348, and the entry now names the
+      revision its figures describe. Actioned in `253194b`. Recorded here after
+      the seventh pass prompted a read of the canonical logs; the round's
+      substance is otherwise already in `Surprises & discoveries` as the
+      ignore-range entry.
 - [x] CodeRabbit review six — four findings in three subjects, returned
       2026-09-26 over `c9fc559`, the commit review five's actions produced.
       The freeze held again (`HEAD` and an empty `git status` identical before
@@ -706,12 +719,32 @@ outcome, and a reviewer should approve it on that understanding.
       Recorded as D33: a review's *arithmetic* is a claim like any other, and
       the useful half of the finding was the pointer to the paragraph, not the
       replacement text. No `minor` here touched code.
+- [x] CodeRabbit review seven — seven findings returned 2026-09-26 over
+      `dbac7d0`, the commit review six's corrections produced. The freeze held
+      for the third pass running. Four adopted: three doc comments in the
+      contract's children — the gate-table fragment unit is a roadmap *title*
+      rather than a line, because `task_records` folds a title across its
+      lines; `anchor_scenarios.rs` no longer describes `TEMPLATE` as awaiting a
+      substitution that happened long ago; and `scan_scenarios.rs` drops a
+      sentence about "argument types" that described an idea the control no
+      longer contains — plus the arithmetic finding, actioned as D32's
+      correction. Three declined: the developers-guide heading number and
+      `docs/contents.md`'s links, both of which review five had already
+      declined and which return here as recurrence rather than as new
+      information, and the pair's second report, which asks for figures
+      matching neither the log nor their own sum. The two count findings both
+      aimed at D32's arithmetic and neither proposed figure was correct; the
+      log gives ten findings, six adopted and four declined. **Two defects
+      neither finding raised were found while checking that count**: D32
+      attributed the ADR-date finding to a round whose log does not contain it,
+      and this checklist had never recorded the two-finding pass over
+      `03985e8`. Recorded as D34.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
       strongest freeze evidence the tool offers (its `review_context` pins the
-      branch and directory but no commit SHA). Eight adopted and three
-      declined. The eight: the template's `metrics-cardinality` bullet, which
+      branch and directory but no commit SHA). Six adopted and four declined.
+      The six: the template's `metrics-cardinality` bullet, which
       told an engineer to record a *count* where the register admits only
       `Bounded`/`Unbounded`; `try_exists` in the notes scan, because `exists`
       answers `false` for `ENOTDIR` as well as for a genuinely absent
@@ -726,11 +759,16 @@ outcome, and a reviewer should approve it on that understanding.
       `Enumerated` while the prose beneath said the state was unnamed — the
       illustration now names `LineMode` as its single subject and puts `bool
       in_table` explicitly out of scope, in the `Not a named type` /
-      `Not resolved` terms the status register already defines. The three
+      `Not resolved` terms the status register already defines. The four
       declines are `docs/roadmap.md` (tick 1.1.3 — reverses D31, whose reading
       is EP-M5's own bar), the ADR date's full stop (the style guide writes it,
-      and three of four ADRs carry it), and the developers-guide heading number
-      (that guide has no numbered headings). Recorded as D32.
+      and three of four ADRs carry it), the developers-guide heading number
+      (that guide's headings are unnumbered, as are sixteen of the twenty-two
+      documents in `docs/`), and `docs/contents.md`'s execution-plan links
+      (`markdownlint` reports zero errors on them, and the style guide prefers
+      inline links). The last two are **repeats**: the heading number returns
+      in the next pass, and the date's stop had been falsified in the post-fix
+      round. Recorded as D32.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
       done twice over: first at `26da23f` after the post-fix round, then again
       at `dd5b37c` — the tree D30 delivers — where all seven gates pass
@@ -757,7 +795,7 @@ outcome, and a reviewer should approve it on that understanding.
       fifth CodeRabbit pass over that commit is what EP-M5 now waits on, and
       its bar is zero findings. **That pass has since returned**, and it
       returned ten — so the bar is not met, and this item stays unticked. The
-      eight findings it did not decline are actioned below and gated; what
+      six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
       the only round that can tick this item.
 
@@ -795,7 +833,7 @@ make test-workflow-contracts      exit 0   6 passed
 `make lint`'s Whitaker leg was present and last in both runs, which is what
 makes the target's exit status its evidence rather than the Clippy leg's.
 
-The same set re-run at the revision D32 delivers, after round five's eight
+The same set re-run at the revision D32 delivers, after round five's six
 adopted findings. Its first attempt went **red on two gates**, and the way it
 failed is worth recording: `make check-fmt` aborted at its rustfmt step, so its
 `mdtablefix --check` step **never executed** and the gate's log showed one
@@ -1786,40 +1824,53 @@ design.
   This pass ran with `git status` empty before and after it and `HEAD` at
   `253194b` both times, which is the strongest freeze evidence available — the
   NDJSON `review_context` pins the branch, the base branch and the working
-  directory, but carries no commit SHA. **Eight of the ten were adopted and
-  three declined.** Adopted: the template's `metrics-cardinality` bullet (a
-  count, where the register admits only `Bounded`/`Unbounded`); `try_exists` in
-  the notes scan; the `declares_marker` extraction with its three-shape
-  control; trailing-punctuation tolerance in `is_citation`, with a new
+  directory, but carries no commit SHA. **Six of the ten were adopted and four
+  declined.** Adopted: the template's `metrics-cardinality` bullet (a count,
+  where the register admits only `Bounded`/`Unbounded`); `try_exists` in the
+  notes scan; the `declares_marker` extraction with its three-shape control;
+  trailing-punctuation tolerance in `is_citation`, with a new
   `punctuated_citations_are_accepted` case for each of comma, full stop and
   semicolon; the `registers.rs` grammar fix together with the `Block` verb
   prefix in `AGGREGATION_STATES` and the two pinned messages it feeds; and the
-  `major` on ADR 004's worked example. The count is eight adopted rather than
-  seven because one finding carried two unrelated halves, and the second half
-  was sound: `"it must Blocked"` is ungrammatical, and `Ratify` and `Amend`
-  beside it are already verbs. Both halves are applied. **Declined one**
-  (`docs/roadmap.md`, tick 1.1.3): the finding reverses D31, which adopted
-  round 4's opposite finding for the same line. Both cannot be satisfied. D31's
-  reading is the one EP-M5 states — the tick waits on a zero-finding review —
-  and this pass returned ten findings, so the bar is not met. **Declined two**
-  (`docs/adr-004-…md`, drop the full stop from the date): falsified by
-  measurement. The style guide's own ADR template writes `YYYY-MM-DD.` *with*
-  the stop, and three of the repository's four ADRs carry it (`adr-001`,
-  `adr-002`, `adr-004`); the one that does not, `adr-003`, is also the one
-  whose status line omits its own full stop. The plan's D31 entry already
-  records this exact finding as raised and falsified in round 4. **Declined
+  `major` on ADR 004's worked example. That finding carried two unrelated
+  halves, and the second half was sound: `"it must Blocked"` is ungrammatical,
+  and `Ratify` and `Amend` beside it are already verbs. Both halves are
+  applied. **Declined one** (`docs/roadmap.md`, tick 1.1.3): the finding
+  reverses D31, which adopted round 4's opposite finding for the same line.
+  Both cannot be satisfied. D31's reading is the one EP-M5 states — the tick
+  waits on a zero-finding review — and this pass returned ten findings, so the
+  bar is not met. **Declined two** (`docs/adr-004-…md`, drop the full stop from
+  the date): falsified by measurement. The style guide's own ADR template writes
+  `YYYY-MM-DD.` *with* the stop, and three of the repository's four ADRs carry
+  it (`adr-001`, `adr-002`, `adr-004`); the one that does not, `adr-003`, is
+  also the one whose status line omits its own full stop. The same finding had
+  already been raised and falsified once: it is D28's second falsification,
+  from the post-fix round. It is *not* one of round four's — that round's log
+  (`/tmp/coderabbit4-….out`, fourteen findings, all enumerated in D31) contains
+  no date finding at all, so an earlier draft of this entry that attributed it
+  there was itself the kind of unchecked claim this entry is about. **Declined
   three** (`docs/developers-guide.md`, number the heading): falsified — that
   guide has no numbered headings at all, so there is no convention for the
-  finding to follow. The round's remaining finding (`docs/contents.md`,
-  reference-style links) is falsified twice: `markdownlint` reports zero errors
-  on the file because MD013 exempts a line with no whitespace beyond the limit,
-  and the style guide says "Prefer inline links using `[text](url)`".
-  Date/Author: 2026-09-26, implementing agent, actioning the review the
-  scrutineer returned after D31. The ten findings carry three declines across
-  three distinct subjects, and two of the three are conventions the repository
-  does not use rather than defects in the work — the style guide writes the
-  date's full stop itself, and `markdownlint` reports no error on the file the
-  third asks to rewrap.
+  finding to follow. The style guide does say "Use numbered sections for
+  long-form technical documents", but that guide's own headings are unnumbered,
+  and sixteen of the twenty-two documents in `docs/` are likewise, so the
+  finding asks one of the majority to adopt a convention most of its peers do
+  not use. **Declined four** (`docs/contents.md`, reference-style links):
+  falsified twice. `markdownlint` reports zero errors on the file because MD013
+  exempts a line with no whitespace beyond the limit, and the style guide says
+  "Prefer inline links using `[text](url)`". Date/Author: 2026-09-26,
+  implementing agent, actioning the review the scrutineer returned after D31.
+  The ten findings carry four declines across four distinct subjects, and each
+  is a convention the repository does not use rather than a defect in the work
+  — the date's full stop is the style guide's own, the guide's headings follow
+  the sixteen of `docs/`'s twenty-two documents that are unnumbered, and
+  `markdownlint` reports no error on the file the fourth asks to rewrap. Two of
+  the four are **repeats of already-settled subjects**: the heading number
+  returns in the next pass, and the date's full stop had been falsified in the
+  post-fix round. Their reappearance is evidence about what the reviewer
+  consistently expects rather than about the branch, and recorded here so that
+  a later pass raising them again is read as recurrence rather than as new
+  information.
 
 - D33: **The sixth pass returned four findings in three subjects, all accepted,
   and all three are stale figures in this plan rather than defects in the
@@ -1901,6 +1952,69 @@ design.
   about, repeated in the record of it. Date/Author: 2026-09-25, implementing
   agent, on the gate run D31's fourth review round required.
 
+- D34: **The seventh pass returned seven findings over `dbac7d0`, four adopted
+  and three declined, and both of the round's proposed figures were wrong.**
+  The freeze held (`HEAD` unchanged and `git status` empty before and after),
+  which makes this the third scored pass. Four findings were accepted. Three
+  are doc comments in the contract's children: `fixtures.rs` said each gate
+  fragment "resolves to exactly one line of `docs/roadmap.md`" where
+  `task_records` folds a title across the lines it occupies, so the unit is a
+  *title* and not a line; `anchor_scenarios.rs` described `TEMPLATE` as
+  something "Step 6 replaces with the `include_str!`", a note about this plan's
+  own construction that the module should not carry now the substitution has
+  long since happened; and `scan_scenarios.rs` justified its directory-path
+  control with a sentence about "the array of argument types a successful read
+  would require" — vestigial prose describing an idea that appears nowhere in
+  the control, which turns on the path being an unreadable directory and
+  nothing else. The fourth is the pair's arithmetic finding, adopted in the
+  form that asks the total to equal the dispositions, and actioned as D32's
+  correction below. Three were declined: `docs/developers-guide.md`'s heading
+  number (that guide's headings are unnumbered, as sixteen of `docs/`'s
+  twenty-two documents are), `docs/contents.md`'s reference-style links
+  (`markdownlint` reports zero errors on the file, and the style guide prefers
+  inline links), and the same pair's second report, which asks for the figures
+  "eleven findings, seven adopted, three declined, one separately falsified" —
+  a count matching neither the log nor its own sum. The log settles the
+  arithmetic at ten findings for the *fifth* pass, six adopted and four
+  declined. **Two further defects were found while checking it, neither raised
+  by the review.** First, D32 attributed the ADR-date finding to "the plan's
+  D31 entry … in round 4", but round four's log contains fourteen findings and
+  no date finding among them; the finding is D28's, from the sixteen-finding
+  post-fix round. An attribution is a claim like any other, and this one cited
+  a record that does not say what it was said to say. Second, the Progress
+  checklist was missing a whole round: the two-finding pass over `03985e8`,
+  actioned in `253194b`, whose subjects are the `PROPERTIES` token count and
+  this plan's ignore-range figures. Both are now recorded, and **that round is
+  named by its commit rather than by an ordinal, because the ordinals
+  disagree**: `253194b`'s own message calls it "the fifth pass", while this
+  plan's "review five" is the later ten-finding round that ran *over*
+  `253194b`. A reader citing "the fifth pass" therefore lands on one of two
+  logs depending on which record they trusted, which is how the missing round
+  stayed missing. Naming the revision a pass ran over is unambiguous where an
+  ordinal is not. The lesson is D31's and D33's, applied to *provenance*:
+  reading the log against the entry that claims to summarize it is what
+  surfaced both, and neither would have been found by reading the plan alone.
+  Date/Author: 2026-09-26, implementing agent, actioning the review the
+  scrutineer returned after D33.
+
+- Observation: **a review's *attribution* is a claim like its arithmetic.** The
+  seventh pass's two count findings sent a reader to D32's fifth-pass figures,
+  and correcting them meant checking that entry against
+  `/tmp/coderabbit7-….out` line by line. The log holds ten findings; the entry
+  said "eight … adopted and three declined", which sums to eleven, and the
+  review's own replacement — "eleven … seven adopted, three declined, one
+  separately falsified" — was a third figure matching neither the log nor
+  arithmetic. Behind that, two defects the review never raised: an attribution
+  to round four of a finding round four does not contain, and a Progress
+  checklist missing an entire round. Both were found by reading the canonical
+  logs against the prose that summarizes them. Impact: the same discipline D31
+  and D33 record for review *findings* applies to the plan's *summary* of them,
+  and a summary written from memory of a round drifts exactly as a
+  hand-corrected count does. The remedy is the one already adopted for the
+  reconciliation paragraph — name the primary source, here the log path, so the
+  next reader can check the claim rather than repeating it. Date/Author:
+  2026-09-26, implementing agent, on the seventh review round's count findings.
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -1924,19 +2038,19 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All twenty-four were accounted for;
-the disposition of each follows. The section holds fifty-seven top-level
-entries in all; the other thirty-three are `Decision log` records D1–D33, which
-are decisions rather than observations and are dispositioned in their own
-section. Six observations were recorded during or after the EP-M5 gate runs: a
+the artefacts named in `Conformance basis`. All twenty-five were accounted for;
+the disposition of each follows. The section holds fifty-nine top-level entries
+in all; the other thirty-four are `Decision log` records D1–D34, which are
+decisions rather than observations and are dispositioned in their own section.
+Seven observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
-record-versus-line discovery that closed the third round's `major` subject, and
-the two the fourth and fifth rounds produced. None bears on any upstream
-artefact, and the second review round — recorded as D29 rather than here,
-because its findings are decisions rather than observations — forced one
-upstream correction of its own, to ADR 004's stable-identifier paragraph, which
-is dispositioned below.
+record-versus-line discovery that closed the third round's `major` subject, the
+two the fourth and fifth rounds produced, and the attribution-versus-arithmetic
+finding the seventh round forced. None bears on any upstream artefact, and the
+second review round — recorded as D29 rather than here, because its findings
+are decisions rather than observations — forced one upstream correction of its
+own, to ADR 004's stable-identifier paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
