@@ -104,33 +104,57 @@ pub(crate) fn check_aggregation_vocabulary(
     aggregation: &[AggRow],
 ) -> Result<(), String> {
     for row in aggregation {
-        if !["None", "One or more"].contains(&row.contributing_notes.as_str()) {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: the aggregation register names \
-                 {:?} contributing notes. Repair: use None or One or more.",
-                row.contributing_notes
-            ));
-        }
-        if !["n/a", "No", "Yes"].contains(&row.any_insufficient.as_str()) {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: the aggregation register names \
-                 {:?} for any insufficient. Repair: use n/a, No, or Yes.",
-                row.any_insufficient
-            ));
-        }
-        if row.contributing_notes == "None" && row.any_insufficient != "n/a" {
-            return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: the no-evidence row cannot be \
-                 qualified by {:?}. Repair: use n/a, because no note exists to insufficient it.",
-                row.any_insufficient
-            ));
-        }
+        check_aggregation_row(row)?;
     }
-    if !status
+    check_a_neutral_status_is_reachable(status)
+}
+
+/// Checks one aggregation row's two vocabularies and the one combination they
+/// cannot express.
+///
+/// The third check is not a third vocabulary but a coherence rule between the
+/// first two: `n/a` records that no note exists to be insufficient, so a row
+/// claiming no contributing notes while qualifying them contradicts itself.
+fn check_aggregation_row(row: &AggRow) -> Result<(), String> {
+    if !["None", "One or more"].contains(&row.contributing_notes.as_str()) {
+        return Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register names {:?} \
+             contributing notes. Repair: use None or One or more.",
+            row.contributing_notes
+        ));
+    }
+    if !["n/a", "No", "Yes"].contains(&row.any_insufficient.as_str()) {
+        return Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register names {:?} \
+             for any insufficient. Repair: use n/a, No, or Yes.",
+            row.any_insufficient
+        ));
+    }
+    if row.contributing_notes == "None" && row.any_insufficient != "n/a" {
+        return Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: the no-evidence row cannot be \
+             qualified by {:?}. Repair: use n/a, because no note exists to insufficient it.",
+            row.any_insufficient
+        ));
+    }
+    Ok(())
+}
+
+/// Checks that a verdict is still reachable: that some admissible cell
+/// contributes nothing.
+///
+/// The register needs a neutral status for the verdict to be *about* anything.
+/// The check is deliberately conditional rather than an unconditional demand
+/// for one, because it must reject a register that has lost its neutral status
+/// only where one is also able to overturn the default. A register with no
+/// `Insufficient` row is already rejected by `check_exclusions`, and rejecting
+/// it here as well would report the wrong defect first.
+fn check_a_neutral_status_is_reachable(status: &[StatusRow]) -> Result<(), String> {
+    let neutral = status
         .iter()
-        .any(|row| row.admissible && row.contributes == NOTHING)
-        && status.iter().any(|row| row.contributes == INSUFFICIENT)
-    {
+        .any(|row| row.admissible && row.contributes == NOTHING);
+    let can_overturn = status.iter().any(|row| row.contributes == INSUFFICIENT);
+    if !neutral && can_overturn {
         return Err(
             "docs/adr-004-state-name-consumption-evidence.md: no admissible status contributes \
              nothing, so every admissible note would overturn the default. Repair: the verdict \
