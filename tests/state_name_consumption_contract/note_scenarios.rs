@@ -321,6 +321,44 @@ fn negated_property_claims_do_not_disagree_with_none(#[case] evidence: &str) -> 
     Ok(())
 }
 
+/// Accepts a cell that denies a consumer exists, in either of the two phrasings
+/// the obligation admits.
+///
+/// ADR 004 words the second obligation as naming a consumer "or stat[ing] that
+/// none of them exist", and the template repeats that sentence verbatim, so a
+/// note that follows the document has to write those words. The consumer
+/// predicate scans a token list, and the list once carried only the shorter
+/// "none exist" — which is not a substring of the longer phrase, so the wording
+/// the document prescribed was the one the check refused.
+///
+/// Each case carries the negative phrase *and no consumer token*, because the
+/// predicate is a list scan and either kind of match satisfies it. A case that
+/// named a consumer as well would pass whether or not its own phrase was in the
+/// list — the first draft of this control did exactly that, with "the tracing
+/// subscriber ... none of them exist", and passed with the phrase's token
+/// removed. The absence of every positive token is what makes each case bear on
+/// the wording it is named for, so the two can be checked independently rather
+/// than one covering for the other.
+#[rstest]
+#[case::adr_wording(
+    "the consumers of ADR 004's search set were considered; none of them exist; \
+     `mdtablefix@abc1234:src/process.rs`"
+)]
+#[case::short_wording("no consumer exists in the workspace; `mdtablefix@abc1234:src/process.rs`")]
+fn a_stated_absence_of_consumers_is_usable(#[case] evidence: &str) -> Result<(), String> {
+    let rows = live_status()?;
+    let note = note_with_rows(&[
+        STATE_DISPLAY_NAME_ROW,
+        &format!("| identifier-need | None | {evidence} |"),
+        METRICS_CARDINALITY_ROW,
+        TRACING_USE_ROW,
+    ]);
+    let cells = note_rows(&note).map_err(|error| error.to_string())?;
+    check_note_cells(&rows, &cells)?;
+    assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
+    Ok(())
+}
+
 /// Accepts the fixture note as the suite's accepting witness.
 #[test]
 fn committed_state_name_note_is_usable() -> Result<(), String> {

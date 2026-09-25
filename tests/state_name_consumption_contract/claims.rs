@@ -63,6 +63,13 @@ fn narrative_text(evidence: &str) -> String {
 
 /// Whether a cell names one of the consumers ADR 004's search set lists, or
 /// states that none exist.
+///
+/// The negative phrases cover both halves of the obligation's two phrasings:
+/// the ADR's own wording, "states that none of them exist", and the shorter
+/// forms an engineer is likely to write. "none of them exist" therefore appears
+/// beside "none exist" rather than instead of it — the obligation is on the
+/// *claim*, and a check that accepted only one wording would reject an honest
+/// note for choosing the other.
 pub(crate) fn names_a_consumer(evidence: &str) -> bool {
     let lowered = narrative_text(evidence);
     [
@@ -75,6 +82,7 @@ pub(crate) fn names_a_consumer(evidence: &str) -> bool {
         "model checker",
         "stateright",
         "documentation",
+        "none of them exist",
         "none exist",
         "no consumer",
     ]

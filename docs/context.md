@@ -103,9 +103,12 @@ A transition boundary whose signature does not report domain failure with
 
 ### State name
 
-A stable, low-cost name for a state used in diagnostics, tracing fields, and
-generated documentation. A state name is not required to be the same as `Debug`
-output.
+A low-cost name for a state used in diagnostics, tracing fields, and generated
+documentation. A state name is not required to be the same as `Debug` output.
+Stability across releases is an intended property, not a settled one: whether a
+name suffices or a separate stable identifier is needed is the question roadmap
+task 3.2.1 decides from the validation notes defined in
+[ADR 004](adr-004-state-name-consumption-evidence.md).
 
 ### State identifier
 

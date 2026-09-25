@@ -614,10 +614,12 @@ outcome, and a reviewer should approve it on that understanding.
 - [x] Step 8 — the eight-item sync map is applied and committed as `1e1afd7`.
       Every companion document named in `Conformance basis` now points at
       ADR 004, the template or the notes directory, and every Step 8 gate was
-      verified green before the commit. The roadmap's task 1.1.3 is ticked, and
-      the two crossing guards that could have objected — the success-criterion
-      `contains` check and the exit register's `GATES` list, which does not name
-      1.1.3 — were both checked first.
+      verified green before the commit. The roadmap's task 1.1.3 was ticked by
+      that commit, and the two crossing guards that could have objected — the
+      success-criterion `contains` check and the exit register's `GATES` list,
+      which does not name 1.1.3 — were both checked first. D31 unticked it
+      again: the tick ran one round ahead of EP-M5, whose bar is a zero-finding
+      review, and the fourth round had already returned findings.
 - [x] EP-M4 — companion documentation is coherent and discoverable. Steps 8 and
       9's first run are recorded above; the nine `make lint` findings it
       surfaced are fixed and committed as `5bae2c1`, and the rerun is with
@@ -659,6 +661,30 @@ outcome, and a reviewer should approve it on that understanding.
       by. Recorded as D30. The re-split those fixes forced — `claims.rs` out
       of `policy.rs`, the task grammar out of `parse.rs` into `roadmap.rs` —
       is D30's largest change and answers tolerance 5's 300-line trigger.
+- [x] CodeRabbit review four — fourteen findings in eight distinct subjects
+      returned 2026-09-25, each reported twice at the same location. Four
+      adopted: `names_a_consumer` now recognizes the ADR's own "none of them
+      exist" wording, which it had been rejecting; roadmap task 1.1.3 is
+      **unticked**, because EP-M5 requires a zero-finding review and the task had
+      been ticked one round early; `"what the Rust expected"` is corrected; and
+      the `docs/context.md` glossary entry now records that stability is
+      undecided rather than settled. Four declined, each against a primary
+      document: the `1.1.3` filter of the success criterion (vacuous — the clause
+      occurs in exactly one of 31 records, and D7 binds by title, not number);
+      the `Enumerated` citation-only rejection (a fourth obligation the ADR never
+      states as checked, and one no rule defines); rename support in `design.md`
+      (would pre-empt task 3.2.1, breaching constraint 2); and the future-dated
+      records (a UTC/localtime misreading — the plan timestamps local time).
+      Recorded as D31, along with the `is_negated` extension requested by the
+      same finding as the accepted wording fix and declined on the same
+      evidence. The round's most useful product is not one of its findings:
+      building the Red replay for the accepted `claims.rs` fix exposed that the
+      first draft of the new control was **vacuous**, passing with the token
+      removed because its own evidence also carried positive tokens. It is in
+      `Surprises & discoveries` with the corrected two-case table, beside a
+      second entry recording that `make spelling` had been skipping 1348 lines
+      of this plan — including the `-ise` spelling the gate caught only after
+      that span was closed.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
       done twice over: first at `26da23f` after the post-fix round, then again
       at `dd5b37c` — the tree D30 delivers — where all seven gates pass
@@ -668,7 +694,20 @@ outcome, and a reviewer should approve it on that understanding.
       so EP-M5's stated bar — "a zero-finding independent review" — requires a
       fourth CodeRabbit pass, over the commit that actions them. It is
       deliberately left unticked rather than ticked against a review that has
-      not happened.
+      not happened. The fourth round has since returned fourteen findings in
+      eight subjects; D31 adopts four, declines four against primary documents
+      and the clock, and **unticked the roadmap task** the third round had left
+      ticked one round early. The gate half went **red** on its first run at
+      that revision: `make markdownlint` failed at its `spelling` prerequisite,
+      on an `-ise` spelling this revision had just written, so `nixie`,
+      `audit` and `test-workflow-contracts` were never reached and have no
+      valid evidence there. Chasing that one error found a second, larger
+      defect — a quadruple-backtick span that had made `typos` skip 1348 lines
+      of this plan — so the repair was not the one-word substitution it first
+      appeared, and the gate is what found both. Recorded in
+      `Surprises & discoveries`. The gate half is re-run green after the
+      repair, over the unchanged Rust diff. A fifth pass over that revision is
+      what EP-M5 now waits on.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -686,6 +725,23 @@ make nixie                        exit 0   All diagrams validated successfully
 make audit                        exit 0   45 dependencies scanned, no advisories
 make test-workflow-contracts      exit 0   6 passed
 ```
+
+The same set re-run at the revision D31 delivers, after the gate's first
+attempt went red and the two defects it exposed were repaired. `make test`
+counts one higher than the `dd5b37c` run because D31 added a two-case control:
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy clean; whitaker clean
+make test                         exit 0   96 tests run: 96 passed, 0 skipped
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 dependencies scanned, no advisories
+make test-workflow-contracts      exit 0   6 passed
+```
+
+`make lint`'s Whitaker leg was present and last in both runs, which is what
+makes the target's exit status its evidence rather than the Clippy leg's.
 
 Each gate's log is at
 `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`.
@@ -849,53 +905,60 @@ design.
   Evidence: `make fmt` failed with `MD025/single-title/single-h1` on
   `docs/phase-2-validation-note-template.md`, which embedded a complete note —
   including its `# Validation note: ...` heading — as literal Markdown, and a
-  document may carry only one H1. Impact: the copyable form is fenced as
-  ```` ```markdown ````, which satisfies MD025 and has the incidental virtue of
-  making the copy boundary visible to the reader.
+  document may carry only one H1. Impact: the copyable form is fenced with a
+  `markdown` info string, which satisfies MD025 and has the incidental virtue
+  of making the copy boundary visible to the reader. The illustration is not
+  written as literal fence characters because `typos` strips fenced regions
+  with a non-greedy "three backticks to the next three backticks" ignore
+  pattern, and a span of four backticks naming a fence opens a spurious region
+  that swallows every line up to the next real fence — 1348 of them here,
+  including two spelling errors this change only found by probe. Naming the
+  info string in prose keeps the meaning and leaves the gate able to read the
+  document.
 
 - Observation: a cell recording that no consumer exists is still an observation,
   and it still needs to say where it was made. Evidence: the fixture gave
   `identifier-need` and `tracing-use` prose cells — "subscriber, metrics, model
   checker and generated documentation considered" and "emits
   `transition.state.before`" — and every note-derived assertion failed on the
-  citation check before reaching the property under test. Impact: both cells now
-  carry a `<repo>@<sha>:<path>` citation alongside their prose. ADR 004 requires
-  a citation of every field, including one whose status is `None`, and the
-  requirement is doing its job.
+  citation check before reaching the property under test. Impact: both cells
+  now carry a `<repo>@<sha>:<path>` citation alongside their prose. ADR 004
+  requires a citation of every field, including one whose status is `None`, and
+  the requirement is doing its job.
 
 - Observation: `clippy.toml`'s `allow-expect-in-tests` reaches `#[test]` bodies
   and not the helper functions they call. Evidence: Step 9's first `make lint`
   run failed with nine findings, two of them `expect_used` on `.expect()` calls
   sitting in `fn blocked_by(...) -> Result<Resolution, String>` and
   `fn gate_table_fragment(gate: &str) -> String` — both helper functions called
-  from tests, neither a test itself. The flag is documented as allowing `expect`
-  in tests; its actual scope is the `#[test]`-annotated item. Impact: both
-  helpers now return `Result` and report the parse failure in the caller's error
-  channel, which is also the better behaviour — the failure they would have
-  panicked on is a real answer, and it belongs where the caller can name the
-  fixture it came from. Recorded because the flag's scope is invisible at the
-  call site: a helper that `expect`s compiles, reads as test code, and fails
-  only at the gate.
+  from tests, neither a test itself. The flag is documented as allowing
+  `expect` in tests; its actual scope is the `#[test]`-annotated item. Impact:
+  both helpers now return `Result` and report the parse failure in the caller's
+  error channel, which is also the better behaviour — the failure they would
+  have panicked on is a real answer, and it belongs where the caller can name
+  the fixture it came from. Recorded because the flag's scope is invisible at
+  the call site: a helper that `expect`s compiles, reads as test code, and
+  fails only at the gate.
 
 - Observation: `make lint` runs clippy before Whitaker, so a clippy failure
   leaves the `dylint.toml` exemption entirely unexercised. Evidence: the first
   Step 9 run aborted at clippy with nine errors, and the log contains zero
   matches for `whitaker`, `no_std_fs`, or `dylint` — the exemption added under
   D20 had never been validated by a gate run at any point before Step 9's
-  second attempt. Impact: none for this plan, since the second run exercises it;
-  recorded because it means "`make lint` is green" is *not* evidence that a
+  second attempt. Impact: none for this plan, since the second run exercises
+  it; recorded because it means "`make lint` is green" is *not* evidence that a
   lint exemption works, and the plan's quality criterion assumed it was.
 
 - Observation: an unread note is an unguarded note, and nothing reports it.
   Evidence: the scan selected candidate files with
-  `entry.file_name().ends_with(".md")`, which clippy flagged as a case-sensitive
-  extension comparison. The flagged form is not merely untidy: a note committed
-  as `2.2.1-mdtablefix.MD` would be skipped silently, and no check would notice,
-  because a skipped note produces exactly the same result as no note at all —
-  an empty vector and a passing scan. Impact: the extension is now compared
-  case-insensitively, off the path rather than off the file name's tail.
-  Recorded because the failure mode is silence, which is the one direction the
-  scan's own design makes invisible.
+  `entry.file_name().ends_with(".md")`, which clippy flagged as a
+  case-sensitive extension comparison. The flagged form is not merely untidy: a
+  note committed as `2.2.1-mdtablefix.MD` would be skipped silently, and no
+  check would notice, because a skipped note produces exactly the same result
+  as no note at all — an empty vector and a passing scan. Impact: the extension
+  is now compared case-insensitively, off the path rather than off the file
+  name's tail. Recorded because the failure mode is silence, which is the one
+  direction the scan's own design makes invisible.
 
 - Observation: a negative control can be defeated by the fixture it mutates, and
   the defeat is silent in the same direction as the defect it tests for. Three
@@ -913,10 +976,10 @@ design.
   check before asserting the rejection, and carries two controls proving the
   register still resolves an agreeing note and still blocks on an inadmissible
   cell — so a guard rejecting every multi-decisive note fails, and one reaching
-  the contradiction branch before the admissibility branch also fails.
-  Recorded because the plan's own non-vacuity rule is what caught all three,
-  and because "the control passes" was, in each case, not evidence until the
-  control's precondition had been shown to hold.
+  the contradiction branch before the admissibility branch also fails. Recorded
+  because the plan's own non-vacuity rule is what caught all three, and because
+  "the control passes" was, in each case, not evidence until the control's
+  precondition had been shown to hold.
 
 - Observation: the 400-line cap is not a style preference; it caught a real
   defect in the review. Evidence: the crate root had reached 788 lines against
@@ -939,10 +1002,10 @@ design.
   `names_a_property("no stability requirement was observed")` returned `true`,
   so an honest note recording the property's *absence* was rejected for
   disagreeing with its own status — and the live fixture passes only because
-  its wording ("records no unmet property") happens to avoid all five
-  keywords, which is precisely the euphemism finding 2 wanted written into the
-  rules. Separately, finding 4 (`major`) claimed `dylint.toml`'s
-  `excluded_paths` is unsupported; Whitaker's own source tree carries
+  its wording ("records no unmet property") happens to avoid all five keywords,
+  which is precisely the euphemism finding 2 wanted written into the rules.
+  Separately, finding 4 (`major`) claimed `dylint.toml`'s `excluded_paths` is
+  unsupported; Whitaker's own source tree carries
   `config_deserializes_excluded_paths`, `config_rejects_invalid_excluded_paths`
   and `legacy_config_without_excluded_paths_still_parses`, plus user
   documentation, so the key is supported configuration and the finding is
@@ -969,20 +1032,19 @@ design.
   offending line belonged to the paragraph added in the same commit. Measuring
   rather than guessing was the point here, because the first two explanations
   of the cause were both wrong. The line lengths were `71, 66, 70, 75, 77, 30`;
-  a greedy fill at
-  80 over the same words yields `78, 59, 79, 77, 80, 17`. So the formatter is
-  not narrower than `MD013` — it is exactly as wide, and it pulls words *up*
-  from the short lines rather than breaking any. A paragraph whose lines merely
-  look conventional fails. Impact: none on the document's content; the reflow
-  is whitespace-only and `make check-fmt` is idempotent afterwards. Recorded
-  because the failure is trivial to misattribute in the other direction: since
-  `make fmt` fixes it silently, the temptation is to treat the red as noise.
-  But a docs-only diff that fails `check-fmt` is exactly what "the gates must
-  succeed before a review is requested" exists to stop, and that instruction's
-  warning against handing a reviewer a deterministic failure applies to prose
-  wrapping as much as to a type error. The practical rule: write prose to a
-  single short line per sentence and let `make fmt` set the wrap, rather than
-  choosing a width by hand.
+  a greedy fill at 80 over the same words yields `78, 59, 79, 77, 80, 17`. So
+  the formatter is not narrower than `MD013` — it is exactly as wide, and it
+  pulls words *up* from the short lines rather than breaking any. A paragraph
+  whose lines merely look conventional fails. Impact: none on the document's
+  content; the reflow is whitespace-only and `make check-fmt` is idempotent
+  afterwards. Recorded because the failure is trivial to misattribute in the
+  other direction: since `make fmt` fixes it silently, the temptation is to
+  treat the red as noise. But a docs-only diff that fails `check-fmt` is
+  exactly what "the gates must succeed before a review is requested" exists to
+  stop, and that instruction's warning against handing a reviewer a
+  deterministic failure applies to prose wrapping as much as to a type error.
+  The practical rule: write prose to a single short line per sentence and let
+  `make fmt` set the wrap, rather than choosing a width by hand.
 
 - Observation: a `mdtablefix` probe run with `--diff` alone is **vacuous**,
   because `--diff` does not enable `--wrap`; the rule flags are separate and
@@ -997,9 +1059,9 @@ design.
   as the vacuous controls this plan's `Verification plan` was written to
   prevent — a check that cannot fail for the reason it names — and it was made
   three times in a row against the tool being used to decide whether a gate
-  result was real. The remedy is the same as for the controls:
-  run the probe with the same arguments as the thing being investigated, not
-  with arguments that merely look equivalent.
+  result was real. The remedy is the same as for the controls: run the probe
+  with the same arguments as the thing being investigated, not with arguments
+  that merely look equivalent.
 
 - Observation: both roadmap-bound checks matched raw document lines, so
   **three kinds of prose resolved as if they named a task**. Evidence: a
@@ -1023,12 +1085,11 @@ design.
   modules. Tolerance 5's three named modules are all clear of its 300-line
   trigger, and every module is under AGENTS.md's 400-line cap; the largest is
   `anchor_scenarios.rs` at 392, which the 400-line cap binds and tolerance 5
-  does not. Recorded because the *title-versus-record*
-  distinction is exactly the kind a reader would assume was arbitrary, and the
-  reason it is not is a sentence in the ADR the check is bound to — which is
-  also why the ambiguity control's derived count reads 3 where the old line
-  scan read 15. The old count was not merely larger; it was counting something
-  the ADR never bound.
+  does not. Recorded because the *title-versus-record* distinction is exactly
+  the kind a reader would assume was arbitrary, and the reason it is not is a
+  sentence in the ADR the check is bound to — which is also why the ambiguity
+  control's derived count reads 3 where the old line scan read 15. The old
+  count was not merely larger; it was counting something the ADR never bound.
 
 - D1: Define "validation note" as the record a validation task produces,
   instantiated from the template and committed to `docs/validation-notes/`.
@@ -1269,11 +1330,11 @@ design.
   would mean demanding a fabricated citation, which is the failure D15 already
   removed once from this design. Correcting the prose rather than the code
   keeps the acceptance criterion honest and leaves `INV-FILLED`'s non-vacuity
-  resting on the rejecting controls, where D15 put it. This is a
-  mechanical correction to a prediction, not a change to a requirement or to an
+  resting on the rejecting controls, where D15 put it. This is a mechanical
+  correction to a prediction, not a change to a requirement or to an
   architecture. Date/Author: 2026-09-19, implementing agent. Count corrected
-  from seven to eight by D26, which added
-  `#[case::citation_without_a_path]`; the reasoning above is unaffected.
+  from seven to eight by D26, which added `#[case::citation_without_a_path]`;
+  the reasoning above is unaffected.
 
 - D23: Fixture tables are assembled from row constants, and every control over a
   live document routes through a `mutated()` helper that refuses to apply a
@@ -1284,11 +1345,11 @@ design.
   a note from the rows it wants, rather than excising a phrase from a note that
   was assembled for a different purpose. Both were forced by measurement rather
   than foreseen: `mdtablefix --wrap` moved a line break under three successive
-  needles in a single control. This is a test-internal restructuring. It changes
-  no requirement, no register, no document this plan ships, and no repair
-  message's obligation — the messages the controls assert are the messages the
-  tests carry either way. Date/Author: 2026-09-19, implementing agent, after the
-  Step 7 gate.
+  needles in a single control. This is a test-internal restructuring. It
+  changes no requirement, no register, no document this plan ships, and no
+  repair message's obligation — the messages the controls assert are the
+  messages the tests carry either way. Date/Author: 2026-09-19, implementing
+  agent, after the Step 7 gate.
 
 - D24: The status and aggregation fixtures track the live documents' exact
   spellings, and the note fixtures carry a citation in every evidence cell.
@@ -1308,16 +1369,17 @@ design.
 - D25: The nine `make lint` findings from Step 9's first run are fixed in the
   contract's own source, with no `#[allow]` added and no exemption widened.
   Rationale: the findings were genuine defects of the code that carried them,
-  and two of them named the dangerous direction rather than the untidy one — the
-  case-sensitive extension comparison would have skipped an unread note
+  and two of them named the dangerous direction rather than the untidy one —
+  the case-sensitive extension comparison would have skipped an unread note
   silently, and the two `expect` calls sat in helpers whose failure belongs in
-  the caller's error channel. The `dylint.toml` exemption is unchanged. Recorded
-  because the first `make lint` run is also the first run in which Whitaker
-  executed at all: clippy runs first in `make lint`, so the exemption's
-  behaviour is not merely unvalidated until a clippy-clean run exists — it is
-  *unexecuted*, and an earlier green claim from a partial gate would have been
-  true of a gate that never reached the lint it names. Date/Author: 2026-09-19,
-  implementing agent, after the Step 9 rerun was dispatched.
+  the caller's error channel. The `dylint.toml` exemption is unchanged.
+  Recorded because the first `make lint` run is also the first run in which
+  Whitaker executed at all: clippy runs first in `make lint`, so the
+  exemption's behaviour is not merely unvalidated until a clippy-clean run
+  exists — it is *unexecuted*, and an earlier green claim from a partial gate
+  would have been true of a gate that never reached the lint it names.
+  Date/Author: 2026-09-19, implementing agent, after the Step 9 rerun was
+  dispatched.
 
 - D26: **The first CodeRabbit pass over the contract found nine issues; four
   were blocking, and the fixes are recorded here.** F1/F9 (a live-document
@@ -1334,11 +1396,11 @@ design.
   the suite runs as root. **F4**: `is_citation_shaped` accepted any token
   containing an `@`, while its message promises `<repo>@<sha>:<path>`; the
   predicate now parses the full shape with all three components non-empty, and
-  `#[case::citation_without_a_path]` is the eighth rejection case.
-  **F5/F7**: the crate root had reached 788 lines against AGENTS.md's 400-line
-  cap. It is now 87 lines, with the scenarios in four child modules
-  (`anchor_scenarios.rs` 223, `note_scenarios.rs` 271, `register_scenarios.rs`
-  284, `scan_scenarios.rs` 135). The four classes were chosen so each owns a
+  `#[case::citation_without_a_path]` is the eighth rejection case. **F5/F7**:
+  the crate root had reached 788 lines against AGENTS.md's 400-line cap. It is
+  now 87 lines, with the scenarios in four child modules (`anchor_scenarios.rs`
+  223, `note_scenarios.rs` 271, `register_scenarios.rs` 284,
+  `scan_scenarios.rs` 135). The four classes were chosen so each owns a
   question rather than a slice of the file: what the *template and roadmap*
   say, what a *note* says, what the *register* says, and what the *scan* reads.
   **F6/F8**: `contribution` collapsed two different non-`nothing` contributions
@@ -1347,38 +1409,37 @@ design.
   overturns the default. It now returns the rejection, and
   `contradictory_notes_are_rejected` proves both halves: a register with a
   second decisive field is still a working register when its cells agree, still
-  blocks on an inadmissible cell, and *rejects* when they contradict.
-  Tolerance 5's 300-line trigger was reached twice while fixing these —
-  `policy.rs` at 319 and the root at 788 — and met both times by re-planning
-  the split rather than by tolerating the growth, per D21's precedent. The
-  register-consistency checks (`check_exclusions`, `check_vocabulary`) moved
-  from `policy.rs` to `registers.rs` because both are claims about the
-  *register* rather than about a note read through it, which also answers F6/F8
-  at the right level: the guard against contradiction belongs with the note,
-  and the guard that the register has one power to overturn the default belongs
-  with the register. No requirement, register field, repair-message obligation,
-  or shipped document changed; `docs/repository-layout.md` and
-  `docs/developers-guide.md` were updated because both enumerate the child
-  modules. Date/Author: 2026-09-20, implementing agent, actioning the review the
-  scrutineer returned after D25.
+  blocks on an inadmissible cell, and *rejects* when they contradict. Tolerance
+  5's 300-line trigger was reached twice while fixing these — `policy.rs` at
+  319 and the root at 788 — and met both times by re-planning the split rather
+  than by tolerating the growth, per D21's precedent. The register-consistency
+  checks (`check_exclusions`, `check_vocabulary`) moved from `policy.rs` to
+  `registers.rs` because both are claims about the *register* rather than about
+  a note read through it, which also answers F6/F8 at the right level: the
+  guard against contradiction belongs with the note, and the guard that the
+  register has one power to overturn the default belongs with the register. No
+  requirement, register field, repair-message obligation, or shipped document
+  changed; `docs/repository-layout.md` and `docs/developers-guide.md` were
+  updated because both enumerate the child modules. Date/Author: 2026-09-20,
+  implementing agent, actioning the review the scrutineer returned after D25.
 
 - D27: The EP-M5 gate run failed `make check-fmt` on this plan, and the finding
   is a **prose-wrapping rule rather than a defect**, so the remedy is to state
   the rule rather than to change a requirement. `mdtablefix --wrap` fills prose
   to 80 columns, and this plan's paragraph introducing the traced-items table
-  was hand-wrapped to 77 at its longest line. The gate report named
-  `+4 -4` on that paragraph alone, and the measured line lengths before and
-  after (`71, 66, 70, 75, 77, 30` → `78, 59, 79, 77, 80, 17`) show the
-  formatter pulling words *up* rather than breaking lines down: it is exactly
-  as wide as `MD013`, not narrower, and a paragraph whose lines merely look
-  conventional fails. `make fmt` applied the reflow, and `make check-fmt` was
-  then idempotent on a second run. Rationale for recording it at all: the
-  failure is misattributable in the harmless-looking direction — since
-  `make fmt` repairs it silently, the temptation is to file the red as noise —
-  and the standing instruction requires the deterministic gates to be green
-  before a review is requested, which a docs-only diff does not exempt itself
-  from. Two by-products are recorded under `Surprises & discoveries`: the first
-  two explanations of the cause were both wrong, and three `mdtablefix --diff`
+  was hand-wrapped to 77 at its longest line. The gate report named `+4 -4` on
+  that paragraph alone, and the measured line lengths before and after
+  (`71, 66, 70, 75, 77, 30` → `78, 59, 79, 77, 80, 17`) show the formatter
+  pulling words *up* rather than breaking lines down: it is exactly as wide as
+  `MD013`, not narrower, and a paragraph whose lines merely look conventional
+  fails. `make fmt` applied the reflow, and `make check-fmt` was then
+  idempotent on a second run. Rationale for recording it at all: the failure is
+  misattributable in the harmless-looking direction — since `make fmt` repairs
+  it silently, the temptation is to file the red as noise — and the standing
+  instruction requires the deterministic gates to be green before a review is
+  requested, which a docs-only diff does not exempt itself from. Two
+  by-products are recorded under `Surprises & discoveries`: the first two
+  explanations of the cause were both wrong, and three `mdtablefix --diff`
   probes said "unchanged" for input the gate rejects, because `--diff` does not
   imply `--wrap` and the rule flags must be repeated on the probe. No
   requirement, register, invariant, repair message, or shipped document
@@ -1386,40 +1447,38 @@ design.
   Date/Author: 2026-09-20, implementing agent, after the EP-M5 re-gate.
 
 - D28: The post-fix review round returned sixteen findings, and six of them
-  are **duplicates or falsified**, so the round is recorded as much for what
-  it did not require as for what it did. Four code findings were real: the
+  are **duplicates or falsified**, so the round is recorded as much for what it
+  did not require as for what it did. Four code findings were real: the
   unreachable `cells.is_empty()` guard in `parse.rs` (removed, with the
   `offset` it existed to report, so `row_from_line` is infallible by
   construction and says why); the `names_a_property` false-rejection of an
   honest negative; the `clippy::shadow-reuse` error `make lint` surfaced in
   `is_negated`, which had escaped the review entirely and is the round's one
-  **gate** finding rather than a review finding; and the hard-coded "15" in
-  the ambiguity control, which reintroduced the roadmap-freezing breakage
-  that binding gates by fragment exists to prevent. Six documentation
-  findings were real: the worked example's two uncited cells, the
-  aggregation register's unstated treatment of a rejected note, the third
-  obligation's silence on negation, the two uncited standard-library claims,
-  the template's vague filename guidance, and this plan's own overstated
-  no-write claim. Two pairs contradicted each other and the contradiction
-  was resolved by measurement rather than preference: finding two asked for
-  the classifier's euphemism **to be documented**, finding fifteen asked for
-  the classifier **to be fixed**; a `rustc` probe showed the predicate
-  false-rejects "no stability requirement was observed", so the classifier
-  was fixed and the ADR prose then made to match it. Two findings were
-  falsified against primary sources: `dylint.toml`'s `excluded_paths` is
-  supported configuration with its own test suite in Whitaker's source, not
-  an unsupported key, and the ADR date's trailing full stop reproduces the
-  style guide's own ADR template and both pre-existing accepted ADRs. One
-  finding was partly fabricated: it asked for references on Prometheus and
-  OpenTelemetry claims that ADR 004 never makes — they are in this plan —
-  and the two claims the ADR does make were cited as `[^1]`–`[^3]`.
+  **gate** finding rather than a review finding; and the hard-coded "15" in the
+  ambiguity control, which reintroduced the roadmap-freezing breakage that
+  binding gates by fragment exists to prevent. Six documentation findings were
+  real: the worked example's two uncited cells, the aggregation register's
+  unstated treatment of a rejected note, the third obligation's silence on
+  negation, the two uncited standard-library claims, the template's vague
+  filename guidance, and this plan's own overstated no-write claim. Two pairs
+  contradicted each other and the contradiction was resolved by measurement
+  rather than preference: finding two asked for the classifier's euphemism **to
+  be documented**, finding fifteen asked for the classifier **to be fixed**; a
+  `rustc` probe showed the predicate false-rejects "no stability requirement
+  was observed", so the classifier was fixed and the ADR prose then made to
+  match it. Two findings were falsified against primary sources: `dylint.toml`'s
+  `excluded_paths` is supported configuration with its own test suite in
+  Whitaker's source, not an unsupported key, and the ADR date's trailing full
+  stop reproduces the style guide's own ADR template and both pre-existing
+  accepted ADRs. One finding was partly fabricated: it asked for references on
+  Prometheus and OpenTelemetry claims that ADR 004 never makes — they are in
+  this plan — and the two claims the ADR does make were cited as `[^1]`–`[^3]`.
   No requirement, register field, register row, gate binding, invariant, or
-  repair message changed. Three of the six documentation findings added
-  prose that a *reader* of the contract needs and that no check reads, which
-  is the class of edit most likely to drift; each states a rule the code
-  already enforces rather than a new one. Date/Author: 2026-09-20,
-  implementing agent, actioning the review the scrutineer returned after
-  D27.
+  repair message changed. Three of the six documentation findings added prose
+  that a *reader* of the contract needs and that no check reads, which is the
+  class of edit most likely to drift; each states a rule the code already
+  enforces rather than a new one. Date/Author: 2026-09-20, implementing agent,
+  actioning the review the scrutineer returned after D27.
 
 - D29: The review after D28 returned nine findings in seven distinct
   locations — two locations were each reported twice, by different analysers,
@@ -1439,24 +1498,24 @@ design.
   second-draft bullets, which are a *chronological record* of a draft that did
   say "committed worked example" and whose withdrawal the third-draft bullet
   three entries later records. Rewriting those would destroy the record of what
-  changed and why, which is the same distinction that kept D2 on the page.
-  Also adopted: D2's byte-equality half marked as superseded by
-  D16, in the form D18 already uses, rather than left to read as a live
-  contradiction; the "seven-file contract" instruction updated to the eleven
-  child modules that shipped; Stage B's red-state prediction corrected to match
-  D22, which had corrected the same claim further down the plan but not where
-  it was first made; the notes-directory README's "copy the template file"
-  instruction replaced with the block-and-marker it must copy, since the file's
-  surrounding prose is not part of a note and the two instructions disagreed;
-  and the ADR's stable-identifier paragraph corrected on a **measured**
-  objection — it implied an `as` cast on a fieldless enum yields a stable
-  number, and a probe showed one variant casting to `2`, then `3` after an
-  insertion, then `0` after a reorder, so only explicitly assigned
-  discriminants under a primitive `repr` are durable. One finding was declined:
-  it asked `committed_state_name_notes_are_usable` to aggregate resolutions
-  across the notes it scans, which would fold `INV-AGGREGATE` into `INV-FILLED`
-  and make the scan's outcome depend on how many notes happen to be committed
-  — a property belonging to neither invariant, and one the aggregation register
+  changed and why, which is the same distinction that kept D2 on the page. Also
+  adopted: D2's byte-equality half marked as superseded by D16, in the form D18
+  already uses, rather than left to read as a live contradiction; the
+  "seven-file contract" instruction updated to the eleven child modules that
+  shipped; Stage B's red-state prediction corrected to match D22, which had
+  corrected the same claim further down the plan but not where it was first
+  made; the notes-directory README's "copy the template file" instruction
+  replaced with the block-and-marker it must copy, since the file's surrounding
+  prose is not part of a note and the two instructions disagreed; and the ADR's
+  stable-identifier paragraph corrected on a **measured** objection — it
+  implied an `as` cast on a fieldless enum yields a stable number, and a probe
+  showed one variant casting to `2`, then `3` after an insertion, then `0`
+  after a reorder, so only explicitly assigned discriminants under a primitive
+  `repr` are durable. One finding was declined: it asked
+  `committed_state_name_notes_are_usable` to aggregate resolutions across the
+  notes it scans, which would fold `INV-AGGREGATE` into `INV-FILLED` and make
+  the scan's outcome depend on how many notes happen to be committed — a
+  property belonging to neither invariant, and one the aggregation register
   already covers exhaustively through `aggregation_register_is_total`'s three
   parameterized cases. `INV-FILLED` stays per-note. The round is recorded here
   because the `major` pair is the plan's own prose drifting from the design it
@@ -1482,55 +1541,203 @@ design.
   and the property obligation by citing `src/stability.rs` — reading the
   *citation* as the claim. Both now read `narrative_text`, which filters
   `is_citation` words out first, and two new cases,
-  `consumer_named_only_in_the_citation` and `property_named_only_in_the_citation`,
-  reject exactly that. **Subject three** (`registers.rs`, `major`): the two
-  roadmap-bound checks matched raw document lines, so a fragment naming the
-  "kill gates" phase heading, a task's link text, or one of its sub-bullets
-  resolved as if it named a task. This is the finding the round's Red evidence
-  is about: with the line scan restored, four cases fail — the three new prose
-  controls and the ambiguity count — and the captured diff shows the old check
-  answering `Ok(())` where the message "matches no task" was required, and
-  `matches 15 tasks` where the record count is 3. Both checks now read
-  `task_records`, and the ADR's own wording settles the span: gates bind "by
-  task *title*", Table 4 says "bound to roadmap tasks by title", so a gate
-  fragment is matched against the title while the success criterion — a body
-  bullet — is matched against the record's text. **Subjects four and five**
-  (ADR 004, `major`/`minor` each): the aggregation register's first column was
-  headed `Admissible notes` while the prose beside it counts *contributing*
-  notes, and the Option C rationale claimed "adding a status is a documentation
-  edit" without noting that `fixtures.rs` pins the register row for row. The
-  header is now `Contributing notes`, and the rationale says the register is the
-  semantic source of truth *and* that the fixture moves in the same change, so
-  the edit is a documentation edit rather than an unaccompanied one. The re-split
-  is the round's largest change and belongs here rather than only in the entry
-  that records the trigger: subjects two and three pushed `policy.rs` to 316
-  lines and `parse.rs` to 307, both past tolerance 5's 300-line trigger, so the
-  split was re-planned rather than tolerated — D21's and D26's precedent, twice
-  invoked before and invoked again here. `claims.rs` takes what an evidence
-  cell *says* (`is_citation_shaped`, `names_a_consumer`, `names_a_property`,
-  `narrative_text`) and `policy.rs` keeps what those answers *oblige*; the
-  roadmap's task-record grammar moved out of `parse.rs` into `roadmap.rs`, which
-  is its only consumer, leaving `parse.rs` with the delimited-table syntax its
-  own module doc claims ("one delimited-table syntax function") and no other
-  document's grammar. The contract is thirteen modules; tolerance 5's three —
-  `types.rs`, `parse.rs`, `policy.rs` — are the ones it bounds, and all three
-  are clear of the 300-line trigger, `policy.rs` at 189 and `parse.rs` at 220.
-  No requirement, register
-  field, register row, gate binding, invariant, or repair-message obligation
-  changed; `docs/developers-guide.md`, `docs/repository-layout.md` and the
-  plan's own module enumerations were updated because all three list the child
-  modules. Date/Author: 2026-09-21, implementing agent, actioning the review the
+  `consumer_named_only_in_the_citation` and
+  `property_named_only_in_the_citation`, reject exactly that. **Subject three**
+  (`registers.rs`, `major`): the two roadmap-bound checks matched raw document
+  lines, so a fragment naming the "kill gates" phase heading, a task's link
+  text, or one of its sub-bullets resolved as if it named a task. This is the
+  finding the round's Red evidence is about: with the line scan restored, four
+  cases fail — the three new prose controls and the ambiguity count — and the
+  captured diff shows the old check answering `Ok(())` where the message
+  "matches no task" was required, and `matches 15 tasks` where the record count
+  is 3. Both checks now read `task_records`, and the ADR's own wording settles
+  the span: gates bind "by task *title*", Table 4 says "bound to roadmap tasks
+  by title", so a gate fragment is matched against the title while the success
+  criterion — a body bullet — is matched against the record's text. **Subjects
+  four and five** (ADR 004, `major`/`minor` each): the aggregation register's
+  first column was headed `Admissible notes` while the prose beside it counts
+  *contributing* notes, and the Option C rationale claimed "adding a status is
+  a documentation edit" without noting that `fixtures.rs` pins the register row
+  for row. The header is now `Contributing notes`, and the rationale says the
+  register is the semantic source of truth *and* that the fixture moves in the
+  same change, so the edit is a documentation edit rather than an unaccompanied
+  one. The re-split is the round's largest change and belongs here rather than
+  only in the entry that records the trigger: subjects two and three pushed
+  `policy.rs` to 316 lines and `parse.rs` to 307, both past tolerance 5's
+  300-line trigger, so the split was re-planned rather than tolerated — D21's
+  and D26's precedent, twice invoked before and invoked again here. `claims.rs`
+  takes what an evidence cell *says* (`is_citation_shaped`, `names_a_consumer`,
+  `names_a_property`, `narrative_text`) and `policy.rs` keeps what those
+  answers *oblige*; the roadmap's task-record grammar moved out of `parse.rs`
+  into `roadmap.rs`, which is its only consumer, leaving `parse.rs` with the
+  delimited-table syntax its own module doc claims ("one delimited-table syntax
+  function") and no other document's grammar. The contract is thirteen modules;
+  tolerance 5's three — `types.rs`, `parse.rs`, `policy.rs` — are the ones it
+  bounds, and all three are clear of the 300-line trigger, `policy.rs` at 189
+  and `parse.rs` at 220. No requirement, register field, register row, gate
+  binding, invariant, or repair-message obligation changed;
+  `docs/developers-guide.md`, `docs/repository-layout.md` and the plan's own
+  module enumerations were updated because all three list the child modules.
+  Date/Author: 2026-09-21, implementing agent, actioning the review the
   scrutineer returned after D29.
+
+- D31: **The fourth CodeRabbit pass returned fourteen findings in eight
+  locations, and four of the eight subjects were adopted** — the round reported
+  every one twice, which is the same structural duplication D30 records and is
+  not itself a finding. The pairing is not uniformly `major`/`minor`, though
+  D30's was. Of the eight locations, four carry `major` at both reports
+  (`claims.rs`, `roadmap.rs`, `roadmap.md`, `policy.rs`), one carries `minor`
+  at both (`developers-guide.md`), one is genuinely mixed (`design.md`), and
+  two are reported once only (this plan, `context.md`). The duplication is
+  therefore by *location* rather than by severity, and two reports of one
+  location may agree on severity while disagreeing on scope — which is what
+  subject one below turns on. Unlike D30, this round is recorded mainly for
+  what it *declined*, because three of its eight subjects ask for changes the
+  governing documents do not sanction, and one asks for a guard that cannot
+  change any outcome. **Subject one** (`claims.rs`, `major` at both locations)
+  asks for two changes, and only the first is sound. The first is adopted:
+  `names_a_consumer` scans a fixed token list, and the ADR's own normative
+  wording — a cell "states that none of them exist" — is not in it. Measured:
+  the predicate returns `false` for `"states that none of them exist"` and
+  `"none of them exist"`, while it accepts the tokens `"none exist"` and
+  `"no consumer"`, so the phrase the ADR requires a note to use is the one
+  phrase the check rejects. The deficiency is measured rather than argued. The
+  second — "update `names_a_property` plus `is_negated()` so postfix negation
+  such as 'stability is not required' is accepted" — is **declined**, and the
+  decline is recorded here rather than passed over in silence. The ADR defines
+  the agreement rule over the property *named only to deny it* and gives "no
+  stability requirement was observed" as its example, which is a prefix
+  negation and is exactly what `is_negated` accepts; postfix denial is not
+  named in ADR 004 or in the template, and no committed note uses it. The
+  predicate is deliberately a bounded heuristic whose stated failure mode is
+  "to accept a note a stricter reader would reject", which is the safe
+  direction and leaves the judgement with the reviewer at task 3.2.1. Widening
+  `is_negated` to match English denial wherever it falls is a parsing problem
+  the ADR does not ask this contract to solve, and the finding carries no
+  evidence that an honest note was refused for it. **Subject two**
+  (`roadmap.rs`, `major` at both locations): `check_success_criterion` matches
+  the clause across all task records, and the finding asks it to filter to
+  `number == "1.1.3"` first. Declined as vacuous. The clause occurs in
+  **exactly one** of the roadmap's 31 records and that record *is* 1.1.3's, so
+  the filter cannot change the outcome for any input: it is a tautological
+  guard, and the plan's own D7 already rejects the number-binding it would
+  introduce, binding by *title* so that renumbering does not break the build.
+  Adding it would trade a live risk for a dead one. **Subject three**
+  (`docs/roadmap.md`, `major` at both locations): untick 1.1.3 until EP-M5's
+  zero-finding review passes. Adopted — the review's own argument is EP-M5's
+  stated bar, and leaving the task ticked against a review that had *already
+  returned fourteen findings* is precisely the defect. Both prior tasks (1.1.1,
+  1.1.2) were ticked in their own task PRs, so this does not depart from
+  precedent; it corrects a tick made one round too early. No test requires
+  1.1.3 to be ticked, and the exit-register contract's unticked-task
+  requirement binds 2.2.3, 3.1.3 and 4.3.1, not 1.1.3, so unticking is safe in
+  both directions. **Subject four** (`policy.rs`, `major` at both locations):
+  reject `state-display-name: Enumerated` evidence that is a citation and
+  nothing else. Declined. The ADR states "three obligations on the evidence
+  cells are checked": citation shape, the `identifier-need` consumer set, and
+  the `identifier-need` property agreement. "Reject citation-only `Enumerated`
+  evidence" is a fourth, and it appears in ADR 004 only as *prose* — "the note
+  lists the actual strings", in the paragraph explaining what `Enumerated`
+  means — never as a checked obligation, and all three obligations are scoped to
+  `identifier-need` or to every cell's citation. The requirement itself is
+  real and is stated in the template, which says a citation-only cell "is
+  required here as it is everywhere, and here it is not sufficient"; but the
+  template's *guidance* is not a machine-checked obligation, and the plan
+  places the judgement of an adequate cell with the reviewer at task 3.2.1.
+  Making it checked here would also mean encoding "the actual strings" as a
+  syntactic property, which no rule in either document defines. **Subject five**
+  (`docs/developers-guide.md`, `minor` at both locations):
+  `"what the Rust expected"` is ungrammatical. Adopted as a wording fix.
+  **Subject six** (`docs/design.md`, `major`/`minor` — the round's one mixed
+  location): name explicit rename support in the deferred decision. Declined —
+  it would pre-empt task 3.2.1. ADR 004's `Outstanding decisions` already
+  states that rename support "is part of the same verdict, because the rename
+  support is the cheap remedy that a stability finding selects", and design.md
+  §14's bullet already points at 3.2.1 and at ADR 004. Resolving it in
+  design.md would breach constraint 2 ("No verdict") by fixing an outcome ahead
+  of the evidence. **Subject seven** (`docs/context.md`, `minor`): reconcile
+  the glossary's `State name` entry with ADR 004. Adopted. The entry describes
+  a stable name without recording that "stable" is undecided, while the
+  `State identifier` entry beside it does record that 3.2.1 decides. **Subject
+  eight** (`plan`, `minor`): the completion records are future-dated. Declined
+  after checking the clock: the plan's own timestamps are **local** time
+  (Europe/Berlin, +0200) and the entries were written at `2026-09-21 00:32`
+  local, which is the date they carry. The finding compares against UTC, where
+  that instant is still `2026-09-20`; ADR 002 already carries a date of
+  `2026-07-22.` recorded the same way and the round accepted it. Four of the
+  eight subjects were therefore adopted — subject one's first half against a
+  measured defect, subjects three, five and seven against the documents they
+  reconcile — and four declined: subject two as vacuous, subject four because
+  the obligation it asks for is stated nowhere as checked, subject six because
+  it would pre-empt task 3.2.1, subject eight against the clock. Date/Author:
+  2026-09-25, implementing agent, actioning the review the scrutineer returned
+  after D30. **Corrected 2026-09-25**, in the same revision: this entry's first
+  draft said the round reported every finding "at a `major` and a `minor`
+  severity", which the log contradicts — five locations carry `major` twice —
+  and it recorded only the first half of subject one, silently dropping the
+  `is_negated` request that the same two findings also carry. Both were caught
+  by reading `/tmp/coderabbit4-….out` against the entry rather than by trusting
+  the summary that produced it. The lesson is the round's own: a record of a
+  review is a claim like any other and needs the primary evidence checked
+  against it, which is how D31's subject one was found to have been
+  half-recorded and D30's `major`/`minor` pattern found not to generalize.
+
+- Observation: **a control written against a token-list predicate can be
+  defeated by the predicate's own breadth, and only a Red replay catches it.**
+  Evidence: D31's regression for the ADR's "none of them exist" wording was
+  first written as
+  `"the tracing subscriber and the metrics recorder were both
+  considered; none of them exist"`.
+  It passed with the phrase's token removed from the list — because the
+  predicate is a *list scan*, so `subscriber`, `tracing`, `metrics` and
+  `recorder` each satisfied it independently, and the control never depended on
+  the wording it was named for. Removing the token and re-running is what
+  exposed it: `case_1_adr_wording` failed while `case_2_short_wording` still
+  passed, which is the discriminating evidence the first draft could not
+  produce because *both* cases passed. Each case now carries its negative
+  phrase and **no consumer token**, so the only thing that can satisfy it is
+  the wording under test. Impact: the accepting control is load-bearing rather
+  than decorative, and the plan gains a second instance of the pattern already
+  recorded for negative controls — a control is only as good as the mutation it
+  survives. It generalizes past this predicate: any check that accepts a *set*
+  of alternatives needs its positive controls built from one alternative at a
+  time, or the alternatives cover for each other. Recorded because the defect
+  was in the new test rather than the new code, and because a green suite
+  reported it as working. Date/Author: 2026-09-25, implementing agent, on the
+  Red replay D31's accepted finding required.
+
+- Observation: **`make spelling` was not checking 1348 lines of this plan, and
+  a green history could not have shown it.** Evidence: the gate rejected
+  `recognises` (correctly — this revision had just written it) and said nothing
+  about a second `-ise` spelling written in the same revision lower down the
+  same file. `typos` ignores fenced regions with the non-greedy pattern "three
+  backticks to the next three backticks", and line 879 illustrated a fenced
+  block by writing a *span of four backticks* around a `markdown` info string.
+  The first three backticks of that span opened an ignore region and the next
+  three closed it two characters later; the remaining three opened a second
+  region that ran until the next real fence at line 2754. Every line from 879
+  to 2227 was therefore skipped, including the new prose. Removing the four
+  backticks from the illustration — and from the sentence describing the
+  hazard, which reintroduced it — drops the largest ignore span in the file
+  from 1348 lines to 27. Impact: a gate can report green over a region it never
+  read, and the same `(?s)` pattern means any future quadruple-backtick span
+  naming a fence reopens the blind spot silently. The illustration now names
+  the info string in prose, which carries the same meaning without literal
+  fence characters. Recorded because the failure mode is invisible in the
+  passing case: the gate is not wrong about what it rejects, only about how
+  much it examined. Date/Author: 2026-09-25, implementing agent, on the gate
+  run D31's fourth review round required.
 
 ## Outcomes & retrospective
 
 ### What was delivered
 
-Roadmap task 1.1.3 is ticked and linked. ADR 004 defines the `StateName`
-consumption evidence; `docs/phase-2-validation-note-template.md` is the form a
-Phase 2 engineer copies; `tests/state_name_consumption_contract.rs` and its
-thirteen child modules guard both against drift. The task's own success criterion
-is itself checked, so the instrument is bound to the sentence that grades it.
+Roadmap task 1.1.3 is linked, and its tick waits on EP-M5's zero-finding review
+(D31). ADR 004 defines the `StateName` consumption evidence;
+`docs/phase-2-validation-note-template.md` is the form a Phase 2 engineer
+copies; `tests/state_name_consumption_contract.rs` and its thirteen child
+modules guard both against drift. The task's own success criterion is itself
+checked, so the instrument is bound to the sentence that grades it.
 
 The task's stated purpose was to make task 3.2.1's instruction executable. A
 Phase 2 engineer now has a form to fill, a rule that turns the filled form into
@@ -1544,9 +1751,9 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every entry in `Surprises & discoveries` was checked against the artefacts
-named in `Conformance basis`. All twenty-two were accounted for; the disposition
-of each follows. Four were recorded during or after the EP-M5 gate runs: a
-prose-wrapping rule, a correction to how this plan had been probing the
+named in `Conformance basis`. All twenty-two were accounted for; the
+disposition of each follows. Four were recorded during or after the EP-M5 gate
+runs: a prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, and the
 record-versus-line discovery that closed the third round's `major` subject.
 None bears on any upstream artefact, and the second review round — recorded as
@@ -1595,9 +1802,9 @@ stable-identifier paragraph, which is dispositioned below.
   subjects repaired code the plan had already specified — the citation-reading
   keyword scan, the line-scanning roadmap checks, and the plan's own stale
   gate-table snippet — and two corrected ADR 004's wording to match the rule
-  its prose already stated. The re-split those repairs forced is a `file
-  layout` change, as D26's was, and the ADR corrections amend a document this
-  task owns rather than an upstream one.
+  its prose already stated. The re-split those repairs forced is a
+  `file layout` change, as D26's was, and the ADR corrections amend a document
+  this task owns rather than an upstream one.
 
 **No effect on the conformance basis.**
 
@@ -1642,12 +1849,13 @@ what it asserts.
 
 **Two counts that are easy to conflate, and both are needed.** Nextest reports
 collected *cases*; the plan names *scenarios*. `rstest` expands four of them,
-so 54 cases across 33 functions as delivered — 47 across 31 before the third
-review round added its controls. A gate that silently stopped collecting a
-scenario would move the case total without moving the scenario list, and only
-the case total notices. This plan now records both, which is why the figures
-here moved when reviews added parameterized regressions: the scenario count and
-the case count are two different numbers, and a round can change both.
+so 56 cases across 34 functions as delivered — 54 across 33 before D31 added
+its two-wordings control, and 47 across 31 before the third review round added
+its controls. A gate that silently stopped collecting a scenario would move the
+case total without moving the scenario list, and only the case total notices.
+This plan now records both, which is why the figures here moved when reviews
+added parameterized regressions: the scenario count and the case count are two
+different numbers, and a round can change both.
 
 **The 400-line cap earns its keep.** It was breached invisibly: `make test`
 passed, `make check-fmt` passed, and the file's own module doc never mentioned
@@ -1660,12 +1868,12 @@ having and exactly when it looks like bureaucracy.
 - **`parse_table` names a fixed path in a message about a variable file.** A
   malformed committed note composes as
   `2.2.1-mdtablefix.md: docs/phase-2-validation-note-template.md: no note
-  register found …`. No input reaches it today — the notes directory holds only
-  a README whose marker sits inside a code span — and the caller's `{name}:`
-  prefix still leads with the file to open. Repairing it means giving the
-  message a name for the document being read; recorded in `Surprises &
-  discoveries` rather than fixed, because it is a change to error construction
-  rather than to a document.
+  register found …`.
+  No input reaches it today — the notes directory holds only a README whose
+  marker sits inside a code span — and the caller's `{name}:` prefix still
+  leads with the file to open. Repairing it means giving the message a name for
+  the document being read; recorded in `Surprises & discoveries` rather than
+  fixed, because it is a change to error construction rather than to a document.
 - **The gate table binds by title fragment, not by task number.** Completing a
   bound task therefore does not break the build, which is intended; the cost is
   that a *reworded* title breaks it, and the ambiguity control is what makes
@@ -1725,7 +1933,8 @@ formatter by running `make fmt` before fixtures are written and by
   whole document cannot make that distinction and would report the criterion as
   intact while the task it grades had lost it.
 - **Artefact**: test `anchor_scenarios::success_criterion_still_maps`, with the
-  region control in `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion`.
+  region control in
+  `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion`.
 - **Non-vacuity**: a fixture register with `tracing-use` removed must fail
   naming the unmapped noun; a roadmap whose bullet is reworded must fail naming
   the clause; and the region control plants an identical sentence in the
@@ -1838,13 +2047,13 @@ formatter by running `make fmt` before fixtures are written and by
   asserts the exact rejection message.
 - **Rationale**: the code collapsed the pair into `Insufficient`, which resolves
   exactly the note the ADR says to refuse — and resolves it silently, in the
-  direction that overturns the default. The pair is unreachable through the live
-  register, which is precisely why the guard must exist: nothing else in the
-  suite would notice the rule being dropped. A register where a second field
-  contributes `Sufficient` passes every document-level check there is — its
-  vocabulary is still closed, exactly one row selects `Insufficient`, and the
-  default can still fall — so only a note-level guard notices that reading a
-  note through it has become contradictory.
+  direction that overturns the default. The pair is unreachable through the
+  live register, which is precisely why the guard must exist: nothing else in
+  the suite would notice the rule being dropped. A register where a second
+  field contributes `Sufficient` passes every document-level check there is —
+  its vocabulary is still closed, exactly one row selects `Insufficient`, and
+  the default can still fall — so only a note-level guard notices that reading
+  a note through it has become contradictory.
 - **Artefact**: test `contradictory_notes_are_rejected`.
 - **Non-vacuity**: the control's register differs from the live one by one
   contribution cell, and its note from the accepting witness by one decisive
@@ -1880,12 +2089,12 @@ formatter by running `make fmt` before fixtures are written and by
   property named only inside the citation; a file carrying the marker but
   missing a field; and a file carrying it with its fields reordered. An
   eleventh control sits outside the table: a status borrowed from a field the
-  register defines under another.
-  Four controls cover the scan itself: a benchmark-shaped note *without* the
-  marker is ignored rather than rejected; a note without the marker still
-  parses, so that control isolates the marker; a directory passed where a note
-  is expected is an error naming the path rather than a silent skip; and a root
-  with no notes directory yields no notes rather than failing.
+  register defines under another. Four controls cover the scan itself: a
+  benchmark-shaped note *without* the marker is ignored rather than rejected; a
+  note without the marker still parses, so that control isolates the marker; a
+  directory passed where a note is expected is an error naming the path rather
+  than a silent skip; and a root with no notes directory yields no notes rather
+  than failing.
 
 ### INV-AGGREGATE — the rule for reading several notes is total
 
@@ -1981,8 +2190,8 @@ Behavioural coverage is delivered as scenario-named `rstest` cases over the
 filled-note fixture and its eight documented defects —
 `committed_state_name_notes_are_usable` and the `INV-FILLED` controls
 constitute the fill-and-gate workflow. The `docs/developers-guide.md` addition
-carries the prose walkthrough. If the dependency cost declined under Q3 is later
-judged acceptable, these convert to Gherkin mechanically.
+carries the prose walkthrough. If the dependency cost declined under Q3 is
+later judged acceptable, these convert to Gherkin mechanically.
 
 ## Plan of work
 
@@ -2003,9 +2212,9 @@ an empty directory otherwise. The documents must exist before the test compiles
 Write the contract test in full. Run `make test` and observe the red state:
 `MissingDelimiters` naming each register, plus the empty-clause-list failure of
 `INV-ANCHORS`. `INV-FILLED` does **not** fail, and the prediction that it would
-is corrected by D22 below — an empty `docs/validation-notes/` is a pass, because
-no honest note can exist before task 2.2.1 has annotated something. Record the
-transcript.
+is corrected by D22 below — an empty `docs/validation-notes/` is a pass,
+because no honest note can exist before task 2.2.1 has annotated something.
+Record the transcript.
 
 Do not use an expected-failure marker. `AGENTS.md` requires every commit to
 pass the gates, so the red state is observed within a session and not
@@ -2136,11 +2345,10 @@ delimiters in Step 5.
 
 Create the contract described in `Interfaces and dependencies` — thirteen child
 modules, of which four are the scenario modules — including every negative
-control, before any register exists. Create
-`dylint.toml` first, with the single path-scoped exemption defined in D20:
-without it the `notes.rs` module fails `make lint`, and creating it now keeps
-the exemption visible from the moment the code that needs it exists rather than
-retro-fitted at delivery.
+control, before any register exists. Create `dylint.toml` first, with the
+single path-scoped exemption defined in D20: without it the `notes.rs` module
+fails `make lint`, and creating it now keeps the exemption visible from the
+moment the code that needs it exists rather than retro-fitted at delivery.
 
 ### Step 4 — observe red
 
@@ -2290,8 +2498,8 @@ outcomes.
 ## Validation and acceptance
 
 **Red evidence.** Before the registers exist, `make test` fails with
-`MissingDelimiters` naming each register and an empty-clause-list failure on the
-evidence section. Not a panic, not an index-out-of-bounds, not a bare
+`MissingDelimiters` naming each register and an empty-clause-list failure on
+the evidence section. Not a panic, not an index-out-of-bounds, not a bare
 `assertion failed`. An empty notes directory passes, deliberately: see
 `INV-FILLED` and D22.
 
@@ -2355,8 +2563,8 @@ read-only directory scan, so no step that runs it can dirty the tree. The plan
 itself writes exactly what "Files this plan reads or writes" lists, and nothing
 else: new files under `docs/` and `tests/state_name_consumption_contract/`,
 `dylint.toml`, and one-line edits to the eight documents named there. Nothing
-outside the repository is written except under `/tmp`, which holds gate logs and
-scratch, and `target/`, which holds build output.
+outside the repository is written except under `/tmp`, which holds gate logs
+and scratch, and `target/`, which holds build output.
 
 ## Artefacts and notes
 
@@ -2476,9 +2684,9 @@ this section as it is drafted, so that this plan ends the task self-contained.
 
 First run at revision `aebe29d`, then re-run after the post-fix round at
 `26da23f` — the revision below. Both runs were sequential, one gate at a time,
-and each command is the one Step 9 names. The figures throughout are the
-second run's, which is the one that exercised the tree being delivered; only
-the first run is where the `clippy::shadow-reuse` red appeared.
+and each command is the one Step 9 names. The figures throughout are the second
+run's, which is the one that exercised the tree being delivered; only the first
+run is where the `clippy::shadow-reuse` red appeared.
 
 `make check-fmt` — exit 0:
 
@@ -2522,24 +2730,23 @@ coverage contract and one in the stub. Nextest counts a seventh binary because
 the lib target is one of them and it collects no tests, which is why the
 banner's figure is one higher than the number of binaries that report results.
 
-Thirty-one functions
-occupy forty-seven collected cases, because `rstest` expands four of them:
-`gate_titles_resolve` into six (one per gate plus the ambiguity control),
-`aggregation_register_is_total` into three (one per reachable state of the note
-multiset), `committed_state_name_notes_are_rejected` into eight (one per
-documented note defect), and
-`negated_property_claims_do_not_disagree_with_none` into three (one per negated
-form). The two totals are both worth recording: forty-seven is what the suite
-must report, and thirty-one is how many scenarios the `Verification plan`
-names.
+Thirty-one functions occupy forty-seven collected cases, because `rstest`
+expands four of them: `gate_titles_resolve` into six (one per gate plus the
+ambiguity control), `aggregation_register_is_total` into three (one per
+reachable state of the note multiset),
+`committed_state_name_notes_are_rejected` into eight (one per documented note
+defect), and `negated_property_claims_do_not_disagree_with_none` into three
+(one per negated form). The two totals are both worth recording: forty-seven is
+what the suite must report, and thirty-one is how many scenarios the
+`Verification plan` names.
 
 The two counts above are the revision that produced those transcripts, and
 `mdtablefix` rewraps prose but does not restate it: a quoted transcript keeps
 the figures its run reported. The delivered revision's figures are these.
 Thirty-three functions occupy fifty-four collected cases, because `rstest`
 still expands four of them, two of them further than before:
-`gate_titles_resolve` into nine (one per binding gate, plus the unresolved,
-the ambiguity, and the three prose controls),
+`gate_titles_resolve` into nine (one per binding gate, plus the unresolved, the
+ambiguity, and the three prose controls),
 `committed_state_name_notes_are_rejected` into ten (one per documented note
 defect), `aggregation_register_is_total` into three (one per reachable state of
 the note multiset), and `negated_property_claims_do_not_disagree_with_none`
@@ -2572,8 +2779,8 @@ Summary: 0 error(s)
     Scanning Cargo.lock for vulnerabilities (45 crate dependencies)
 ```
 
-No advisory line follows, which is the passing shape: `cargo audit` prints
-each finding it has and prints nothing when it finds none.
+No advisory line follows, which is the passing shape: `cargo audit` prints each
+finding it has and prints nothing when it finds none.
 
 `make test-workflow-contracts` — exit 0:
 
@@ -2607,14 +2814,15 @@ make audit                        exit 0   45 dependencies scanned, no advisorie
 make test-workflow-contracts      exit 0   6 passed
 ```
 
-The `make lint` leg needs the same reading the earlier runs did. The log ends at
-the whitaker line with no per-lint diagnostic, because a lint that does not fire
-prints nothing; what distinguishes "ran and found nothing" from "never ran" is
-that `whitaker` is the *last* command in the target, so the target's exit status
-is the leg's. The `.exit` sidecar records `EXIT_STATUS=0`, and `dylint.toml`
-registers a live lint set with the one path-scoped exemption, so the leg cannot
-have been an empty pass. The two manifest warnings above recur here unchanged:
-they are Cargo's, not this change's, and `Cargo.toml` is untouched.
+The `make lint` leg needs the same reading the earlier runs did. The log ends
+at the whitaker line with no per-lint diagnostic, because a lint that does not
+fire prints nothing; what distinguishes "ran and found nothing" from "never
+ran" is that `whitaker` is the *last* command in the target, so the target's
+exit status is the leg's. The `.exit` sidecar records `EXIT_STATUS=0`, and
+`dylint.toml` registers a live lint set with the one path-scoped exemption, so
+the leg cannot have been an empty pass. The two manifest warnings above recur
+here unchanged: they are Cargo's, not this change's, and `Cargo.toml` is
+untouched.
 
 Three figures moved from the `26da23f` run and each is accounted for: 87 → 94
 collected cases, 31 → 33 functions, and 47 → 54 cases for this contract alone.

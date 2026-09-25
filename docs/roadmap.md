@@ -44,7 +44,7 @@ outcome informs every later implementation slice. See terms-of-reference.md
   - Success: the exit note maps B1 and B2 to concrete evidence from
     design.md §11.1 and failure modes in design.md §§13.6-13.7:
     [ADR 003](adr-003-v0-1-exit-register.md).
-- [x] 1.1.3. Define the `StateName` consumption question for Phase 2.
+- [ ] 1.1.3. Define the `StateName` consumption question for Phase 2.
   - Requires 1.1.2.
   - Decide what `mdtablefix` must consume to prove whether `&'static str` is
     enough or whether a stable numeric identifier is needed.
