@@ -682,7 +682,7 @@ outcome, and a reviewer should approve it on that understanding.
       first draft of the new control was **vacuous**, passing with the token
       removed because its own evidence also carried positive tokens. It is in
       `Surprises & discoveries` with the corrected two-case table, beside a
-      second entry recording that `make spelling` had been skipping 1348 lines
+      second entry recording that `make spelling` had been skipping 1258 lines
       of this plan — including the `-ise` spelling the gate caught only after
       that span was closed.
 - [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
@@ -702,7 +702,7 @@ outcome, and a reviewer should approve it on that understanding.
       on an `-ise` spelling this revision had just written, so `nixie`,
       `audit` and `test-workflow-contracts` were never reached and have no
       valid evidence there. Chasing that one error found a second, larger
-      defect — a quadruple-backtick span that had made `typos` skip 1348 lines
+      defect — a quadruple-backtick span that had made `typos` skip 1258 lines
       of this plan — so the repair was not the one-word substitution it first
       appeared, and the gate is what found both. Recorded in
       `Surprises & discoveries`. The gate half is re-run green after the
@@ -928,7 +928,7 @@ design.
   written as literal fence characters because `typos` strips fenced regions
   with a non-greedy "three backticks to the next three backticks" ignore
   pattern, and a span of four backticks naming a fence opens a spurious region
-  that swallows every line up to the next real fence — 1348 of them here,
+  that swallows every line up to the next real fence — 1258 of them here,
   including two spelling errors this change only found by probe. Naming the
   info string in prose keeps the meaning and leaves the gate able to read the
   document.
@@ -1723,27 +1723,32 @@ design.
   reported it as working. Date/Author: 2026-09-25, implementing agent, on the
   Red replay D31's accepted finding required.
 
-- Observation: **`make spelling` was not checking 1348 lines of this plan, and
+- Observation: **`make spelling` was not checking 1258 lines of this plan, and
   a green history could not have shown it.** Evidence: the gate rejected
   `recognises` (correctly — this revision had just written it) and said nothing
   about a second `-ise` spelling written in the same revision lower down the
   same file. `typos` ignores fenced regions with the non-greedy pattern "three
-  backticks to the next three backticks", and line 879 illustrated a fenced
+  backticks to the next three backticks", and line 853 illustrated a fenced
   block by writing a *span of four backticks* around a `markdown` info string.
   The first three backticks of that span opened an ignore region and the next
   three closed it two characters later; the remaining three opened a second
-  region that ran until the next real fence at line 2754. Every line from 879
-  to 2227 was therefore skipped, including the new prose. Removing the four
+  region that ran until the next real fence at line 2111. Every line from 853
+  to 2111 was therefore skipped, including the new prose. Removing the four
   backticks from the illustration — and from the sentence describing the
   hazard, which reintroduced it — drops the largest ignore span in the file
-  from 1348 lines to 27. Impact: a gate can report green over a region it never
+  from 1258 lines to 27. Impact: a gate can report green over a region it never
   read, and the same `(?s)` pattern means any future quadruple-backtick span
   naming a fence reopens the blind spot silently. The illustration now names
   the info string in prose, which carries the same meaning without literal
   fence characters. Recorded because the failure mode is invisible in the
   passing case: the gate is not wrong about what it rejects, only about how
-  much it examined. Date/Author: 2026-09-25, implementing agent, on the gate
-  run D31's fourth review round required.
+  much it examined. The line numbers above are those of `b7adf35`, the revision
+  the hazard was found in; this document has been edited since, so they will
+  not match a later checkout and are cited with their revision for that reason.
+  The first draft of this entry gave figures measured in an intermediate
+  uncommitted state, which no checkout reproduces — the defect the entry is
+  about, repeated in the record of it. Date/Author: 2026-09-25, implementing
+  agent, on the gate run D31's fourth review round required.
 
 ## Outcomes & retrospective
 
