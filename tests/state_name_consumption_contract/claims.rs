@@ -90,7 +90,14 @@ pub(crate) fn names_a_consumer(evidence: &str) -> bool {
     .any(|consumer| lowered.contains(consumer))
 }
 
-/// The four properties ADR 004 admits, as its third obligation names them.
+/// The four properties ADR 004 admits, as its third obligation names them,
+/// plus the adjective one of them is normally written with.
+///
+/// The array holds five tokens for four properties: "stable" is the
+/// adjectival form of "stability across releases", and an engineer writing
+/// "requires stable ordering" has named the property as surely as one writing
+/// "requires stability". Both spellings are here because the predicate is a
+/// substring scan, and "stability" is not a substring of "stable".
 const PROPERTIES: [&str; 5] = [
     "equality",
     "stability",
