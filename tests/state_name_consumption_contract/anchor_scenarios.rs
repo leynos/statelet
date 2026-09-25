@@ -28,8 +28,9 @@ use super::{
 
 /// Checks the blank form field-by-field against the register.
 ///
-/// The form is read from `TEMPLATE`, which Step 6 replaces with the
-/// `include_str!` of `docs/phase-2-validation-note-template.md`.
+/// The form is read from `TEMPLATE`, the `include_str!` of
+/// `docs/phase-2-validation-note-template.md`, so a check can fail only when
+/// the live document and the register disagree.
 #[test]
 fn template_matches_the_status_register() -> Result<(), String> {
     let rows = live_status()?;

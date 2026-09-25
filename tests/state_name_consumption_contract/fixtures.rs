@@ -76,7 +76,7 @@ pub(crate) fn aggregation_register() -> String {
 /// The fragments are copied from live roadmap task titles: S1 from the
 /// `ProcessBuffer` annotation task, S2 from the continuation annotation task, S3
 /// from the conventions-only baseline task, and S4 from the return-shape task.
-/// Each resolves to exactly one line of `docs/roadmap.md`.
+/// Each resolves to exactly one task title in `docs/roadmap.md`.
 pub(crate) fn gate_table() -> String {
     [
         GATES_HEADING,
