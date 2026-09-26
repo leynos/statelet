@@ -510,7 +510,20 @@ outcome, and a reviewer should approve it on that understanding.
 7. **Every source file under 400 lines**, every function under 70, cognitive
    complexity under 9, at most 4 arguments, nesting under 4.
 8. **British English, Oxford spelling** in all new prose.
-9. **No fenced-block line over 120 columns**, no prose line over 80.
+9. **No fenced-block line over 120 columns**, no prose line over 80, with one
+   named exception: the proposed bet B7 preview under Q1. Its four cells carry
+   164 characters of state-register vocabulary, and a four-column GFM row
+   spends 13 more on its pipes and the one space of padding each cell takes, so
+   177 columns is the narrowest any rendering of that content can be and 178 is
+   what `mdtablefix` produces once the first column is padded to the `Bet`
+   header's width. The exception is not a matter of taste: the row cannot be
+   made to fit, and its cells are each no wider than §11.1's current maxima (3,
+   77, 10, 93), which is what leaves the pre-existing bet rows byte-identical
+   when the follow-up change pastes it in. The row therefore carries an `MD013`
+   disable/enable pair, as the live §11.1 table carries its own, and the defect
+   this leaves is recorded rather than hidden: `make markdownlint` is green
+   *because* of that pair, and removing the pair makes the gate fire on this
+   line at 178 > 120.
 10. **The filesystem exemption is confined to one module.** `dylint.toml`
     exempts `state_name_consumption_contract::notes` and nothing else. No other
     module of the contract test, and no other test crate, may call `std::fs`.
@@ -739,6 +752,23 @@ outcome, and a reviewer should approve it on that understanding.
       attributed the ADR-date finding to a round whose log does not contain it,
       and this checklist had never recorded the two-finding pass over
       `03985e8`. Recorded as D34.
+- [x] CodeRabbit review eight — five findings returned 2026-09-26 over
+      `227d975`, the commit review seven's corrections produced. The freeze
+      held for the fourth pass running. Two adopted: Step 9's completion
+      instruction, which had told a reader to tick task 1.1.3 before the
+      zero-finding review EP-M5 requires — the D31 ordering written back in as
+      an instruction — and ADR 004's `as`-cast sentence, whose position claim
+      is true only of implicit discriminants; a `rustc` probe measured implicit
+      `B` shifting `1` → `2` on an insertion while an explicit `B` held at `9`
+      across a reorder. Three declined: the `identifier-need` `major`, whose
+      remedy names the verdict constraint 2 leaves open — the shape the ADR's
+      own Option B considered and refused; the ADR metadata
+      full stops, the third appearance of a subject falsified twice against the
+      style guide's own template; and the B7 width finding, whose two
+      instructions cannot both hold and whose remedy is arithmetically
+      impossible at 164 characters of cell content. That last one pointed past
+      a real defect — constraint 9 forbade what line 210 does — now recorded as
+      a named exception with its arithmetic. Recorded as D35.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -797,7 +827,15 @@ outcome, and a reviewer should approve it on that understanding.
       returned ten — so the bar is not met, and this item stays unticked. The
       six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
-      the only round that can tick this item.
+      the only round that can tick this item. **Three further passes have since
+      returned** — four findings over `c9fc559`, seven over `dbac7d0`, and five
+      over `227d975` — each actioned and gated in turn, and each leaving the bar
+      unmet, so the item is still unticked. Every pass has found something, and
+      the last two rounds' findings were themselves about this plan's own
+      records rather than about the work, which is the checklist-vs-evidence
+      class D33 and D34 describe. Step 9 now carries the ordering this history
+      taught: the tick comes after a pass that returns no findings, not between
+      the gates and the review.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -1997,6 +2035,72 @@ design.
   Date/Author: 2026-09-26, implementing agent, actioning the review the
   scrutineer returned after D33.
 
+- D35: **The eighth pass returned five findings over `227d975`, two adopted and
+  three declined.** The freeze held again (`HEAD` at `227d975` and `git status`
+  empty before and after), making this the fourth scored pass, and the log is
+  `/tmp/coderabbit10-….out` — five findings, exit 0, valid NDJSON, no rate
+  limit. **Adopted two.** The first is Step 9's completion instruction, which
+  told a reader to tick roadmap task 1.1.3 with no review step between the
+  gates and the tick: that is precisely the ordering D31 had to undo one round
+  later, written back into the plan as an instruction, so the step now requires
+  a pass that returns no findings *before* the tick and says what to do when
+  one returns findings instead. The second is ADR 004's `as`-cast sentence,
+  which said flatly that "a cast reports the variant's position" — true only of
+  a variant whose discriminant is implicit. **Measured with a `rustc` probe**
+  rather than reasoned about: an implicit `B` cast to `u8` gave `1`, then `2`
+  once a variant was inserted before it, while an explicitly assigned `B` gave
+  `9` and still gave `9` after the enum was reordered. The sentence now scopes
+  the position-derivation to implicit discriminants, which is what the durable
+  `#[repr(u8)]`-with-explicit-values remedy beside it already presupposed; the
+  paragraph's own measurement — `2`, then `3`, then `0` — stands unchanged and
+  is an instance of the narrower claim. **Declined three.** The
+  `identifier-need` finding (`major`) asks the register to distinguish a stable
+  display name from a machine-identifier requirement and to give stability-only
+  evidence "a distinct stable-name status or an outcome that preserves the
+  current string return shape". That outcome is a *verdict*, and constraint 2
+  forbids this record pronouncing one: the register's whole design is that
+  stability evidence is recorded as `identifier-need: Property required`,
+  contributing `Insufficient`, and then read at task 3.2.1 — the finding's own
+  remedy names the conclusion ("preserves the current string return shape")
+  that the aggregation register exists to leave open. The clarity it wants is
+  already bought by the third obligation, which requires the `identifier-need`
+  cell to name the property it observed, so stability-only evidence is recorded
+  and readable without a status that decides the outcome. The shape it asks for
+  was considered at construction and refused in the ADR's own Option B: "Two
+  axes: a verdict axis and a naming-defect axis", rejected because a register
+  that treats a naming defect as a verdict "has no terminating procedure for
+  those notes". This round's remedy is that shape one level down — a second
+  axis for the stability case — and it fails for the same reason. Unlike the
+  other two declines, this one is a *design disagreement* rather than a
+  recurrence or an impossibility, and it is recorded as such: a later reader
+  weighing it should know that the ADR's authors saw the request coming and
+  gave their reason, at length, under `## Options considered`. The ADR metadata
+  finding repeats the date full-stop finding of the post-fix round and of round
+  five, both already falsified: the style guide's own ADR template writes
+  `YYYY-MM-DD.` *with* the stop and `<Status>.` likewise, and this pass's log
+  shows it now targets both the Status and the Date line. It is recorded as
+  recurrence rather than re-litigated. **Declined one (the B7 width finding),
+  and it pointed past a real defect.** The finding asks for the Q1 preview row
+  to be restructured so no line exceeds 120 columns while keeping the `MD013`
+  suppression in place — two instructions that cannot both be satisfied,
+  because the suppression is the only reason the line is not an error. The
+  remedy is arithmetically impossible as well: the row's four cells carry 164
+  characters, and a four-column GFM row spends 13 more on pipes and the one
+  space of padding each cell takes, so 177 columns is the narrowest any
+  rendering of that content can be. The shipped row is 178 — fitted, as its
+  caption claims, so that no cell exceeds §11.1's current column maxima, which a
+  `mdtablefix` probe confirmed by leaving all six pre-existing bet rows
+  byte-identical while the new row stayed at 178 rather than being repadded to
+  the table's 196. Verified by removing the pair in place and running the
+  linter over the file: `MD013` fired at 178 > 120. What the finding *did*
+  expose is that constraint 9 forbade exactly what line 210 does, so the plan
+  broke its own rule and passed only because the suppression was there.
+  Constraint 9 now names the exception, gives the character and column
+  arithmetic that forces it, and states plainly that the gate is green because
+  of the pair — so the next reader meets a recorded exception rather than a
+  silent one. Date/Author: 2026-09-26, implementing agent, actioning the review
+  the scrutineer returned after D34.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2039,8 +2143,8 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-five were accounted for;
-the disposition of each follows. The section holds fifty-nine top-level entries
-in all; the other thirty-four are `Decision log` records D1–D34, which are
+the disposition of each follows. The section holds sixty top-level entries in
+all; the other thirty-five are `Decision log` records D1–D35, which are
 decisions rather than observations and are dispositioned in their own section.
 Seven observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
@@ -2743,9 +2847,16 @@ make test-workflow-contracts 2>&1 | tee /tmp/wfc-statelet-$(git branch --show-cu
 Run these sequentially, never in parallel; the repository relies on build
 caching and concurrent cargo jobs contend for the package-cache lock.
 
-Then tick roadmap task 1.1.3, append the ADR link to its success bullet as
-tasks 1.1.1 and 1.1.2 do, set this plan's status to `COMPLETE`, and record
-outcomes.
+Then request one more independent review over the commit that carries these
+actions, and read it before ticking anything. EP-M5's bar is a zero-finding
+review, and the D31 round is what happens without this step: a tick written
+here, one round ahead of the review that has to justify it. If that review
+returns findings, action them, re-gate, and request another pass over the
+resulting commit; the tick waits on a pass that returns none.
+
+Once such a pass returns, tick roadmap task 1.1.3, append the ADR link to its
+success bullet as tasks 1.1.1 and 1.1.2 do, set this plan's status to
+`COMPLETE`, and record outcomes.
 
 ## Documentation sync map
 
