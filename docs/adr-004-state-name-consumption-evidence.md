@@ -336,13 +336,18 @@ stronger" — design `6.1 State naming`.*
   of the derive: a durable value they must not renumber. This is the cost that
   the verdict has to justify, and it is a cost the string default does not
   incur.
-- A numeric identifier cannot reduce metric cardinality.[^3] `StateName` is a
-  total function from a state to a label, and any identifier is a total
-  function from the same state to a value. Substituting one for the other
-  relabels the same domain, so the number of distinct values an observability
-  backend sees is unchanged. Cardinality is a property of the value set, not of
-  the type that represents it, which is why it gates admissibility and never
-  decides the verdict.
+- A numeric identifier does not by itself bound metric cardinality.[^3]
+  `StateName` is a total function from a state to a label, and any identifier
+  is a total function from the same state to a value, so substituting one for
+  the other relabels the same domain. Nothing about the substitution fixes the
+  size of the observed set. An identifier that distinguishes states is
+  injective over the domain, so its image has *at least* as many distinct
+  values as the label set; the labels can be fewer, because nothing requires
+  `state_name` to be injective in turn. An identifier whose image is *smaller*
+  can only have got there by ceasing to distinguish states, which forfeits the
+  identity it was introduced to provide. Cardinality is therefore a property of
+  the observed value set and not of the type that represents it, which is why
+  it gates admissibility and never decides the verdict.
 - A note can be written from the type declaration rather than from observation:
   ninety seconds of reading an enum, dressed as evidence. The mitigation is
   procedural and partly machine-checked: every evidence cell must be a citation

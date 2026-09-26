@@ -137,17 +137,21 @@ roadmap task collects evidence for it. An instrument that asks only "did a
 consumer need an operation `&'static str` cannot do?" records "no" and loses
 this entirely.
 
-**Finding two: a numeric identifier cannot reduce metric cardinality.**
-`StateName` is a total function from a state to a label; any identifier is a
-total function from the same state to a value. Substituting one for the other
-relabels the same domain, so the number of distinct values a backend sees is
-unchanged. Prometheus guidance warns against labels holding "dimensions with
-high cardinality (many different label values) … or other unbounded sets of
-values"; OpenTelemetry likewise treats low cardinality as a property of the
-value set, not of the representing type. An unbounded name set is therefore a
-naming defect — a name synthesized from data, or a leaked `String` — and never
-an argument for an identifier. Cardinality gates whether a note is *usable*; it
-never decides the verdict.
+**Finding two: a numeric identifier does not by itself bound metric
+cardinality.** `StateName` is a total function from a state to a label; any
+identifier is a total function from the same state to a value. Substituting one
+for the other relabels the same domain, and nothing about the substitution
+fixes the size of the observed set. An identifier that distinguishes states is
+injective, so its image holds *at least* as many distinct values as the label
+set — the labels can be fewer, since nothing requires `state_name` to be
+injective in turn; an identifier with a *smaller* image reached it by ceasing
+to distinguish states. Prometheus guidance warns against labels holding
+"dimensions with high cardinality (many different label values) … or other
+unbounded sets of values"; OpenTelemetry likewise treats cardinality as a
+property of the observed value set, not of the representing type. An unbounded
+name set is therefore a naming defect — a name synthesized from data, or a
+leaked `String` — and never an argument for an identifier. Cardinality gates
+whether a note is *usable*; it never decides the verdict.
 
 **Finding three: no stable numeric identifier is available for free.**
 `std::mem::discriminant` does not qualify: the standard library documents that
@@ -872,6 +876,32 @@ outcome, and a reviewer should approve it on that understanding.
       links each appear in six of the fourteen logs, and the B7 row width
       recurs from review eight, which declined it on arithmetic that has not
       changed. Recorded as D39.
+- [x] CodeRabbit review thirteen — four findings returned 2026-09-26 over
+      `787a716`, the commit review twelve's corrections produced. The freeze
+      held for the ninth pass running, and the log reached `complete` with
+      `outcome: completed`, exit 0, and no abort markers. **Two adopted as one
+      subject, and it is the first correction in this workstream to reach an
+      *argument* rather than a record.** The two are the round's only
+      non-recurrences: they target the same two lines of ADR 004's "Known risks
+      and limitations" and prescribe different remedies. Both are right that the
+      passage overreaches:
+      it claimed an identifier "cannot reduce metric cardinality" because the
+      substitution "relabels the same domain, so the number of distinct values
+      an observability backend sees is unchanged". The premise holds; the
+      conclusion does not follow. A relabelling fixes neither the size nor the
+      direction of the image — an injective identifier has *at least* as many
+      distinct values as the label set, since `state_name` is not itself
+      required to be injective, and a *smaller* image is reached only by ceasing
+      to distinguish states. Neither reviewer's wording is adopted verbatim:
+      one asserts "has at least as many" without carrying the injectivity
+      premise, the other attributes to `state_name` a uniqueness guarantee
+      nothing provides. The corrected text states the supported relation and
+      keeps the conclusion the argument exists for. The same overreach stood at
+      two further sites in this plan, and all three are corrected together.
+      Two declined, both recurrences: the B7 row width, and the ADR date's
+      trailing full stop, declined a third time against the style guide's own
+      ADR template at `docs/documentation-style-guide.md:425`. Recorded as
+      D40.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -930,21 +960,24 @@ outcome, and a reviewer should approve it on that understanding.
       returned ten — so the bar is not met, and this item stays unticked. The
       six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
-      the only round that can tick this item. **Seven further passes have since
+      the only round that can tick this item. **Eight further passes have since
       returned** — four findings over `c9fc559`, seven over `dbac7d0`, five
       over `227d975`, six over `33c79aa`, five over `b1c8295`, six over
-      `cd458d5`, and five over `e5ef763` — each actioned and gated in turn, and
-      each leaving the bar unmet, so the item is still unticked. Every pass has
-      found something. The seventh through tenth rounds' findings were
-      themselves about this plan's own records rather than about the work, which
-      is the checklist-vs-evidence class D33 and D34 describe; the tenth round
-      broke that run by aiming at the plan's substance, and the review's own
-      checklist-order defect it exposed was found while recording it; the
-      eleventh returned to code for the first time in several passes, its two
-      code findings declined against a probe rather than against precedent; and
-      the twelfth returned to this plan's own timeline, adopting two
-      corrections — the sync map's live tick instruction, and the template's
-      three conflicting statements about when it was written. Step 9 now
+      `cd458d5`, five over `e5ef763`, and four over `787a716` — each actioned
+      and gated in turn, and each leaving the bar unmet, so the item is still
+      unticked. Every pass has found something. The seventh through tenth
+      rounds' findings were themselves about this plan's own records rather than
+      about the work, which is the checklist-vs-evidence class D33 and D34
+      describe; the tenth round broke that run by aiming at the plan's
+      substance, and the review's own checklist-order defect it exposed was
+      found while recording it; the eleventh returned to code for the first time
+      in several passes, its two code findings declined against a probe rather
+      than against precedent; the twelfth returned to this plan's own timeline,
+      adopting two corrections — the sync map's live tick instruction, and the
+      template's three conflicting statements about when it was written; and the
+      thirteenth reached an argument, correcting a cardinality claim whose
+      premise was sound and whose conclusion did not follow from it, at all
+      three sites it appeared. Step 9 now
       carries the ordering this history taught: the tick comes after a pass
       that returns no findings, not between the gates and the review.
 
@@ -1121,10 +1154,17 @@ design.
   any identifier is hand-assigned, hence new public API; recorded in ADR 004's
   "Known risks and limitations".
 
-- Observation: a numeric identifier cannot reduce observability cardinality.
-  Evidence: both map the same state domain; Prometheus and OpenTelemetry frame
-  cardinality as a property of the value set. Impact: cardinality gates
-  admissibility and never decides the verdict.
+- Observation: a numeric identifier does not by itself *bound* observability
+  cardinality; the claim that it cannot *reduce* it is also stronger than the
+  premises support, and the twelfth review round caught the overreach in both
+  places it was written. Evidence: both `state_name` and any identifier map the
+  same state domain, so neither direction is settled by the substitution alone
+  — an injective identifier has at least as many distinct values as the label
+  set, and fewer only by no longer distinguishing states. Prometheus and
+  OpenTelemetry frame cardinality as a property of the observed value set.
+  Impact: cardinality gates admissibility and never decides the verdict, which
+  is the conclusion the corrected argument still carries. Corrected in ADR
+  004's "Known risks and limitations" and above in this plan.
 
 - Observation: adding a row to `docs/design.md` §11.1 is *not* inert, despite
   `has_table_bet` being a presence check. Evidence:
@@ -2380,6 +2420,52 @@ design.
   120-column budget at any wrapping. Date/Author: 2026-09-26, implementing
   agent, actioning the review the scrutineer returned after D38.
 
+- D40: **The thirteenth pass returned four findings over `787a716`, two adopted
+  as one subject and two declined, and the adoption is the first correction to
+  reach an *argument* rather than a record.** The freeze held a ninth time
+  (`HEAD` unchanged and `git status` empty before and after), and the log is
+  `/tmp/coderabbit15-….out` — 16 lines, 4959 bytes, exit 0, valid NDJSON,
+  `complete` reached with `outcome: completed`, no abort markers, no rate
+  limit. **Adopted.** Two findings — the only two of the round that are not
+  recurrences — target the same two lines of ADR 004's "Known risks and
+  limitations" and prescribe different remedies for them. Both are right that
+  the passage overreaches, and they differ only in how far: the claim as
+  written was that an identifier "cannot reduce metric cardinality" because the
+  substitution "relabels the same domain, so the number of distinct values an
+  observability backend sees is unchanged". The premise is true and the
+  conclusion does not follow from it. A relabelling of the same domain fixes
+  neither the size nor the direction of the image: an identifier that
+  distinguishes states is injective, so its image holds *at least* as many
+  distinct values as the label set, since nothing requires `state_name` to be
+  injective in turn; an identifier with a *smaller* image can only have reached
+  that by ceasing to distinguish states, which forfeits the identity it was
+  introduced to provide. The heading's own verb, "reduce", was therefore the
+  unsupported half — cardinality can rise as easily as fall — and neither
+  reviewer's replacement wording is adopted verbatim, because one of the two
+  asserts "has at least as many" without the injectivity premise on its own
+  side and the other attributes a uniqueness guarantee to `state_name` that
+  nothing provides. The corrected text states the relation the premises support
+  and keeps the conclusion the argument exists to carry: cardinality gates
+  admissibility and never decides the verdict. The same overreach appeared at
+  two further sites in this plan — the Q-and-A passage that introduced the
+  finding and the `Surprises & discoveries` observation recording it — and both
+  are corrected with it, since three copies of one bad argument is three times
+  the defect. **Declined, two findings, and the log settles which two.** This
+  round reports exactly three ADR findings: the date's full stop at line 9, and
+  the cardinality pair at 342-343 twice over — there is no `Status`-field
+  finding here, and an earlier draft of this entry imported one from the tenth
+  round by assuming symmetry where the log shows none. So the two declines are
+  the B7 row width, whose remedy remains arithmetically impossible and which
+  reviews eight and twelve already declined on the same measured floor — 164
+  characters of cell content plus pipes and padding make 177 columns the
+  narrowest rendering, and the row carries a recorded `MD013` exception rather
+  than a hidden one — and the ADR date's trailing full stop, declined a third
+  time on the same falsification: the style guide's own ADR template writes
+  `YYYY-MM-DD.` at `docs/documentation-style-guide.md:425`, ADR 004 follows it,
+  and `adr-003` — the estate's outlier — is the one that omits it. Date/Author:
+  2026-09-26, implementing agent, actioning the review the scrutineer returned
+  after D39.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2443,10 +2529,10 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-six were accounted for;
-the disposition of each follows. The section holds sixty-five top-level entries
-in all; the other thirty-nine are `Decision log` records D1–D39, which are
-decisions rather than observations and are dispositioned in their own section.
-Eight observations were recorded during or after the EP-M5 gate runs: a
+the disposition of each follows. The section holds sixty-six top-level entries
+in all; the other forty are `Decision log` records D1–D40, which are decisions
+rather than observations and are dispositioned in their own section. Eight
+observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
 record-versus-line discovery that closed the third round's `major` subject, the
