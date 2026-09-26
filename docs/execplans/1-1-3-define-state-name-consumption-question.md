@@ -453,7 +453,12 @@ Upstream artefacts and revisions at the time of writing:
 - Technical design: `docs/design.md`, same status and date.
 - Decision records: ADR 001; ADR 002 (Accepted 2026-07-22); ADR 003 (Accepted
   2026-08-22).
-- Roadmap: `docs/roadmap.md` at commit `bad9a04`.
+- Roadmap: `docs/roadmap.md` at commit `bad9a04` — still a true statement of
+  the inherited basis after the rebase, because that commit remains an ancestor
+  of the tip and `main` never touched this file
+  (`git diff --quiet bad9a04 e98b685 -- docs/roadmap.md` is silent), so the
+  revision pinned here and the revision the file now has differ only by the
+  branch's own edits.
 - Governing standard: `docs/documentation-style-guide.md`.
 - External interfaces treated as axioms, not verified here:
   `std::mem::discriminant`'s stability and opacity clauses; `tracing`'s
@@ -1061,6 +1066,20 @@ outcome, and a reviewer should approve it on that understanding.
       transient fault a fifth retry would be betting on. `27bdda9` is therefore
       recorded as unreviewed, and the retrying stops here rather than at a
       threshold picked in advance.
+- [x] The branch is rebased onto the PR's target. `origin/main` at `e98b685`
+      is now an ancestor of the tip: `bad9a04..fb22d52` was replayed as 51
+      commits with no conflicts, `git range-diff` reports all 51 as `=` so each
+      patch reproduced byte-for-byte, the 15 paths `main` changed and this
+      branch did not are byte-identical to `e98b685`'s versions, and the three
+      co-touched files match what a plain `git merge-tree` of the old tip with
+      `e98b685` produces — so the two branches compose rather than compete. The
+      seven gates were then re-run at the new tip, because a rebase is a new
+      candidate and evidence bound to the old head does not carry: all seven
+      exit 0, with `make test` at 99/99 including the 59 cases of the contract
+      suite. Recorded as D47, which also states why the acceptance test is
+      patch identity rather than the rebase's clean exit. The residual gap this
+      closes is rewritten rather than deleted, so the record keeps how the
+      divergence was measured as well as that it is gone.
 - [x] EP-M5's transcript requirement — the seven gates are recorded in
       `Artefacts and notes` over the delivered revision, which was the last
       unmet clause of that acceptance. The first attempt at it produced a
@@ -2193,7 +2212,7 @@ design.
   tables, and it offered twenty-four for the first count by counting every
   top-level bullet in the section rather than the `- Observation:` ones — the
   section's other thirty-two entries were `Decision log` records D1–D32 (D33
-  itself brings the tally to thirty-three; the tally has since grown to D46,
+  itself brings the tally to thirty-three; the tally has since grown to D47,
   and the same count-by-top-level-bullet method is what the
   `Outcomes & retrospective` section uses below). The lesson is D31's, one
   level down: a review is an input to be verified, and that applies to a
@@ -2804,6 +2823,53 @@ design.
   described rather than trusting it, and re-probed after the gate run that
   falsified it.
 
+- D47: **A rebase is the one operation that can silently drop the other
+  branch's work while every visible signal reads clean, so it is accepted on
+  patch identity rather than on exit status.** The task was to rebase
+  `1-1-3-define-state-name-consumption-question` onto the PR's target
+  `origin/main`. Replaying `bad9a04..fb22d52` — established as the exclusive
+  boundary because `bad9a04` is the parent of the branch's first commit and is
+  an ancestor of both tips, with no commit in the range appearing on `main` —
+  moved 51 commits onto `e98b685` and exited 0 with **zero conflicts**. That
+  clean exit is the condition worth distrusting rather than the result worth
+  trusting: a rebase that dropped a target-side hunk and a rebase that merged
+  it correctly both exit 0, and the second is only distinguishable by
+  measurement. The measurements that do distinguish it are three, and each
+  answers a different question. **Patch identity** — `git range-diff` reporting
+  all 51 as `=` — answers "did the branch's own work survive byte-for-byte?",
+  and it is the strongest available answer because `=` means the patch
+  reproduced exactly, not merely that no conflict was raised. **Target
+  survivorship** — every path `main` changed but the branch did not is
+  byte-identical to `e98b685` — answers "did the branch accidentally revert
+  `main`?", and covers the 15 files the branch's own 27 paths leave out.
+  **Merge equivalence** — `docs/developers-guide.md`, `Cargo.lock` and
+  `Makefile`, the three files both sides reach, hash equal at the new tip to
+  the tree a plain `git merge-tree --write-tree` produces — answers "if the two
+  changes interacted, did the rebase resolve them the way a merge would?" The
+  co-touched Markdown file is the only place the question is not rhetorical,
+  and there the answer is that the rebase kept both: the branch's section
+  entered at hunk `@@ -74` with **no deletion line anywhere in the diff against
+  the target**, so `main`'s `## Coverage publication` section at `@@ -208` is
+  intact and the two edits compose. Two further guards closed gaps the three
+  checks leave. A **repeated-block scan** — and the first version of this scan
+  was wrong, flagging every newly *inserted* four-line window as a duplication
+  when the artefact it exists to catch is a block appearing *more often*, so it
+  was tightened to require the target-side count to be at least one — found no
+  reconstruction artefact. And an **ownership-set comparison** confirmed the
+  rebased tip touches exactly the same 27 paths as the pre-rebase tip, which is
+  the cheap way to notice a replay that resurrected or dropped a file. The
+  lockfile directive was satisfied without regeneration, and the reasoning is
+  worth keeping because "rebuild the lock" is the usual instruction and the
+  wrong one here: the branch's only manifest-shaped file is `dylint.toml`, a
+  linter configuration, and `Cargo.toml` is identical at both tips, so
+  `Cargo.lock` is byte-identical to `main`'s and there is no divergence to
+  reconcile. Rebuilding it would have introduced a change where none was
+  wanted. Finally, the seven gates were re-run at the new tip rather than
+  inherited from the old one, because a completed rebase creates a new
+  candidate and evidence bound to the old head does not carry. Date/Author:
+  2026-09-27, implementing agent, on the rebase the user directed, before
+  publication.
+
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
   the previous green described a tree that no longer existed — the gates had
@@ -2884,21 +2950,25 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-eight were accounted
-for; the disposition of each follows. The section holds seventy-four top-level
-entries in all; the other forty-six are `Decision log` records D1–D46, which
+for; the disposition of each follows. The section holds seventy-five top-level
+entries in all; the other forty-seven are `Decision log` records D1–D47, which
 are decisions rather than observations and are dispositioned in their own
-section. Ten observations were recorded during or after the EP-M5 gate runs: a
-prose-wrapping rule, a correction to how this plan had been probing the
-formatter, the post-fix review round's falsification record, the
-record-versus-line discovery that closed the third round's `major` subject, the
-two the fourth and fifth rounds produced between them, the
-attribution-versus-arithmetic finding the seventh round forced, the ninth
-round's measurement that an inline link cannot be wrapped, the fourteenth
-round's distinction between an aborted stream and a scored one, and the
-gate-evidence rule that a green gate describes the bytes it read and no others.
-None bears on any upstream artefact, and the second review round — recorded as
-D29 rather than here, because its findings are decisions rather than
-observations — forced one upstream correction of its own, to ADR 004's
+section. **D47 is the one entry added after this reconciliation was first
+written**, by the rebase that closed the divergence the `Residual gaps` section
+once recorded; it is a decision about how a replay is accepted rather than a
+discovery about a document, so it is dispositioned here by being named rather
+than by being checked against an upstream artefact. Ten observations were
+recorded during or after the EP-M5 gate runs: a prose-wrapping rule, a
+correction to how this plan had been probing the formatter, the post-fix review
+round's falsification record, the record-versus-line discovery that closed the
+third round's `major` subject, the two the fourth and fifth rounds produced
+between them, the attribution-versus-arithmetic finding the seventh round
+forced, the ninth round's measurement that an inline link cannot be wrapped,
+the fourteenth round's distinction between an aborted stream and a scored one,
+and the gate-evidence rule that a green gate describes the bytes it read and no
+others. None bears on any upstream artefact, and the second review round —
+recorded as D29 rather than here, because its findings are decisions rather
+than observations — forced one upstream correction of its own, to ADR 004's
 stable-identifier paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
@@ -3028,21 +3098,39 @@ having and exactly when it looks like bureaucracy.
   accepting witness is a string fixture rather than a committed file, so none
   of them is required for this task. The first malformed `StateName` note is
   the first real exercise of the filler's side of the workflow.
-- **The branch is four commits behind `origin/main`** at `e98b685`, with
-  merge-base `bad9a04`. The divergence is a *delivery* concern rather than a
-  review one — it blocks a PR, not a tick — so the merge is deferred to PR time
-  rather than performed mid-review, where it would change the revision under
-  review and invalidate the gate evidence tied to the then-current commit. The
-  merge was measured safe read-only: `git merge-tree --write-tree` exits 0,
-  only three files are touched by both sides' reach (`Cargo.lock`, `Makefile`,
-  `docs/developers-guide.md`), of which this branch touched only the last, in a
-  region disjoint from main's (hunk `@@ -74` here against `@@ -208` there). The
-  one interaction worth naming: `c4efce9` bumps a pinned SHA in
-  `.github/workflows/mutation-testing.yml`, and
+- **The divergence from `origin/main` is closed, and the gap this bullet once
+  recorded is now the record of how it closed.** The branch stood four commits
+  behind `origin/main` at `e98b685` from merge-base `bad9a04`; it has since
+  been **rebased** onto `e98b685`, replaying `bad9a04..fb22d52` as 51 commits
+  with no conflicts, so the target is now an ancestor of the tip and the
+  divergence a reader can measure is zero. The rebase was semantically neutral
+  rather than merely conflict-free:
+  `git range-diff bad9a04..fb22d52 e98b685..HEAD` reports all 51 commits as
+  `=`, meaning each patch reproduced byte-identically, and the three files both
+  sides' reach touched — `Cargo.lock`, `Makefile`, `docs/developers-guide.md` —
+  are byte-identical at the new tip to what a plain
+  `git merge-tree --write-tree` of the old tip with `e98b685` produces. Of
+  those three the branch itself touched only `developers-guide.md`, in a region
+  disjoint from main's (hunk `@@ -74` here against `@@ -208` there), so the two
+  changes compose rather than compete. `Cargo.lock` is byte-identical to
+  `e98b685`'s version — main's — and nothing needed regenerating, because the
+  branch's only manifest-shaped file is `dylint.toml`, which is a linter
+  configuration main never had rather than a dependency manifest, and
+  `Cargo.toml` is untouched by both sides. The one interaction worth naming:
+  `c4efce9` bumps a pinned SHA in `.github/workflows/mutation-testing.yml`, and
   `tests/workflow_contracts/mutation_testing_test.py` asserts over that file —
   but it asserts the *shape* of the pin and not its value, saying so in its own
   docstring ("Dependabot owns the SHA value"), so the bump cannot break it.
-  Re-measure if `origin/main` advances past `e98b685`.
+  That the bump is now *in* the tip rather than merely measured is what the
+  rebase changed, and the assertion still holds for the reason the docstring
+  gives. Recorded as D47.
+
+  **This bullet deliberately states no count of commits behind or ahead and no
+  new tip's hash beyond what the rebase already fixed**, and the reason is
+  D43's and D46's: a revision written into this file is stale the moment the
+  file is committed, and any figure about the archive set is invalidated by the
+  run that validates it. The checkable form is the command in the paragraph —
+  run `git range-diff` and read the `=` column — not a number copied here.
 
 ## Verification plan
 
@@ -3964,6 +4052,29 @@ the rule being followed: they preserve the superseded run of the three Markdown
 gates rather than overwriting it, because the check that matters is not whether
 a gate passed but whether it passed over the bytes being shipped.
 
+**The run at the rebased tip, and the evidence gap it had to work around.**
+After the branch was rebased onto `e98b685`, all seven gates were re-run over
+the new candidate and all seven exited 0, with `make test` reporting
+`99 tests run: 99 passed, 0 skipped`. The seven logs and their sidecars carry
+the `-2` suffix (`…-question.out-2`), and a reader should know why before
+concluding that either set is spurious: the canonical filenames were already
+occupied by the pre-rebase runs, so the wrapper wrote the new evidence
+alongside rather than over it. **The sidecars written this way are weaker than
+the canonical ones**, and the difference is the one this section exists to make
+legible. They contain a bare `0` — the exit code and nothing else — where the
+canonical sidecars carry the timestamps, the `HEAD` sha, the
+`git status --porcelain` state and, for the three Markdown gates, the
+`plan_sha256` that pins the bytes. So the `-2` sidecars attest that each gate
+exited 0; they do not independently attest *which* revision or *which* bytes it
+exited 0 over, and the attribution for this run therefore rests on the two
+things that can be checked without them: the logs' own headers, and the fact
+that the tree was clean at `3f20bdc` with no tracked file modified for the
+whole of the run. That is a real limit and it is stated rather than smoothed,
+because the alternative was to overwrite the pre-rebase evidence and lose the
+comparison. A future run on this branch should prefer the canonical filenames
+once the pre-rebase evidence is no longer wanted, or adopt a suffix convention
+that keeps the rich fields.
+
 Two of the eight lines repay reading rather than skimming. The `make lint` line
 names its three legs because each must *reach* for the exit code to mean
 anything: a clippy failure stops the suite before `whitaker` runs, which is
@@ -4397,3 +4508,20 @@ re-permits in tests.
   constraint forbidding a `docs/design.md` §11.1 edit is now unconditional, and
   the §14 bullet is in scope. No implementation has started: `Progress` is
   unchanged and Stage A has not run.
+- 2026-09-27, rebased onto the PR's target and re-gated. The branch was
+  replayed from merge-base `bad9a04` onto `origin/main` at `e98b685` as 51
+  commits with no conflicts, closing the divergence the `Residual gaps` section
+  had recorded and deferred to PR time. The replay was accepted on patch
+  identity rather than on its clean exit: `git range-diff` reports all 51
+  commits as `=`, the 15 paths `main` changed and this branch did not are
+  byte-identical to `e98b685`'s versions, and the three co-touched files match
+  the tree a plain `git merge-tree` produces, so `Cargo.lock` is `main`'s and
+  nothing needed regenerating. All seven gates were re-run at the new tip —
+  seven exits of 0, `make test` at 99/99 — and their logs carry a `-2` suffix
+  because the canonical filenames held the pre-rebase evidence; those sidecars
+  record the exit code but not the revision, and `Artefacts and notes` states
+  that limit rather than implying otherwise. Recorded as D47. `Progress` gained
+  the rebase as a completed item; the four `Surprises & discoveries` tallies
+  and the `Conformance basis` roadmap pin were re-measured rather than assumed
+  to have survived the edit. EP-M5 and roadmap task 1.1.3 remain unticked, on
+  the bar D44 records: `27bdda9`'s review never ran.
