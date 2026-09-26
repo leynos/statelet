@@ -2762,6 +2762,21 @@ having and exactly when it looks like bureaucracy.
   accepting witness is a string fixture rather than a committed file, so none
   of them is required for this task. The first malformed `StateName` note is
   the first real exercise of the filler's side of the workflow.
+- **The branch is four commits behind `origin/main`** at `e98b685`, with
+  merge-base `bad9a04`. The divergence is a *delivery* concern rather than a
+  review one — it blocks a PR, not a tick — so the merge is deferred to PR time
+  rather than performed mid-review, where it would change the revision under
+  review and invalidate the gate evidence tied to the then-current commit. The
+  merge was measured safe read-only: `git merge-tree --write-tree` exits 0,
+  only three files are touched by both sides' reach (`Cargo.lock`, `Makefile`,
+  `docs/developers-guide.md`), of which this branch touched only the last, in a
+  region disjoint from main's (hunk `@@ -74` here against `@@ -208` there). The
+  one interaction worth naming: `c4efce9` bumps a pinned SHA in
+  `.github/workflows/mutation-testing.yml`, and
+  `tests/workflow_contracts/mutation_testing_test.py` asserts over that file —
+  but it asserts the *shape* of the pin and not its value, saying so in its own
+  docstring ("Dependabot owns the SHA value"), so the bump cannot break it.
+  Re-measure if `origin/main` advances past `e98b685`.
 
 ## Verification plan
 
