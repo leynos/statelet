@@ -3633,21 +3633,15 @@ documents are what a reader opens.
 
 ### Step 9 gate transcripts
 
-**The delivered revision.** Listed below are the seven EP-M5 names plus
-`make typecheck`, which is **not** one of them and is carried so a reader
-comparing this block against the acceptance list need not work out why the
-counts differ.
+**What this section is.** A record of gate runs, each attributed to the
+revision its bytes came from. It is deliberately not a promise about the tip: a
+transcript is only as durable as its reader's ability to find the revision it
+describes, and a block headed "the current run" goes stale the moment anyone
+edits the file again — which is how the two counts further down diverged
+unnoticed. Each run below names its revision instead.
 
-Every line is a measurement of the tree this commit carries, not of its
-predecessor. That is worth stating precisely, because the file you are reading
-is one of the inputs: all eight gates were run over `d4fb5ba` with this edit
-already in the working tree, and no further edit followed before the commit, so
-the gated bytes and the committed bytes are the same bytes. A reader can check
-that without trusting the claim by comparing `git rev-parse HEAD:<this path>`
-against `git hash-object <this path>` at a clean checkout — they match, or the
-commit was made after a later edit and this paragraph is describing a tree that
-never shipped. The earlier transcripts below cannot make that claim, which is
-why they are kept as history rather than merged into this one.
+`e4244e05632444c172163cb61744dc8f13c377cc` is the blob these seven gates
+measured, at revision `e76be77`.
 
 ```plaintext
 make check-fmt                    exit 0   28 files left unchanged
@@ -3660,19 +3654,34 @@ make test-workflow-contracts      exit 0   6 passed
 make typecheck                    exit 0   cargo check --all-targets --all-features
 ```
 
-Two entries repay reading rather than skimming. The `make lint` line names its
-three legs because each must *reach* for the exit code to mean anything: a
-clippy failure stops the suite before `whitaker` runs, which is D25's recorded
-failure mode, and this log shows all three finishing. The `make audit` line
-says 45 dependencies with no match rather than a bare zero, because
-`cargo-audit` loading 1271 advisories and matching none of them across 45
-crates is a different statement from an audit that scanned nothing.
+**One invariant governs how this file may be edited, and it is why the block
+above can be trusted for its revision and not for later ones.** This file is an
+input to exactly three of the seven gates — `make check-fmt` (through
+`mdtablefix`), `make markdownlint` and `make nixie` — and to none of the
+others: no test under `tests/` mentions `docs/execplans`
+(`grep -rn execplans tests/` returns nothing) and no Rust source reads it. So a
+commit whose only change is to this file must re-run those three and may leave
+the other five, while a commit touching Rust sources must re-run all seven. The
+`.stale-d4fb5ba-2026-09-26T06-42-25` archives beside each canonical log show
+the rule being followed: they preserve the superseded run of the three Markdown
+gates rather than overwriting it, because the check that matters is not whether
+a gate passed but whether it passed over the bytes being shipped.
 
-`make nixie` prints no diagram count of its own, so the figure beside it is
-derived rather than quoted: the log visits 28 files and closes with
-`All diagrams validated successfully!`, and `grep -rn '^```mermaid'` over the
-tracked Markdown finds three fences, in `docs/design.md`,
-`docs/documentation-style-guide.md` and `docs/rstest-bdd-users-guide.md`.
+Two of the eight lines repay reading rather than skimming. The `make lint` line
+names its three legs because each must *reach* for the exit code to mean
+anything: a clippy failure stops the suite before `whitaker` runs, which is
+D25's recorded failure mode. The `make audit` line says 45 crates with no match
+rather than a bare zero, because `cargo-audit` loading 1271 advisories and
+matching none across 45 crate dependencies is a different statement from an
+audit that scanned nothing — the same distinction a zero-findings abort forced
+on the review rounds.
+
+`make nixie` prints no diagram count of its own, so no count is attributed to
+it: the log visits 28 files and closes with
+`All diagrams validated successfully!`. The three Mermaid fences in the tracked
+Markdown — in `docs/design.md`, `docs/documentation-style-guide.md` and
+`docs/rstest-bdd-users-guide.md` — are named here with the grep that finds
+them, so a reader re-checks by looking rather than re-deriving.
 
 **The earlier runs, kept for the reds they record.** First at `aebe29d`, then
 re-run after the post-fix round at `26da23f`, whose figures the block below
