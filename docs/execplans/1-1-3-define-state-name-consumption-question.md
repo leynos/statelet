@@ -812,6 +812,35 @@ outcome, and a reviewer should approve it on that understanding.
       and one review nine's own text exposed, since it cites "review eight" as
       an earlier round. The order is now the order the passes happened, newest
       before the retroactively-recorded review five.
+- [x] CodeRabbit review eleven — six findings returned 2026-09-26 over
+      `cd458d5`, the commit review ten's corrections produced. The freeze held
+      for the seventh pass running, and the log reached `complete` with exit 0
+      and no abort markers. **This round reaches code**, the first to do so in
+      several passes: two near-duplicate findings ask `names_a_consumer` to
+      apply `is_negated` to its positive tokens so that "no tracing was used"
+      no longer counts as naming a consumer, and both are declined. A probe
+      built from the module's own predicates settles it — the ADR's second
+      obligation names "the metrics recorder **or its documented absence**",
+      which *is* a negated mention, so the reviewer's rule would refuse a
+      wording the document prescribes; and shadow-implementing that rule
+      rejects "no documentation was written" while still accepting "the
+      tracing subscriber was never used", the same claim in two wordings with
+      two verdicts. The asymmetry the finding notes is therefore deliberate:
+      `names_a_property` needs the negation test to avoid *rejecting* an
+      honest `None` cell, while `names_a_consumer` exists to be permissive,
+      and its stated failure mode is to accept a note a stricter reader would
+      refuse. **One adopted**: the awkward "two the fourth and fifth rounds
+      produced" phrasing in the reconciliation paragraph, rewritten as "the two
+      the fourth and fifth rounds produced between them". The remaining three
+      are declined. One is the plan's own quoted example in a code span —
+      `recognises`, cited *as the spelling the gate rejected*, so the
+      non-Oxford form is the datum and renaming it would delete the evidence;
+      AGENTS.md is explicit that backticked text is what the spelling gate
+      ignores, which is why the phrase is inside backticks. The other two are
+      the developers-guide heading number and `docs/contents.md`'s links,
+      recurrences measured across the canonical logs rather than counted by
+      eye: the heading subject appears in **six** of the thirteen logs and the
+      link subject in five. Recorded as D38.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -870,18 +899,20 @@ outcome, and a reviewer should approve it on that understanding.
       returned ten — so the bar is not met, and this item stays unticked. The
       six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
-      the only round that can tick this item. **Five further passes have since
+      the only round that can tick this item. **Six further passes have since
       returned** — four findings over `c9fc559`, seven over `dbac7d0`, five
-      over `227d975`, six over `33c79aa`, and five over `b1c8295` — each
-      actioned and gated in turn, and each leaving the bar unmet, so the item
-      is still unticked. Every pass has found something, and the last four
-      rounds' findings were themselves about this plan's own records rather
-      than about the work, which is the checklist-vs-evidence class D33 and D34
-      describe; the tenth round broke that run by aiming at the plan's
-      substance, and the review's own checklist-order defect it exposed was
-      found while recording it. Step 9 now carries the ordering this history
-      taught: the tick comes after a pass that returns no findings, not between
-      the gates and the review.
+      over `227d975`, six over `33c79aa`, five over `b1c8295`, and six over
+      `cd458d5` — each actioned and gated in turn, and each leaving the bar
+      unmet, so the item is still unticked. Every pass has found something. The
+      seventh through tenth rounds' findings were themselves about this plan's
+      own records rather than about the work, which is the checklist-vs-evidence
+      class D33 and D34 describe; the tenth round broke that run by aiming at
+      the plan's substance, and the review's own checklist-order defect it
+      exposed was found while recording it; and the eleventh returned to code
+      for the first time in several passes, its two code findings declined
+      against a probe rather than against precedent. Step 9 now carries the
+      ordering this history taught: the tick comes after a pass that returns no
+      findings, not between the gates and the review.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -2246,6 +2277,39 @@ design.
   re-litigated. Date/Author: 2026-09-26, implementing agent, actioning the
   review the scrutineer returned after D36.
 
+- D38: **The eleventh pass returned six findings over `cd458d5`, one adopted
+  and five declined, and it is the first round in several passes to reach
+  code.** The freeze held a seventh time (`HEAD` at `cd458d5` and `git status`
+  empty before and after), and the log is `/tmp/coderabbit13-….out` — 21 lines,
+  6535 bytes, exit 0, valid NDJSON, `complete` reached, no abort markers, no
+  rate limit. **Declined, as two near-duplicates.** Both ask `names_a_consumer`
+  to apply `is_negated` to its positive tokens, so that "no tracing was used"
+  stops counting as naming a consumer. A probe built from the module's own
+  predicates settles it against them. First, ADR 004's second obligation reads
+  "the tracing subscriber, the metrics recorder **or its documented absence**,
+  any model checker, and generated documentation" — a documented *absence* is a
+  negated mention, so the reviewer's rule would refuse a wording the ADR
+  expressly admits. Second, the rule is not even self-consistent:
+  shadow-implemented faithfully, it rejects "no documentation was written"
+  while still accepting "the tracing subscriber was never used" — the same
+  claim in two wordings, given two verdicts, which is the class of defect D31
+  declined a neighbouring request for. The asymmetry between the two predicates
+  is deliberate and load-bearing: `names_a_property` needs `is_negated` to
+  avoid *rejecting* an honest `None` cell that names a property only to deny
+  it, while `names_a_consumer` is permissive by design and documents its
+  failure mode as accepting a note a stricter reader would refuse. A third
+  finding asks this plan to stop quoting the non-Oxford spelling it uses as
+  evidence: the word is cited *as the spelling the gate rejected*, so renaming
+  it would delete the observation it supports, and AGENTS.md is explicit that
+  backticked text is what the spelling gate ignores. **Adopted.** The
+  reconciliation paragraph's "two the fourth and fifth rounds produced" reads
+  as a list item missing its noun; it now says "the two the fourth and fifth
+  rounds produced between them". The remaining two are recurrences, counted
+  across the canonical logs rather than by eye: the developers-guide heading
+  subject appears in **six** of the thirteen logs and the `docs/contents.md`
+  link subject in five. Date/Author: 2026-09-26, implementing agent, actioning
+  the review the scrutineer returned after D37.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2309,19 +2373,20 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-six were accounted for;
-the disposition of each follows. The section holds sixty-three top-level
-entries in all; the other thirty-seven are `Decision log` records D1–D37, which
-are decisions rather than observations and are dispositioned in their own
-section. Eight observations were recorded during or after the EP-M5 gate runs:
-a prose-wrapping rule, a correction to how this plan had been probing the
+the disposition of each follows. The section holds sixty-four top-level entries
+in all; the other thirty-eight are `Decision log` records D1–D38, which are
+decisions rather than observations and are dispositioned in their own section.
+Eight observations were recorded during or after the EP-M5 gate runs: a
+prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
 record-versus-line discovery that closed the third round's `major` subject, the
-two the fourth and fifth rounds produced, the attribution-versus-arithmetic
-finding the seventh round forced, and the ninth round's measurement that an
-inline link cannot be wrapped. None bears on any upstream artefact, and the
-second review round — recorded as D29 rather than here, because its findings
-are decisions rather than observations — forced one upstream correction of its
-own, to ADR 004's stable-identifier paragraph, which is dispositioned below.
+two the fourth and fifth rounds produced between them, the
+attribution-versus-arithmetic finding the seventh round forced, and the ninth
+round's measurement that an inline link cannot be wrapped. None bears on any
+upstream artefact, and the second review round — recorded as D29 rather than
+here, because its findings are decisions rather than observations — forced one
+upstream correction of its own, to ADR 004's stable-identifier paragraph, which
+is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
