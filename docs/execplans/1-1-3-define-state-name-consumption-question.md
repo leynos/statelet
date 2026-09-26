@@ -388,7 +388,8 @@ Written (new):
 
 Written (modified): `docs/design.md`, `docs/terms-of-reference.md`,
 `docs/context.md`, `docs/roadmap.md`, `docs/contents.md`, `docs/users-guide.md`,
-`docs/developers-guide.md`, `docs/repository-layout.md`.
+`docs/developers-guide.md`, `docs/repository-layout.md`, and this plan itself,
+which every step below revises as the living document.
 
 Read only, never modified: everything under `src/`;
 `tests/v0_1_exit_register_contract.rs` and its children; `Makefile`,
@@ -752,6 +753,24 @@ outcome, and a reviewer should approve it on that understanding.
       attributed the ADR-date finding to a round whose log does not contain it,
       and this checklist had never recorded the two-finding pass over
       `03985e8`. Recorded as D34.
+- [x] CodeRabbit review nine — six findings returned 2026-09-26 over
+      `33c79aa`, the commit review eight's corrections produced. The freeze held
+      for the fifth pass running. Three adopted, across two subjects. The
+      plan's "Files this plan reads or writes" declaration listed eight
+      modified documents and omitted this plan, which every step revises; the
+      two findings reporting it say the same thing, and the list now names the
+      plan with its reason. The template's `state-display-name` bullet said a
+      citation-only cell "is not sufficient" without saying who judges it, so a
+      reader could take the contract for the enforcer of a rule it does not
+      check; it now names the split. Three declined, each a recurrence:
+      `docs/contents.md`'s long link lines, whose rewrap review five falsified
+      twice and which a `markdown-it` probe shows cannot be wrapped at all —
+      breaking an inline link between `]` and `(` stops it rendering as a link
+      in every variant tried; the developers-guide heading number, falsified in
+      review five and again in the seventh, where that guide has no numbered
+      headings at all; and the B7 row width, whose remedy is arithmetically
+      impossible and which review eight already declined on the same
+      arithmetic. Recorded as D36.
 - [x] CodeRabbit review eight — five findings returned 2026-09-26 over
       `227d975`, the commit review seven's corrections produced. The freeze
       held for the fourth pass running. Two adopted: Step 9's completion
@@ -827,15 +846,15 @@ outcome, and a reviewer should approve it on that understanding.
       returned ten — so the bar is not met, and this item stays unticked. The
       six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
-      the only round that can tick this item. **Three further passes have since
-      returned** — four findings over `c9fc559`, seven over `dbac7d0`, and five
-      over `227d975` — each actioned and gated in turn, and each leaving the bar
-      unmet, so the item is still unticked. Every pass has found something, and
-      the last two rounds' findings were themselves about this plan's own
-      records rather than about the work, which is the checklist-vs-evidence
-      class D33 and D34 describe. Step 9 now carries the ordering this history
-      taught: the tick comes after a pass that returns no findings, not between
-      the gates and the review.
+      the only round that can tick this item. **Four further passes have since
+      returned** — four findings over `c9fc559`, seven over `dbac7d0`, five
+      over `227d975`, and six over `33c79aa` — each actioned and gated in turn,
+      and each leaving the bar unmet, so the item is still unticked. Every pass
+      has found something, and the last three rounds' findings were themselves
+      about this plan's own records rather than about the work, which is the
+      checklist-vs-evidence class D33 and D34 describe. Step 9 now carries the
+      ordering this history taught: the tick comes after a pass that returns no
+      findings, not between the gates and the review.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -2101,6 +2120,46 @@ design.
   silent one. Date/Author: 2026-09-26, implementing agent, actioning the review
   the scrutineer returned after D34.
 
+- D36: **The ninth pass returned six findings over `33c79aa`, three adopted
+  across two subjects and three declined, and every decline is a recurrence.**
+  The freeze held a fifth time (`HEAD` at `33c79aa` and `git status` empty
+  before and after), and the log is `/tmp/coderabbit11-….out` — eighteen lines,
+  exit 0, valid NDJSON, `complete` reached, no rate limit. **Adopted.** The
+  substance is one omission the round reported twice: "Files this plan reads or
+  writes" declares eight modified documents and does not declare *this plan*,
+  which every step of it revises — so the section that exists to bound the
+  change surface was itself the recording of a scope the task exceeds on every
+  commit. Both findings say the same thing at the same line; the list now names
+  the plan and says why. The second subject is the template's
+  `state-display-name` bullet, which said a citation-only cell "is not
+  sufficient" and left the enforcer unnamed. ADR 004 already draws that line —
+  three obligations are "checked, not merely asked for", and the adequacy of
+  the strings is the reviewer's judgement at task 3.2.1 — so the bullet now
+  says which is which, and a Phase 2 engineer copying the form cannot mistake
+  the contract for the judge of a rule it does not implement. **Declined
+  three.** The `docs/contents.md` rewrap returns for a third time, and this
+  round the falsification is stronger than review five's: a `markdown-it` probe
+  shows the remedy cannot be applied at all. Putting the text on one line and
+  `](url)` on the next stops the link rendering — `href` is `undefined` in
+  every variant tried, indented or not — because CommonMark will not split a
+  link's destination from its `](`; and the shortest reference-style definition
+  that keeps one line under 80 is 79 columns, which is why review five's
+  reference-link remedy was already falsified against the style guide's "Prefer
+  inline links". The four cited lines are therefore long by necessity, not by
+  neglect, and MD013 exempts them because no whitespace follows column 80. The
+  developers-guide heading number returns for a third time: that guide has no
+  numbered headings at all, so there is no sequence to join. (The "sixteen of
+  the twenty-two" figure review five used is re-measured and holds under the
+  `##`-heading criterion: six documents in `docs/` have numbered headings,
+  sixteen do not.) The B7 width finding returns verbatim from the eighth pass,
+  with the same impossible remedy, and is declined on the arithmetic already
+  recorded there. Four of this round's six findings therefore rest on one of
+  two claims the repository falsifies — the link can be wrapped, or the heading
+  should be numbered — and both have now survived three rounds because the
+  reviewer consistently expects them, which is evidence about the reviewer
+  rather than about the branch. Date/Author: 2026-09-26, implementing agent,
+  actioning the review the scrutineer returned after D35.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2118,6 +2177,27 @@ design.
   reconciliation paragraph — name the primary source, here the log path, so the
   next reader can check the claim rather than repeating it. Date/Author:
   2026-09-26, implementing agent, on the seventh review round's count findings.
+
+- Observation: **an inline link cannot be wrapped, so a long link line is a
+  formatting floor rather than an unfinished job.** Three review rounds have
+  asked for `docs/contents.md`'s long bullet lines to be brought under 80
+  columns, and the third asked plainly, which is why the remedy was measured
+  this time instead of argued. A `markdown-it` probe over the exact content
+  shows the obvious wrap does not merely look odd — it stops rendering a link
+  at all. Moving the link text to one line and `](url)` to the next yields no
+  `<a>` element and an `undefined` href, indented or not, because CommonMark
+  will not separate a link's destination from the `](` that opens it. What
+  remains is reference-style links, and their shortest possible definition line
+  is `[1]: <74-char url>` at 79 columns — inside the limit, and refused anyway
+  by the style guide's "Prefer inline links using `[text](url)`".
+  `markdownlint` is already green on all four lines, because MD013 exempts a
+  line with no whitespace past column 80, which is exactly the shape a long URL
+  produces. Impact: the estate's 80-column rule and its inline-link preference
+  conflict wherever a path is long, and this repository resolves it in favour
+  of the link — the four lines stay as they are, and a future reviewer reading
+  the width should know the wrap they propose would break the navigation rather
+  than tidy it. Date/Author: 2026-09-26, implementing agent, on the ninth
+  review round's `docs/contents.md` finding.
 
 ## Outcomes & retrospective
 
@@ -2142,16 +2222,17 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All twenty-five were accounted for;
-the disposition of each follows. The section holds sixty top-level entries in
-all; the other thirty-five are `Decision log` records D1–D35, which are
+the artefacts named in `Conformance basis`. All twenty-six were accounted for;
+the disposition of each follows. The section holds sixty-two top-level entries
+in all; the other thirty-six are `Decision log` records D1–D36, which are
 decisions rather than observations and are dispositioned in their own section.
-Seven observations were recorded during or after the EP-M5 gate runs: a
+Eight observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
 record-versus-line discovery that closed the third round's `major` subject, the
-two the fourth and fifth rounds produced, and the attribution-versus-arithmetic
-finding the seventh round forced. None bears on any upstream artefact, and the
+two the fourth and fifth rounds produced, the attribution-versus-arithmetic
+finding the seventh round forced, and the ninth round's measurement that an
+inline link cannot be wrapped. None bears on any upstream artefact, and the
 second review round — recorded as D29 rather than here, because its findings
 are decisions rather than observations — forced one upstream correction of its
 own, to ADR 004's stable-identifier paragraph, which is dispositioned below.
