@@ -3633,11 +3633,53 @@ documents are what a reader opens.
 
 ### Step 9 gate transcripts
 
-First run at revision `aebe29d`, then re-run after the post-fix round at
-`26da23f` — the revision below. Both runs were sequential, one gate at a time,
-and each command is the one Step 9 names. The figures throughout are the second
-run's, which is the one that exercised the tree being delivered; only the first
-run is where the `clippy::shadow-reuse` red appeared.
+**The delivered revision.** Listed below are the seven EP-M5 names plus
+`make typecheck`, which is **not** one of them and is carried so a reader
+comparing this block against the acceptance list need not work out why the
+counts differ.
+
+Every line is a measurement of the tree this commit carries, not of its
+predecessor. That is worth stating precisely, because the file you are reading
+is one of the inputs: all eight gates were run over `d4fb5ba` with this edit
+already in the working tree, and no further edit followed before the commit, so
+the gated bytes and the committed bytes are the same bytes. A reader can check
+that without trusting the claim by comparing `git rev-parse HEAD:<this path>`
+against `git hash-object <this path>` at a clean checkout — they match, or the
+commit was made after a later edit and this paragraph is describing a tree that
+never shipped. The earlier transcripts below cannot make that claim, which is
+why they are kept as history rather than merged into this one.
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   cargo doc, cargo clippy, whitaker all reached
+make test                         exit 0   99 tests run: 99 passed, 0 skipped; 1 doctest
+make markdownlint                 exit 0   Summary: 0 error(s) over 29 files
+make nixie                        exit 0   28 files visited; all diagrams validated
+make audit                        exit 0   45 crate dependencies scanned; none matched
+make test-workflow-contracts      exit 0   6 passed
+make typecheck                    exit 0   cargo check --all-targets --all-features
+```
+
+Two entries repay reading rather than skimming. The `make lint` line names its
+three legs because each must *reach* for the exit code to mean anything: a
+clippy failure stops the suite before `whitaker` runs, which is D25's recorded
+failure mode, and this log shows all three finishing. The `make audit` line
+says 45 dependencies with no match rather than a bare zero, because
+`cargo-audit` loading 1271 advisories and matching none of them across 45
+crates is a different statement from an audit that scanned nothing.
+
+`make nixie` prints no diagram count of its own, so the figure beside it is
+derived rather than quoted: the log visits 28 files and closes with
+`All diagrams validated successfully!`, and `grep -rn '^```mermaid'` over the
+tracked Markdown finds three fences, in `docs/design.md`,
+`docs/documentation-style-guide.md` and `docs/rstest-bdd-users-guide.md`.
+
+**The earlier runs, kept for the reds they record.** First at `aebe29d`, then
+re-run after the post-fix round at `26da23f`, whose figures the block below
+shows. That run predates the contract suite's growth and so reports
+`87 tests run`; the delivered tree carries 99. The two blocks are not
+restatements of one measurement and neither may be quoted for the other. Only
+the first run is where the `clippy::shadow-reuse` red appeared.
 
 `make check-fmt` — exit 0:
 
