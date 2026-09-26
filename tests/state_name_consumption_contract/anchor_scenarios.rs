@@ -1,0 +1,393 @@
+//! Anchor scenarios: the template, the quoted clauses, and the roadmap bindings.
+//!
+//! Each of these checks a *link* between two documents: the blank form against
+//! the register it instantiates, the clauses ADR 004 quotes against the
+//! sections they came from, and the gate table and success criterion against
+//! the live roadmap. A drift on either side of any pair fails here.
+
+use pretty_assertions::assert_eq;
+use rstest::rstest;
+
+use super::{
+    ADR,
+    ADR_002,
+    DESIGN,
+    EMPTY_CLAUSE_LIST,
+    ROADMAP,
+    STRONGER,
+    clauses,
+    fixtures::{TEMPLATE, gate_table, status_register_without},
+    fold_whitespace,
+    live_status,
+    mutated,
+    parse::{gate_rows, note_rows, status_rows},
+    registers::check_deferred_clause,
+    roadmap::{check_gate_titles, check_success_criterion, task_records},
+    types::{Register, field_order},
+};
+
+/// Checks the blank form field-by-field against the register.
+///
+/// The form is read from `TEMPLATE`, the `include_str!` of
+/// `docs/phase-2-validation-note-template.md`, so a check can fail only when
+/// the live document and the register disagree.
+#[test]
+fn template_matches_the_status_register() -> Result<(), String> {
+    let rows = live_status()?;
+    let template = note_rows(TEMPLATE).map_err(|error| error.to_string())?;
+    assert_eq!(
+        template
+            .iter()
+            .map(|row| row.field.clone())
+            .collect::<Vec<String>>(),
+        field_order(&rows)
+    );
+    for row in &template {
+        assert_eq!(row.status, "TBD", "field {} must ship blank", row.field);
+        assert_eq!(row.evidence, "TBD", "field {} must ship blank", row.field);
+    }
+    Ok(())
+}
+
+/// Resolves the three quoted clauses, and rejects a rewritten clause, a
+/// relocated clause, a fabricated one, a mis-attributed one, and an emptied
+/// evidence section.
+#[test]
+fn quoted_passages_still_resolve() -> Result<(), String> {
+    clauses::check_quoted_clauses(ADR, DESIGN, ROADMAP, ADR_002)?;
+    // The check reports the file a reader must open, not the attribution word
+    // the ADR uses for it.
+    let drifted = |path: &str, quoted: &str| {
+        Err(format!(
+            "{path} no longer contains the quoted clause {quoted:?} under \"6.1 State naming\". \
+             Repair: update ADR 004 and its contract together."
+        ))
+    };
+    // The source no longer carries the clause the ADR quotes. The reported
+    // text is the ADR's quotation, because that is what failed to resolve.
+    let rewritten = mutated(DESIGN, "stronger", "a stronger type");
+    assert_eq!(
+        clauses::check_quoted_clauses(ADR, &rewritten, ROADMAP, ADR_002),
+        drifted("docs/design.md", STRONGER)
+    );
+    // The clause is still in `docs/design.md`, word for word, but a heading now
+    // ends §6.1 before it. A resolver that searched the whole document rather
+    // than the named section would accept it.
+    let relocated = mutated(
+        DESIGN,
+        "The `mdtablefix` baseline",
+        "### 6.1.1 Superseded\n\nThe `mdtablefix` baseline",
+    );
+    assert_eq!(
+        clauses::check_quoted_clauses(ADR, &relocated, ROADMAP, ADR_002),
+        drifted("docs/design.md", STRONGER)
+    );
+    // The ADR quotes a clause its source never carried. The needle is a single
+    // word: `mdtablefix --wrap` breaks the quoted clause between "something"
+    // and "stronger", so any longer needle would be split by the formatter.
+    let fabricated = mutated(ADR, "stronger", "weaker");
+    assert_eq!(
+        clauses::check_quoted_clauses(&fabricated, DESIGN, ROADMAP, ADR_002),
+        drifted(
+            "docs/design.md",
+            "The default remains `&'static str` until a real example consumes something weaker"
+        )
+    );
+    // The clause is real and unmoved, but the ADR now credits it to a document
+    // this contract does not read.
+    let misattributed = mutated(ADR, "— design", "— context");
+    assert_eq!(
+        clauses::check_quoted_clauses(&misattributed, DESIGN, ROADMAP, ADR_002),
+        Err(
+            "docs/adr-004-state-name-consumption-evidence.md attributes a clause to \"context\", \
+             which this contract does not read. Repair: use design, roadmap or adr-002."
+                .to_owned()
+        )
+    );
+    // The evidence section still holds its delimiters but no clause at all.
+    let emptied = empty_evidence_block(ADR);
+    assert_eq!(
+        clauses::check_quoted_clauses(&emptied, DESIGN, ROADMAP, ADR_002),
+        Err(EMPTY_CLAUSE_LIST.to_owned())
+    );
+    Ok(())
+}
+
+/// Empties ADR 004's evidence block while leaving both delimiters in place.
+///
+/// Replacing the quoted text would leave the italic markers and so leave an
+/// (empty-bodied) clause behind; the empty-list failure needs a block that
+/// genuinely holds none.
+fn empty_evidence_block(adr: &str) -> String {
+    let begin = Register::Evidence.begin();
+    let end = Register::Evidence.end();
+    let Some((head, rest)) = adr.split_once(begin) else {
+        return adr.to_owned();
+    };
+    let Some((_, tail)) = rest.split_once(end) else {
+        return adr.to_owned();
+    };
+    format!("{head}{begin}\n\n{end}{tail}")
+}
+
+/// The number of roadmap task titles naming a fragment, counted as the check
+/// counts.
+///
+/// The span is the *title*, not the record, because that is the span the check
+/// reads: a gate binds by task title. Counting records would disagree with the
+/// check for exactly the fragment this helper exists to describe — "baseline"
+/// names three titles and six whole records — and a helper that disagrees with
+/// the check it predicts is worse than a literal, because the assertion would
+/// pass while pinning the wrong number.
+fn roadmap_fragment_matches(fragment: &str) -> usize {
+    task_records(ROADMAP)
+        .iter()
+        .filter(|record| record.title.contains(fragment))
+        .count()
+}
+
+/// The ambiguity failure, with its count taken from the live roadmap.
+///
+/// A literal count would freeze the roadmap. Binding gates by fragment exists
+/// so that completing a bound task or renumbering the roadmap does not break
+/// the build; a literal "6" reintroduces exactly that breakage one line later,
+/// and fails for a reason a reader would have to diff two documents to see.
+///
+/// Deriving it costs something, and the cost is worth naming: because this
+/// helper counts the way the check counts, the *number* in the message can no
+/// longer disagree with `check_gate_titles`, so that one digit is no longer
+/// independently pinned. What remains pinned is everything the control is for —
+/// that the fragment still matches more than one record (asserted separately by
+/// `the_ambiguity_fragment_still_matches_many_records`, so this control cannot
+/// quietly decay into a single match and pass), that the check rejects rather
+/// than accepts, and that it takes the ambiguous branch rather than the
+/// "no task" one. The counting *method* is pinned as far as it can be: a check
+/// counting raw document lines would now report a *different* number here, so
+/// this assertion still fails if the check regresses to line counting.
+fn ambiguous_fragment_message(gate: &str, fragment: &str) -> String {
+    let matches = roadmap_fragment_matches(fragment);
+    format!(
+        "docs/roadmap.md: gate {gate} names task fragment {fragment:?}, which matches {matches} \
+         tasks. Repair: use a fragment specific to one task."
+    )
+}
+
+/// Holds the ambiguity control's precondition: its fragment matches many
+/// records.
+///
+/// The control asserts an exact message, and that message is derived from the
+/// live roadmap, so it cannot fail merely because the number moved. What it
+/// *must* still fail on is the precondition that there is an ambiguity to
+/// demonstrate at all. Without this, a roadmap edit leaving one "baseline"
+/// record would turn `#[case::ambiguous]` into a test of nothing: the check
+/// would accept the fragment, the case would fail for an unrelated reason, and
+/// the only thing the suite would be saying is that the fixture went stale.
+#[test]
+fn the_ambiguity_fragment_still_matches_many_records() {
+    let matches = roadmap_fragment_matches("baseline");
+    assert!(
+        matches > 1,
+        "the ambiguity control's fragment matches {matches} roadmap task record(s), so its case \
+         proves nothing about ambiguity. Repair: choose a fragment the live roadmap still repeats."
+    );
+}
+
+/// The "no task" failure for a fragment no task title carries.
+///
+/// A fragment is only a task binding when it names a *task*. Each of the
+/// deceiving fragments below is present in `docs/roadmap.md` and would satisfy a
+/// scan of the document's lines: `kill gates` appears in a phase heading,
+/// `adr-004-state-name-consumption-evidence.md` inside a task's link, and
+/// `Requires 1.1.2` inside one of its sub-bullets. None is a task title, so
+/// each must be reported as matching no task.
+fn unresolved_fragment_message(gate: &str, fragment: &str) -> String {
+    format!(
+        "docs/roadmap.md: gate {gate} names task fragment {fragment:?}, which matches no task. \
+         Repair: restore that task's title, or revise ADR 004's gate table."
+    )
+}
+
+/// Resolves each gate's title fragment to exactly one live roadmap task, and
+/// rejects a fragment matching none and one matching many.
+#[rstest]
+#[case::records_process_buffer("S1", "Annotate `mdtablefix` `ProcessBuffer`", None)]
+#[case::records_continuation("S2", "Annotate `mdtablefix` continuation", None)]
+#[case::records_baseline("S3", "Apply the conventions-only baseline", None)]
+#[case::decides("S4", "Finalize the `StateName` return shape", None)]
+#[case::unresolved(
+    "S4",
+    "Do the thing",
+    Some(unresolved_fragment_message("S4", "Do the thing"))
+)]
+#[case::prose_is_not_a_task(
+    "S4",
+    "kill gates",
+    Some(unresolved_fragment_message("S4", "kill gates"))
+)]
+#[case::a_link_is_not_a_task(
+    "S4",
+    "adr-004-state-name-consumption-evidence.md",
+    Some(unresolved_fragment_message("S4", "adr-004-state-name-consumption-evidence.md"))
+)]
+#[case::a_sub_bullet_is_not_a_task(
+    "S4",
+    "Requires 1.1.2",
+    Some(unresolved_fragment_message("S4", "Requires 1.1.2"))
+)]
+#[case::ambiguous("S3", "baseline", Some(ambiguous_fragment_message("S3", "baseline")))]
+fn gate_titles_resolve(
+    #[case] gate: &str,
+    #[case] fragment: &str,
+    #[case] failure: Option<String>,
+) -> Result<(), String> {
+    let mutated = gate_table().replace(&gate_table_fragment(gate)?, fragment);
+    let row = gate_rows(&mutated)
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .find(|row| row.gate == gate)
+        .expect("the fixture gate table must name every gate");
+    assert_eq!(row.fragment, fragment);
+    match failure {
+        None => assert_eq!(check_gate_titles(&mutated, ROADMAP), Ok(())),
+        Some(expected) => assert_eq!(check_gate_titles(&mutated, ROADMAP), Err(expected)),
+    }
+    Ok(())
+}
+
+/// The fragment the fixture gate table ships for one gate, so that a case can
+/// replace it without the table being written out twice.
+///
+/// Fallible rather than `expect`ing, for the reason given on `blocked_by`. An
+/// absent gate is not a fixture defect either: `gate_titles_resolve` asserts the
+/// fragment it receives after calling this, so returning an empty string for an
+/// unnamed gate keeps the case's own assertion as the place the failure lands.
+fn gate_table_fragment(gate: &str) -> Result<String, String> {
+    Ok(gate_rows(&gate_table())
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .find(|row| row.gate == gate)
+        .map_or_else(String::new, |row| row.fragment))
+}
+
+/// Checks the acceptance criterion the task is graded on still resolves.
+#[test]
+fn success_criterion_still_maps() -> Result<(), String> {
+    check_success_criterion(&live_status()?, ROADMAP)?;
+    let missing = status_register_without("tracing-use");
+    let rows = status_rows(&missing).expect("the mutated register still parses");
+    assert_eq!(
+        check_success_criterion(&rows, ROADMAP),
+        Err(
+            "docs/adr-004-state-name-consumption-evidence.md: no status-register field maps the \
+             criterion noun \"tracing use\". Repair: add the tracing-use field, or reword the \
+             roadmap task."
+                .to_owned()
+        )
+    );
+    let reworded = mutated(ROADMAP, "and tracing use", "and tracing coverage");
+    assert_eq!(
+        check_success_criterion(&live_status()?, &reworded),
+        Err(
+            "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: restore \
+             \"the Phase 2 validation note template has fields for state display name, optional \
+             identifier need, metrics cardinality, and tracing use\", or revise this contract \
+             together with the task."
+                .to_owned()
+        )
+    );
+    Ok(())
+}
+
+/// Rejects the criterion when its sentence appears only *outside* a task.
+///
+/// The clause is a task's success bullet. The same sentence in the roadmap's
+/// framing prose is not the criterion, and a check that scanned the document's
+/// lines would accept it — reporting the task as still graded on a sentence
+/// the task had lost. The control plants an identical sentence in the page's
+/// introduction, then breaks the task's own copy with a needle unique to its
+/// bullet, so exactly one copy of the clause survives and the only question is
+/// whether the check knows which document region it is in.
+///
+/// Both needles are phrases no reflow can split. The clause itself is never a
+/// needle: `mdtablefix --wrap` breaks it across lines, and the replacements are
+/// applied to the raw text, so a needle spanning one of those breaks would stop
+/// applying the next time the document was formatted.
+#[test]
+fn criterion_outside_a_task_is_not_the_criterion() -> Result<(), String> {
+    let planted = mutated(
+        ROADMAP,
+        "# Statelet roadmap\n",
+        "# Statelet roadmap\n\nRecall that the Phase 2 validation note template has fields for \
+         state display name, optional identifier need, metrics cardinality, and tracing use.\n",
+    );
+    let broken_in_the_task = mutated(&planted, "Success: the Phase 2", "Success: the note form");
+    let clause = fold_whitespace(
+        "the Phase 2 validation note template has fields for state display name, optional \
+         identifier need, metrics cardinality, and tracing use",
+    );
+    let copies = fold_whitespace(&broken_in_the_task)
+        .matches(&clause)
+        .count();
+    assert_eq!(
+        copies, 1,
+        "this control needs exactly one copy of the criterion in the document — the one planted \
+         in the introduction — and found {copies}. Repair: check that the planted sentence still \
+         matches the clause the check looks for, and that the task's own copy is still broken by \
+         the reword; a control with no surviving copy proves nothing about where the clause lives."
+    );
+    assert_eq!(
+        check_success_criterion(&live_status()?, &broken_in_the_task),
+        Err(
+            "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: restore \
+             \"the Phase 2 validation note template has fields for state display name, optional \
+             identifier need, metrics cardinality, and tracing use\", or revise this contract \
+             together with the task."
+                .to_owned()
+        )
+    );
+    Ok(())
+}
+
+/// Holds the gate controls' preconditions against the live roadmap.
+///
+/// Those controls assert fragments that appear in the roadmap *outside* every
+/// task title, which is a property of the roadmap rather than of the contract.
+/// A roadmap edit can therefore retire a control silently: the fragment stops
+/// appearing, `check_gate_titles` still rejects it for the same reason, the
+/// case still passes, and the suite stops demonstrating anything about prose.
+/// This test fails instead, naming what to re-choose.
+#[test]
+fn the_deceiving_fragments_still_appear_outside_task_titles() {
+    for fragment in [
+        "kill gates",
+        "adr-004-state-name-consumption-evidence.md",
+        "Requires 1.1.2",
+    ] {
+        let in_document = ROADMAP.lines().any(|line| line.contains(fragment));
+        let in_a_title = task_records(ROADMAP)
+            .iter()
+            .any(|record| record.title.contains(fragment));
+        assert!(
+            in_document && !in_a_title,
+            "{fragment:?} no longer appears in the roadmap outside every task title (present in \
+             the document: {in_document}; present in a title: {in_a_title}), so its control no \
+             longer demonstrates that prose is not a task. Repair: choose a fragment the live \
+             roadmap still carries outside its task titles."
+        );
+    }
+}
+
+/// Checks that `docs/design.md` still defers the default to evidence.
+#[test]
+fn deferred_clause_still_resolves() -> Result<(), String> {
+    check_deferred_clause(DESIGN)?;
+    let reworded = mutated(DESIGN, "stronger", "a stronger type");
+    assert_eq!(
+        check_deferred_clause(&reworded),
+        Err(format!(
+            "docs/design.md §6.1 no longer contains {STRONGER:?}. Repair: restore the default's \
+             deferral, or revise ADR 004 and its contract together."
+        ))
+    );
+    Ok(())
+}

@@ -31,6 +31,8 @@ compact and omits build output such as `target/`.
 
 ├── tests/
 │   ├── stub.rs
+│   ├── state_name_consumption_contract.rs
+│   ├── state_name_consumption_contract/
 │   └── v0_1_exit_register_contract.rs
 ├── AGENTS.md
 ├── Cargo.toml
@@ -39,6 +41,7 @@ compact and omits build output such as `target/`.
 ├── README.md
 ├── clippy.toml
 ├── codecov.yml
+├── dylint.toml
 └── rust-toolchain.toml
 ```
 
@@ -72,6 +75,31 @@ compact and omits build output such as `target/`.
   replace it.
 - `tests/v0_1_exit_register_contract.rs`: Guards ADR 003 against drift in its
   exit register, cited evidence, and roadmap gates.
+- `tests/state_name_consumption_contract.rs`: Guards ADR 004 against drift in
+  its status and aggregation registers, its gate table, the validation note
+  template, and the source clauses it quotes. It also reads
+  `docs/validation-notes/` to check any committed note carrying the
+  `<!-- state-name-note -->` marker.
+- `tests/state_name_consumption_contract/`: Holds that contract's private
+  child modules: the table parser, the register vocabulary, the evidence-cell
+  predicates, the note policy and its verdict checks, the cross-register
+  consistency checks, quoted-clause resolution, the roadmap's task-record
+  grammar with the two checks that bind it, the notes-directory scan, the row
+  fixtures, and the four scenario modules — `anchor_scenarios.rs` for the
+  template and roadmap bindings, `note_scenarios.rs` for note cells and their
+  verdict, `register_scenarios.rs` for the registers, and `scan_scenarios.rs`
+  for the directory scan.
+- `docs/validation-notes/`: Holds the filled validation notes, one per task,
+  named `<task>-<subject>.md`. Shared by several Phase 2 and Phase 3 decisions;
+  a note declares which contract reads it with a marker comment.
+- `docs/phase-2-validation-note-template.md`: The blank form a validation note
+  is instantiated from. It is the schema ADR 004's rule reads, not design
+  material, and it is never edited to record an observation.
+- `dylint.toml`: Configures Whitaker lint behaviour not expressible in Rust
+  source. It exempts one module — `state_name_consumption_contract::notes` —
+  from `no_std_fs_operations`, which denies `std::fs` in integration-test
+  crates and cannot be suppressed by any attribute. The exemption is
+  path-scoped so the rest of that contract stays under the lint.
 - `AGENTS.md`: Provides repository-specific working instructions for agents and
   contributors.
 - `Cargo.toml`: Defines package metadata, dependencies, lint policy, and Cargo

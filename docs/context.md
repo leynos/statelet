@@ -10,8 +10,10 @@ Companion documents:
 - `docs/terms-of-reference.md`
 - `docs/design.md`
 - `docs/roadmap.md`
+- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/phase-2-validation-note-template.md`
 
-Last substantive revision: 2026-06-14
+Last substantive revision: 2026-09-19
 
 ## Purpose
 
@@ -101,9 +103,19 @@ A transition boundary whose signature does not report domain failure with
 
 ### State name
 
-A stable, low-cost name for a state used in diagnostics, tracing fields, and
-generated documentation. A state name is not required to be the same as `Debug`
-output.
+A low-cost name for a state used in diagnostics, tracing fields, and generated
+documentation. A state name is not required to be the same as `Debug` output.
+Stability across releases is an intended property, not a settled one: whether a
+name suffices or a separate stable identifier is needed is the question roadmap
+task 3.2.1 decides from the validation notes defined in
+[ADR 004](adr-004-state-name-consumption-evidence.md).
+
+### State identifier
+
+A stable value distinguishing one state from another for machine consumption;
+distinct from a state name, which is a human-readable label. Whether `statelet`
+needs one, or whether a state name suffices for v0.1, is the question roadmap
+task 3.2.1 decides. See [ADR 004](adr-004-state-name-consumption-evidence.md).
 
 ### Transition instrumentation
 
@@ -189,3 +201,11 @@ without converting the code into a framework or graph-first DSL.
 The previously implemented Rust proc-macro project in this project family. It
 informs `statelet` crate-boundary, compile-diagnostic, and dependency-topology
 decisions, especially the risk of circular dependencies.
+
+### Validation note
+
+The record a validation task produces, instantiated from
+`docs/phase-2-validation-note-template.md` and committed to
+`docs/validation-notes/`, carrying the marker comment its contract test keys
+on. A validation note is evidence, not a verdict; the rule that reads one note,
+or several, is [ADR 004](adr-004-state-name-consumption-evidence.md).

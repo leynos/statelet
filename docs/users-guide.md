@@ -18,6 +18,13 @@ Statelet may deliberately ship nothing if either validation example shows
 little value. [ADR 003](adr-003-v0-1-exit-register.md) records that off-ramp
 alongside the conventions-only and macro release scopes.
 
+The shape of the state name itself is likewise unsettled. Whether a
+`&'static str` is enough, or whether consumers need a stable identifier as
+well, will be decided from observations recorded while the validation examples
+are annotated and not before — so no identifier will be added on anticipation
+alone. [ADR 004](adr-004-state-name-consumption-evidence.md) defines what those
+observations record and how they are read.
+
 ## Quick start
 
 Run the public validation entrypoint from a fresh checkout:

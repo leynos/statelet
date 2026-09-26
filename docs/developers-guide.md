@@ -74,6 +74,80 @@ The contract test keeps `googletest` and `pretty_assertions` test-only. It uses
 combination, and `pretty_assertions` for readable diffs when parsed document
 rows differ. Neither dependency belongs in the runtime crate.
 
+## StateName consumption contract
+
+`tests/state_name_consumption_contract.rs` owns the integration-test scenarios
+for [ADR 004](adr-004-state-name-consumption-evidence.md). Its child modules
+each own one invariant class rather than a share of the text: `parse.rs` holds
+the one delimited-table syntax function, `types.rs` the register vocabulary and
+the `ParseError` messages, `claims.rs` what an evidence cell's words say — a
+citation, a consumer, a property — and `policy.rs` what those answers oblige,
+naming admissibility and the note verdict. The checks that bind two documents
+to each other are one module per binding: `clauses.rs` for quoted-clause
+resolution, `registers.rs` for the cross-register checks and the status
+register's own consistency, and `roadmap.rs` for the roadmap's task-record
+grammar, the gate table, and the success criterion. `notes.rs` holds the
+read-only scan of `docs/validation-notes/`, and `fixtures.rs` the row constants
+the negative controls build documents from. The scenarios sit in
+`anchor_scenarios.rs`, `note_scenarios.rs`, `register_scenarios.rs` and
+`scan_scenarios.rs`, one per invariant class, so that the 400-line cap binds
+each part of the contract alike.
+
+The contract reads ADR 004, the template, `docs/design.md`, `docs/roadmap.md`,
+and `docs/adr-002-transition-boundary-scope.md` with `include_str!` and parses
+them. Four edits break it by design, and each reports where to repair the
+document rather than what Rust expects:
+
+- Changing a register's field names, statuses, admissibility flags, or
+  contributions. Both the blocking set and the verdict are read from the
+  register, so ADR 004 and `fixtures.rs` must change together.
+- Rewording roadmap task 1.1.3's success criterion, or removing a criterion
+  noun a register field maps. The task text is the link between the roadmap and
+  the instrument.
+- Rewording the three clauses ADR 004 quotes in its evidence section, or moving
+  one to a different section of its source.
+- Changing the template's fields or their order. The template is the schema
+  every future note instantiates.
+
+The gate table binds gates to roadmap tasks by title *fragment*, not by task
+number, so completing a bound task or renumbering the roadmap does not break
+the build. That is deliberate: the project's `mapsplice` tooling renumbers
+tasks, and a numeric binding would freeze seven numbers.
+
+### The one lint exemption
+
+`dylint.toml` exempts exactly one module —
+`state_name_consumption_contract::notes` — from Whitaker's
+`no_std_fs_operations`, which denies `std::fs` in integration-test crates. The
+lint cannot be suppressed by any Rust attribute; a `dylint.toml` entry is the
+only working mechanism, and the path-scoped form is the narrower one. The
+exemption is confined to `notes.rs` so that every parser, policy predicate and
+invariant check in this contract stays under the lint. The exemption carries
+its rationale in the `dylint.toml` comment beside it.
+
+`camino` enumerates the directory (`read_dir_utf8`) and yields a path per
+entry, but has no content-read API, so the content read is the one operation
+that needs `std::fs`.
+
+### Filling a note
+
+A Phase 2 engineer copies `docs/phase-2-validation-note-template.md` to
+`docs/validation-notes/<task>-<subject>.md` and commits the filled copy with
+the work that produced it. The template is never edited to record an
+observation: editing it changes the schema for every future note and breaks the
+contract that checks the form against the register it instantiates.
+
+A note declares which contract owns it with a marker comment on a line of its
+own, which is what lets several unrelated decisions share one directory. A file
+without the `<!-- state-name-note -->` marker is ignored by this contract
+entirely, including a note written for another decision.
+
+A note that selects a blocking status is still committed, still useful and
+still checked. It resolves to `Not resolved`, names the blocking field and
+status, and contributes nothing to the verdict. Such a note is never deleted to
+make the suite pass: a blocked note that names its blocker is a finding, and
+the finding is the point.
+
 ## Tooling
 
 Development builds use Cranelift for debug code generation, which is the estate
