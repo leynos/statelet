@@ -318,7 +318,12 @@ Two remedies are viable, and each breaches a standing constraint:
 
 - **Option A — a `dylint.toml` exclusion, scoped by path.** Create
   `dylint.toml` at the workspace root with
-  `[no_std_fs_operations] excluded_paths = ["state_name_consumption_contract::notes"]`,
+
+  ```toml
+  [no_std_fs_operations]
+  excluded_paths = ["state_name_consumption_contract::notes"]
+  ```
+
   and read through `std::fs` inside that one module. Measured working, in both
   the crate-wide and the path-scoped form, the latter being the narrower one.
   Cost: one new tracked file that this plan's "Files this plan reads or writes"
@@ -753,6 +758,23 @@ outcome, and a reviewer should approve it on that understanding.
       attributed the ADR-date finding to a round whose log does not contain it,
       and this checklist had never recorded the two-finding pass over
       `03985e8`. Recorded as D34.
+- [x] CodeRabbit review eight — five findings returned 2026-09-26 over
+      `227d975`, the commit review seven's corrections produced. The freeze
+      held for the fourth pass running. Two adopted: Step 9's completion
+      instruction, which had told a reader to tick task 1.1.3 before the
+      zero-finding review EP-M5 requires — the D31 ordering written back in as
+      an instruction — and ADR 004's `as`-cast sentence, whose position claim
+      is true only of implicit discriminants; a `rustc` probe measured implicit
+      `B` shifting `1` → `2` on an insertion while an explicit `B` held at `9`
+      across a reorder. Three declined: the `identifier-need` `major`, whose
+      remedy names the verdict constraint 2 leaves open — the shape the ADR's
+      own Option B considered and refused; the ADR metadata
+      full stops, the third appearance of a subject falsified twice against the
+      style guide's own template; and the B7 width finding, whose two
+      instructions cannot both hold and whose remedy is arithmetically
+      impossible at 164 characters of cell content. That last one pointed past
+      a real defect — constraint 9 forbade what line 210 does — now recorded as
+      a named exception with its arithmetic. Recorded as D35.
 - [x] CodeRabbit review nine — six findings returned 2026-09-26 over
       `33c79aa`, the commit review eight's corrections produced. The freeze held
       for the fifth pass running. Three adopted, across two subjects. The
@@ -771,23 +793,25 @@ outcome, and a reviewer should approve it on that understanding.
       headings at all; and the B7 row width, whose remedy is arithmetically
       impossible and which review eight already declined on the same
       arithmetic. Recorded as D36.
-- [x] CodeRabbit review eight — five findings returned 2026-09-26 over
-      `227d975`, the commit review seven's corrections produced. The freeze
-      held for the fourth pass running. Two adopted: Step 9's completion
-      instruction, which had told a reader to tick task 1.1.3 before the
-      zero-finding review EP-M5 requires — the D31 ordering written back in as
-      an instruction — and ADR 004's `as`-cast sentence, whose position claim
-      is true only of implicit discriminants; a `rustc` probe measured implicit
-      `B` shifting `1` → `2` on an insertion while an explicit `B` held at `9`
-      across a reorder. Three declined: the `identifier-need` `major`, whose
-      remedy names the verdict constraint 2 leaves open — the shape the ADR's
-      own Option B considered and refused; the ADR metadata
-      full stops, the third appearance of a subject falsified twice against the
-      style guide's own template; and the B7 width finding, whose two
-      instructions cannot both hold and whose remedy is arithmetically
-      impossible at 164 characters of cell content. That last one pointed past
-      a real defect — constraint 9 forbade what line 210 does — now recorded as
-      a named exception with its arithmetic. Recorded as D35.
+- [x] CodeRabbit review ten — five findings returned 2026-09-26 over
+      `b1c8295`, the commit review nine's corrections produced. The freeze held
+      for the sixth pass running. Two adopted, and they are one subject
+      reported twice: a bullet in Q5 collapsed the `dylint.toml` exclusion onto
+      a single 87-column line, so the configuration read as an unfinished
+      wrap. It is now a fenced TOML block — the form this plan already uses for
+      the same configuration under "Interfaces and dependencies", which is why
+      the remedy was the plan's own convention rather than a new proposal, and
+      why the finding is the first in several rounds to aim at the plan's
+      substance rather than at its records. Three declined, every one of them a
+      **fourth** appearance of a subject already falsified: `docs/contents.md`'s
+      link lines, the developers-guide heading number, and ADR 004's metadata
+      full stops. Recorded as D37.
+      **A defect in this checklist was found while recording that round**: the
+      bullets read six, seven, nine, eight, five, because review nine's entry
+      was inserted above review eight's — an inversion this commit corrects,
+      and one review nine's own text exposed, since it cites "review eight" as
+      an earlier round. The order is now the order the passes happened, newest
+      before the retroactively-recorded review five.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -846,15 +870,18 @@ outcome, and a reviewer should approve it on that understanding.
       returned ten — so the bar is not met, and this item stays unticked. The
       six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
-      the only round that can tick this item. **Four further passes have since
+      the only round that can tick this item. **Five further passes have since
       returned** — four findings over `c9fc559`, seven over `dbac7d0`, five
-      over `227d975`, and six over `33c79aa` — each actioned and gated in turn,
-      and each leaving the bar unmet, so the item is still unticked. Every pass
-      has found something, and the last three rounds' findings were themselves
-      about this plan's own records rather than about the work, which is the
-      checklist-vs-evidence class D33 and D34 describe. Step 9 now carries the
-      ordering this history taught: the tick comes after a pass that returns no
-      findings, not between the gates and the review.
+      over `227d975`, six over `33c79aa`, and five over `b1c8295` — each
+      actioned and gated in turn, and each leaving the bar unmet, so the item
+      is still unticked. Every pass has found something, and the last four
+      rounds' findings were themselves about this plan's own records rather
+      than about the work, which is the checklist-vs-evidence class D33 and D34
+      describe; the tenth round broke that run by aiming at the plan's
+      substance, and the review's own checklist-order defect it exposed was
+      found while recording it. Step 9 now carries the ordering this history
+      taught: the tick comes after a pass that returns no findings, not between
+      the gates and the review.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -920,8 +947,31 @@ Each gate's log is at
 `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`, run
 sequentially one gate at a time, with an `.out.exit` sidecar per gate.
 
-Each gate's log is at
-`/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`.
+The set re-run at the revision D37 delivers, over the tenth review round's
+adopted findings. The diff is documentation only — this plan, one file — so no
+Rust source moved and the code-bearing gates are re-run for currency rather
+than because a defect was expected there. The numbers are unchanged from the
+run above, which is the expected result and also the weaker evidence: a gate
+that could not have failed is not a gate that passed on merit.
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy clean; whitaker clean
+make test                         exit 0   99 tests run: 99 passed, 0 skipped; 1 doctest
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 dependencies scanned, no advisories
+make test-workflow-contracts      exit 0   6 passed
+make typecheck                    exit 0   cargo check --all-targets --all-features
+```
+
+`make typecheck` appears here as an eighth line and is **not** one of the seven
+gates this plan's EP-M5 acceptance names. It was run alongside them, exits 0,
+and is recorded rather than discarded because a reader comparing this block
+against the acceptance list would otherwise have to work out why the counts
+differ. The acceptance list is unchanged: the seven named in "EP-M5 — delivery"
+are the contract, and adding an eighth there would be a scope decision rather
+than a gate run.
 
 All eight sidecars read `EXIT=0` at `76601e8`. The three Markdown gates were
 re-run after this document's last edit rather than being carried over: an
@@ -2160,6 +2210,42 @@ design.
   rather than about the branch. Date/Author: 2026-09-26, implementing agent,
   actioning the review the scrutineer returned after D35.
 
+- D37: **The tenth pass returned five findings over `b1c8295`, two adopted as
+  one subject and three declined, and every decline is a fourth appearance.**
+  The freeze held a sixth time (`HEAD` at `b1c8295` and `git status` empty
+  before and after), and the log is `/tmp/coderabbit12-….out` — nineteen lines,
+  exit 0, valid NDJSON, `complete` reached, no rate limit. **Adopted.** Two
+  findings report one thing: the Q5 bullet beneath "Two remedies are viable"
+  had collapsed the `dylint.toml` exclusion onto a single line —
+
+  ```plaintext
+  `[no_std_fs_operations] excluded_paths = ["state_name_consumption_contract::notes"]`,
+  ```
+
+  — 87 columns wide, so a reader met a configuration that looked like a wrap
+  that had not been finished. The remedy is the form this plan already uses two
+  thousand lines below, under "Interfaces and dependencies", where the same
+  configuration is a fenced `toml` block. Fencing it here is therefore not a
+  new proposal but the plan's own convention applied to a bullet that had
+  dropped it, and a `markdown-it` probe confirms an indented fence inside a
+  bullet survives `mdtablefix` byte-identically and lints at zero errors. This
+  is the first finding in several rounds to aim at the plan's *substance*
+  rather than at its records, and it is right. **Declined three.** All three
+  are the same subjects as the ninth round's declines, now in their fourth
+  appearance. `docs/contents.md`'s link lines cannot be wrapped — the
+  `markdown-it` probe settled that — and MD013 exempts them because no
+  whitespace follows column 80, which is why `markdownlint-cli2` reports zero
+  errors on all 29 files. The developers-guide heading number still has no
+  sequence to join: that document has **zero** numbered headings, verified by
+  `grep -c '^#\{1,3\} *[0-9]'`. ADR 004's metadata full stops are the style
+  guide's own template, which writes
+  `<Proposed | Accepted | Superseded | Deprecated>.` and `YYYY-MM-DD.` — ADR
+  003 is the estate outlier that omits them, not ADR 004 that keeps them. A
+  subject surviving a fourth round is evidence about the reviewer, not about
+  the branch, and the three are recorded here as recurrences rather than
+  re-litigated. Date/Author: 2026-09-26, implementing agent, actioning the
+  review the scrutineer returned after D36.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2223,11 +2309,11 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-six were accounted for;
-the disposition of each follows. The section holds sixty-two top-level entries
-in all; the other thirty-six are `Decision log` records D1–D36, which are
-decisions rather than observations and are dispositioned in their own section.
-Eight observations were recorded during or after the EP-M5 gate runs: a
-prose-wrapping rule, a correction to how this plan had been probing the
+the disposition of each follows. The section holds sixty-three top-level
+entries in all; the other thirty-seven are `Decision log` records D1–D37, which
+are decisions rather than observations and are dispositioned in their own
+section. Eight observations were recorded during or after the EP-M5 gate runs:
+a prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
 record-versus-line discovery that closed the third round's `major` subject, the
 two the fourth and fifth rounds produced, the attribution-versus-arithmetic
