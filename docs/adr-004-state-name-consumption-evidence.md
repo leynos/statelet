@@ -324,13 +324,14 @@ stronger" — design `6.1 State naming`.*
   `std::mem::discriminant` does not qualify: the standard library documents
   that the discriminant of an enum variant may change if the enum definition
   changes,[^1] and transmuting `Discriminant<T>` to a primitive is undefined
-  behaviour.[^1] An `as` cast on a fieldless enum is not sufficient either: a
-  cast reports the variant's position, so inserting or reordering a variant
-  silently changes it. Measured: one variant cast to `u8` gave `2`, then `3`
-  after a fourth variant was inserted before it, then `0` after the enum was
-  reordered. A value is durable only when every variant's discriminant is
-  *explicitly assigned*, with a `#[repr(u8)]`-style representation when a width
-  or representation contract is also required.[^2] Any such value must be
+  behaviour.[^1] An `as` cast on a fieldless enum is not sufficient either:
+  where a variant's discriminant is left implicit it is derived from that
+  variant's position, so inserting or reordering a variant silently changes the
+  cast's value. Measured: one variant cast to `u8` gave `2`, then `3` after a
+  fourth variant was inserted before it, then `0` after the enum was reordered.
+  A value is durable only when every variant's discriminant is *explicitly
+  assigned*, with a `#[repr(u8)]`-style representation when a width or
+  representation contract is also required.[^2] Any such value must be
   hand-assigned, which means new public API and a new obligation on every user
   of the derive: a durable value they must not renumber. This is the cost that
   the verdict has to justify, and it is a cost the string default does not
