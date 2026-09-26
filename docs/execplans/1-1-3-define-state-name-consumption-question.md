@@ -902,6 +902,34 @@ outcome, and a reviewer should approve it on that understanding.
       trailing full stop, declined a third time against the style guide's own
       ADR template at `docs/documentation-style-guide.md:425`. Recorded as
       D40.
+- [x] CodeRabbit review fourteen — **no review ran; the pass aborted twice**,
+      so `48703e3` is unreviewed and this bullet reports a fault rather than a
+      result. Both attempts died in the WebSocket handshake with
+      `TRPCWebSocketClosedError` / `Error: WebSocket closed`, exit 1, no
+      `{"type":"complete"}` record, and a log that is not valid NDJSON:
+      `/tmp/coderabbit16-….out` (6 lines, 660 bytes, sha256
+      `b024f76b2dd0d80a…`) and `/tmp/coderabbit17-….out` (4 lines, 541 bytes,
+      sha256 `3432d0c03f7cff1f…`). **Zero findings is not a clean result**: no
+      analysis stage was ever reached, so the stream produced nothing to
+      adjudicate. Three facts make this the service rather than the checkout.
+      The first abort is **byte-identical to the sixth pass's abort** — same
+      six lines, same `b024f76b…` hash — so that exact signature has now
+      occurred twice, making this the third abort on the branch. The retry,
+      after a 60-second cooldown, failed *earlier* in the handshake — log17 is
+      log16 with its `setting_up` and
+      `preparing_sandbox` lines deleted, so the fault moved back a stage
+      rather than clearing, and the CLI's `recoverable: true` did not hold.
+      And `coderabbit auth status` exits 0 with the account's seat assigned,
+      so nothing local is misconfigured. Neither log carries a rate-limit or
+      quota message. The freeze held in both attempts — `HEAD` `48703e3`
+      unchanged and `git status` empty before and after — which is what leaves
+      the abort as the only reason this pass is unscored. **The last completed
+      pass does not cover this revision**: log15's four findings were returned
+      over `787a716`, committed at 05:10:58 and reviewed by 05:16:28, while
+      `48703e3` was committed at 05:30:02 — so there is no completed pass
+      against `48703e3` at all, and reading log15 as its evidence would be
+      reading stale evidence. Nothing was adopted and nothing declined, because
+      nothing was returned. Recorded as D41.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -965,7 +993,8 @@ outcome, and a reviewer should approve it on that understanding.
       over `227d975`, six over `33c79aa`, five over `b1c8295`, six over
       `cd458d5`, five over `e5ef763`, and four over `787a716` — each actioned
       and gated in turn, and each leaving the bar unmet, so the item is still
-      unticked. Every pass has found something. The seventh through tenth
+      unticked. Every one of those eight found something. The seventh through
+      tenth
       rounds' findings were themselves about this plan's own records rather than
       about the work, which is the checklist-vs-evidence class D33 and D34
       describe; the tenth round broke that run by aiming at the plan's
@@ -979,7 +1008,17 @@ outcome, and a reviewer should approve it on that understanding.
       premise was sound and whose conclusion did not follow from it, at all
       three sites it appeared. Step 9 now
       carries the ordering this history taught: the tick comes after a pass
-      that returns no findings, not between the gates and the review.
+      that returns no findings, not between the gates and the review. **The
+      fourteenth pass returned no findings at all, for a reason unlike any pass
+      before it**: it aborted twice in the WebSocket handshake and never reached
+      analysis, so it is unscored rather than clean, and the revision at `HEAD`
+      now carries no completed pass against it — log15's findings belong to
+      `787a716`, which `48703e3` supersedes. This is the branch's third abort,
+      the second byte-identical to the first, and the retry failed one stage
+      *earlier* than the attempt it replaced — recorded as D41, whose standing
+      evidence runs the
+      other way from every round above it: what the two attempts prove is the
+      freeze, not the review.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -2466,6 +2505,57 @@ design.
   2026-09-26, implementing agent, actioning the review the scrutineer returned
   after D39.
 
+- D41: **The fourteenth pass returned no findings because it never reached
+  analysis, and an aborted stream is not evidence of anything.** Both attempts
+  over `48703e3` died at the transport layer — `TRPCWebSocketClosedError`,
+  `Error: WebSocket closed`, exit 1, no `complete` record, not valid NDJSON —
+  so this entry records a fault rather than a disposition. **No finding was
+  adopted and none declined, because none was returned**; the round is
+  unscored, and `48703e3` stays unreviewed in exactly the sense the plan's
+  EP-M5 bar asks about. What makes that safe to conclude, rather than a
+  cautious guess, is that the aborts are measurable against the passes that did
+  land. Log16's six lines and 660 bytes carry sha256 `b024f76b2dd0d80a…`,
+  **identical to the sixth pass's abort** — two distant passes producing the
+  same bytes, on the same branch, on a checkout whose `coderabbit auth status`
+  exits 0 with its seat assigned. The retry is the stronger datum: after the
+  instructed 60-second cooldown it came back *shorter*, and `diff` shows log17
+  is log16 with its `setting_up` and `preparing_sandbox` lines removed. The
+  fault therefore travelled one stage *earlier* into the handshake rather than
+  clearing, which is what makes a third immediate retry the wrong move and also
+  why the CLI's `"recoverable":true` cannot be taken at face value here.
+  Neither log holds a rate-limit or quota message, so the standing backoff
+  instruction is not engaged. **The freeze is what the two attempts do
+  establish**: `HEAD` `48703e34534cdeef61aca9721838b4cb71ee5c97` and
+  `git status --porcelain` empty, identical before and after, in both — so the
+  abort is the only defect in the pass. The related reading trap is worth
+  recording beside it: log15 completed with four findings, but over `787a716`,
+  committed 05:10:58 and reviewed by 05:16:28, whereas `48703e3` was committed
+  at 05:30:02. **No completed pass covers the current revision at all**, and a
+  reader who reached for log15 as this revision's evidence would be citing a
+  finding set that belongs to a superseded commit. Date/Author: 2026-09-26,
+  implementing agent, recording the scrutineer's report after D40.
+
+- Observation: **an aborted review is not a weak review; it is not a review.**
+  A pass that returns zero findings reads, at a glance, like the zero-finding
+  pass EP-M5's bar asks for — and the two are indistinguishable in any summary
+  that reports only a count. They are opposite results. A scored pass that
+  returns nothing has read the diff and found no objection; an aborted stream
+  has read nothing at all, so its zero is the absence of a measurement rather
+  than a measurement of zero. This round's log makes the distinction
+  unavoidable once looked at: `{"type":"complete"}` never appears, exit status
+  is 1, and the file is not valid NDJSON because an stderr line sits where a
+  record should. Impact: every count this plan records has to be qualified by
+  whether its source parsed to completion, because the failure mode is not a
+  wrong number — it is a *right-looking* number with no analysis behind it, and
+  the plan's own EP-M5 bar is stated as a count ("a zero-finding independent
+  review"), which is exactly the shape that invites the substitution. The
+  remedy adopted here is to make the abort state part of the record: the
+  revision is named as unreviewed, the log's line and byte counts and hash
+  stand beside the claim, and the nearest completed pass is explicitly
+  disqualified by its commit timestamps rather than left as an available
+  substitute. Date/Author: 2026-09-26, implementing agent, on the fourteenth
+  review round's two aborts.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2528,21 +2618,22 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All twenty-six were accounted for;
-the disposition of each follows. The section holds sixty-six top-level entries
-in all; the other forty are `Decision log` records D1–D40, which are decisions
-rather than observations and are dispositioned in their own section. Eight
-observations were recorded during or after the EP-M5 gate runs: a
+the artefacts named in `Conformance basis`. All twenty-seven were accounted
+for; the disposition of each follows. The section holds sixty-eight top-level
+entries in all; the other forty-one are `Decision log` records D1–D41, which
+are decisions rather than observations and are dispositioned in their own
+section. Nine observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
 record-versus-line discovery that closed the third round's `major` subject, the
 two the fourth and fifth rounds produced between them, the
-attribution-versus-arithmetic finding the seventh round forced, and the ninth
-round's measurement that an inline link cannot be wrapped. None bears on any
-upstream artefact, and the second review round — recorded as D29 rather than
-here, because its findings are decisions rather than observations — forced one
-upstream correction of its own, to ADR 004's stable-identifier paragraph, which
-is dispositioned below.
+attribution-versus-arithmetic finding the seventh round forced, the ninth
+round's measurement that an inline link cannot be wrapped, and the fourteenth
+round's distinction between an aborted stream and a scored one. None bears on
+any upstream artefact, and the second review round — recorded as D29 rather
+than here, because its findings are decisions rather than observations — forced
+one upstream correction of its own, to ADR 004's stable-identifier paragraph,
+which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
