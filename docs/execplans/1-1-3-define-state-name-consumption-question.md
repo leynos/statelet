@@ -3731,14 +3731,31 @@ false the instant it is committed. The honest options are to cite evidence
 outside the file or to name a revision that is *not* this one, and this section
 does the first.
 
-So the block below is not attributed to the tip. It reports a run measured over
-the bytes that became `e76be77` — blob
-`e4244e05632444c172163cb61744dc8f13c377cc`, checkable against that commit and
-unaffected by later edits to this file — with the three Markdown gates
-subsequently re-run green over a later edit. It lists the seven EP-M5 names plus
-`make typecheck`, which is **not** one of them and is carried so a reader
-comparing this block against the acceptance list need not work out why the
-counts differ.
+So the block below is not attributed to the tip, and it is not attributed to a
+single revision either, because the figures were not all measured at once. The
+code-bearing five come from a run whose sidecars read `HEAD after=f9aab72` with
+this file modified in the tree; the three Markdown gates were re-run
+afterwards, and their sidecars read `head=e36d64a`. Each set is checkable
+against its own sidecar. It lists the seven EP-M5 names plus `make typecheck`,
+which is **not** one of them and is carried so a reader comparing this block
+against the acceptance list need not work out why the counts differ.
+
+**One limit of that evidence, and how it was closed.** A sidecar records the
+`HEAD` sha and the porcelain status, not the hash of a modified file — so on a
+dirty tree it names the revision *around* the bytes rather than the bytes
+themselves, and two different working-tree states can produce sidecars that
+look identical from the outside. The three Markdown sidecars therefore also
+record the plan file's sha256, which pins the bytes independently of the
+revision.
+
+That is the general remedy and it is worth stating once for future runs: either
+gate a clean tree, or have the sidecar carry the working file's hash alongside
+the status. The first is stronger, because it needs no extra field and leaves
+nothing to compare by hand; the second is what to reach for when the file under
+gates is the one being edited, which is the situation this section is in. Not
+stating it would have left the attribution stronger than prose naming its own
+hash and weaker than it looks, which is the difference a reader is least likely
+to check.
 
 ```plaintext
 make check-fmt                    exit 0   28 files left unchanged
