@@ -3633,15 +3633,33 @@ documents are what a reader opens.
 
 ### Step 9 gate transcripts
 
-**What this section is.** A record of gate runs, each attributed to the
-revision its bytes came from. It is deliberately not a promise about the tip: a
-transcript is only as durable as its reader's ability to find the revision it
-describes, and a block headed "the current run" goes stale the moment anyone
-edits the file again — which is how the two counts further down diverged
-unnoticed. Each run below names its revision instead.
+**What this section is.** A record of gate runs. It is deliberately not a
+promise about the tip: a block headed "the current run" goes stale the moment
+anyone edits the file again, which is how the two counts further down diverged
+unnoticed.
 
-`e4244e05632444c172163cb61744dc8f13c377cc` is the blob these seven gates
-measured, at revision `e76be77`.
+**Where the attribution lives, and why not in this file.** Each run is pinned
+by the `.exit` sidecar beside its canonical log under `/tmp`, which records the
+exit code, the timestamps, and the `HEAD` sha the gate ran against. Where this
+prose and a sidecar disagree, the sidecar is the measurement and this is a
+summary.
+
+The reason attribution sits outside is not fastidiousness: **a file cannot
+contain a true statement of its own commit hash.** Writing the hash,
+committing, and re-reading shows the hash of the *previous* commit — the act of
+recording it changes it. Any sentence of the form "this file's blob is X" is
+false the instant it is committed. The honest options are to cite evidence
+outside the file or to name a revision that is *not* this one, and this section
+does the first.
+
+So the block below is not attributed to the tip. It reports a run measured over
+the bytes that became `e76be77` — blob
+`e4244e05632444c172163cb61744dc8f13c377cc`, checkable against that commit and
+unaffected by later edits to this file — with the three Markdown gates
+subsequently re-run green over a later edit. It lists the seven EP-M5 names plus
+`make typecheck`, which is **not** one of them and is carried so a reader
+comparing this block against the acceptance list need not work out why the
+counts differ.
 
 ```plaintext
 make check-fmt                    exit 0   28 files left unchanged
