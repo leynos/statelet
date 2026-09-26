@@ -605,7 +605,9 @@ outcome, and a reviewer should approve it on that understanding.
       home are committed. Ticked retroactively on 2026-09-19: ADR 004 (322
       lines, four empty delimiter pairs per D19) and
       `docs/validation-notes/README.md` landed in `65b59c5`. The template
-      itself belongs to Step 6 and is not yet written.
+      document itself was written at Step 6; Steps 3 and 4 ran against a
+      literal placeholder in `fixtures.rs`, since the template is not one of
+      the documents the scan `include_str!`s at red.
 - [x] Q5 settled 2026-09-19 — path-scoped `dylint.toml` exemption; D18 lifted
       by D20; constraint 10 added; `dylint.toml` and `notes.rs` added to the
       file list. This tick and D20 are the only diff of the resumption commit.
@@ -620,11 +622,13 @@ outcome, and a reviewer should approve it on that understanding.
       `/tmp/red-statelet-1-1-3-define-state-name-consumption-question.out`.
 - [x] Steps 5 to 7 — both ADR registers, the template, the illustrative
       example, the gate table and the evidence section are in place and
-      formatted. All 39 contract scenarios pass, alongside the pre-existing
-      nextest cases and the doctest: `make test` reports
-      `79 tests run: 79 passed, 0 skipped`, and `make fmt` completes with
-      `Summary: 0 error(s)` and is idempotent. Committed as `261ebc3`; the six
-      latent contract defects found on the way are in
+      formatted. The template is **written** here, its placeholder in
+      `fixtures.rs` replaced by the `include_str!` of the new document, which
+      is the other half of the Step 2 timeline. All 39 contract scenarios pass,
+      alongside the pre-existing nextest cases and the doctest: `make test`
+      reports `79 tests run: 79 passed, 0 skipped`, and `make fmt` completes
+      with `Summary: 0 error(s)` and is idempotent. Committed as `261ebc3`; the
+      six latent contract defects found on the way are in
       `Surprises & discoveries` and D23/D24.
 - [x] EP-M1 — ADR 004 exists and both its registers are guarded.
 - [x] EP-M2 — the template matches the status register; ADR 004 carries the
@@ -841,6 +845,33 @@ outcome, and a reviewer should approve it on that understanding.
       recurrences measured across the canonical logs rather than counted by
       eye: the heading subject appears in **six** of the thirteen logs and the
       link subject in five. Recorded as D38.
+- [x] CodeRabbit review twelve — five findings returned 2026-09-26 over
+      `e5ef763`, the commit review eleven's correction produced. The freeze
+      held for the eighth pass running, and the log reached `complete` with
+      exit 0 and no abort markers. **Two adopted, and both are corrections to
+      this plan's own timeline.** The first is the sync map's fifth item, which
+      read as a live instruction to tick roadmap task 1.1.3: that is the D31
+      ordering written back in at a second site, and it is live, because Step 8
+      says "Apply every item in `Documentation sync map`" and Step 8 is done.
+      The tick is now explicitly not that item's to write, and the item names
+      the `1e1afd7` application, the D31 revert and Step 9's sole live
+      instruction. The second is the template's timeline. Steps 5 to 7 read as
+      though the template first appeared there while the Step 2 record said it
+      "belongs to Step 6 and is not yet written", and Step 2's procedure named
+      it as created in that step — three statements that cannot all hold. What
+      holds was recovered from the artefacts: `include_str!` is compile-time,
+      the template is absent from `65b59c5`, and the monolith at `261ebc3`
+      carried `fixtures::TEMPLATE` as a **literal placeholder** with the doc
+      comment D34 records as stale. The red transcript settles it
+      independently — all 39 scenarios *ran*, so every `include_str!`
+      resolved, and `template_matches_the_status_register` failed on **ADR
+      004's** missing status register rather than on a missing document. Step 2,
+      the Steps 5-7 record and the Progress entry now tell one timeline. Three
+      declined as recurrences, re-counted by each subject's own `fileName` and
+      line: the developers-guide heading number and the `docs/contents.md` long
+      links each appear in six of the fourteen logs, and the B7 row width
+      recurs from review eight, which declined it on arithmetic that has not
+      changed. Recorded as D39.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -899,20 +930,23 @@ outcome, and a reviewer should approve it on that understanding.
       returned ten — so the bar is not met, and this item stays unticked. The
       six findings it did not decline are actioned below and gated; what
       remains is one further pass over the commit that carries them, which is
-      the only round that can tick this item. **Six further passes have since
+      the only round that can tick this item. **Seven further passes have since
       returned** — four findings over `c9fc559`, seven over `dbac7d0`, five
-      over `227d975`, six over `33c79aa`, five over `b1c8295`, and six over
-      `cd458d5` — each actioned and gated in turn, and each leaving the bar
-      unmet, so the item is still unticked. Every pass has found something. The
-      seventh through tenth rounds' findings were themselves about this plan's
-      own records rather than about the work, which is the checklist-vs-evidence
-      class D33 and D34 describe; the tenth round broke that run by aiming at
-      the plan's substance, and the review's own checklist-order defect it
-      exposed was found while recording it; and the eleventh returned to code
-      for the first time in several passes, its two code findings declined
-      against a probe rather than against precedent. Step 9 now carries the
-      ordering this history taught: the tick comes after a pass that returns no
-      findings, not between the gates and the review.
+      over `227d975`, six over `33c79aa`, five over `b1c8295`, six over
+      `cd458d5`, and five over `e5ef763` — each actioned and gated in turn, and
+      each leaving the bar unmet, so the item is still unticked. Every pass has
+      found something. The seventh through tenth rounds' findings were
+      themselves about this plan's own records rather than about the work, which
+      is the checklist-vs-evidence class D33 and D34 describe; the tenth round
+      broke that run by aiming at the plan's substance, and the review's own
+      checklist-order defect it exposed was found while recording it; the
+      eleventh returned to code for the first time in several passes, its two
+      code findings declined against a probe rather than against precedent; and
+      the twelfth returned to this plan's own timeline, adopting two
+      corrections — the sync map's live tick instruction, and the template's
+      three conflicting statements about when it was written. Step 9 now
+      carries the ordering this history taught: the tick comes after a pass
+      that returns no findings, not between the gates and the review.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -2310,6 +2344,42 @@ design.
   link subject in five. Date/Author: 2026-09-26, implementing agent, actioning
   the review the scrutineer returned after D37.
 
+- D39: **The twelfth pass returned five findings over `e5ef763`, two adopted
+  and three declined, and both adoptions are corrections to this plan's own
+  timeline.** The freeze held an eighth time (`HEAD` unchanged and `git status`
+  empty before and after), and the log is `/tmp/coderabbit14-….out` — 20 lines,
+  5505 bytes, exit 0, valid NDJSON, `complete` reached, no abort markers, no
+  rate limit. **Adopted.** The sync map's fifth item read as a live instruction
+  to tick task 1.1.3, which is the D31 ordering written back in at a second
+  site. It is a live instruction: Step 8 says "Apply every item in
+  `Documentation sync map`", and Step 8's item is `[x]`. Its text now records
+  that the tick is deliberately *not* this item's to write, names the `1e1afd7`
+  application and the D31 revert, and points at Step 9, whose instruction at
+  the foot of that step is the only live one. The second adoption is the same
+  class as review eight's tick-ordering finding and the same class as D22: the
+  plan told a *timeline* that the artefacts contradict. Step 2 was written as
+  "create … `phase-2-validation-note-template.md`", and the Progress record
+  said the template "belongs to Step 6 and is not yet written", while Steps 5
+  to 7 read as though the template first appeared there. `include_str!` is
+  compile-time and the template is absent from `65b59c5`, so something had to
+  stand in at red. It did: the monolith at `261ebc3` carried
+  `fixtures.rs::TEMPLATE` as a literal, with a doc comment saying it was
+  "something Step 6 replaces with the `include_str!`" — the comment D34 records
+  as stale. The red transcript settles it independently: all 39 scenarios
+  *ran*, so every `include_str!` resolved, and
+  `template_matches_the_status_register` failed on *ADR 004's* missing status
+  register rather than on any missing document. Step 2's procedure, its
+  Progress record, and the Steps 5-7 record now tell that timeline in one
+  voice. **Declined, three recurrences**, each counted across the fourteen
+  canonical logs by the subject's own `fileName` and line rather than by a
+  looser pattern, which is how two of the figures below were corrected while
+  this entry was written. The developers-guide heading number appears in six
+  (logs 7, 9, 11, 12, 13, 14), the `docs/contents.md` long link lines in the
+  same six, and the B7 row width recurs from review eight onward, where it was
+  declined on arithmetic that has not changed: the row cannot fit the
+  120-column budget at any wrapping. Date/Author: 2026-09-26, implementing
+  agent, actioning the review the scrutineer returned after D38.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2373,8 +2443,8 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-six were accounted for;
-the disposition of each follows. The section holds sixty-four top-level entries
-in all; the other thirty-eight are `Decision log` records D1–D38, which are
+the disposition of each follows. The section holds sixty-five top-level entries
+in all; the other thirty-nine are `Decision log` records D1–D39, which are
 decisions rather than observations and are dispositioned in their own section.
 Eight observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
@@ -2836,16 +2906,18 @@ and the plan needs revision before code.
 
 ### Stage B — red (EP-M1)
 
-Create both new documents with their full prose and their delimiter comments
-but **no register tables**, and create `docs/validation-notes/README.md` with
-an empty directory otherwise. The documents must exist before the test compiles
-— `include_str!` of a missing file is a compile error, not a test failure.
-Write the contract test in full. Run `make test` and observe the red state:
-`MissingDelimiters` naming each register, plus the empty-clause-list failure of
-`INV-ANCHORS`. `INV-FILLED` does **not** fail, and the prediction that it would
-is corrected by D22 below — an empty `docs/validation-notes/` is a pass,
-because no honest note can exist before task 2.2.1 has annotated something.
-Record the transcript.
+Create ADR 004 with its full prose and its delimiter comments but **no register
+tables**, and create `docs/validation-notes/README.md` with an empty directory
+otherwise. The documents the test `include_str!`s must exist before it compiles
+— `include_str!` of a missing file is a compile error, not a test failure. The
+template is not among them at this stage: `fixtures.rs` carries a literal
+placeholder in its place until Step 6 writes the document, and the substitution
+lands with it. Write the contract test in full. Run `make test` and observe the
+red state: `MissingDelimiters` naming each register, plus the empty-clause-list
+failure of `INV-ANCHORS`. `INV-FILLED` does **not** fail, and the prediction
+that it would is corrected by D22 below — an empty `docs/validation-notes/` is
+a pass, because no honest note can exist before task 2.2.1 has annotated
+something. Record the transcript.
 
 Do not use an expected-failure marker. `AGENTS.md` requires every commit to
 pass the gates, so the red state is observed within a session and not
@@ -2959,10 +3031,12 @@ tree is clean, and every test passes across the five existing binaries.
 
 ### Step 2 — create the documents and the notes directory
 
-Create `docs/adr-004-state-name-consumption-evidence.md` and
-`docs/phase-2-validation-note-template.md` with full prose, and
-`docs/validation-notes/README.md`. This step precedes the test because
-`include_str!` needs the files to exist.
+Create `docs/adr-004-state-name-consumption-evidence.md` with full prose and
+`docs/validation-notes/README.md`. This step precedes the test because the scan
+`include_str!`s ADR 004, and a file reached that way must exist before the test
+compiles. The template is not created here: it is written at Step 6, and
+`fixtures.rs` holds a literal placeholder until it is. See the corrected Step 4
+below.
 
 **Done 2026-09-19, with one departure from the step as written.** The step
 originally asked for "delimiter comments but no tables". `make fmt` merges an
@@ -2970,7 +3044,9 @@ adjacent, empty delimiter pair onto a single line, which would have made Step 4
 fail with `EmptyRegister` rather than the predicted `MissingDelimiters`; see
 D19 and `Surprises & discoveries`. ADR 004 was therefore committed with its
 four delimiter pairs *empty and merged*, and the registers arrive with their
-delimiters in Step 5.
+delimiters in Step 5. The template's absence from `65b59c5` is not a departure:
+it followed from the placeholder arrangement above, and the compile-time
+requirement is satisfied by the documents the scan actually reads.
 
 ### Step 3 — write the contract test in full
 
@@ -3116,9 +3192,12 @@ success bullet as tasks 1.1.1 and 1.1.2 do, set this plan's status to
    `docs/validation-notes/` carrying the marker its contract test keys on."
    Deliberately *not* made `INV-ANCHORS` targets: welding glossary entries to
    the test suite buys little and taxes every future edit.
-5. `docs/roadmap.md`: tick task 1.1.3 and append the ADR link to its success
-   bullet. Per Q4, add one `- See docs/phase-2-validation-note-template.md.`
-   bullet to tasks 2.2.1, 2.2.2, and 3.1.2. Renumber nothing.
+5. `docs/roadmap.md`: append the ADR link to task 1.1.3's success bullet. Per
+   Q4, add one `- See docs/phase-2-validation-note-template.md.` bullet to
+   tasks 2.2.1, 2.2.2, and 3.1.2. Renumber nothing. **The tick is deliberately
+   not this item's to write.** Step 8 applied it as `1e1afd7` and D31 reverted
+   it, because it ran a round ahead of the zero-finding review EP-M5 requires;
+   Step 9 carries the only live tick instruction.
 6. `docs/users-guide.md` "Current status": one sentence recording that the
    `StateName` return type is not yet settled and that no identifier will be
    added without recorded evidence, matching the existing paragraph that
