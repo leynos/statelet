@@ -2629,10 +2629,26 @@ design.
   the same one D41 and D42 reached from their own directions and worth stating
   once: a record is only as trustworthy as the reader's ability to *re-check*
   it, so a claim whose truth depends on when it is read is not a record, it is
-  a snapshot pretending to be one. Adopted after three self-invalidating
-  revisions of the same paragraph, each of which was made *less* true by being
-  written down. Date/Author: 2026-09-26, implementing agent, satisfying EP-M5's
-  transcript requirement.
+  a snapshot pretending to be one.
+
+  Three committed revisions of this paragraph exist — `e76be77`, `f94adba` and
+  `de2f723`, each superseding the last — and the defect is visible in the first
+  of them, which is why the count is given with its commits rather than as a
+  bare number. `e76be77`'s version said its figures measured "the tree this
+  commit carries" and told the reader to confirm them by comparing
+  `git rev-parse HEAD:<this path>` against `git hash-object <this path>` at a
+  clean checkout. That check cannot fail: at a clean checkout both sides read
+  the same blob, so it detects a dirty tree and nothing else, and it would have
+  passed just as green on a revision whose transcript was wrong. A verification
+  step that cannot fail is not evidence, which is the same conclusion D41
+  reached about a zero-findings abort and the reason this entry lists its three
+  revisions by name: `f94adba` named the revision and blob explicitly, which
+  made the claim falsifiable but left the framing tip-implying, and `de2f723`
+  moved the attribution to the sidecars and said why it cannot live here. A
+  reader can weigh that progression by checking out any of the three and
+  reading the section's first paragraph rather than taking this summary for it.
+  Date/Author: 2026-09-26, implementing agent, satisfying EP-M5's transcript
+  requirement.
 
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
