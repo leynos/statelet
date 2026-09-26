@@ -847,8 +847,12 @@ outcome, and a reviewer should approve it on that understanding.
       ignores, which is why the phrase is inside backticks. The other two are
       the developers-guide heading number and `docs/contents.md`'s links,
       recurrences measured across the canonical logs rather than counted by
-      eye: the heading subject appears in **six** of the thirteen logs and the
-      link subject in five. Recorded as D38.
+      eye: each appears in **six** — logs 7, 9, 11, 12, 13 and 14 — with the
+      log numbers named so the count can be re-checked rather than re-derived.
+      The heading subject is the numbered-heading finding at
+      `docs/developers-guide.md:77`; log 4 also carries two findings on that
+      file, but at lines 98-99 and on a different subject, so it does not
+      count toward the six. Recorded as D38.
 - [x] CodeRabbit review twelve — five findings returned 2026-09-26 over
       `e5ef763`, the commit review eleven's correction produced. The freeze
       held for the eighth pass running, and the log reached `complete` with
@@ -873,9 +877,9 @@ outcome, and a reviewer should approve it on that understanding.
       the Steps 5-7 record and the Progress entry now tell one timeline. Three
       declined as recurrences, re-counted by each subject's own `fileName` and
       line: the developers-guide heading number and the `docs/contents.md` long
-      links each appear in six of the fourteen logs, and the B7 row width
-      recurs from review eight, which declined it on arithmetic that has not
-      changed. Recorded as D39.
+      links each appear in six of the canonical logs — logs 7, 9, 11, 12, 13
+      and 14 — and the B7 row width recurs from review eight, which declined it
+      on arithmetic that has not changed. Recorded as D39.
 - [x] CodeRabbit review thirteen — four findings returned 2026-09-26 over
       `787a716`, the commit review twelve's corrections produced. The freeze
       held for the ninth pass running, and the log reached `complete` with
@@ -2419,9 +2423,12 @@ design.
   as a list item missing its noun; it now says "the two the fourth and fifth
   rounds produced between them". The remaining two are recurrences, counted
   across the canonical logs rather than by eye: the developers-guide heading
-  subject appears in **six** of the thirteen logs and the `docs/contents.md`
-  link subject in five. Date/Author: 2026-09-26, implementing agent, actioning
-  the review the scrutineer returned after D37.
+  subject appears in **six** — logs 7, 9, 11, 12, 13 and 14 — and the
+  `docs/contents.md` link subject in the same six, both figures re-measured
+  across the completed logs and each named by log number, since the earlier
+  "five" for the link subject did not survive the measurement and a count
+  stated without its logs cannot be checked. Date/Author: 2026-09-26,
+  implementing agent, actioning the review the scrutineer returned after D37.
 
 - D39: **The twelfth pass returned five findings over `e5ef763`, two adopted
   and three declined, and both adoptions are corrections to this plan's own
@@ -2449,12 +2456,12 @@ design.
   `template_matches_the_status_register` failed on *ADR 004's* missing status
   register rather than on any missing document. Step 2's procedure, its
   Progress record, and the Steps 5-7 record now tell that timeline in one
-  voice. **Declined, three recurrences**, each counted across the fourteen
-  canonical logs by the subject's own `fileName` and line rather than by a
-  looser pattern, which is how two of the figures below were corrected while
-  this entry was written. The developers-guide heading number appears in six
-  (logs 7, 9, 11, 12, 13, 14), the `docs/contents.md` long link lines in the
-  same six, and the B7 row width recurs from review eight onward, where it was
+  voice. **Declined, three recurrences**, each counted across the canonical
+  logs by the subject's own `fileName` and line rather than by a looser
+  pattern, which is how two of the figures below were corrected while this
+  entry was written. The developers-guide heading number appears in six (logs
+  7, 9, 11, 12, 13, 14), the `docs/contents.md` long link lines in the same
+  six, and the B7 row width recurs from review eight onward, where it was
   declined on arithmetic that has not changed: the row cannot fit the
   120-column budget at any wrapping. Date/Author: 2026-09-26, implementing
   agent, actioning the review the scrutineer returned after D38.
@@ -2534,6 +2541,32 @@ design.
   reader who reached for log15 as this revision's evidence would be citing a
   finding set that belongs to a superseded commit. Date/Author: 2026-09-26,
   implementing agent, recording the scrutineer's report after D40.
+
+- D42: **A recurrence count with no log numbers beside it cannot be checked,
+  and this one had drifted.** Re-measuring the two long-running recurrences
+  while the fourteenth round's backoff ran turned up a disagreement inside this
+  plan: the review-eleven bullet and D38 both said the developers-guide heading
+  subject and the `docs/contents.md` link subject each appeared in **five**
+  logs, where the review-twelve bullet and D40 said **six**. Both claims were
+  made in good faith and both were defensible, which is the problem. Measured
+  directly — one `"type":"finding"` record per log, matched by `fileName` and
+  cited line, which is the measure D39 adopted — the answer is six for each:
+  logs 7, 9, 11, 12, 13 and 14, with the headings at
+  `docs/developers-guide.md:77` and the links at `docs/contents.md:27`. The
+  apparent five came from a near-miss worth naming, because the near-miss is
+  what makes this class of error hard to see: log 4 also carries two findings
+  against `developers-guide.md`, so a count that matched on `fileName` alone
+  would have found seven, and a count that stopped at the first sighting of the
+  *file* rather than the *subject* would have found fewer still. Those two
+  log-4 findings are on lines 98-99 and concern an ungrammatical repair
+  sentence, which is a different subject that happens to share a file, and they
+  count toward neither figure. The remedy is not a better count but a
+  *checkable* one: both sites now name the six logs explicitly, so the next
+  reader re-checks by looking rather than by re-deriving, and the two drifting
+  denominators ("thirteen logs", "fourteen completed logs") are gone — the
+  first was snapshot-relative and the second wrong, since only thirteen of the
+  canonical logs completed. Date/Author: 2026-09-26, implementing agent, found
+  while measuring recurrence counts during the fourteenth round's backoff.
 
 - Observation: **an aborted review is not a weak review; it is not a review.**
   A pass that returns zero findings reads, at a glance, like the zero-finding
@@ -2619,8 +2652,8 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-seven were accounted
-for; the disposition of each follows. The section holds sixty-eight top-level
-entries in all; the other forty-one are `Decision log` records D1–D41, which
+for; the disposition of each follows. The section holds sixty-nine top-level
+entries in all; the other forty-two are `Decision log` records D1–D42, which
 are decisions rather than observations and are dispositioned in their own
 section. Nine observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
