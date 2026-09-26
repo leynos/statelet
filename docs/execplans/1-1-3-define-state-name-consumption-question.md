@@ -934,6 +934,34 @@ outcome, and a reviewer should approve it on that understanding.
       against `48703e3` at all, and reading log15 as its evidence would be
       reading stale evidence. Nothing was adopted and nothing declined, because
       nothing was returned. Recorded as D41.
+- [x] CodeRabbit review fifteen — **no review ran again; both attempts
+      aborted**, so `27bdda9` is unreviewed and this bullet reports a fault
+      rather than a result. `/tmp/coderabbit18-….out` (4 lines, 541 bytes,
+      sha256 `3432d0c03f7cff1f…`) is byte-identical to the fourteenth round's
+      second abort, and the retry `/tmp/coderabbit19-….out` (5 lines, 597
+      bytes, sha256 `3edb2a5e4685cc99c0…`) is a **third distinct signature**
+      that sits *between* the other two in handshake depth. The three are an
+      exact nested chain: 660 − 597 = 63 is the `preparing_sandbox` line with
+      its newline, and 597 − 541 = 56 is the `setting_up` line with its own, so
+      log19 is log16 minus one status line and log18 is log19 minus another —
+      verified by deleting the line and comparing bytes, not by arithmetic
+      alone. **The abort is therefore not pinned to a single handshake depth**,
+      which is what argues against one deterministic breakage and for
+      intermittent application-layer instability. Two diagnostics close off the
+      other explanations: `coderabbit doctor` reports 8 passed and 0 failed
+      *including* `[pass] WebSocket reachable wss://ide.coderabbit.ai/ws`, and
+      `coderabbit usage` reports **10 of 10** included reviews remaining on a
+      rolling one-hour window — so this is neither connectivity nor a rate
+      limit, and the standing backoff instruction is not engaged. The CLI's own
+      per-run log under `~/.coderabbit/logs` names the mechanism the `--agent`
+      stream hides: the socket opened at 05:41:02Z and the failure was logged at
+      05:42:35Z, a 93-second stall, where the earlier 660-byte abort had stalled
+      32 seconds. The freeze held — `HEAD` `27bdda9` unchanged and `git status`
+      empty before and after — so the abort remains the only defect in the
+      pass. **A fifth identical attempt is not warranted**: four attempts have
+      now produced three distinct signatures at three different depths, and the
+      claim that would justify another retry — that the fault is transient —
+      is the one the expanding signature set contradicts. Recorded as D44.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -1022,7 +1050,17 @@ outcome, and a reviewer should approve it on that understanding.
       *earlier* than the attempt it replaced — recorded as D41, whose standing
       evidence runs the
       other way from every round above it: what the two attempts prove is the
-      freeze, not the review.
+      freeze, not the review. **The fifteenth pass aborted twice more**, and it
+      is the one that settled the question rather than extending it:
+      `coderabbit doctor` reports every check passing including a live probe of
+      the WebSocket endpoint, and `coderabbit usage` reports 10 of 10 included
+      reviews remaining, so neither connectivity nor quota is the cause and the
+      standing backoff instruction is not engaged. Four attempts have now
+      produced **three distinct abort signatures at three handshake depths** —
+      the exact nested chain D44 measures — which is evidence *against* the
+      transient fault a fifth retry would be betting on. `27bdda9` is therefore
+      recorded as unreviewed, and the retrying stops here rather than at a
+      threshold picked in advance.
 - [x] EP-M5's transcript requirement — the seven gates are recorded in
       `Artefacts and notes` over the delivered revision, which was the last
       unmet clause of that acceptance. The first attempt at it produced a
@@ -2155,21 +2193,23 @@ design.
   tables, and it offered twenty-four for the first count by counting every
   top-level bullet in the section rather than the `- Observation:` ones — the
   section's other thirty-two entries were `Decision log` records D1–D32 (D33
-  itself brings the tally to thirty-three). The lesson is D31's, one level
-  down: a review is an input to be verified, and that applies to a review's
-  *arithmetic* as much as to its arguments. The useful half of each finding was
-  the pointer to the paragraph, not the replacement text. The reconciliation
-  paragraph had been corrected by hand in an earlier round and drifted again,
-  so its replacement names the denominator explicitly — "every `- Observation:`
-  entry" — to make the next drift detectable rather than silent. This round's
-  `make markdownlint` then went red, and for the same reason twice over: the
-  gate's `spelling` prerequisite runs **before** the linting step, so the two
-  `-ise` forms the round had just written left the Markdown lint unreached. The
-  word is "parameterized", and the *review* spells it with an `s`, so
-  transcribing its wording carried the reviewer's spelling into the document
-  that quotes it — the same class of defect as D32's, where a quoted command's
-  punctuation arrived with the quote. Date/Author: 2026-09-26, implementing
-  agent, actioning the review the scrutineer returned after D32.
+  itself brings the tally to thirty-three; the tally has since grown to D46,
+  and the same count-by-top-level-bullet method is what the
+  `Outcomes & retrospective` section uses below). The lesson is D31's, one
+  level down: a review is an input to be verified, and that applies to a
+  review's *arithmetic* as much as to its arguments. The useful half of each
+  finding was the pointer to the paragraph, not the replacement text. The
+  reconciliation paragraph had been corrected by hand in an earlier round and
+  drifted again, so its replacement names the denominator explicitly — "every
+  `- Observation:` entry" — to make the next drift detectable rather than
+  silent. This round's `make markdownlint` then went red, and for the same
+  reason twice over: the gate's `spelling` prerequisite runs **before** the
+  linting step, so the two `-ise` forms the round had just written left the
+  Markdown lint unreached. The word is "parameterized", and the *review* spells
+  it with an `s`, so transcribing its wording carried the reviewer's spelling
+  into the document that quotes it — the same class of defect as D32's, where a
+  quoted command's punctuation arrived with the quote. Date/Author: 2026-09-26,
+  implementing agent, actioning the review the scrutineer returned after D32.
 
 - Observation: **a control written against a token-list predicate can be
   defeated by the predicate's own breadth, and only a Red replay catches it.**
@@ -2631,24 +2671,138 @@ design.
   it, so a claim whose truth depends on when it is read is not a record, it is
   a snapshot pretending to be one.
 
-  Three committed revisions of this paragraph exist — `e76be77`, `f94adba` and
-  `de2f723`, each superseding the last — and the defect is visible in the first
-  of them, which is why the count is given with its commits rather than as a
-  bare number. `e76be77`'s version said its figures measured "the tree this
-  commit carries" and told the reader to confirm them by comparing
-  `git rev-parse HEAD:<this path>` against `git hash-object <this path>` at a
-  clean checkout. That check cannot fail: at a clean checkout both sides read
-  the same blob, so it detects a dirty tree and nothing else, and it would have
-  passed just as green on a revision whose transcript was wrong. A verification
-  step that cannot fail is not evidence, which is the same conclusion D41
-  reached about a zero-findings abort and the reason this entry lists its three
-  revisions by name: `f94adba` named the revision and blob explicitly, which
-  made the claim falsifiable but left the framing tip-implying, and `de2f723`
-  moved the attribution to the sidecars and said why it cannot live here. A
-  reader can weigh that progression by checking out any of the three and
-  reading the section's first paragraph rather than taking this summary for it.
-  Date/Author: 2026-09-26, implementing agent, satisfying EP-M5's transcript
-  requirement.
+  Three committed revisions of this paragraph exist as of `de2f723` — `e76be77`,
+  `f94adba` and `de2f723`, each superseding the last — and the defect is
+  visible in the first of them, which is why the count is given with its
+  commits rather than as a bare number. (Two further revisions followed and are
+  recorded in D45: `27bdda9` re-attributed the paragraph to the *canonical*
+  sidecars, and the repair for the defect D45 found replaced the moving values
+  with a structural statement. The count is anchored to `de2f723` rather than
+  to the tip because it was measured there; a reader checking it should run the
+  commit list rather than trust this number.) `e76be77`'s version said its
+  figures measured "the tree this commit carries" and told the reader to
+  confirm them by comparing `git rev-parse HEAD:<this path>` against
+  `git hash-object <this path>` at a clean checkout. That check cannot fail: at
+  a clean checkout both sides read the same blob, so it detects a dirty tree
+  and nothing else, and it would have passed just as green on a revision whose
+  transcript was wrong. A verification step that cannot fail is not evidence,
+  which is the same conclusion D41 reached about a zero-findings abort and the
+  reason this entry lists its three revisions by name: `f94adba` named the
+  revision and blob explicitly, which made the claim falsifiable but left the
+  framing tip-implying, and `de2f723` moved the attribution to the sidecars and
+  said why it cannot live here. A reader can weigh that progression by checking
+  out any of the three and reading the section's first paragraph rather than
+  taking this summary for it. Date/Author: 2026-09-26, implementing agent,
+  satisfying EP-M5's transcript requirement.
+
+- D44: **A retry that fails at a *new* depth is not a retry that is working, and
+  the fourth attempt settled it.** The fifteenth review round spent both its
+  attempts without reaching analysis: `/tmp/coderabbit18-….out` reproduced the
+  fourteenth round's second abort byte-for-byte, and `/tmp/coderabbit19-….out`
+  produced a **third** signature. The three abort logs are an exact nested
+  chain of the same five-to-six line stream, differing only in which `status`
+  phases survived the drop — 660 bytes with `setting_up` and
+  `preparing_sandbox`, 597 with `setting_up` alone, 541 with neither — so log19
+  reached one phase further than logs 17/18 and one phase short of log16. That
+  was verified by deleting the named line from the longer log and comparing
+  bytes, since the byte arithmetic (63 and 56, exactly the two lines with their
+  newlines) invites a mistake by agreeing too easily. **The mistake this entry
+  exists to prevent** is reading log19's new hash as progress. It is not: a
+  fault that recurs at three different depths is *less* likely to be transient
+  than one that recurs at a fixed point, because the first is consistent with
+  an unstable handshake and the second with a single deterministic breakage
+  that a fix could target. Two diagnostics rule out the remaining explanations
+  rather than assuming them — `coderabbit doctor` reports 8 passed, 0 failed,
+  including a passing probe of `wss://ide.coderabbit.ai/ws`, and
+  `coderabbit usage` reports 10 of 10 included reviews remaining, so neither
+  the transport nor a rate limit is the cause and the standing backoff
+  instruction is not engaged. The CLI's own log for the attempt records the
+  socket opening and the failure 93 seconds later, against 32 seconds for the
+  earlier abort of the same kind, which is a stall rather than a refusal.
+  **Decision: stop retrying for this revision** — four attempts across two
+  rounds have produced three signatures at three depths, and `27bdda9` is
+  recorded as unreviewed rather than as clean. Date/Author: 2026-09-26,
+  implementing agent, recording the fifteenth round's two aborts.
+
+- D45: **A paragraph that tells the reader to check it against a sidecar must
+  survive that check, and this one did not — twice.** The paragraph above the
+  gate block said "each set is checkable against its own sidecar" and then named
+  `HEAD after=f9aab72` for the five code gates and `head=e36d64a` for the
+  three Markdown ones. Checking it as instructed falsifies both: the canonical
+  sidecars carry `d4fb5ba` and `84f52dd`. The named revisions belong to runs
+  that were *superseded* at 06:37 and 07:17, and their sidecars survive as
+  `.stale-*` archives beside the canonical ones. The figures themselves were
+  never wrong — all eight verify in both the canonical and the superseded logs
+  — so what D43's remedy had pinned was the *bytes*, while the prose kept
+  naming the *revision around them*, which is precisely the distinction D43 was
+  written to draw. Two further defects came out of fixing it. **The first was a
+  repeat of the churn D43 records**: the repair named the canonical revisions
+  (`d4fb5ba`, `84f52dd`), and re-running the three Markdown gates to validate
+  the repair immediately superseded `84f52dd` with `27bdda9`, so the corrected
+  sentence went stale within the same cycle — writing a value into the prose
+  and then re-measuring is a loop, and any revision named there is stale the
+  moment the next gate runs. **The remedy is therefore structural, not another
+  value**: the paragraph now names only what the sidecars permanently hold, and
+  sends the reader to the sidecar for the fields that move. The `head_sha`
+  moves whenever the revision changes; the `plan_sha256` moves whenever the
+  file does; the *existence* of a `.stale-*` archive beside a sidecar means
+  that sidecar was superseded, which is the thing a reader actually needs and
+  the thing no edit can falsify. **The second was D42's class again**: the
+  first repair wrote "the two named commits are the ones the *canonical*
+  sidecars carry", a claim containing a count and no way to check it, in the
+  entry whose subject is checkability. It is replaced by the structural
+  statement above. The general form is worth stating: when a document's own
+  verification instruction falsifies it, the repair is not to correct the
+  values but to stop writing values that the instruction's subject can change —
+  otherwise the fix needs its own fix, which is what happened here once before
+  this entry was finished. Date/Author: 2026-09-26, implementing agent, found
+  by performing the check the paragraph invites.
+
+- D46: **D45 fixed the attribution and left the paragraph's other promises
+  unchecked, and three of them were false.** The repair D45 records replaced
+  the moving revision names with "name only what the sidecars permanently
+  hold", and then described the archives in a sentence that had not been
+  measured: they were said to follow the pattern `.stale-<sha>-<timestamp>`, to
+  preserve "the hash of the bytes it read", and to let a reader see "which were
+  superseded by later ones". Measured against the filesystem, the second and
+  third clauses fail outright. **Most archives cannot preserve the bytes at
+  all**: the revision field is spelled eight different ways across the set —
+  `head_sha`, `head_before`, `head_after`, `full_head_before`,
+  `full_head_after`, `head`, `HEAD after` and `HEAD before`, the last two
+  differing from their underscore counterparts only in case and spacing — and
+  the `plan_sha256` field that actually pins the bytes exists in only a small
+  minority of them, because most were written before D43 introduced it and a
+  sidecar cannot record a field its writer does not know. So for those the
+  archive names a revision *around* the bytes and nothing more — the exact
+  distinction D43 was written to draw, still unmet one level down. **The
+  variety is not a chronology**: ordering the archives by mtime interleaves the
+  spellings rather than progressing through them, `head_after` reappearing after
+  `head_sha` was already in use, so they are several ad-hoc writers rather
+  than one schema evolving, which is a claim the first draft of this repair
+  asserted and the mtimes falsified. **The first clause was true when it was
+  written and false by the time it was committed**, which is the sharpest thing
+  in this entry. The draft asserted that no archive name matched
+  `.stale-<sha>-<timestamp>`; that held for every archive then on disk. The
+  gate run dispatched to validate the sentence then preserved the superseded
+  sidecars under exactly `stale-<sha>-<timestamp>` names of its own, so the
+  checking run created the first counterexample to the claim it was checking.
+  That counterexample is checkable, and is named here because an archive is
+  only ever added and never deleted, so a named one stays checkable: the three
+  archives whose suffix is `stale-27bdda9-2026-09-26T06:34:24`, one beside each
+  of the three Markdown sidecars, satisfy the pattern the draft said nothing
+  satisfied. Two lessons, and the second is the one worth keeping. The first is
+  D45's, repeated: a paragraph about sidecars has to be checked *against the
+  sidecars*, and this one was checked against the canonical ones only, which
+  are uniform and therefore unrepresentative. The second is narrower and more
+  useful: **a statement about the archive set as a whole is self-invalidating,
+  because the gate run that validates the paragraph changes that set.** Every
+  re-run adds an archive, under whatever naming the wrapper of the moment uses.
+  The repair therefore describes no property of the set — no count, no naming
+  rule, no field vocabulary — and says in the prose that it deliberately does
+  not, so the next reader does not "fix" it by measuring. Date/Author:
+  2026-09-26, implementing agent, found by probing the archives the sentence
+  described rather than trusting it, and re-probed after the gate run that
+  falsified it.
 
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
@@ -2656,16 +2810,16 @@ design.
   passed, but not over the bytes being shipped, which is a weaker and more
   dangerous statement than a failure, because a failure announces itself and
   this does not. The remedy was not to hedge the prose but to re-run the three
-  gates after the last edit and to preserve the superseded runs in
-  `.stale-<sha>-<timestamp>` archives beside each canonical log rather than
-  overwriting them. The archives are the point: they make visible that a run
-  happened, that it was superseded, and by which revision, so a reader who
-  finds a transcript whose attribution looks odd can see the history rather
-  than trusting a summary. The five gates that cannot read the file were not
-  re-run, and the justification is checkable rather than asserted —
-  `grep -rn execplans tests/` returns nothing and no Rust source reads it —
-  which is what keeps this from being a blanket exemption. Date/Author:
-  2026-09-26, implementing agent, after the transcript's first full gate run.
+  gates after the last edit and to preserve the superseded runs in `.stale-*`
+  archives beside each canonical log rather than overwriting them. The archives
+  are the point: they make visible that a run happened, that it was superseded,
+  and by which revision, so a reader who finds a transcript whose attribution
+  looks odd can see the history rather than trusting a summary. The five gates
+  that cannot read the file were not re-run, and the justification is checkable
+  rather than asserted — `grep -rn execplans tests/` returns nothing and no
+  Rust source reads it — which is what keeps this from being a blanket
+  exemption. Date/Author: 2026-09-26, implementing agent, after the
+  transcript's first full gate run.
 
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
@@ -2730,8 +2884,8 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-eight were accounted
-for; the disposition of each follows. The section holds seventy-one top-level
-entries in all; the other forty-three are `Decision log` records D1–D43, which
+for; the disposition of each follows. The section holds seventy-four top-level
+entries in all; the other forty-six are `Decision log` records D1–D46, which
 are decisions rather than observations and are dispositioned in their own
 section. Ten observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
@@ -3733,12 +3887,41 @@ does the first.
 
 So the block below is not attributed to the tip, and it is not attributed to a
 single revision either, because the figures were not all measured at once. The
-code-bearing five come from a run whose sidecars read `HEAD after=f9aab72` with
-this file modified in the tree; the three Markdown gates were re-run
-afterwards, and their sidecars read `head=e36d64a`. Each set is checkable
-against its own sidecar. It lists the seven EP-M5 names plus `make typecheck`,
-which is **not** one of them and is carried so a reader comparing this block
-against the acceptance list need not work out why the counts differ.
+code-bearing five come from a run whose sidecars read `HEAD after=d4fb5ba` with
+this file modified in the tree — and none of those five gates can read this
+file, so that attribution does not move when the file does. The three Markdown
+gates can read it, so their sidecars carry two fields rather than one: the
+`head_sha` of the revision *around* the bytes, and the plan file's
+`plan_sha256`, which is the field that actually pins them. Read the sidecar
+beside each canonical log rather than a revision named here, because the sha256
+changes on every edit to this file and a value written into the prose would be
+stale by the time it was read — the same trap D43 records for a commit hash,
+one field along. The superseded runs survive as archives beside those sidecars,
+and a reader can use them to see which run described which revision. They are
+useful for that and unreliable for anything else, and the reason is structural
+rather than a matter of degree: the archives are not a uniform key. The field
+naming the revision differs between them — `head_sha` in some, `head_before`
+with `head_after` in others, `HEAD after` in others again, and further
+spellings besides — and unlike the canonical sidecars they do not all record
+the byte pin, because those written before D43 introduced `plan_sha256` cannot
+carry a field their writer did not know. For an archive like that, the bytes it
+read cannot be recovered from the archive alone, so it cannot be matched
+against this file. The spellings also do not form a chronology: order the
+archives by mtime and they interleave rather than progress, so the variety
+reflects several ad-hoc writers rather than one schema being revised stepwise.
+Read those sentences as a caution and not as a description of a fixed set. The
+archive set grows by one whenever the gates run, since a run supersedes a
+sidecar, so **any count or exhaustive list written here is falsified by the
+very run that validates the rest of the document** — including the run that
+produced the evidence block below. That is D43's churn trap one level out, and
+the sharper form of it: the trap is not only that a written value goes stale,
+but that *checking* it is what makes it stale. The upshot for a reader is what
+the paragraph above already gives: take the attribution from the canonical
+sidecar beside each log, which *is* uniform, and treat the archives as evidence
+that a superseded run existed and for nothing further. It lists the seven EP-M5
+names plus `make typecheck`, which is **not** one of them and is carried so a
+reader comparing this block against the acceptance list need not work out why
+the counts differ.
 
 **One limit of that evidence, and how it was closed.** A sidecar records the
 `HEAD` sha and the porcelain status, not the hash of a modified file — so on a
