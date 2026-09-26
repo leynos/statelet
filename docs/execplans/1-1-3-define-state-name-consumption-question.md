@@ -967,6 +967,32 @@ outcome, and a reviewer should approve it on that understanding.
       now produced three distinct signatures at three different depths, and the
       claim that would justify another retry — that the fault is transient —
       is the one the expanding signature set contradicts. Recorded as D44.
+- [x] CodeRabbit review sixteen — **one finding, and the first pass to reach
+      analysis after the five attempts the two preceding rounds aborted.** The
+      freeze that D44 records was the
+      environment's, not the branch's: this pass completed in 146 seconds,
+      27 files reviewed, and the log ends `review_completed` with exit 0 — so
+      the aborting observed in rounds fourteen and fifteen was a transport
+      fault that cleared on its own rather than a property of `27bdda9` or of
+      the tool's handling of it. **The single finding is the same
+      future-dated-record subject D31 and the 2026-09-25 entry each declined**,
+      now on its third appearance. Its premise is false — the rebase ran at
+      `2026-09-27T01:01:57+02:00`, which is `2026-09-26T23:01:57Z`, so the date
+      is the local one and was correct as written — and it is **adopted
+      anyway**, because three rounds of declining established that the readers
+      and the record disagree about which zone a bare date means, and a
+      reviewer cannot be asked to hold a fact the plan never states. The repair
+      writes the offset into all three sites rather than changing a date that
+      is right: D47's closing record, the `Progress` item above, and this
+      section's revision note all now carry `2026-09-27T01:01:57+02:00`
+      beside `2026-09-26T23:01:57Z`, and D47 names the two independent
+      witnesses — `3f20bdc`'s committer timestamp and the rebase log's mtime —
+      that fix the instant without reference to the plan. Recorded as D48,
+      which also states why answering "the premise is false" is not the same as
+      satisfying the finding. **The bar EP-M5 states is still unmet**: it asks
+      for a zero-finding review, and this pass returned one. The remaining work
+      is a pass over the commit that carries the repair, which is the only
+      round that can tick the item.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -1073,10 +1099,21 @@ outcome, and a reviewer should approve it on that understanding.
       branch did not are byte-identical to `e98b685`'s versions, and the three
       co-touched files match what a plain `git merge-tree` of the old tip with
       `e98b685` produces — so the two branches compose rather than compete. The
-      seven gates were then re-run at the new tip, because a rebase is a new
-      candidate and evidence bound to the old head does not carry: all seven
-      exit 0, with `make test` at 99/99 including the 59 cases of the contract
-      suite. Recorded as D47, which also states why the acceptance test is
+      gates were then re-run at the new tip, because a rebase is a new
+      candidate and evidence bound to the old head does not carry: every gate
+      named in EP-M5's acceptance exits 0 at the new tip, with `make test` at
+      99/99 including the 59 cases of the contract suite. One of those
+      acceptance gates changed its own number at the rebase and the reason is
+      worth naming: `make test-workflow-contracts` collects **116** cases where
+      the pre-rebase transcript records 6, because `main` added workflow
+      contract tests this branch inherits — the gate grew, and the branch
+      passed the larger set rather than the one it was written against.
+      `make audit` also exits 0, scanning 45 crate dependencies with no
+      advisories. The rebase's completion is timestamped rather than merely
+      asserted: `2026-09-27T01:01:57+02:00`, which is
+      `2026-09-26T23:01:57Z`, written with its offset because the two zones
+      fall on different dates at this hour. Recorded as D47, which also states
+      why the acceptance test is
       patch identity rather than the rebase's clean exit. The residual gap this
       closes is rewritten rather than deleted, so the record keeps how the
       divergence was measured as well as that it is gone.
@@ -2212,7 +2249,7 @@ design.
   tables, and it offered twenty-four for the first count by counting every
   top-level bullet in the section rather than the `- Observation:` ones — the
   section's other thirty-two entries were `Decision log` records D1–D32 (D33
-  itself brings the tally to thirty-three; the tally has since grown to D47,
+  itself brings the tally to thirty-three; the tally has since grown to D48,
   and the same count-by-top-level-bullet method is what the
   `Outcomes & retrospective` section uses below). The lesson is D31's, one
   level down: a review is an input to be verified, and that applies to a
@@ -2864,11 +2901,57 @@ design.
   linter configuration, and `Cargo.toml` is identical at both tips, so
   `Cargo.lock` is byte-identical to `main`'s and there is no divergence to
   reconcile. Rebuilding it would have introduced a change where none was
-  wanted. Finally, the seven gates were re-run at the new tip rather than
-  inherited from the old one, because a completed rebase creates a new
-  candidate and evidence bound to the old head does not carry. Date/Author:
+  wanted. Finally, the gates EP-M5's acceptance names were re-run at the new
+  tip rather than inherited from the old one, because a completed rebase
+  creates a new candidate and evidence bound to the old head does not carry;
+  `make test-workflow-contracts` collected 116 cases against the 6 the
+  pre-rebase transcript records, because the target branch added workflow
+  contract tests the replay inherited. The wall-clock was
+  `2026-09-27T01:01:57+02:00`, written with its offset because
+  `2026-09-26T23:01:57Z` names the same instant and a bare date cannot say
+  which of the two a reader should take; `3f20bdc`'s committer timestamp and
+  the rebase log's mtime carry it independently of each other. Date/Author:
   2026-09-27, implementing agent, on the rebase the user directed, before
   publication.
+
+- D48: **The same finding re-found on a third round is evidence about the
+  record, not about the reviewer, so the third occurrence was adopted and the
+  two earlier declines were wrong.** The sixteenth round is the first to reach
+  analysis after the fourteenth and fifteenth rounds aborted five attempts
+  between them, and it returned one finding: the rebase record and its D47
+  references carry a date that has not happened. Its premise is false — the
+  rebase ran at `2026-09-27T01:01:57+02:00`, which is `2026-09-26T23:01:57Z`, so
+  `2026-09-27` was the local date at the time and remains so now; the two
+  timestamps that carry the instant, commit `3f20bdc`'s committer date and the
+  rebase log's mtime, agree to the second. **The premise is false and the
+  finding is still correct**, which is the whole of this entry. A bare date is
+  not ambiguous *about the instant* — it is ambiguous *to a reader who does not
+  know the zone*, and this repository does not settle the zone for them. Its
+  own evidence mixes two: the `test` and `check-fmt` sidecars stamp
+  `2026-09-26T06:37:49+02:00` with the offset written out, while the
+  `markdownlint` and `nixie` sidecars beside them stamp the same gate session as
+  `2026-09-26T06:41:37Z`. Both are honest and both are correct; a reader
+  comparing the plan's bare `2026-09-27` against either has no way to see that
+  the plan means the first. So the repair is neither to change the date, which
+  would be wrong, nor to decline again, which is what D31 and the 2026-09-25
+  entry did when the same class arrived — and those declines are the reason it
+  has now arrived a third time. Declining on "the premise is false" answers the
+  sentence the reviewer wrote rather than the problem it points at. The
+  accepted form is to write the offset into the record at all three sites, so
+  the date cannot be read against the wrong zone at all: the effect survives a
+  UTC-based reviewer and a local-time author, and it is falsifiable — a reader
+  can now check `2026-09-27T01:01:57+02:00` against `3f20bdc` directly rather
+  than taking the plan's word for which day it was. **What made the earlier
+  declines look sound was their evidence, and the evidence was about the clock
+  rather than about the record.** D31 and its successor each checked what time
+  it was and found the date true, which it was; neither asked whether a reader
+  of the plan could establish that without leaving the plan. A third round
+  finding the same thing is what a persistent finding looks like when the first
+  two rounds were answered rather than satisfied, and the cost of the two
+  declines is now recorded rather than absorbed: the branch's review cost three
+  rounds to be told what one round would have been right to say twice.
+  Date/Author: 2026-09-27, implementing agent, actioning the sixteenth round's
+  single finding after verifying its premise false and its substance true.
 
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
@@ -2950,25 +3033,28 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-eight were accounted
-for; the disposition of each follows. The section holds seventy-five top-level
-entries in all; the other forty-seven are `Decision log` records D1–D47, which
+for; the disposition of each follows. The section holds seventy-six top-level
+entries in all; the other forty-eight are `Decision log` records D1–D48, which
 are decisions rather than observations and are dispositioned in their own
-section. **D47 is the one entry added after this reconciliation was first
-written**, by the rebase that closed the divergence the `Residual gaps` section
-once recorded; it is a decision about how a replay is accepted rather than a
-discovery about a document, so it is dispositioned here by being named rather
-than by being checked against an upstream artefact. Ten observations were
-recorded during or after the EP-M5 gate runs: a prose-wrapping rule, a
-correction to how this plan had been probing the formatter, the post-fix review
-round's falsification record, the record-versus-line discovery that closed the
-third round's `major` subject, the two the fourth and fifth rounds produced
-between them, the attribution-versus-arithmetic finding the seventh round
-forced, the ninth round's measurement that an inline link cannot be wrapped,
-the fourteenth round's distinction between an aborted stream and a scored one,
-and the gate-evidence rule that a green gate describes the bytes it read and no
-others. None bears on any upstream artefact, and the second review round —
-recorded as D29 rather than here, because its findings are decisions rather
-than observations — forced one upstream correction of its own, to ADR 004's
+section. **D47 and D48 are the two entries added after this reconciliation was
+first written** — D47 by the rebase that closed the divergence the
+`Residual gaps` section once recorded, D48 by the sixteenth review round, which
+is the first to reach analysis after the two preceding rounds aborted five
+attempts between them. Both are decisions about how a record is accepted rather
+than discoveries about a document, so they are dispositioned here by being
+named rather than by being checked against an upstream artefact. Ten
+observations were recorded during or after the EP-M5 gate runs: a
+prose-wrapping rule, a correction to how this plan had been probing the
+formatter, the post-fix review round's falsification record, the
+record-versus-line discovery that closed the third round's `major` subject, the
+two the fourth and fifth rounds produced between them, the
+attribution-versus-arithmetic finding the seventh round forced, the ninth
+round's measurement that an inline link cannot be wrapped, the fourteenth
+round's distinction between an aborted stream and a scored one, and the
+gate-evidence rule that a green gate describes the bytes it read and no others.
+None bears on any upstream artefact, and the second review round — recorded as
+D29 rather than here, because its findings are decisions rather than
+observations — forced one upstream correction of its own, to ADR 004's
 stable-identifier paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
@@ -4075,6 +4161,55 @@ comparison. A future run on this branch should prefer the canonical filenames
 once the pre-rebase evidence is no longer wanted, or adopt a suffix convention
 that keeps the rich fields.
 
+**The run that acted on that recommendation, and the one thing it may not
+record.** D48's repair was gated under a `-postrebase16-` infix family, chosen
+over the canonical names for the reason the paragraph above gives. **This
+paragraph deliberately describes no property of that family** — not its
+members, not how many runs it holds, not which fields its sidecars carry — and
+the reason is D46's: the gate run dispatched to validate these sentences adds a
+member to the family, so every such claim is falsified by the act of checking
+it. Writing the count here would be the mistake D46 already catalogues once.
+Two things about the family are durable and are worth stating, because neither
+is a property of the archive set. The first is the limit D43 establishes:
+**this file cannot record the digest of its own final bytes**, so a sidecar's
+`plan_sha256`, where a wrapper writes one, pins the bytes *as they stood at
+that run* — never the bytes a reader now holds, because the record of the pin
+is part of what changed them. The second follows from the first: a reader who
+wants to know that the gates read the shipped bytes must re-run them, and a
+reader who wants to know only that they passed can read the exits. Those are
+different claims and this section does not conflate them.
+
+**The post-rebase transcript, which names the seven gates EP-M5 actually
+accepts on.** The blocks above record runs that included `make typecheck` and
+omitted two gates the acceptance list names. That gap was found while repairing
+D48, by reading the acceptance list against the transcripts rather than against
+the phrase "all seven gates" — and it is worth recording that the phrase hid
+it, because "seven" was true of both sets while the sets differed. The gates
+EP-M5 accepts on, run at the tip and all exiting 0:
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy clean; whitaker clean
+make test                         exit 0   99 tests run: 99 passed, 0 skipped; 1 doctest
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 dependencies scanned, no advisories
+make test-workflow-contracts      exit 0   116 passed
+```
+
+`make typecheck` and `make spelling` were also run and also exit 0, and they
+are *not* on that list — the first is the eighth line the paragraph above
+explains, and the second is a prerequisite the `markdownlint` target runs for
+itself. `make test-workflow-contracts` reads 116 where the earlier blocks read
+6, and that is the rebase rather than a discrepancy: `main` added workflow
+contract tests and the replay inherited them, so this branch is now passing a
+larger set than the one it was written against. Nothing about the branch's own
+change surface is covered by the additional cases, which assert over
+`.github/workflows/` — and the one interaction worth naming is that `c4efce9`,
+which the rebase brought in, bumps a pinned SHA in `mutation-testing.yml` that
+those contracts assert over; they assert its *shape* and not its value, so the
+bump does not break them.
+
 Two of the eight lines repay reading rather than skimming. The `make lint` line
 names its three legs because each must *reach* for the exit code to mean
 anything: a clippy failure stops the suite before `whitaker` runs, which is
@@ -4508,20 +4643,39 @@ re-permits in tests.
   constraint forbidding a `docs/design.md` §11.1 edit is now unconditional, and
   the §14 bullet is in scope. No implementation has started: `Progress` is
   unchanged and Stage A has not run.
-- 2026-09-27, rebased onto the PR's target and re-gated. The branch was
-  replayed from merge-base `bad9a04` onto `origin/main` at `e98b685` as 51
-  commits with no conflicts, closing the divergence the `Residual gaps` section
-  had recorded and deferred to PR time. The replay was accepted on patch
-  identity rather than on its clean exit: `git range-diff` reports all 51
-  commits as `=`, the 15 paths `main` changed and this branch did not are
-  byte-identical to `e98b685`'s versions, and the three co-touched files match
-  the tree a plain `git merge-tree` produces, so `Cargo.lock` is `main`'s and
-  nothing needed regenerating. All seven gates were re-run at the new tip —
-  seven exits of 0, `make test` at 99/99 — and their logs carry a `-2` suffix
-  because the canonical filenames held the pre-rebase evidence; those sidecars
-  record the exit code but not the revision, and `Artefacts and notes` states
-  that limit rather than implying otherwise. Recorded as D47. `Progress` gained
-  the rebase as a completed item; the four `Surprises & discoveries` tallies
-  and the `Conformance basis` roadmap pin were re-measured rather than assumed
-  to have survived the edit. EP-M5 and roadmap task 1.1.3 remain unticked, on
-  the bar D44 records: `27bdda9`'s review never ran.
+- 2026-09-27, rebased onto the PR's target and re-gated. The wall-clock was
+  `2026-09-27T01:01:57+02:00`, which is `2026-09-26T23:01:57Z`; the offset is
+  written alongside the date because the records this branch is checked against
+  do not agree on a zone. The branch was replayed from merge-base `bad9a04` onto
+  `origin/main` at `e98b685` as 51 commits with no conflicts, closing the
+  divergence the `Residual gaps` section had recorded and deferred to PR time.
+  The replay was accepted on patch identity rather than on its clean exit:
+  `git range-diff` reports all 51 commits as `=`, the 15 paths `main` changed
+  and this branch did not are byte-identical to `e98b685`'s versions, and the
+  three co-touched files match the tree a plain `git merge-tree` produces, so
+  `Cargo.lock` is `main`'s and nothing needed regenerating. All seven gates
+  were re-run at the new tip — seven exits of 0, `make test` at 99/99 — and
+  their logs carry a `-2` suffix because the canonical filenames held the
+  pre-rebase evidence; those sidecars record the exit code but not the
+  revision, and `Artefacts and notes` states that limit rather than implying
+  otherwise. Recorded as D47. `Progress` gained the rebase as a completed item;
+  the four `Surprises & discoveries` tallies and the `Conformance basis`
+  roadmap pin were re-measured rather than assumed to have survived the edit.
+  EP-M5 and roadmap task 1.1.3 remain unticked, on the bar D44 records:
+  `27bdda9`'s review never ran.
+- 2026-09-27, the sixteenth review round reaches analysis and returns one
+  finding. The wall-clock is `2026-09-27T01:29+02:00`, recorded with its offset
+  for D48's reason. The pass completed in 146 seconds over 27 files and ended
+  `review_completed`, so D44's freeze was a transport fault that cleared rather
+  than a property of the revision — **`27bdda9`'s review never ran, and the
+  branch's first completed pass is over the rebased tip instead.** The finding
+  is the future-dated-record subject D31 and the 2026-09-25 entry each
+  declined; it is **adopted** this time even though its premise is false,
+  because three appearances establish that the plan's bare dates cannot be read
+  against evidence that stamps two different zones. The repair writes the
+  offset into the D47 record, the rebase `Progress` item and the revision note
+  rather than altering a date that is correct, and D47 now names the two
+  witnesses that fix the instant independently. Recorded as D48; the
+  reconciliation tallies move to 76 entries over D1–D48. The bar EP-M5 states
+  is a zero-finding pass and this one returned a finding, so the item stays
+  unticked and the next pass is over the commit carrying this repair.
