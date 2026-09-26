@@ -1023,6 +1023,21 @@ outcome, and a reviewer should approve it on that understanding.
       evidence runs the
       other way from every round above it: what the two attempts prove is the
       freeze, not the review.
+- [x] EP-M5's transcript requirement — the seven gates are recorded in
+      `Artefacts and notes` over the delivered revision, which was the last
+      unmet clause of that acceptance. The first attempt at it produced a
+      record that could not be true: a file cannot contain a true statement of
+      its own commit hash, so "the current run" over "this commit" was false by
+      the act of being written, and took three self-invalidating revisions to
+      make durable. The attribution now lives in the `.exit` sidecars beside
+      each canonical log, which carry the exit code, the timestamps, the `HEAD`
+      sha and the `git status --porcelain` state for the bytes actually
+      measured, and the prose names a revision that is *not* the tip. The three
+      Markdown gates were re-run after the final edit and their superseded runs
+      preserved in `.stale-<sha>-<timestamp>` archives rather than overwritten,
+      so the archives show the rule being followed rather than stated. Recorded
+      as D43, plus the observation that a green gate describes the bytes it read
+      and no others.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -2589,6 +2604,53 @@ design.
   substitute. Date/Author: 2026-09-26, implementing agent, on the fourteenth
   review round's two aborts.
 
+- D43: **A gate transcript must be attributed to something outside itself,
+  because a file cannot state its own hash.** EP-M5's acceptance requires seven
+  gate transcripts, and the first attempt to satisfy it wrote a block headed
+  "the current run" over "the tree this commit carries". Neither phrase can
+  survive its own edit. "The current run" is true only until the next edit to
+  the file, which is precisely how the two counts further down this plan
+  drifted apart unnoticed; and "this commit" is worse, because the revision it
+  names is whatever revision the *reader* happens to be on, not the one that
+  was gated. Naming the hash explicitly does not fix it either — it makes the
+  claim falsifiable, which is an improvement, but the file still cannot
+  *contain* a true statement of its own commit hash: writing the hash,
+  committing, and re-reading shows the hash of the previous commit, since the
+  act of recording it changes it. Any sentence of the form "this file's blob is
+  X" is false the instant it is committed. The resolution is to attribute the
+  runs to evidence that lives outside the file and is created by the gate
+  rather than by the author: the `.exit` sidecar beside each canonical log under
+  `/tmp`, which records the exit code, the timestamps, and the `HEAD` sha for
+  the bytes actually measured, plus the `git status --porcelain` state. The
+  plan's prose then names a revision that is *not* the tip — `e76be77`, blob
+  `e4244e05…`, both checkable against that commit and unaffected by later edits
+  — and says why it is named that way, so the next person tempted to write the
+  current hash here sees the trap before falling into it. The general lesson is
+  the same one D41 and D42 reached from their own directions and worth stating
+  once: a record is only as trustworthy as the reader's ability to *re-check*
+  it, so a claim whose truth depends on when it is read is not a record, it is
+  a snapshot pretending to be one. Adopted after three self-invalidating
+  revisions of the same paragraph, each of which was made *less* true by being
+  written down. Date/Author: 2026-09-26, implementing agent, satisfying EP-M5's
+  transcript requirement.
+
+- Observation: **the gate-evidence rule is about bytes, not exit codes.** The
+  three Markdown gates read this plan file, so after the transcript was added
+  the previous green described a tree that no longer existed — the gates had
+  passed, but not over the bytes being shipped, which is a weaker and more
+  dangerous statement than a failure, because a failure announces itself and
+  this does not. The remedy was not to hedge the prose but to re-run the three
+  gates after the last edit and to preserve the superseded runs in
+  `.stale-<sha>-<timestamp>` archives beside each canonical log rather than
+  overwriting them. The archives are the point: they make visible that a run
+  happened, that it was superseded, and by which revision, so a reader who
+  finds a transcript whose attribution looks odd can see the history rather
+  than trusting a summary. The five gates that cannot read the file were not
+  re-run, and the justification is checkable rather than asserted —
+  `grep -rn execplans tests/` returns nothing and no Rust source reads it —
+  which is what keeps this from being a blanket exemption. Date/Author:
+  2026-09-26, implementing agent, after the transcript's first full gate run.
+
 - Observation: **a review's *attribution* is a claim like its arithmetic.** The
   seventh pass's two count findings sent a reader to D32's fifth-pass figures,
   and correcting them meant checking that entry against
@@ -2651,22 +2713,23 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All twenty-seven were accounted
-for; the disposition of each follows. The section holds sixty-nine top-level
-entries in all; the other forty-two are `Decision log` records D1–D42, which
+the artefacts named in `Conformance basis`. All twenty-eight were accounted
+for; the disposition of each follows. The section holds seventy-one top-level
+entries in all; the other forty-three are `Decision log` records D1–D43, which
 are decisions rather than observations and are dispositioned in their own
-section. Nine observations were recorded during or after the EP-M5 gate runs: a
+section. Ten observations were recorded during or after the EP-M5 gate runs: a
 prose-wrapping rule, a correction to how this plan had been probing the
 formatter, the post-fix review round's falsification record, the
 record-versus-line discovery that closed the third round's `major` subject, the
 two the fourth and fifth rounds produced between them, the
 attribution-versus-arithmetic finding the seventh round forced, the ninth
-round's measurement that an inline link cannot be wrapped, and the fourteenth
-round's distinction between an aborted stream and a scored one. None bears on
-any upstream artefact, and the second review round — recorded as D29 rather
-than here, because its findings are decisions rather than observations — forced
-one upstream correction of its own, to ADR 004's stable-identifier paragraph,
-which is dispositioned below.
+round's measurement that an inline link cannot be wrapped, the fourteenth
+round's distinction between an aborted stream and a scored one, and the
+gate-evidence rule that a green gate describes the bytes it read and no others.
+None bears on any upstream artefact, and the second review round — recorded as
+D29 rather than here, because its findings are decisions rather than
+observations — forced one upstream correction of its own, to ADR 004's
+stable-identifier paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
