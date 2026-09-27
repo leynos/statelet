@@ -3311,6 +3311,23 @@ design.
   from the old one — and a count worth writing is worth naming its base for,
   because that is what lets the next reader check it.**
 
+- Observation: **a byte count is a measurement, and a measurement without its
+  method is a number that only looks checkable.** The `PROSE_RANK` record above
+  stated the roadmap window as "915 bytes and three task records". Re-measured
+  this revision, the count of three task records is exactly right and the byte
+  count is not: `locate_section`'s *body* is 867 bytes, and 919 is the span
+  from the matched line to its bound. Both measure the same window; they differ
+  by the 52 bytes of the matched line plus its newline, and the record had
+  taken one while calling it the other. Nothing was stale — `git log` shows
+  `docs/roadmap.md` unchanged since before the figure was written, and
+  `git merge-base --is-ancestor` confirms it — so this was not the drift the
+  entry above describes but its quieter cousin: a measurement whose method was
+  never named, drifting inside itself rather than against the document. The
+  repair names the body, gives the alternative figure, and says which is which,
+  because a reader who wants to check the claim has to know where the window
+  starts. **Carried lesson: state the quantity, not just the number — "the body
+  `locate_section` returns" is checkable, and "915 bytes" was not.**
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -3334,8 +3351,8 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All thirty-one were accounted for;
-the disposition of each follows. The section holds eighty-three top-level
+the artefacts named in `Conformance basis`. All thirty-two were accounted for;
+the disposition of each follows. The section holds eighty-four top-level
 entries in all; the other fifty-two are `Decision log` records D1–D52, which
 are decisions rather than observations and are dispositioned in their own
 section. **D47, D48, D49, D50, D51 and D52 are the six entries added after this
@@ -3368,7 +3385,7 @@ own. **D51 is the third and the only one of the six whose subject is a
 admissibility prose and this plan's `Risks` copy of it, and the rewording
 restates a rule the register already enforced rather than changing it, so like
 D49's it is dispositioned below among the upstream corrections and, unlike
-D49's, it moved no test. Thirteen observations were recorded during or after
+D49's, it moved no test. Fourteen observations were recorded during or after
 the EP-M5 gate runs: a prose-wrapping rule, a correction to how this plan had
 been probing the formatter, the post-fix review round's falsification record,
 the record-versus-line discovery that closed the third round's `major` subject,
@@ -3380,12 +3397,14 @@ gate-evidence rule that a green gate describes the bytes it read and no others,
 and the stale-complement rule the eighteenth round's defect produced, which is
 that a narrowed population invalidates every claim about its complement; the
 nineteenth round's count-versus-revision rule, that a total is a claim only
-once the revision it measures is named; and the span bound its checklist-item
-question exposed, which is recorded as a residual gap rather than fixed. None
-bears on any upstream artefact, and the second review round — recorded as D29
-rather than here, because its findings are decisions rather than observations —
-forced one upstream correction of its own, to ADR 004's stable-identifier
-paragraph, which is dispositioned below.
+once the revision it measures is named; the span bound its checklist-item
+question exposed, which is recorded as a residual gap rather than fixed; and
+this revision's quantity-versus-number rule, that a measurement which does not
+say which quantity it measured cannot be checked. None bears on any upstream
+artefact, and the second review round — recorded as D29 rather than here,
+because its findings are decisions rather than observations — forced one
+upstream correction of its own, to ADR 004's stable-identifier paragraph, which
+is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -3533,14 +3552,18 @@ having and exactly when it looks like bureaucracy.
   next heading of the same or higher rank, and an attribution matching *prose*
   — ADR 004's `roadmap 3.2.1. Finalize the …` — inherits `PROSE_RANK`, which is
   `##`. On the roadmap that makes the window the rest of the phase rather than
-  the task: measured, the span from task 3.2.1's line to the next `##`-heading
-  is **915 bytes and three task records**, so the clause could move into 3.2.2
-  or 3.2.3 and still resolve. Kept, because the bound is safe in the direction
-  D12 requires from it — it will not resolve inside a fence — and because the
-  same rule is what stops ADR 004's own evidence clauses from resolving against
-  the wrong section. Recorded rather than repaired: narrowing it to
-  checklist-item boundaries is a parser change, not a wording change, and the
-  parse that would prove it correct is the whole of the next review pass's cost.
+  the task: measured, the *body* `locate_section` returns — everything after
+  task 3.2.1's line, up to but excluding the next `##` heading — is **867 bytes
+  and three task records** (3.2.1, 3.2.2 and 3.2.3), so the clause could move
+  into 3.2.2 or 3.2.3 and still resolve. The figure is the body and not the
+  span from the matched line to the bound, which is 919 bytes: 52 bytes of
+  difference, and the number a reader would get by measuring the tempting way.
+  Kept, because the bound is safe in the direction D12 requires from it — it
+  will not resolve inside a fence — and because the same rule is what stops ADR
+  004's own evidence clauses from resolving against the wrong section. Recorded
+  rather than repaired: narrowing it to checklist-item boundaries is a parser
+  change, not a wording change, and the parse that would prove it correct is
+  the whole of the next review pass's cost.
 - **The three `docs/validation-notes/` notes this contract expects** — 1.2.3's
   benchmark note, 2.2.3's exit note, 3.1.3's decision note — do not exist yet.
   The marker rule means their arrival is not a build failure, and the scan's
@@ -4770,9 +4793,13 @@ the figures its run reported. **The paragraph that follows is the D30
 checkpoint at `dd5b37c`** — the pre-rebase revision D30 delivered, whose replay
 after the rebase is `7df6f53`, a replay a `git range-diff` over the two
 single-commit ranges reports as identical. It is not the delivered tree: the
-suite has grown twice since, and the delivered figures are the 59 cases across
-35 functions recorded under `Surprises & discoveries`. Read this paragraph for
-what D30's checkpoint measured, and that one for what ships.
+suite has grown three times since, and the delivered figures are **79 cases
+across 49 functions**, re-measured for this revision by counting `#[test]` and
+`#[rstest]` attributes and by grouping nextest's PASS lines — the method the
+nineteenth round established after this paragraph was found to be measuring a
+checkpoint while reading as though it measured the tree. Read this paragraph
+for what D30's checkpoint measured, and `Surprises & discoveries` for what
+ships.
 
 Thirty-three functions occupy fifty-four collected cases at that checkpoint,
 because `rstest` still expanded four of them, two of them further than before:
@@ -5276,21 +5303,23 @@ re-permits in tests.
   — both re-measured this round by counting comment-stripped `#[case]`
   attributes and by grouping nextest's own PASS lines, and both agreeing with
   the paragraph, which was quoting a true measurement of an unnamed revision.
-  The `major` asks the aggregation rule to stop ratification when an expected
-  note is blocked; **declined**, because ADR 004's `## Options considered`
-  refuses exactly that shape — a naming defect "is not a verdict about the
-  return type, so a register that treats it as one has no terminating procedure
-  for those notes" — and because the register is already consistent once read
-  as its first column says: a blocked note contributes nothing, the expected
-  2.2.1 and 3.1.2 notes contribute `Sufficient`, and "One or more / No /
-  Ratify" is the row that applies. The finding's other half is **adopted**: the
-  ADR's admissibility sentence now states the consequence in the register's own
-  terms instead of writing "blocks the *Statelet* gate", with this plan's
-  `Risks` copy reworded to match, and no rule, register, fixture or test
-  changed. Recorded as D51; the reconciliation tallies move to 82 entries over
-  D1–D51, and the checkpoint paragraph in the gate transcripts now names
-  `dd5b37c` and points at the delivered totals. The bar EP-M5 states remains
-  unmet at two findings, so both it and roadmap task 1.1.3 stay unticked and
-  the next pass is over the commit carrying this repair. (The tally this
-  paragraph records is D51's own and is left at 82 over D1–D51; the twentieth
-  round's D52 moves it to 83 over D1–D52.)
+  (The delivered figures stand at 79 across 49 as of the twentieth round's
+  property suite; this bullet keeps the counts that round measured.) The
+  `major` asks the aggregation rule to stop ratification when an expected note
+  is blocked; **declined**, because ADR 004's `## Options considered` refuses
+  exactly that shape — a naming defect "is not a verdict about the return type,
+  so a register that treats it as one has no terminating procedure for those
+  notes" — and because the register is already consistent once read as its
+  first column says: a blocked note contributes nothing, the expected 2.2.1 and
+  3.1.2 notes contribute `Sufficient`, and "One or more / No / Ratify" is the
+  row that applies. The finding's other half is **adopted**: the ADR's
+  admissibility sentence now states the consequence in the register's own terms
+  instead of writing "blocks the *Statelet* gate", with this plan's `Risks`
+  copy reworded to match, and no rule, register, fixture or test changed.
+  Recorded as D51; the reconciliation tallies move to 82 entries over D1–D51,
+  and the checkpoint paragraph in the gate transcripts now names `dd5b37c` and
+  points at the delivered totals. The bar EP-M5 states remains unmet at two
+  findings, so both it and roadmap task 1.1.3 stay unticked and the next pass
+  is over the commit carrying this repair. (The tally this paragraph records is
+  D51's own and is left at 82 over D1–D51; the twentieth round's D52 moves it
+  to 83 over D1–D52.)
