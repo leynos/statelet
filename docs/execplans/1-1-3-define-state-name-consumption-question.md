@@ -1123,6 +1123,35 @@ outcome, and a reviewer should approve it on that understanding.
       `AGENTS.md` names it as the Mermaid gate), so the substitution would have
       read as a pass had the agent not reported it as a substitution. It was
       run over the same tree to close the set, and exits 0.
+- [x] The renumbering-trap entry's citation is repaired, and the repair was
+      re-read after the formatter ran. The entry had compared the trap against
+      "the entry at line 1142", which it said describes a *word* being
+      swallowed. That pointer was mine and it was false: line 1142 carries
+      review five's four declines, and this plan contains no record of a
+      swallowed word. The comparison is now made against the fence-ignore
+      entry's actual content, **by relative position rather than by line
+      number** — a line number in a living document is a claim that decays on
+      the next edit, which is exactly how the false one arose, while a relative
+      pointer survives insertion above it. The four other self-referential
+      pointers in the section were checked and all four resolve. Committed as
+      `9c9fb5c`, pushed, and the three Markdown gates re-run over the committed
+      bytes: `check-fmt` exit 0 and idempotent on re-run, `markdownlint` 0
+      errors over 29 files, `nixie` validated all diagrams. The seven `45 to
+      75` figures the trap destroyed last time are intact, and no wrapped
+      continuation in the document opens with a numeral.
+- [x] The CodeScene code-health check is recorded, and its one live finding
+      is left open deliberately. It has failed on this branch continuously, and
+      the plan had never mentioned it. Adjudicated rather than fixed: the
+      repository ruleset requires exactly one check (`build-test`), CodeScene
+      is not in it, and `docs/developers-guide.md` records CodeScene's
+      *coverage* role as deliberately off for pull requests — so the failure
+      blocks nothing and the earlier rounds were right to ignore it. What was
+      missing was the finding, not the fix. Local ground truth from
+      `cs review`: `register_scenarios.rs` scores **9.38** on one `Code
+      Duplication` issue, the newest of the three sub-10.00 modules, with
+      `parse.rs` at 9.09 and `registers.rs` at 9.38 — and all three are new on
+      this branch. Thirteen of the sixteen contract modules score 10.0, so the
+      bar is demonstrably achievable and this is not a gate that cannot be met.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3450,6 +3479,70 @@ design.
   lesson: a formatter that is idempotent on its own damage reports success over
   it, so a claim repaired inside a formatted document must be re-read *after*
   the formatter runs, not before.**
+
+- Observation: **a line number cited inside a document that is still being
+  edited is a claim with a half-life, and it is falsifiable by the same command
+  that reads it — so either cite the position or verify the number, and never
+  neither.** Evidence: the renumbering-trap entry above originally compared
+  itself against "the entry at line 1142", which it said described a *word*
+  being swallowed. A `grep -n 'swallow'` over the whole plan returns the
+  fence-ignore entry, the trap entry's own prose, and nothing else — no entry
+  describes a swallowed word. The number had no referent either, but not in the
+  way first assumed: **line 1142 never held the declines.** At `07ce9c7`, when
+  the pointer was written, line 1142 held ADR 004's worked example, and the
+  declines it was said to name were at line 2385 of that same revision, in a
+  `Progress` checklist item. So the numeral was not a drifted pointer at all —
+  it was invented, and the "review five's four declines" reading I first gave
+  it was itself a guess about a line I had not read. It was written under
+  memory of a different revision of a different file, and survived into the
+  tree because nothing checks it: the plan is an input to three gates and all
+  three read *format*, not reference. Impact: the repair replaced the number
+  with a relative position ("the fence-ignore entry above"), which cannot
+  drift, and the four other self-referential pointers in the section were then
+  checked and all four resolve — a number among them survived only because
+  nothing above it had been inserted since. **The failure then reproduced
+  itself inside this very entry, one draft earlier.** That draft cited line
+  1142 as evidence of what the numeral had been pointing at, and the Progress
+  entry added above it moved line 1142 before the text below it was even read —
+  inserting at line 1126 pushed everything after it down, so the evidence line
+  the draft named no longer held what the draft said. Neither draft read the
+  file; both inferred the contents from the number, and the second inference
+  was false in the same way as the first, in the same entry, within the hour.
+  **Carried lesson: a cross-reference is evidence about a population of edits,
+  so it is verified the way a count is — by reading what is at the position
+  now, not by trusting what was there when it was written.**
+
+- Observation: **the code-health service that fails on every revision was never
+  recorded, and its failure is a fact about the ruleset rather than about the
+  code — which is precisely why it needed recording.** Evidence:
+  `CodeScene Code Health Review (main)` has concluded `failure` on every commit
+  this branch produced that was checked, `99cece6` and `9bc592f3` among them —
+  including `07ce9c7` and the tip `9c9fb5c` — and the plan mentioned CodeScene
+  nowhere before this entry. Three commands separate the causes.
+  `gh api repos/leynos/statelet/rulesets/18427786` lists the required checks: **
+  `build-test`, and nothing else**, so the failing check blocks no merge.
+  `docs/developers-guide.md`'s coverage-publication section records that a pull
+  request deliberately never contacts `codescene.io`, so the signal reaching
+  the PR at all is itself the interesting fact: the service is reading the
+  branch by a path that document does not describe. And `cs review` run locally
+  reproduces the finding without the service: `register_scenarios.rs` scores
+  **9.38** on one `Code Duplication` issue between two functions differing only
+  in their literals, with `parse.rs` at 9.09 and `registers.rs` at 9.38.
+  Impact: the finding is real and is left open, because it is a maintainability
+  signal in a test module, the repository does not gate on it, and fixing it
+  would mean reshaping four sibling scenarios into a table test — a change to
+  reviewed, passing code that no acceptance criterion asks for. What the record
+  fixes is the *silence*: an unrecorded red check is indistinguishable from an
+  unnoticed one. The measurement also settles that the bar is not impossible:
+  **thirteen of the sixteen** contract modules score 10.0, and the three that
+  do not are `parse.rs` (9.09), `register_scenarios.rs` (9.38) and
+  `registers.rs` (9.38). `claim_properties.rs`, added in the twenty-first
+  round, is among the thirteen — so a module written to this bar reaches it as
+  the ordinary case, and the three short of it are the exceptions that need a
+  reason. **Carried lesson: a check that fails continuously without failing
+  anything still needs one adjudication recorded, because "advisory" is a
+  conclusion that has to be reached and written down, not a state to be assumed
+  from the check being ignored.**
 
 ## Outcomes & retrospective
 
