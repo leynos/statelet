@@ -2,8 +2,10 @@
 //!
 //! Each of these checks a *link* between two documents: the blank form against
 //! the register it instantiates, the clauses ADR 004 quotes against the
-//! sections they came from, and the gate table and success criterion against
-//! the live roadmap. A drift on either side of any pair fails here.
+//! sections they came from, and the gate table against the live roadmap. A
+//! drift on either side of any pair fails here. The success criterion's own
+//! controls, which ask *which* copy of a sentence is the criterion rather than
+//! where a fragment resolves, live in `criterion_scenarios.rs`.
 
 use pretty_assertions::assert_eq;
 use rstest::rstest;
@@ -16,13 +18,12 @@ use super::{
     ROADMAP,
     STRONGER,
     clauses,
-    fixtures::{TEMPLATE, gate_table, status_register_without},
-    fold_whitespace,
+    fixtures::{TEMPLATE, gate_table},
     live_status,
     mutated,
-    parse::{gate_rows, note_rows, status_rows},
+    parse::{gate_rows, note_rows},
     registers::check_deferred_clause,
-    roadmap::{check_gate_titles, check_success_criterion, task_records},
+    roadmap::{check_gate_titles, task_records},
     types::{Register, field_order},
 };
 
@@ -254,6 +255,36 @@ fn gate_titles_resolve(
     Ok(())
 }
 
+/// Resolves the live gate table against the live roadmap.
+///
+/// Every `gate_titles_resolve` case runs over the *fixture* table, which is what
+/// makes each rejection control possible: a case must plant a fragment in a table
+/// it owns. That leaves the live pairing unread. The fixture and the document
+/// are compared by `INV-REGISTERS`-style parsing in `register_scenarios.rs` for
+/// the status and aggregation registers, but the gate table has no equivalent
+/// there, so without this scenario the ADR's own table could be deleted, or a
+/// fragment edited, and every gate case would still pass over the fixture.
+///
+/// The two checks are complementary and neither subsumes the other: this one
+/// binds the live document to the live roadmap, and `gate_titles_resolve` binds
+/// each rejection branch to the message it must produce.
+#[test]
+fn live_gate_table_binds_the_live_roadmap() -> Result<(), String> {
+    // The table must be non-empty before the binding means anything: an ADR
+    // whose gate block had been emptied parses to no rows, and a check over no
+    // rows would pass while binding nothing at all. The refusal travels through
+    // the error channel rather than `assert!`, because `panic_in_result_fn` is
+    // denied — a control that returns `Result` reports rather than crashes.
+    let gates = gate_rows(ADR).map_err(|error| error.to_string())?;
+    if gates.is_empty() {
+        return Err("ADR 004's gate table parsed to no rows, so this scenario would pass while \
+                    binding nothing. Repair: restore the gate-table block, or revise this \
+                    contract with it."
+            .to_owned());
+    }
+    check_gate_titles(ADR, ROADMAP)
+}
+
 /// The fragment the fixture gate table ships for one gate, so that a case can
 /// replace it without the table being written out twice.
 ///
@@ -267,85 +298,6 @@ fn gate_table_fragment(gate: &str) -> Result<String, String> {
         .into_iter()
         .find(|row| row.gate == gate)
         .map_or_else(String::new, |row| row.fragment))
-}
-
-/// Checks the acceptance criterion the task is graded on still resolves.
-#[test]
-fn success_criterion_still_maps() -> Result<(), String> {
-    check_success_criterion(&live_status()?, ROADMAP)?;
-    let missing = status_register_without("tracing-use");
-    let rows = status_rows(&missing).expect("the mutated register still parses");
-    assert_eq!(
-        check_success_criterion(&rows, ROADMAP),
-        Err(
-            "docs/adr-004-state-name-consumption-evidence.md: no status-register field maps the \
-             criterion noun \"tracing use\". Repair: add the tracing-use field, or reword the \
-             roadmap task."
-                .to_owned()
-        )
-    );
-    let reworded = mutated(ROADMAP, "and tracing use", "and tracing coverage");
-    assert_eq!(
-        check_success_criterion(&live_status()?, &reworded),
-        Err(
-            "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: restore \
-             \"the Phase 2 validation note template has fields for state display name, optional \
-             identifier need, metrics cardinality, and tracing use\", or revise this contract \
-             together with the task."
-                .to_owned()
-        )
-    );
-    Ok(())
-}
-
-/// Rejects the criterion when its sentence appears only *outside* a task.
-///
-/// The clause is a task's success bullet. The same sentence in the roadmap's
-/// framing prose is not the criterion, and a check that scanned the document's
-/// lines would accept it — reporting the task as still graded on a sentence
-/// the task had lost. The control plants an identical sentence in the page's
-/// introduction, then breaks the task's own copy with a needle unique to its
-/// bullet, so exactly one copy of the clause survives and the only question is
-/// whether the check knows which document region it is in.
-///
-/// Both needles are phrases no reflow can split. The clause itself is never a
-/// needle: `mdtablefix --wrap` breaks it across lines, and the replacements are
-/// applied to the raw text, so a needle spanning one of those breaks would stop
-/// applying the next time the document was formatted.
-#[test]
-fn criterion_outside_a_task_is_not_the_criterion() -> Result<(), String> {
-    let planted = mutated(
-        ROADMAP,
-        "# Statelet roadmap\n",
-        "# Statelet roadmap\n\nRecall that the Phase 2 validation note template has fields for \
-         state display name, optional identifier need, metrics cardinality, and tracing use.\n",
-    );
-    let broken_in_the_task = mutated(&planted, "Success: the Phase 2", "Success: the note form");
-    let clause = fold_whitespace(
-        "the Phase 2 validation note template has fields for state display name, optional \
-         identifier need, metrics cardinality, and tracing use",
-    );
-    let copies = fold_whitespace(&broken_in_the_task)
-        .matches(&clause)
-        .count();
-    assert_eq!(
-        copies, 1,
-        "this control needs exactly one copy of the criterion in the document — the one planted \
-         in the introduction — and found {copies}. Repair: check that the planted sentence still \
-         matches the clause the check looks for, and that the task's own copy is still broken by \
-         the reword; a control with no surviving copy proves nothing about where the clause lives."
-    );
-    assert_eq!(
-        check_success_criterion(&live_status()?, &broken_in_the_task),
-        Err(
-            "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: restore \
-             \"the Phase 2 validation note template has fields for state display name, optional \
-             identifier need, metrics cardinality, and tracing use\", or revise this contract \
-             together with the task."
-                .to_owned()
-        )
-    );
-    Ok(())
 }
 
 /// Holds the gate controls' preconditions against the live roadmap.

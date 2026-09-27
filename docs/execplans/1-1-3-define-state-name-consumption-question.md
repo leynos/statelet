@@ -3551,29 +3551,38 @@ formatter by running `make fmt` before fixtures are written and by
 ### INV-CRITERION — the acceptance criterion still resolves
 
 - **Obligation**: roadmap task 1.1.3's success bullet resolves verbatim
-  (whitespace-folded) inside a *task record* of `docs/roadmap.md`, and each of
-  its four nouns — state display name, identifier need, metrics cardinality,
-  tracing use — maps to exactly one field identifier in ADR 004's status
-  register.
-- **Method**: the check runs over the parsed task records, with one rejection
-  case per unmapped noun plus a reworded-roadmap control.
+  (whitespace-folded) inside the *task record whose title names that task*, and
+  each of its four nouns — state display name, identifier need, metrics
+  cardinality, tracing use — maps to exactly one field identifier in ADR 004's
+  status register.
+- **Method**: the check runs over the parsed task records, filtered to the one
+  whose title carries the task's identifying fragment; one rejection case per
+  unmapped noun plus a reworded-roadmap control plus two attribution controls.
 - **Rationale**: this is the one thing the task is graded on, and no other
-  invariant touches it. It is also the cheapest in the set — but the *record*
-  span is not decoration: the criterion is a sentence in the task's own success
-  bullet, so the same sentence in the page's introduction, a phase's framing
-  prose, or another task's rationale is not the criterion. A check over the
-  whole document cannot make that distinction and would report the criterion as
-  intact while the task it grades had lost it.
+  invariant touches it. It is also the cheapest in the set — but neither the
+  *record* span nor the *title* binding is decoration. The criterion is a
+  sentence in the task's own success bullet, so the same sentence in the page's
+  introduction, a phase's framing prose, or another task's rationale is not the
+  criterion; a check over the whole document cannot make that distinction and
+  would report the criterion as intact while the task it grades had lost it. The
+  binding is by title rather than by number so that completing or renumbering
+  the roadmap does not break the build — the rule D7 states and the gate table
+  follows — and the fragment is checked against `record.title` while the clause
+  is checked against `record.text`, because the two live in different places.
 - **Artefact**: test `anchor_scenarios::success_criterion_still_maps`, with the
   region control in
-  `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion`.
+  `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion` and the
+  attribution control in
+  `anchor_scenarios::criterion_in_another_task_is_not_the_criterion`.
 - **Non-vacuity**: a fixture register with `tracing-use` removed must fail
   naming the unmapped noun; a roadmap whose bullet is reworded must fail naming
-  the clause; and the region control plants an identical sentence in the
+  the clause; the region control plants an identical sentence in the
   introduction, breaks the task's own copy, and asserts the check still fails —
-  after first asserting that exactly one copy of the clause survives, so a
-  control with no surviving copy cannot pass by proving nothing about where the
-  clause lives.
+  after first asserting that exactly one copy of the clause survives; and the
+  attribution control removes the clause from the graded task, plants it in
+  another task's record, and asserts the check still fails — after asserting the
+  plant really landed inside a *different* task's record, so it cannot pass by
+  demonstrating only that the clause was deleted.
 
 ### INV-TEMPLATE — the blank form matches the register it instantiates
 

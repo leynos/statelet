@@ -14,7 +14,9 @@
 //!
 //! This file holds the shared constants and helpers; the scenarios themselves
 //! live in `anchor_scenarios.rs` (template and roadmap bindings),
-//! `note_scenarios.rs` (note cells and the verdict they yield),
+//! `claims_scenarios.rs` (what an evidence cell says),
+//! `criterion_scenarios.rs` (which copy of a sentence is the success
+//! criterion), `note_scenarios.rs` (note cells and the verdict they yield),
 //! `register_scenarios.rs` (register parsing and consistency) and
 //! `scan_scenarios.rs` (the directory scan over committed notes). Each module
 //! owns one invariant class, and each is a child rather than a share of this
@@ -27,8 +29,12 @@
 mod anchor_scenarios;
 #[path = "state_name_consumption_contract/claims.rs"]
 mod claims;
+#[path = "state_name_consumption_contract/claims_scenarios.rs"]
+mod claims_scenarios;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
+#[path = "state_name_consumption_contract/criterion_scenarios.rs"]
+mod criterion_scenarios;
 #[path = "state_name_consumption_contract/fixtures.rs"]
 mod fixtures;
 #[path = "state_name_consumption_contract/note_scenarios.rs"]
@@ -50,7 +56,7 @@ mod scan_scenarios;
 #[path = "state_name_consumption_contract/types.rs"]
 mod types;
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use parse::status_rows_or_error;
 use types::StatusRow;
 
@@ -84,6 +90,18 @@ fn fold_whitespace(text: &str) -> String { text.split_whitespace().collect::<Vec
 /// The workspace root, derived from the manifest directory so the scan works
 /// regardless of the runner's working directory.
 fn workspace_root() -> Utf8PathBuf { Utf8PathBuf::from(env!("CARGO_MANIFEST_DIR")) }
+
+/// Whether a path exists, with an inspection failure travelling as an error.
+///
+/// `Utf8Path::exists` is deliberately not used here, for the reason
+/// `notes::committed_notes` documents: it answers "false" both for a path that
+/// is genuinely absent and for one that cannot be inspected at all, so a
+/// control that guards on it cannot tell the precondition it needs from a
+/// machine that refuses to look. Both controls below turn on that difference.
+pub(crate) fn path_exists(path: &Utf8Path) -> Result<bool, String> {
+    path.try_exists()
+        .map_err(|error| format!("{path} cannot be inspected: {error}"))
+}
 
 /// Applies a source substitution, refusing to apply one that matches nothing.
 ///

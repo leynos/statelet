@@ -12,6 +12,12 @@
 //! whoever wrote the note, so a keyword scan that includes it reads a filename
 //! as a claim.
 
+/// The shortest revision `git` accepts as an abbreviation of an object name.
+const MIN_ABBREVIATED_SHA: usize = 4;
+
+/// The length of a full Git object name.
+const FULL_SHA: usize = 40;
+
 /// Whether a cell cites the revision it was observed against.
 ///
 /// The message names `<repo>@<sha>:<path>`, so the predicate admits exactly that
@@ -20,11 +26,42 @@
 /// the message would then be promising something it never checked. Each of the
 /// three components must also be non-empty: `@sha:path` and `repo@:path` are
 /// citations of nothing.
+///
+/// The revision must be a commit name, which is what makes the citation do its
+/// job. A cell is traceable to an observation only because the revision pins the
+/// tree the observation was made in; `mdtablefix@main:src/process.rs` names a
+/// *ref*, and a ref advances, so the moment `main` moves the cell stops
+/// describing any revision in particular — the status has become an assertion
+/// wearing a citation's shape. The rule is the one `git` uses for an abbreviated
+/// object name: four to forty hexadecimal digits. Upper case is accepted because
+/// it names the same object, and the bound is `git`'s rather than this
+/// contract's invention: a revision failing it would not resolve.
+///
+/// `narrative_text` deliberately does *not* apply the revision rule. It strips
+/// every citation-shaped word, and stripping a `main`-citing cell is the point:
+/// leaving one in place would feed that cell's *path* — chosen by whoever wrote
+/// the note — to the keyword scans below, which is the defect stripping exists
+/// to prevent. Shape decides what is removed; only this predicate decides what
+/// is acceptable.
 pub(crate) fn is_citation_shaped(evidence: &str) -> bool {
-    evidence.split_whitespace().any(is_citation)
+    evidence
+        .split_whitespace()
+        .filter_map(citation_parts)
+        .any(|(_, revision, _)| is_commit_revision(revision))
 }
 
-/// Whether one whitespace-delimited word is a complete citation.
+/// Whether a revision names a commit rather than a mutable ref.
+///
+/// A shape test and not a resolution test: no suite can check that `abc1234`
+/// exists in a repository this contract does not read, so what is enforced is
+/// that the revision *can* name one — which is exactly the difference between a
+/// citation and a ref written where one belongs.
+fn is_commit_revision(revision: &str) -> bool {
+    (MIN_ABBREVIATED_SHA..=FULL_SHA).contains(&revision.len())
+        && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+/// The three components of a citation-shaped word, or `None` if it is not one.
 ///
 /// A citation ends the clause that cites it, so it arrives wearing the
 /// punctuation that closed that clause. ADR 004's own worked example writes
@@ -38,22 +75,27 @@ pub(crate) fn is_citation_shaped(evidence: &str) -> bool {
 /// clause. Nothing may precede the opening backtick, so a citation embedded in
 /// a larger word is still not a citation, and a closing backtick inside a path
 /// is still the end of the citation rather than a stray quote.
-fn is_citation(word: &str) -> bool {
+///
+/// The revision is returned unvalidated. Whether it names a commit is a
+/// different question from whether the word is citation-shaped — `narrative_text`
+/// wants the shape alone — so `is_citation_shaped` asks the further question of
+/// what this returns.
+fn citation_parts(word: &str) -> Option<(&str, &str, &str)> {
     let trimmed = word.trim_end_matches([',', '.', ';']);
-    let Some(inner) = trimmed
-        .strip_prefix('`')
-        .and_then(|rest| rest.strip_suffix('`'))
-    else {
-        return false;
-    };
-    let Some((repo, rest)) = inner.split_once('@') else {
-        return false;
-    };
-    let Some((revision, path)) = rest.split_once(':') else {
-        return false;
-    };
-    !repo.is_empty() && !revision.is_empty() && !path.is_empty()
+    let inner = trimmed.strip_prefix('`')?.strip_suffix('`')?;
+    let (repo, rest) = inner.split_once('@')?;
+    let (revision, path) = rest.split_once(':')?;
+    (!repo.is_empty() && !revision.is_empty() && !path.is_empty())
+        .then_some((repo, revision, path))
 }
+
+/// Whether one word is citation-shaped, whatever revision it names.
+///
+/// The shape alone, because that is what `narrative_text` needs: a word that
+/// looks like a citation must come out of the scan even when its revision does
+/// not name a commit, or a cell the shape check rejects would still leak its
+/// path into the keyword predicates on the way to being rejected.
+fn is_citation(word: &str) -> bool { citation_parts(word).is_some() }
 
 /// The words of a cell that make a claim, with its citations removed.
 ///
@@ -128,23 +170,54 @@ const PROPERTIES: [&str; 5] = [
 /// survives at four and not at much more.
 const NEGATION_WINDOW: usize = 4;
 
+/// The negations that scope a *requirement* rather than the property itself.
+///
+/// These are the determiners and the preposition that take the requirement away:
+/// "no stability requirement", "none of them need ordering", "without stable
+/// ordering". English puts them in the quantifier's own position, so wherever one
+/// appears in the window it is denying that anybody asked for the property.
+const REQUIREMENT_NEGATIONS: [&str; 4] = ["no", "none", "never", "without"];
+
+/// The verbs that ask for a property in the first place.
+///
+/// Read only to disambiguate the adverb: "not" denies a requirement when it
+/// governs one of these — "they do not need ordering" — and in no other case.
+const REQUIREMENT_VERBS: [&str; 4] = ["need", "needs", "require", "requires"];
+
 /// Whether a cell names one of the four properties ADR 004 admits.
 ///
-/// A keyword counts only when the cell *asserts* it. "no stability requirement
-/// was observed" is an honest `None` cell — the property is named precisely to
-/// record that nobody asked for it — and a bare substring test reads the word
-/// "stability" and rejects the note for disagreeing with its own status. That
-/// leaves an engineer no way to record a negative except by not mentioning the
-/// property at all, which punishes the more informative note; the rule would be
-/// demanding a euphemism rather than agreement.
+/// A keyword counts only when the cell *asserts* it, and the two ways a cell can
+/// mention a property without asserting it have to be told apart, because they
+/// fall on opposite sides of the register.
 ///
-/// The negation is therefore looked for in the words just before the keyword,
-/// which is where English puts it, and never across a clause break, so a
-/// negation in one clause cannot silence an assertion in the next. It is a
-/// bounded heuristic rather than a parse, and deliberately a loose one: its
-/// failure mode on unusual phrasing is to accept a note a stricter reader would
-/// reject, which leaves the judgement where ADR 004 puts it — with the reviewer
-/// at task 3.2.1 — instead of failing an honest note on its wording.
+/// The first is a denial: "no stability requirement was observed" is an honest
+/// `None` cell — the property is named precisely to record that nobody asked for
+/// it — and a bare substring test reads the word "stability" and rejects the note
+/// for disagreeing with its own status. That leaves an engineer no way to record
+/// a negative except by not mentioning the property at all, which punishes the
+/// more informative note; the rule would be demanding a euphemism rather than
+/// agreement.
+///
+/// The second is the record of a *lacking* property, which ADR 004 expects as its
+/// central evidence: "the subscriber requires labels that are not stable across
+/// releases" is exactly the observation that overturns the default, and reading
+/// its "not stable" as a denial would reject the one note the instrument exists
+/// to collect. The two are distinguished by what the negation scopes, which is
+/// where English puts the difference: a determiner takes the requirement away
+/// ("no stability requirement"), while the adverb negates whatever follows it and
+/// therefore denies the requirement only when it governs a requirement verb —
+/// "do not need ordering" denies one, "are not stable" says the property is
+/// required and unmet.
+///
+/// The negation is looked for in the words just before the keyword, which is
+/// where English puts it, and never across a clause break, so a negation in one
+/// clause cannot silence an assertion in the next. It is a bounded heuristic
+/// rather than a parse, deliberately a loose one: wording it does not cover is
+/// read as an assertion, which is the side that leaves the judgement where ADR
+/// 004 puts it — with the reviewer at task 3.2.1 — rather than rejecting a note
+/// for its phrasing. A cell negating the property with neither a determiner nor
+/// a requirement verb, as "the labels are never stable" does, is read as naming
+/// it; so is one whose negation the window is too short to reach.
 pub(crate) fn names_a_property(evidence: &str) -> bool {
     let lowered = narrative_text(evidence);
     PROPERTIES.iter().any(|property| {
@@ -154,23 +227,44 @@ pub(crate) fn names_a_property(evidence: &str) -> bool {
     })
 }
 
-/// Whether the words just before a keyword negate it.
+/// One word with the punctuation a writer put beside it trimmed away.
+///
+/// "no," and "not." are the ordinary forms, so the marks have to go before the
+/// word is compared. An apostrophe is kept, so that "doesn't" survives to the
+/// contraction test rather than being cut at its contraction.
+fn bare_word(word: &str) -> &str {
+    word.trim_matches(|character: char| !character.is_alphanumeric() && character != '\'')
+}
+
+/// Whether the words just before a keyword deny that the property was required.
 fn is_negated(before: &str) -> bool {
-    const NEGATIONS: [&str; 5] = ["no", "not", "never", "without", "none"];
-    before
+    let words = before
         .rsplit(['.', ';', ','])
         .next()
         .unwrap_or(before)
         .split_whitespace()
-        .rev()
-        .take(NEGATION_WINDOW)
-        .any(|word| {
-            // Punctuation is stripped because the word being tested arrives with
-            // whatever a writer put beside it: "no," and "not." are the ordinary
-            // forms. An apostrophe is kept, so that "doesn't" survives to the
-            // `n't` test below rather than being cut at the contraction.
-            let bare = word
-                .trim_matches(|character: char| !character.is_alphanumeric() && character != '\'');
-            NEGATIONS.contains(&bare) || bare.ends_with("n't")
+        .map(bare_word)
+        .collect::<Vec<&str>>();
+    let window = words.len().saturating_sub(NEGATION_WINDOW);
+    words
+        .iter()
+        .enumerate()
+        .skip(window)
+        .any(|(offset, word)| {
+            if REQUIREMENT_NEGATIONS.contains(word) {
+                return true;
+            }
+            // "not" and the `n't` contractions. What they deny is what follows
+            // them: a requirement verb names the requirement and so takes it
+            // away, and anything else — the property word itself above all —
+            // leaves the requirement standing and negates the value instead. A
+            // contraction is the same adverb, so it is read the same way:
+            // "doesn't need ordering" denies, "isn't stable" does not.
+            if *word != "not" && !word.ends_with("n't") {
+                return false;
+            }
+            words
+                .get(offset + 1)
+                .is_some_and(|next| REQUIREMENT_VERBS.contains(next))
         })
 }

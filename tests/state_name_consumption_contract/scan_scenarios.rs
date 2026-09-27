@@ -10,11 +10,15 @@
 use pretty_assertions::assert_eq;
 
 use super::{
+    ADR,
     fixtures::{benchmark_note, state_name_note},
     live_status,
     notes::{self, committed_notes},
-    parse::note_rows,
+    parse::{aggregation_rows, note_rows},
     policy::{check_note_cells, resolve_note},
+    path_exists,
+    registers::{aggregate_resolutions, check_aggregation_total, outcome_amends_design},
+    types::{AggRow, Resolution},
     workspace_root,
 };
 
@@ -98,7 +102,7 @@ fn unmarked_notes_are_ignored() -> Result<(), String> {
 #[test]
 fn unreadable_entries_are_an_error_not_a_skip() -> Result<(), String> {
     let directory = workspace_root().join("docs/validation-notes");
-    if !directory.exists() {
+    if !path_exists(&directory)? {
         return Err(format!(
             "{directory} does not exist, so the control cannot show that an unreadable entry is \
              an error rather than a skip."
@@ -127,7 +131,7 @@ fn unreadable_entries_are_an_error_not_a_skip() -> Result<(), String> {
 #[test]
 fn an_absent_notes_directory_yields_no_notes() -> Result<(), String> {
     let absent = workspace_root().join("target/state-name-contract-absent-root");
-    if absent.exists() {
+    if path_exists(&absent)? {
         return Err(format!(
             "{absent} exists, so this control cannot show that an absent directory is not a \
              failure. Repair: name a path under `target/` that nothing creates."
@@ -137,24 +141,124 @@ fn an_absent_notes_directory_yields_no_notes() -> Result<(), String> {
     Ok(())
 }
 
-/// Scans the live notes directory and checks every marked note.
+/// Scans the live notes directory, checks every marked note, and aggregates the
+/// resolutions through ADR 004's aggregation register.
 ///
 /// A failure names the note it came from. A message saying only that some note
 /// holds a `TBD` would send a Phase 2 engineer to the directory rather than to
 /// the file.
 ///
+/// The resolutions are *retained* rather than discarded, because the register's
+/// question is about the multiset and a note is only ever half the answer. A
+/// scan that checked each note and dropped its verdict would leave the second
+/// half of ADR 004 unread: the register could say anything at all about the
+/// combination, and this contract would not notice. Reading it here is what
+/// makes Table 3 a tested rule rather than a described one.
+///
 /// An empty directory passes: no note can honestly exist until roadmap task
 /// 2.2.1 has annotated something, so a failure there would demand a fabricated
-/// observation. `committed_state_name_notes_are_rejected` and the string
-/// fixtures are this invariant's non-vacuity, not the directory's contents.
+/// observation. The non-vacuity for the multiset half is supplied by
+/// `the_verdict_follows_the_aggregation_register`, which drives the same
+/// aggregation over constructed resolutions including the empty one.
 #[test]
 fn committed_state_name_notes_are_usable() -> Result<(), String> {
     let rows = live_status()?;
+    let register = aggregation_rows(ADR).map_err(|error| error.to_string())?;
+    let mut resolutions = Vec::new();
     for note in committed_notes(&workspace_root())? {
         let name = note.file_name.as_str();
         let cells = note_rows(&note.text).map_err(|error| format!("{name}: {error}"))?;
         check_note_cells(&rows, &cells).map_err(|error| format!("{name}: {error}"))?;
-        resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?;
+        resolutions.push(resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?);
     }
+    aggregate_resolutions(&register, &resolutions)?;
+    Ok(())
+}
+
+/// Drives the aggregation over every state of the multiset the register covers,
+/// including the conflict between a sufficient and an insufficient note.
+///
+/// This is `INV-AGGREGATE`'s non-vacuity. The live scan proves the register is
+/// *read*; it cannot prove the register is *right*, because the committed notes
+/// today resolve to one state and the directory may hold none at all. The cases
+/// below supply the states the directory cannot, and each asserts the outcome
+/// the register's third row selects — the one outcome that overturns the
+/// default, and so the one whose absence would make the register decorative.
+///
+/// The multi-note conflict is the case the register exists for: three notes
+/// reach task 3.2.1, and one of them recording a required property amends the
+/// design however many of the others ratify it. A rule reading "all" rather
+/// than "any" would ratify there, and the case below fails on it.
+#[test]
+fn the_verdict_follows_the_aggregation_register() -> Result<(), String> {
+    let register = aggregation_rows(ADR).map_err(|error| error.to_string())?;
+    check_aggregation_total(&register)?;
+    let blocked = Resolution::NotResolved {
+        field: "state-display-name".to_owned(),
+        status: "Not a named type".to_owned(),
+    };
+    let cases: [(&str, &[Resolution], bool); 4] = [
+        ("no note contributes", std::slice::from_ref(&blocked), false),
+        ("every note blocked", &[blocked.clone(), blocked.clone()], false),
+        ("one sufficient note", &[Resolution::Sufficient], false),
+        (
+            "a sufficient note and an insufficient one",
+            &[Resolution::Sufficient, Resolution::Insufficient],
+            true,
+        ),
+    ];
+    for (case, resolutions, amends) in cases {
+        let outcome = aggregate_resolutions(&register, resolutions)
+            .map_err(|error| format!("{case}: {error}"))?;
+        assert_eq!(
+            outcome_amends_design(&outcome),
+            amends,
+            "{case}: the register yields {outcome:?}, which {} the design. Repair: check the \
+             aggregation register's rows against the state this case reaches — the middle column \
+             asks whether *any* contributor is insufficient, and a rule reading any as all would \
+             disagree here.",
+            if amends { "must amend" } else { "must not amend" }
+        );
+    }
+    // The conflict's outcome is the one a Phase 2 engineer acts on, so it is
+    // pinned as the register words it rather than as a prefix. This cannot break
+    // on a reflow — the string is read out of the register, not written here —
+    // and it breaks exactly when someone rewords the outcome, which is a change
+    // to the instruction the task ends in.
+    assert_eq!(
+        aggregate_resolutions(
+            &register,
+            &[Resolution::Sufficient, Resolution::Insufficient]
+        )?,
+        "Amend design 6.1 before publish"
+    );
+    Ok(())
+}
+
+/// Rejects a multiset state the register does not cover.
+///
+/// The register is a document and can lose a row; `check_aggregation_total`
+/// catches that when the register is read, and this catches the other direction
+/// — an aggregator that reaches for a state no row covers and, if it were
+/// written with a fallback, would silently take the wrong outcome instead.
+#[test]
+fn an_uncovered_multiset_state_is_rejected() -> Result<(), String> {
+    let register = aggregation_rows(ADR).map_err(|error| error.to_string())?;
+    let amended_row = register
+        .iter()
+        .find(|row| row.contributing_notes == "One or more" && row.any_insufficient == "Yes")
+        .ok_or("the live register no longer covers the insufficient state")?;
+    let trimmed = register
+        .iter()
+        .filter(|row| row != &amended_row)
+        .cloned()
+        .collect::<Vec<AggRow>>();
+    assert_eq!(
+        aggregate_resolutions(&trimmed, &[Resolution::Insufficient]),
+        Err("docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
+             cover One or more contributing notes with any insufficient Yes, which 1 committed \
+             note(s) reach. Repair: add that row; the verdict has no outcome to take."
+            .to_owned())
+    );
     Ok(())
 }

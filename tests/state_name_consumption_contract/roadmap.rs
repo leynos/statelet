@@ -127,25 +127,67 @@ const SUCCESS_CRITERION_CLAUSE: &str = "the Phase 2 validation note template has
                                         display name, optional identifier need, metrics \
                                         cardinality, and tracing use";
 
+/// The fragment naming the task the criterion grades, in that task's *title*.
+///
+/// The check binds by title rather than by number, for the reason the gate table
+/// does: completing a task or renumbering the roadmap must not break the build.
+/// The cost is the same one the gate table pays — a reworded title breaks it —
+/// and it is paid deliberately, because the alternative is a check that follows
+/// the clause to whichever task happens to carry it.
+pub(crate) const CRITERION_TASK_FRAGMENT: &str = "consumption question";
+
 /// Checks that roadmap task 1.1.3's success bullet still resolves and that each
 /// of its four nouns maps to exactly one register field.
 ///
-/// The clause is looked for inside a *task record*, not in the document at
-/// large. The criterion is a sentence in the task's own success bullet, so a
-/// copy of the sentence in a phase introduction, a step's framing prose or a
-/// task's rationale is not the criterion and must not be read as one. A check
-/// over the whole document cannot make that distinction, and would report the
-/// criterion as intact while the task it grades had lost it.
+/// The clause is looked for inside the task record *whose title names the task*,
+/// not in the document at large and not in any task record that happens to carry
+/// it. Both halves are load-bearing. A copy of the sentence in a phase
+/// introduction, a step's framing prose or a task's rationale is not the
+/// criterion, and a check over the whole document would report the criterion as
+/// intact while the task it grades had lost it. A copy in *another task's*
+/// record is not the criterion either: the criterion is what task 1.1.3 is
+/// graded on, so moving it to 3.2.2 or to any neighbouring task leaves this one
+/// ungraded, and a check accepting it from anywhere would call that a pass.
+///
+/// The title is matched against the record's *title* and the clause against its
+/// *text*, because the two live in different places: the title is the checklist
+/// line, and the clause is a sub-bullet in the body beneath it.
 pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str) -> Result<(), String> {
     let clause = fold_whitespace(SUCCESS_CRITERION_CLAUSE);
-    if !task_records(roadmap)
-        .iter()
-        .any(|record| record.text.contains(&clause))
-    {
-        return Err(format!(
-            "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: restore \
-             {SUCCESS_CRITERION_CLAUSE:?}, or revise this contract together with the task."
-        ));
+    let graded = task_records(roadmap)
+        .into_iter()
+        .filter(|record| record.title.contains(CRITERION_TASK_FRAGMENT))
+        .collect::<Vec<TaskRecord>>();
+    match graded.as_slice() {
+        [] => {
+            return Err(format!(
+                "docs/roadmap.md no longer carries a task title naming {CRITERION_TASK_FRAGMENT:?}, \
+                 which is how this check finds the task the success criterion grades. Repair: \
+                 restore that task's title, or revise this contract together with the task."
+            ));
+        }
+        [record] => {
+            if !record.text.contains(&clause) {
+                return Err(format!(
+                    "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: \
+                     restore {SUCCESS_CRITERION_CLAUSE:?}, or revise this contract together with the \
+                     task."
+                ));
+            }
+        }
+        records => {
+            let titles = records
+                .iter()
+                .map(|record| format!("{:?}", record.title))
+                .collect::<Vec<String>>()
+                .join(", ");
+            return Err(format!(
+                "docs/roadmap.md: the title fragment {CRITERION_TASK_FRAGMENT:?} names {} tasks \
+                 ({titles}), so the success criterion resolves against more than one. Repair: use a \
+                 fragment specific to the task this contract grades.",
+                records.len()
+            ));
+        }
     }
     for (noun, field) in CRITERION_NOUNS {
         if !rows.iter().any(|row| row.field == field) {

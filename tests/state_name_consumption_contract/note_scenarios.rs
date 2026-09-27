@@ -1,11 +1,12 @@
 //! Note-cell and committed-note scenarios.
 //!
-//! These exercise what a *note* must satisfy: one row per register field,
-//! citation-shaped evidence, the `identifier-need` obligations, and the verdict
-//! that follows — including the rejection of a note whose cells select two
-//! different contributions. The directory scan's own controls live in
-//! `scan_scenarios.rs`, because they ask what the scan reads rather than what a
-//! note says.
+//! These exercise what a *note* must satisfy: one row per register field, the
+//! statuses the register defines, and the verdict that follows — including the
+//! rejection of a note whose cells select two different contributions. What an
+//! evidence cell's *words* mean is a different question and lives in
+//! `claims_scenarios.rs`; what the directory scan reads lives in
+//! `scan_scenarios.rs`. Each module owns one question so that a failure names
+//! the layer it came from.
 
 use googletest::prelude::*;
 use pretty_assertions::assert_eq;
@@ -179,6 +180,20 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
      equality, stability across releases, ordering, or compact encoding. Repair: name the \
      property the variant-name &'static str fails to supply."
 )]
+#[case::citation_names_a_ref_not_a_commit(
+    note_with_rows(&[STATE_DISPLAY_NAME_ROW, IDENTIFIER_NEED_ROW,
+                     "| metrics-cardinality | Bounded | `mdtablefix@main:src/process.rs` |",
+                     TRACING_USE_ROW]),
+    "a StateName note records evidence for field \"metrics-cardinality\" that is not a citation of \
+     the shape <repo>@<sha>:<path>. Repair: cite the revision the observation was made against."
+)]
+#[case::citation_revision_is_too_short(
+    note_with_rows(&[STATE_DISPLAY_NAME_ROW, IDENTIFIER_NEED_ROW,
+                     "| metrics-cardinality | Bounded | `mdtablefix@abc:src/process.rs` |",
+                     TRACING_USE_ROW]),
+    "a StateName note records evidence for field \"metrics-cardinality\" that is not a citation of \
+     the shape <repo>@<sha>:<path>. Repair: cite the revision the observation was made against."
+)]
 fn committed_state_name_notes_are_rejected(
     #[case] note: String,
     #[case] expected: &str,
@@ -283,106 +298,6 @@ fn contradictory_notes_are_rejected() -> Result<(), String> {
                 .to_owned()
         )
     );
-    Ok(())
-}
-
-/// Accepts a `None` cell that names a property in order to *deny* it.
-///
-/// The agreement rule reads a status against the properties its evidence
-/// names, and a cell recording `None` says so by naming the property nobody
-/// asked for. A substring test cannot tell naming-to-assert from
-/// naming-to-deny, so it rejects every negative phrased as anything other than
-/// silence — leaving an engineer no way to record one except by not mentioning
-/// the property at all. The rule would then be demanding a euphemism rather
-/// than agreement, and punishing the more informative note.
-#[rstest]
-#[case::negated_stability(
-    "the subscriber and the metrics recorder were both considered; no stability requirement was \
-     observed; `mdtablefix@abc1234:src/process.rs`"
-)]
-#[case::negated_ordering(
-    "subscriber, metrics and documentation considered; none of them need ordering; \
-     `mdtablefix@abc1234:src/process.rs`"
-)]
-#[case::negated_equality(
-    "no consumer needs equality of identifiers; `mdtablefix@abc1234:src/process.rs`"
-)]
-fn negated_property_claims_do_not_disagree_with_none(#[case] evidence: &str) -> Result<(), String> {
-    let rows = live_status()?;
-    let note = note_with_rows(&[
-        STATE_DISPLAY_NAME_ROW,
-        &format!("| identifier-need | None | {evidence} |"),
-        METRICS_CARDINALITY_ROW,
-        TRACING_USE_ROW,
-    ]);
-    let cells = note_rows(&note).map_err(|error| error.to_string())?;
-    check_note_cells(&rows, &cells)?;
-    assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
-    Ok(())
-}
-
-/// Accepts a cell that denies a consumer exists, in either of the two phrasings
-/// the obligation admits.
-///
-/// ADR 004 words the second obligation as naming a consumer "or stat[ing] that
-/// none of them exist", and the template repeats that sentence verbatim, so a
-/// note that follows the document has to write those words. The consumer
-/// predicate scans a token list, and the list once carried only the shorter
-/// "none exist" — which is not a substring of the longer phrase, so the wording
-/// the document prescribed was the one the check refused.
-///
-/// Each case carries the negative phrase *and no consumer token*, because the
-/// predicate is a list scan and either kind of match satisfies it. A case that
-/// named a consumer as well would pass whether or not its own phrase was in the
-/// list — the first draft of this control did exactly that, with "the tracing
-/// subscriber ... none of them exist", and passed with the phrase's token
-/// removed. The absence of every positive token is what makes each case bear on
-/// the wording it is named for, so the two can be checked independently rather
-/// than one covering for the other.
-#[rstest]
-#[case::adr_wording(
-    "the consumers of ADR 004's search set were considered; none of them exist; \
-     `mdtablefix@abc1234:src/process.rs`"
-)]
-#[case::short_wording("no consumer exists in the workspace; `mdtablefix@abc1234:src/process.rs`")]
-fn a_stated_absence_of_consumers_is_usable(#[case] evidence: &str) -> Result<(), String> {
-    let rows = live_status()?;
-    let note = note_with_rows(&[
-        STATE_DISPLAY_NAME_ROW,
-        &format!("| identifier-need | None | {evidence} |"),
-        METRICS_CARDINALITY_ROW,
-        TRACING_USE_ROW,
-    ]);
-    let cells = note_rows(&note).map_err(|error| error.to_string())?;
-    check_note_cells(&rows, &cells)?;
-    assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
-    Ok(())
-}
-
-/// Accepts a citation wearing the punctuation that closed its clause.
-///
-/// A citation ends the clause that cites it, so it arrives with whatever mark
-/// ended that clause. ADR 004's own worked example writes
-/// "`mdtablefix@abc1234:src/process.rs`, `LineMode`", which is the comma case
-/// below: an engineer copying the shape the document teaches writes one, and a
-/// citation that ends its cell wears a full stop or a semicolon instead. All
-/// three name the same revision, so a check that refused them would refuse the
-/// shape the document teaches.
-#[rstest]
-#[case::comma("`mdtablefix@abc1234:src/process.rs`, LineMode")]
-#[case::period("`mdtablefix@abc1234:src/process.rs`. Observed in ProcessBuffer.")]
-#[case::semicolon("`mdtablefix@abc1234:src/process.rs`; three names")]
-fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), String> {
-    let rows = live_status()?;
-    let note = note_with_rows(&[
-        &format!("| state-display-name | Enumerated | {evidence} |"),
-        IDENTIFIER_NEED_ROW,
-        METRICS_CARDINALITY_ROW,
-        TRACING_USE_ROW,
-    ]);
-    let cells = note_rows(&note).map_err(|error| error.to_string())?;
-    check_note_cells(&rows, &cells)?;
-    assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
     Ok(())
 }
 

@@ -12,7 +12,7 @@
 use super::{
     fold_whitespace,
     policy::{IDENTIFIER_NEED, INSUFFICIENT, NOTHING, PROPERTY_REQUIRED, SUFFICIENT},
-    types::{AggRow, StatusRow},
+    types::{AggRow, Resolution, StatusRow},
 };
 
 /// The clause the deferred-decisions item in `docs/design.md` must carry.
@@ -98,6 +98,94 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
 /// Whether an aggregation row covers one reachable state.
 fn matches_state(row: &AggRow, notes: &str, insufficient: &str) -> bool {
     row.contributing_notes == notes && (notes == "None" || row.any_insufficient == insufficient)
+}
+
+/// The state one note contributes to the multiset, as the register's columns
+/// count it.
+///
+/// The register has two columns and a note has one contribution, so the three
+/// states a note can be in map onto them as follows. `Sufficient` is a
+/// *contributing* note that is not insufficient; `Insufficient` is a
+/// contributing note that is; and `NotResolved` contributes nothing at all,
+/// which is the register's own rule — "a note rejected as contradictory
+/// contributes nothing, exactly as a blocked note does" — read one note at a
+/// time. It is deliberately *not* an error: a blocked note is a finding a Phase
+/// 2 engineer commits on purpose, and a scan that refused to read one would
+/// make the register's first row unreachable.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MultisetState {
+    /// No note contributed: every note was blocked or rejected.
+    Uninhabited,
+    /// Notes contributed, and none of them was insufficient.
+    Ratified,
+    /// Notes contributed, and at least one was insufficient.
+    Amended,
+}
+
+/// The outcome ADR 004's aggregation register selects for a multiset of notes.
+///
+/// This is the register's rule as a *procedure*, which is what the register's
+/// own prose claims it is: the two columns below are read off the resolutions
+/// `resolve_note` returned, `check_aggregation_total` proves the register covers
+/// every reachable pair, and the outcome text is taken from the row the pair
+/// selects rather than hardcoded here. A hardcoded string would agree with the
+/// register only until the register was reworded, and the wording is the part a
+/// reader consumes.
+///
+/// The multiset is read with `any`, not `all`: the register's middle column
+/// asks whether *any* contributor is insufficient, so one note recording a
+/// required property amends the design no matter how many others ratify it.
+/// That is the same rule `resolve_note` applies within a single note, lifted one
+/// level, and the parallel is the point — a note is read as the single
+/// non-`nothing` contribution its cells select, and the multiset as the single
+/// state its contributors reach.
+pub(crate) fn aggregate_resolutions(
+    rows: &[AggRow],
+    resolutions: &[Resolution],
+) -> Result<String, String> {
+    let contributed = resolutions
+        .iter()
+        .filter(|resolution| !matches!(resolution, Resolution::NotResolved { .. }))
+        .count();
+    let any_insufficient = resolutions
+        .iter()
+        .any(|resolution| matches!(resolution, Resolution::Insufficient));
+    let state = match (contributed, any_insufficient) {
+        (0, _) => MultisetState::Uninhabited,
+        (_, false) => MultisetState::Ratified,
+        (_, true) => MultisetState::Amended,
+    };
+    let (notes, insufficient) = match state {
+        MultisetState::Uninhabited => ("None", "n/a"),
+        MultisetState::Ratified => ("One or more", "No"),
+        MultisetState::Amended => ("One or more", "Yes"),
+    };
+    rows.iter()
+        .find(|row| matches_state(row, notes, insufficient))
+        .map_or_else(
+            || {
+                Err(format!(
+                    "docs/adr-004-state-name-consumption-evidence.md: the aggregation register \
+                     does not cover {notes} contributing notes with any insufficient \
+                     {insufficient}, which {} committed note(s) reach. Repair: add that row; the \
+                     verdict has no outcome to take.",
+                    resolutions.len()
+                ))
+            },
+            |row| Ok(row.outcome.clone()),
+        )
+}
+
+/// Reads the verdict out of an aggregated outcome: whether the design must be
+/// amended before publication.
+///
+/// The register's third row is the only outcome that overturns the default, and
+/// the check is stated as a prefix test over the row's own wording — the same
+/// form `check_aggregation_total` uses — so that reflowing the remainder of the
+/// cell does not break it. The outcome string is what a Phase 2 engineer reads;
+/// pinning the whole sentence here would duplicate the document in the test.
+pub(crate) fn outcome_amends_design(outcome: &str) -> bool {
+    outcome.starts_with("Amend")
 }
 
 /// Checks that the aggregation register's preconditions are reachable, and that
