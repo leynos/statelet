@@ -1,4 +1,5 @@
-//! Directory scan over `docs/validation-notes/`.
+//! Directory scan over `docs/validation-notes/`, and the scratch roots its
+//! controls scan instead.
 //!
 //! This is the one module of the contract that touches the ambient filesystem,
 //! and it is exempted by name in the repository's `dylint.toml`; every other
@@ -10,10 +11,18 @@
 //! and the note set is deliberately open — a Phase 2 engineer adds a note months
 //! from now, and its arrival must not require a Rust edit, so `include_str!`
 //! cannot serve it.
+//!
+//! It also *writes*, for one purpose: a scenario that scans a populated
+//! directory needs a populated directory, and `docs/validation-notes/` holds no
+//! note until roadmap task 2.2.1 has annotated something. Writing the scratch
+//! trees here rather than in the scenario module keeps the exemption to a single
+//! module, which is the property `dylint.toml` claims; the alternative — a
+//! second exempted path — would narrow the coverage the exemption withdraws
+//! from nothing while making that claim false.
 
 use std::fs;
 
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 
 /// The directory holding committed validation notes.
 const NOTES_DIR: &str = "docs/validation-notes";
@@ -137,4 +146,64 @@ pub(crate) fn read_marked_note(path: &Utf8Path) -> Result<Option<CommittedNote>,
         return Err(format!("{path}: the note's file name cannot be read"));
     };
     Ok(Some(CommittedNote { file_name, text }))
+}
+
+/// A populated notes directory on disk, and the root `committed_notes` reads
+/// through it.
+///
+/// The scenario that needs this cannot build its subject any other way: the
+/// live `docs/validation-notes/` holds no note until roadmap task 2.2.1 has
+/// annotated something, so the scan's end-to-end behaviour over *notes* is
+/// unreachable from the repository as it stands. Driving `check_note_cells` and
+/// `resolve_note` directly, as the other scenarios do, proves what those
+/// functions answer; it cannot prove the scan reaches them, which is what the
+/// two review findings asked to see.
+///
+/// The root is `<workspace>/target/...`, which `.gitignore` already excludes and
+/// Cargo already treats as its own build directory, so nothing in the tree is
+/// touched. The directory is rebuilt on every run rather than reused, so a
+/// scenario never reads a previous run's leftovers.
+///
+/// Every filesystem failure travels as an error. A scratch tree that could not
+/// be created is not a finding about the scan, and a control passing because its
+/// subject was never written would be exactly the vacuity this suite's controls
+/// are written to avoid.
+pub(crate) struct ScratchNotes {
+    root: Utf8PathBuf,
+}
+
+impl ScratchNotes {
+    /// Creates an empty root with `docs/validation-notes/` beneath it.
+    pub(crate) fn new(name: &str) -> Result<Self, String> {
+        let root = Utf8PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("state-name-contract")
+            .join(name);
+        // Rebuilt rather than reused: a note left by an earlier run would be
+        // scanned as though this run had written it, and the scenario would then
+        // be asserting over a directory it does not control.
+        if root.exists() {
+            fs::remove_dir_all(&root)
+                .map_err(|error| format!("{root}: the previous scratch root cannot be removed: {error}"))?;
+        }
+        let directory = root.join(NOTES_DIR);
+        fs::create_dir_all(&directory)
+            .map_err(|error| format!("{directory}: the scratch notes directory cannot be created: {error}"))?;
+        Ok(Self { root })
+    }
+
+    /// The root to hand `committed_notes`.
+    pub(crate) fn root(&self) -> &Utf8Path { self.root.as_path() }
+
+    /// Writes one file into the scratch notes directory.
+    ///
+    /// The body is written verbatim, so a caller that plants a defect writes the
+    /// defect; and a caller that plants nothing writes a *valid* note, which is
+    /// what keeps a rejection case from passing because its subject was
+    /// malformed in some other way.
+    pub(crate) fn write(&self, file_name: &str, text: &str) -> Result<(), String> {
+        let path = self.root.join(NOTES_DIR).join(file_name);
+        fs::write(&path, text)
+            .map_err(|error| format!("{path}: the scratch note cannot be written: {error}"))
+    }
 }

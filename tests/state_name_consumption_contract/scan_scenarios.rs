@@ -11,9 +11,16 @@ use pretty_assertions::assert_eq;
 
 use super::{
     ADR,
-    fixtures::{benchmark_note, state_name_note},
+    fixtures::{
+        IDENTIFIER_NEED_ROW,
+        STATE_DISPLAY_NAME_ROW,
+        TRACING_USE_ROW,
+        benchmark_note,
+        note_with_rows,
+        state_name_note,
+    },
     live_status,
-    notes::{self, committed_notes},
+    notes::{self, ScratchNotes, committed_notes},
     parse::{aggregation_rows, note_rows},
     policy::{check_note_cells, resolve_note},
     path_exists,
@@ -172,6 +179,80 @@ fn committed_state_name_notes_are_usable() -> Result<(), String> {
         resolutions.push(resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?);
     }
     aggregate_resolutions(&register, &resolutions)?;
+    Ok(())
+}
+
+/// Scans a populated scratch directory and rejects the one note that must be
+/// rejected.
+///
+/// The scan's accepting half over *notes* rather than over strings. Every other
+/// note scenario hands `check_note_cells` and `resolve_note` a fixture directly,
+/// which proves what those functions answer and says nothing about whether the
+/// scan reaches them: a `committed_notes` that returned an empty vector for
+/// every root would leave the whole suite green, and it would do so on any
+/// directory whose notes were unreadable.
+///
+/// Three notes are planted, and each is load-bearing. The valid one is the
+/// accepting witness: without it the scenario would pass over an empty scan.
+/// The unmarked one is ignored rather than rejected, which is the marker rule
+/// reaching the directory scan. The invalid one carries a `TBD` and must be
+/// reported — a scan that skipped it would answer "no notes" for a directory
+/// that holds one, which is the silent skip the module exists to refuse.
+///
+/// The rejection is asserted as the *message prefix naming the file*, not as the
+/// full text: what this scenario owns is that the failure surfaced from the scan
+/// at all and names the note it came from. The wording of the cell check is
+/// `committed_state_name_notes_are_rejected`'s subject, and pinning it twice
+/// would fail two tests on one edit.
+#[test]
+fn a_populated_notes_directory_is_scanned_end_to_end() -> Result<(), String> {
+    let scratch = ScratchNotes::new("populated")?;
+    scratch.write("2.2.1-state-name.md", &state_name_note())?;
+    scratch.write("1.2.3-benchmark.md", &benchmark_note())?;
+    scratch.write(
+        "2.2.1-unfinished.md",
+        &note_with_rows(&[
+            STATE_DISPLAY_NAME_ROW,
+            IDENTIFIER_NEED_ROW,
+            "| metrics-cardinality | TBD | `mdtablefix@abc1234:src/process.rs` |",
+            TRACING_USE_ROW,
+        ]),
+    )?;
+
+    let notes = committed_notes(scratch.root())?;
+    assert_eq!(
+        notes
+            .iter()
+            .map(|note| note.file_name.as_str())
+            .collect::<Vec<&str>>(),
+        vec!["2.2.1-state-name.md", "2.2.1-unfinished.md"],
+        "the scan must read both marked notes and ignore the benchmark note, which declares \
+         another contract's marker"
+    );
+
+    let rows = live_status()?;
+    let mut reported = Vec::new();
+    for note in &notes {
+        let name = note.file_name.as_str();
+        let cells = note_rows(&note.text).map_err(|error| format!("{name}: {error}"))?;
+        if let Err(error) = check_note_cells(&rows, &cells) {
+            reported.push(format!("{name}: {error}"));
+        } else {
+            // Only reached by the valid note: the other must have failed, or
+            // this scenario is asserting a rejection that did not happen.
+            resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?;
+        }
+    }
+    assert_eq!(reported.len(), 1, "exactly one planted note is invalid: {reported:?}");
+    if !reported
+        .first()
+        .is_some_and(|message| message.starts_with("2.2.1-unfinished.md: "))
+    {
+        return Err(format!(
+            "the rejection must name the note it came from, so a reader is sent to the file \
+             rather than to the directory: {reported:?}"
+        ));
+    }
     Ok(())
 }
 
