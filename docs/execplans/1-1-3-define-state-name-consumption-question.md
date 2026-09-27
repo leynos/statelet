@@ -577,8 +577,10 @@ outcome, and a reviewer should approve it on that understanding.
 - Risk: the admissibility blocker "repair the state names" names work in
   `mdtablefix` or `wireframe`, repositories this roadmap does not own.
   Severity: medium. Likelihood: medium. Mitigation: ADR 004 states that a
-  blocked note records an upstream issue link and blocks the *Statelet* gate;
-  it never instructs a Phase 2 engineer to land a refactor they cannot merge.
+  blocked note records an upstream issue link, and it blocks: an inadmissible
+  note contributes nothing to the verdict, so a verdict drawn as though that
+  field had been observed would rest on no observation; the note never
+  instructs a Phase 2 engineer to land a refactor they cannot merge.
 
 - Risk: the parser repeats the defects roadmap task 1.1.2 spent roughly ten
   commits repairing. Severity: medium. Likelihood: medium. Mitigation: one
@@ -737,9 +739,12 @@ outcome, and a reviewer should approve it on that understanding.
       and all three are **stale figures or false claims in this plan**, which
       is the review catching the living document rather than the work: the
       reconciliation paragraph counted twenty-two observations where the
-      section now holds twenty-four, and named the wrong denominator besides
-      (the section has fifty-six top-level entries, of which thirty-two are
-      `Decision log` records); the delivered `rstest` totals were D31's, not
+      section held twenty-four *at that revision*, and named the wrong
+      denominator besides — the section then held fifty-six top-level entries,
+      of which thirty-two were `Decision log` records, **counts scored against
+      the revision the round reviewed rather than against the tree a later
+      reader opens**, which is the rule this plan now states explicitly; the
+      delivered `rstest` totals were D31's, not
       D32's; and the Stage B paragraph claimed the full prose of both new
       documents was appended to this plan, which it never was. Each figure was
       **re-measured against the live tree rather than transcribed from the
@@ -1045,6 +1050,22 @@ outcome, and a reviewer should approve it on that understanding.
       Recorded as D50. **The bar EP-M5 states is still unmet**: three
       findings, not zero, so the item stays unticked and the next pass is over
       the commit carrying this repair.
+- [x] CodeRabbit review nineteen — **two findings, returned 2026-09-27 over
+      `9bc592f`**, the fourth consecutive pass to complete without an abort,
+      and the first whose subject is a commit that changed *nothing but this
+      plan file*. One `minor` and one `major`; both are adopted as wording
+      repairs and neither changes a rule or a test. The `minor` is a labelling
+      defect this plan had carried since D30: the paragraph naming
+      "thirty-three functions … fifty-four collected cases" as "the delivered
+      revision's figures" is really the D30 checkpoint at `dd5b37c`, which
+      delivers 54/33 while the tree itself ships **59/35** — both counts
+      re-measured this round, comment-stripped, and both matching nextest. The
+      `major` is quoted below in D51: it asked for a semantics change the ADR
+      already considered and refused, and half-accepted, its remedy is a
+      sentence that now agrees with the register it sits above. **The bar
+      EP-M5 states is still unmet**: two findings, not zero. This round also
+      produced the `r21` run, which the gate section records as superseded in
+      form and sound in content. Recorded as D51.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3092,6 +3113,58 @@ design.
   repair. Date/Author: 2026-09-27, implementing agent, actioning the eighteenth
   round's three findings after attributing both defects to earlier commits.
 
+- D51: **The nineteenth round returned two findings, both prose defects, and
+  the `major` was a request this ADR had already refused.** The round completed
+  in 235 seconds over 27 files with exit 0, the fourth consecutive clean
+  completion, and both findings are adopted as wording repairs with no rule,
+  register, fixture or test changed. **Finding one** (`minor`, this plan's
+  "delivered revision's figures" paragraph) named a count that was right about
+  a revision that was not the delivered one; it is D30's checkpoint at
+  `dd5b37c`, which really did carry 54 cases across 33 functions, and the tree
+  that ships carries 59 across 35. Both figures were re-measured this round by
+  counting comment-stripped `#[case]` attributes and by grouping nextest's PASS
+  lines, and both agree with the paragraph's own text, which was quoting a run
+  it never named. The repair labels the paragraph as the checkpoint and points
+  at the delivered totals rather than deleting or renumbering it: a checkpoint
+  figure that a later gate run proves true is evidence of a milestone, and
+  relabelling keeps both readings rather than trading one for the other.
+  **Finding two** (`major`, ADR 004's aggregation rule against the blocked-note
+  prose) asked to "ensure ratification cannot proceed when an expected note
+  selects a blocking status", with a contract scenario covering one
+  `Sufficient` note combined with one blocking note. Declined as a
+  re-litigation of the ADR's own rejected Option B, and the document says why
+  in its `## Options considered` — "a naming defect … is not a verdict about
+  the return type, so a register that treats it as one has no terminating
+  procedure for those notes" — which is exactly the terminating procedure the
+  requested rule would have to invent. The register's semantics are already
+  consistent and were checked against the code rather than argued:
+  `resolve_note` blocks per note, only `identifier-need` can contribute
+  `Sufficient`, and `check_aggregation_total` reads the three reachable states
+  of the *multiset*; the requested combination is the "One or more / No /
+  Ratify" row, which is correct, because the blocking note is not an expected
+  contributor and D8's register counts contributors. Declined too is the
+  contract scenario, on the D28-era precedent that folding `INV-AGGREGATE` into
+  a note-level evaluator "would fold `INV-AGGREGATE` into `INV-FILLED` and make
+  the scan's outcome depend on how many notes happen to be committed — a
+  property belonging to neither invariant". **Accepted is the finding's other
+  half**, "or explicitly define how the other evidence permits ratification":
+  ADR 004's admissibility paragraph now states the consequence in the
+  register's own terms instead of writing "blocks the *Statelet* gate", a
+  phrase the aggregation register cannot be read to mean, and the lone other
+  copy in this plan's `Risks` is reworded with it. The two were the only copies
+  in the tree. **The bar EP-M5 states is still unmet**: two findings, not zero.
+  Date/Author: 2026-09-27, implementing agent, actioning the nineteenth round's
+  two findings after measuring the count and reading the register's semantics
+  against the code.
+
+- Observation: **a count is only a claim once it names its revision.** The
+  nineteenth round's `minor` is one sentence in a plan that carries three
+  different case totals — 87, 94 and 99 — each true of the revision that
+  produced it and false of the other two, and the paragraph that was wrong was
+  wrong only in which revision it belonged to. The plan's own convention
+  already solves this; what the paragraph lacked was the naming. Date/Author:
+  2026-09-27, implementing agent, after verifying both totals by two methods.
+
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
   the previous green described a tree that no longer existed — the gates had
@@ -3202,45 +3275,74 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All twenty-nine were accounted for;
-the disposition of each follows. The section holds seventy-nine top-level
-entries in all; the other fifty are `Decision log` records D1–D50, which are
+the artefacts named in `Conformance basis`. All thirty-one were accounted for;
+the disposition of each follows. The section holds eighty-two top-level entries
+in all; the other fifty-one are `Decision log` records D1–D51, which are
 decisions rather than observations and are dispositioned in their own section.
-**D47, D48, D49 and D50 are the four entries added after this reconciliation
-was first written** — D47 by the rebase that closed the divergence the
-`Residual gaps` section once recorded, D48 by the sixteenth review round, which
-is the first to reach analysis after the two preceding rounds aborted four
-attempts between them, D49 by the seventeenth, whose `major` sent a register
-row and its `fixtures.rs` pin upstream together, and D50 by the eighteenth,
-whose two defects are in this plan's own rerun rule and its Stage D ordering
-and pre-date the commit the round reviewed. D47 and D48 are decisions about how
-a record is accepted rather than discoveries about a document, so they are
-dispositioned here by being named rather than by being checked against an
-upstream artefact. **D49 is the exception among the four**: it amended ADR
-004's *Admissibility* prose and its status register, so its downstream impact
-is dispositioned with the other upstream corrections below rather than
-discharged by naming. **D50 is the second exception and the first decision in
-this section whose subject is this plan's *instructions* rather than its
-evidence** — it repairs the rerun rule and the Stage D completion summary — so
-its downstream impact is bounded by this file and there is no upstream artefact
-to check it against; the state that must move is the plan's own. Eleven
-observations were recorded during or after the EP-M5 gate runs: a
-prose-wrapping rule, a correction to how this plan had been probing the
-formatter, the post-fix review round's falsification record, the
-record-versus-line discovery that closed the third round's `major` subject, the
-two the fourth and fifth rounds produced between them, the
+**D47, D48, D49, D50 and D51 are the five entries added after this
+reconciliation was first written** — D47 by the rebase that closed the
+divergence the `Residual gaps` section once recorded, D48 by the sixteenth
+review round, which is the first to reach analysis after the two preceding
+rounds aborted four attempts between them, D49 by the seventeenth, whose
+`major` sent a register row and its `fixtures.rs` pin upstream together, D50 by
+the eighteenth, whose two defects are in this plan's own rerun rule and its
+Stage D ordering and pre-date the commit the round reviewed, and D51 by the
+nineteenth, whose `major` is a requested semantics change ADR 004's own
+rejected Option B had already refused. D47, D48 and D51 are decisions about how
+a record is accepted or about wording rather than discoveries about a document,
+so they are dispositioned here by being named rather than by being checked
+against an upstream artefact. **D49 is the exception among the five**: it
+amended ADR 004's *Admissibility* prose and its status register, so its
+downstream impact is dispositioned with the other upstream corrections below
+rather than discharged by naming. **D50 is the second exception and the first
+decision in this section whose subject is this plan's *instructions* rather
+than its evidence** — it repairs the rerun rule and the Stage D completion
+summary — so its downstream impact is bounded by this file and there is no
+upstream artefact to check it against; the state that must move is the plan's
+own. **D51 is the third and the only one of the five whose subject is a
+*sentence* in an upstream document**: its accepted half reworded ADR 004's
+admissibility prose and this plan's `Risks` copy of it, and the rewording
+restates a rule the register already enforced rather than changing it, so like
+D49's it is dispositioned below among the upstream corrections and, unlike
+D49's, it moved no test. Thirteen observations were recorded during or after
+the EP-M5 gate runs: a prose-wrapping rule, a correction to how this plan had
+been probing the formatter, the post-fix review round's falsification record,
+the record-versus-line discovery that closed the third round's `major` subject,
+the two the fourth and fifth rounds produced between them, the
 attribution-versus-arithmetic finding the seventh round forced, the ninth
 round's measurement that an inline link cannot be wrapped, the fourteenth
 round's distinction between an aborted stream and a scored one, the
 gate-evidence rule that a green gate describes the bytes it read and no others,
 and the stale-complement rule the eighteenth round's defect produced, which is
-that a narrowed population invalidates every claim about its complement. None
+that a narrowed population invalidates every claim about its complement; the
+nineteenth round's count-versus-revision rule, that a total is a claim only
+once the revision it measures is named; and the span bound its checklist-item
+question exposed, which is recorded as a residual gap rather than fixed. None
 bears on any upstream artefact, and the second review round — recorded as D29
 rather than here, because its findings are decisions rather than observations —
 forced one upstream correction of its own, to ADR 004's stable-identifier
 paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
+
+- The nineteenth round's `major` named a rule ADR 004's status register and
+  aggregation register disagreed *in a sentence* rather than in a procedure,
+  and the accepted half of it is amended upstream in this task: the ADR's
+  *Admissibility* paragraph no longer writes "blocks the *Statelet* gate",
+  which the aggregation register's first column cannot be read to mean, and
+  states the consequence in the register's own terms — an inadmissible note
+  contributes nothing, so a verdict drawn as though that field had been
+  observed would rest on no observation at all. No rule changed and no test
+  moved; the amended sentence is now consistent with lines 203–206 and the
+  contributing-notes paragraph beside the register, which it always described.
+  This plan's `Risks` entry quoting the old wording is amended with it, and the
+  two were the only copies in the tree. The round's same finding also carried
+  its requested half, that the ADR "explicitly define how the other evidence
+  permits ratification", and the answer is that the aggregation register
+  already does: the blocking note is an *expected* 2.2.1 or 3.1.2 note, whose
+  second status is `Sufficient`, so the row that applies is "One or more / No /
+  Ratify" and the register is not silent about the combination the finding
+  worried over. Recorded as D51.
 
 - The `mdtablefix` empty-delimiter-merge, the §11.1 repadding hazard, the
   needle-versus-reflow finding, and the H1 collision all bear on
@@ -3361,6 +3463,20 @@ having and exactly when it looks like bureaucracy.
   bound task therefore does not break the build, which is intended; the cost is
   that a *reworded* title breaks it, and the ambiguity control is what makes
   that failure legible rather than mysterious.
+- **A checklist-item attribution is bounded by the next `##`, not by its own
+  task record.** `locate_section` pays for `#[derive(StateName)]` at column
+  zero in `docs/design.md` §6.1 with a rule that bounds a found section by the
+  next heading of the same or higher rank, and an attribution matching *prose*
+  — ADR 004's `roadmap 3.2.1. Finalize the …` — inherits `PROSE_RANK`, which is
+  `##`. On the roadmap that makes the window the rest of the phase rather than
+  the task: measured, the span from task 3.2.1's line to the next `##`-heading
+  is **915 bytes and three task records**, so the clause could move into 3.2.2
+  or 3.2.3 and still resolve. Kept, because the bound is safe in the direction
+  D12 requires from it — it will not resolve inside a fence — and because the
+  same rule is what stops ADR 004's own evidence clauses from resolving against
+  the wrong section. Recorded rather than repaired: narrowing it to
+  checklist-item boundaries is a parser change, not a wording change, and the
+  parse that would prove it correct is the whole of the next review pass's cost.
 - **The three `docs/validation-notes/` notes this contract expects** — 1.2.3's
   benchmark note, 2.2.3's exit note, 3.1.3's decision note — do not exist yet.
   The marker rule means their arrival is not a build failure, and the scan's
@@ -4413,6 +4529,22 @@ Markdown — in `docs/design.md`, `docs/documentation-style-guide.md` and
 `docs/rstest-bdd-users-guide.md` — are named here with the grep that finds
 them, so a reader re-checks by looking rather than re-deriving.
 
+The run that carried the nineteenth round's repair, `r21`, is not transcribed
+here at all: it predates the paragraph above that moves this plan's future runs
+to the `PLAN_SHA256` phase, so its sidecars carry neither `plan_sha256` nor
+`transcript_pending`, and they disagree with these bytes while their
+`worktree_clean=yes` still names `9bc592f` — a revision this plan's own text
+has since left. That run was green, and its evidence is sound for the bytes it
+gated, `9a2806493a00fbecc6b488f647558ea5e81644e011dea68228f1001f125a0196`. It
+is recorded here because a reader who finds its sidecars and reads them against
+this tree's own gate record will otherwise find two measurements where the
+record expects one, and because what it measures is exactly the gap the next
+phase closes. Its figures, read from its seven sidecars rather than restated:
+all seven exit 0 over `9bc592f`, `worktree_clean=yes`, `make test` reporting
+**99 tests run: 99 passed, 0 skipped**. The run that will be transcribed beside
+the other blocks is the acceptance run for whichever commit carries *this*
+text, and it is Phase C's, made after that commit exists.
+
 **The run that carried the eighteenth round's repair, and the one respect in
 which its evidence differs from the sets above.** Its subject is a working tree
 dirty by exactly one file — this plan — rather than a committed revision, and
@@ -4550,9 +4682,16 @@ what the suite must report, and thirty-one is how many scenarios the
 
 The two counts above are the revision that produced those transcripts, and
 `mdtablefix` rewraps prose but does not restate it: a quoted transcript keeps
-the figures its run reported. The delivered revision's figures are these.
-Thirty-three functions occupy fifty-four collected cases, because `rstest`
-still expands four of them, two of them further than before:
+the figures its run reported. **The paragraph that follows is the D30
+checkpoint at `dd5b37c`** — the pre-rebase revision D30 delivered, whose replay
+after the rebase is `7df6f53`, a replay a `git range-diff` over the two
+single-commit ranges reports as identical. It is not the delivered tree: the
+suite has grown twice since, and the delivered figures are the 59 cases across
+35 functions recorded under `Surprises & discoveries`. Read this paragraph for
+what D30's checkpoint measured, and that one for what ships.
+
+Thirty-three functions occupy fifty-four collected cases at that checkpoint,
+because `rstest` still expanded four of them, two of them further than before:
 `gate_titles_resolve` into nine (one per binding gate, plus the unresolved, the
 ambiguity, and the three prose controls),
 `committed_state_name_notes_are_rejected` into ten (one per documented note
@@ -4561,10 +4700,11 @@ the note multiset), and `negated_property_claims_do_not_disagree_with_none`
 into three (one per negated form). Twenty-nine functions contribute one case
 each, and the four expanding ones contribute twenty-five. The two totals are
 worth recording for the same reason as before — fifty-four is what the suite
-must report, and thirty-three is how many scenarios the `Verification plan`
-names — and the reason they moved is worth recording too: three of the added
-cases guard a distinction the check could not make before, so the count is
-evidence that the controls exist rather than that the file grew.
+must report *at that revision*, and thirty-three is how many scenarios the
+`Verification plan` named *then* — and the reason they moved is worth recording
+too: three of the added cases guard a distinction the check could not make
+before, so the count is evidence that the controls exist rather than that the
+file grew.
 
 `make markdownlint` — exit 0:
 
@@ -5028,3 +5168,29 @@ re-permits in tests.
   re-measured against the live section rather than adjusted by hand. The bar
   EP-M5 states remains unmet at three findings, so both it and roadmap task
   1.1.3 stay unticked and the next pass is over the commit carrying this repair.
+- 2026-09-27, the nineteenth review round returns two findings over `9bc592f`,
+  both prose defects, in the fourth consecutive pass to complete without an
+  abort. The round's subject is the first commit on this branch to change
+  nothing but this plan file since the rebase, and both findings are repairs of
+  sentences rather than of rules. The `minor` mislabels D30's checkpoint as
+  "the delivered revision": the paragraph describes 54 cases across 33
+  functions, which `dd5b37c` did deliver, while the tree ships **59 across 35**
+  — both re-measured this round by counting comment-stripped `#[case]`
+  attributes and by grouping nextest's own PASS lines, and both agreeing with
+  the paragraph, which was quoting a true measurement of an unnamed revision.
+  The `major` asks the aggregation rule to stop ratification when an expected
+  note is blocked; **declined**, because ADR 004's `## Options considered`
+  refuses exactly that shape — a naming defect "is not a verdict about the
+  return type, so a register that treats it as one has no terminating procedure
+  for those notes" — and because the register is already consistent once read
+  as its first column says: a blocked note contributes nothing, the expected
+  2.2.1 and 3.1.2 notes contribute `Sufficient`, and "One or more / No /
+  Ratify" is the row that applies. The finding's other half is **adopted**: the
+  ADR's admissibility sentence now states the consequence in the register's own
+  terms instead of writing "blocks the *Statelet* gate", with this plan's
+  `Risks` copy reworded to match, and no rule, register, fixture or test
+  changed. Recorded as D51; the reconciliation tallies move to 82 entries over
+  D1–D51, and the checkpoint paragraph in the gate transcripts now names
+  `dd5b37c` and points at the delivered totals. The bar EP-M5 states remains
+  unmet at two findings, so both it and roadmap task 1.1.3 stay unticked and
+  the next pass is over the commit carrying this repair.

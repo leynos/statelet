@@ -197,8 +197,10 @@ is not finite. A `String` label is blocked when it is one of those two naming
 defects and not merely because it is a `String`: a `String` drawn from a fixed
 set is enumerated like any other label, and one built from data is blocked
 however few values it can produce. The note records a link to the upstream
-issue and blocks the *Statelet* gate. This record never instructs a Phase 2
-engineer to land a refactor in a repository this roadmap does not own.
+issue, and it blocks: an inadmissible note contributes nothing to the verdict,
+and a verdict drawn as though the field it names had been observed would rest
+on no observation at all. This record never instructs a Phase 2 engineer to
+land a refactor in a repository this roadmap does not own.
 
 Blocking is therefore not a dead end. A blocked note is still committed: it
 names its blocker, and it contributes nothing to the verdict. If every note is
@@ -248,6 +250,8 @@ illustration is not machine-checked.
 
 Roadmap task: 2.2.1.
 
+## Note register
+
 <!-- note-register:begin -->
 | Field | Status | Evidence |
 | --- | --- | --- |
@@ -273,6 +277,14 @@ keeps `Enumerated` an honest claim about the state it names. A note is read
 through *one* subject — the template names the file `<task>-<subject>.md` for
 that reason — and this note's subject is `LineMode`, not the local.
 ```
+
+The heading is not decoration. The blank form in
+`docs/phase-2-validation-note-template.md` carries `## Note register` above its
+delimited table, and a reader comparing the two — a Phase 2 engineer sizing up
+a filled note, or a reviewer checking one against the form — reads the
+paragraph above a table as the heading's. An illustration that dropped it would
+teach a shape the schema does not have, and would send the first engineer to
+copy it hunting for a heading that is not there.
 
 ## Gates
 

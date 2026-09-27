@@ -113,7 +113,11 @@ document rather than what Rust expects:
 The gate table binds gates to roadmap tasks by title *fragment*, not by task
 number, so completing a bound task or renumbering the roadmap does not break
 the build. That is deliberate: the project's `mapsplice` tooling renumbers
-tasks, and a numeric binding would freeze seven numbers.
+tasks, and a numeric binding would freeze four numbers — the four gates S1 to
+S4 ADR 004's table names. ADR 003's exit register reaches the opposite
+conclusion for its own three because there the roadmap numbering is
+load-bearing rather than incidental, and the two are not in conflict: each
+binds by the identifier its decision actually consumes.
 
 ### The one lint exemption
 
