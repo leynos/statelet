@@ -408,14 +408,22 @@ Written (new):
 
 Written (modified): `docs/design.md`, `docs/terms-of-reference.md`,
 `docs/context.md`, `docs/roadmap.md`, `docs/contents.md`, `docs/users-guide.md`,
-`docs/developers-guide.md`, `docs/repository-layout.md`, and this plan itself,
-which every step below revises as the living document.
+`docs/developers-guide.md`, `docs/repository-layout.md`, `Cargo.toml`,
+`Cargo.lock`, and this plan itself, which every step below revises as the
+living document.
 
 Read only, never modified: everything under `src/`;
 `tests/v0_1_exit_register_contract.rs` and its children; `Makefile`,
-`clippy.toml`, `Cargo.toml`, `rust-toolchain.toml`, `typos.toml`.
+`clippy.toml`, `rust-toolchain.toml`, `typos.toml`.
 
-No dependency change. `Cargo.toml` and `Cargo.lock` are untouched.
+**Superseded in part by D52, 2026-09-27.** That decision added `proptest` under
+`[dev-dependencies]`, and the manifest is what changed: 4 added lines in
+`Cargo.toml` and 272 in `Cargo.lock`, both purely additive. The sentence this
+paragraph replaces read "No dependency change. `Cargo.toml` and `Cargo.lock`
+are untouched," which was true of the scope as approved and is quoted here
+rather than deleted. `Cargo.toml` leaves the read-only list above and joins the
+modified list, because that list bounds the change surface, and a bound the
+tree has moved past reads as verified when it is not.
 
 ### Documentation to read before starting
 
@@ -523,6 +531,14 @@ outcome, and a reviewer should approve it on that understanding.
 2. **No verdict.** ADR 004 defines evidence and rule. It must not conclude that
    `&'static str` is or is not sufficient.
 3. **No dependency change.** `Cargo.toml` and `Cargo.lock` are untouched.
+   **Superseded in part by D52, 2026-09-27.** The constraint is retained as
+   written because it is the invariant the work was approved under, and the
+   exception to it is narrow enough to state in one line: `proptest` joins
+   `[dev-dependencies]` only (`Cargo.toml:90`), the manifest diff is 4 added
+   lines against 272 in the lockfile, and no runtime dependency changes. The
+   user authorized it directly — "proptest is an authorized dependency" — which
+   is the direction tolerance 2 requires. The constraint stands for every other
+   dependency: `cap-std` and `rstest-bdd` remain refused.
 4. **`tests/v0_1_exit_register_contract.rs` and its children are not
    modified.** If an edit to `docs/design.md`, `docs/context.md`, or
    `docs/roadmap.md` breaks that contract, revert the edit; do not adapt the
@@ -1307,6 +1323,27 @@ outcome, and a reviewer should approve it on that understanding.
       and however green it comes back — which is precisely how this branch
       reached a twenty-fifth round with six tokens a gate would have caught
       deterministically had the gate been the one being run.
+- [x] The twenty-seventh round returned **three findings, all *(minor)*, no
+      warning**, and they reduce to two distinct subjects. All seven gates
+      exit 0 at `83dc862` — `check-fmt` 28 files unchanged, `lint` reaching the
+      whitaker leg over a live path-scoped exemption, nextest **119/119**, the
+      spelling chain silent, `markdownlint-cli2` 0 errors over 29 files,
+      `nixie` all diagrams validated, `audit` **76 packages** against a RustSec
+      database of 1271 advisories, and `test-workflow-contracts` **116 passed**
+      in 3.05s. The pass took 285 s over the default `origin/main...HEAD`
+      scope — 32 files, 11331 insertions, 7 deletions across 71 commits — with
+      no abort and no rate limit. **Subject one** (reported twice, at the
+      dependency-scope claims): the plan's live scope statements still said
+      `Cargo.toml` was read-only and that there was "no dependency change",
+      which D52 falsified when it added `proptest` under `[dev-dependencies]`.
+      **Adopted.** Three live sites are corrected and one further site the
+      reviewer did not name was found by searching the class rather than the
+      cited lines. **Subject two** (`policy.rs`, the `check_note_cells`
+      narrative-text requirement): **declined as a third recurrence**, already
+      raised and disposed of in the twenty-first round (plan lines 2498-2511)
+      and in the ninth (D36), on ADR 004's own scoping. Recorded as **D58**;
+      repaired in the commit that carries this item. Three findings is not
+      zero, so EP-M5 and roadmap 1.1.3 stay unticked.
 - [x] The twenty-sixth round returned **one finding, no warning**, and the
       repair is a single deleted line. All seven gates exit 0 at `75fc11e` —
       nextest 119/119 across 7 binaries, `make audit` 76 packages against a
@@ -3651,6 +3688,56 @@ design.
   review findings rather than a change to the work. Date/Author: 2026-09-27,
   implementing agent, actioning the twenty-sixth round after verifying the
   finding against the bytes at both revisions.
+- D58: **A supersession note repairs the decision it names and not the scope
+  that decision moves, so the scope must be swept separately.** The
+  twenty-seventh round returned three findings and they reduce to two subjects.
+  The first is this plan's live scope statements: the read-only list still named
+  `Cargo.toml`, and the sentence beneath it still read "No dependency change.
+  `Cargo.toml` and `Cargo.lock` are untouched," which D52 falsified on
+  2026-09-27 when it added `proptest` under `[dev-dependencies]`. **Adopted**,
+  and the repair is a supersession addendum at each site rather than a rewrite
+  — the historical wording is quoted and left legible, because it is the scope
+  the work was approved under. Provenance is measured: all three cited sites
+  entered at `caabd3e`, the post-design-review revision, and no commit since
+  has amended any of them, including `3a46358`, which added `proptest` and
+  touched the plan's *decision* record but no scope statement. The reviewer
+  named all three sites — the read-only list, constraint 3, and "Interfaces and
+  dependencies" — and the class search the round-18 rule requires confirmed the
+  set is **complete**: every other present-tense occurrence in this file is
+  either already superseded (`D9`'s entry and the Q3 passage, both carrying
+  D52's note) or scoped to a named revision by its own section. Two of the
+  latter are close enough to the line to name, because a future round reading
+  only the sentence would report them again: the rebase bullet's "`Cargo.toml`
+  is untouched by both sides" records what the *rebase* had to reconcile, and
+  the gate transcript's "they are Cargo's, not this change's, and `Cargo.toml`
+  is untouched" describes a run that predates `proptest`. Both are true of the
+  event they name and false as present-tense claims, which is the distinction
+  this whole subject turns on. The second subject is a **third recurrence**:
+  reject `state-display-name: Enumerated` evidence that is a citation and
+  nothing else. Raised in round nine (D36, where the ADR-side half *was*
+  adopted and the template bullet now names the enforcer), raised again in
+  round twenty-one (plan 2498-2511, subject four), and now in round
+  twenty-seven. **Declined for the reason both earlier rounds give**, which is
+  checkable rather than a preference: ADR 004 states "three obligations on the
+  evidence cells are checked, not merely asked for", and they are citation
+  shape on every cell, the `identifier-need` consumer set, and the
+  `identifier-need` property agreement. "The note lists the actual strings"
+  appears in the ADR only as prose inside the `Enumerated` explanation, never
+  as a listed obligation, and all three checked obligations are scoped to
+  `identifier-need` or to every cell's citation. The requirement is real and
+  the template states it; encoding it as a check would mean encoding "the
+  actual strings" as a syntactic property, which no rule in either document
+  defines. Judging an adequate cell belongs to the reviewer at task 3.2.1.
+  **What is new in this round is the shape of the recurrence itself**: the same
+  finding now returns at a fixed interval of reviews, so the disposal costs a
+  paragraph each time and buys nothing the first decline did not already
+  establish. A future round that raises it should cite this entry and the two
+  before it rather than re-deriving the ADR's scope. Date/Author: 2026-09-28,
+  implementing agent, actioning the twenty-seventh round after verifying each
+  finding against the bytes at the tip, measuring the provenance of every scope
+  claim at `caabd3e`, and reading ADR 004's obligation list against the
+  reviewer's requested fourth.
+
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
@@ -4596,7 +4683,10 @@ EP-M5 both require.
 - **Acceptance**: `make test` passes; every negative control asserts a specific
   message rather than `is_err()`.
 - **Conformance check**: no runtime code; no verdict pronounced; ADR 002's
-  boundary untouched; no roadmap renumbering; no dependency change.
+  boundary untouched; no roadmap renumbering; no dependency change — these are
+  claims about *this plateau's own commit*, `2426ea9`, at which they hold:
+  `Cargo.toml` was not touched until `3a46358`, fifty-two commits later, so the
+  milestone is not falsified by D52 even though the plan as a whole is.
 - **Recovery**: additive — delete the ADR and the test.
 - **Remaining gaps**: no template, no committed note.
 - **Compatibility decision**: none. Nothing is released; `src/` is a stub.
@@ -5549,6 +5639,12 @@ named modules are clear of its 300-line trigger at 228, 220 and 189.
 No dependency change. The existing dev-dependencies — `camino`, `googletest`,
 `pretty_assertions`, `rstest`, `toml` — are sufficient. `camino` supplies the
 notes-directory scan *enumeration*, following `tests/dev_fast_contract.rs:19`.
+
+**Superseded in part by D52, 2026-09-27.** That decision added `proptest` to
+this set, because the evidence predicates in `claims.rs` read arbitrary text
+and their invariants are therefore properties rather than cases. The paragraph
+above is retained as the scope this section was approved with; the dependency
+in force is the six-entry set it names plus `proptest = "1.11.0"`.
 
 One module, and only one, steps outside that dependency set. `notes.rs` reads
 the contents of each enumerated note through `std::fs`, and is exempted by name
