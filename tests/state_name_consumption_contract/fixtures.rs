@@ -36,6 +36,7 @@ pub(crate) fn status_register() -> String {
         "| --- | --- | --- | --- |",
         "| state-display-name | Enumerated | yes | nothing |",
         "| state-display-name | Not a named type | no | nothing |",
+        "| state-display-name | Synthesized from data | no | nothing |",
         "| identifier-need | None | yes | Sufficient |",
         "| identifier-need | Property required | yes | Insufficient |",
         "| metrics-cardinality | Bounded | yes | nothing |",

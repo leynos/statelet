@@ -17,8 +17,9 @@ set.
 - [Phase 2 validation note template](phase-2-validation-note-template.md) is
   the blank form a Phase 2 engineer copies to record a `StateName` consumption
   observation; it is the schema ADR 004's rule reads, not design material.
-- [Validation notes](validation-notes/README.md) is the directory those filled
-  forms are committed to, and explains how a note is named and marked.
+- [Validation notes directory](validation-notes/README.md) is the directory
+  those filled forms are committed to, and explains how a note is named and
+  marked.
 
 ## Execution plans
 

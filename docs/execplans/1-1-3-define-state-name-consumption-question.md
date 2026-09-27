@@ -276,7 +276,7 @@ while the failure class that actually bit roadmap task 1.1.2 was *malformed*
 input. Five named handwritten controls cover that class exactly, with no
 dependency. The behavioural coverage the governing instruction asks for is
 delivered as scenario-named `rstest` cases over the filled-note fixture and its
-eight documented defects, which exercise the same `docs/developers-guide.md`
+ten documented defects, which exercise the same `docs/developers-guide.md`
 carries the prose walkthrough. This is a proportionality judgement, not a
 refusal — if the dependency cost is acceptable, the scenarios convert to
 Gherkin mechanically.
@@ -968,7 +968,7 @@ outcome, and a reviewer should approve it on that understanding.
       claim that would justify another retry — that the fault is transient —
       is the one the expanding signature set contradicts. Recorded as D44.
 - [x] CodeRabbit review sixteen — **one finding, and the first pass to reach
-      analysis after the five attempts the two preceding rounds aborted.** The
+      analysis after the four attempts the two preceding rounds aborted.** The
       freeze that D44 records was the
       environment's, not the branch's: this pass completed in 146 seconds,
       27 files reviewed, and the log ends `review_completed` with exit 0 — so
@@ -993,6 +993,35 @@ outcome, and a reviewer should approve it on that understanding.
       for a zero-finding review, and this pass returned one. The remaining work
       is a pass over the commit that carries the repair, which is the only
       round that can tick the item.
+- [x] CodeRabbit review seventeen — **four findings, returned 2026-09-27 over
+      `3c25662`**, the second consecutive pass to complete without an abort and
+      the first to be scored on a revision carrying an adopted finding rather
+      than a declined one. All four are adopted. Two are measurement claims and
+      were measured rather than argued: `committed_state_name_notes_are_rejected`
+      carries **ten** `#[case]` attributes, not the eight the verification plan
+      and this plan's own progress text still described, and the two
+      aborted-attempt totals read "five" where the round produced **four** —
+      two per round across rounds fourteen and fifteen, which D44's own text and
+      three other passages in this plan already stated. **The search for those
+      two totals was done on whitespace-folded text, not line by line**: the
+      `mdtablefix --wrap` reflow that split "five attempts" across a line break
+      hid a third site at the residual-gaps reconciliation, which a line-based
+      `grep` reported as no match. The remaining two findings are the grammar of
+      one `docs/contents.md` bullet and the `major`, which is substantive: the
+      *Admissibility* prose named three upstream-finding classes — a name
+      synthesized from data, a `String` label, and a state that is not a named
+      type — while the status register could express only two of them, so a
+      **finite** data-derived label would have resolved to an admissible
+      `Enumerated`/`Bounded` note and contributed nothing. The remedy the
+      reviewer offered first — add a blocking status — is the one the document
+      itself selects: ADR 004 line 87 and its architectural rationale both place
+      naming defects *in admissibility* ("this record gates them instead"), and
+      D4 claims the chosen cardinality reading "still detects the dangerous case
+      of a name synthesized from data". Narrowing the prose would have falsified
+      all three. The register therefore gains `state-display-name:
+      Synthesized from data, Admissible: no`, with its `fixtures.rs` pin in the
+      same change, as the ADR's own Option C paragraph prescribes. Recorded as
+      D49. **The bar EP-M5 states is still unmet**: four findings, not zero.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -2917,7 +2946,7 @@ design.
 - D48: **The same finding re-found on a third round is evidence about the
   record, not about the reviewer, so the third occurrence was adopted and the
   two earlier declines were wrong.** The sixteenth round is the first to reach
-  analysis after the fourteenth and fifteenth rounds aborted five attempts
+  analysis after the fourteenth and fifteenth rounds aborted four attempts
   between them, and it returned one finding: the rebase record and its D47
   references carry a date that has not happened. Its premise is false — the
   rebase ran at `2026-09-27T01:01:57+02:00`, which is `2026-09-26T23:01:57Z`, so
@@ -2952,6 +2981,42 @@ design.
   rounds to be told what one round would have been right to say twice.
   Date/Author: 2026-09-27, implementing agent, actioning the sixteenth round's
   single finding after verifying its premise false and its substance true.
+
+- D49: **A register that cannot record a defect the prose says it gates is a
+  document disagreeing with itself, and the prose was right.** The seventeenth
+  round's `major`: ADR 004's *Admissibility* section named three
+  upstream-finding classes — a name synthesized from data, a `String` label,
+  and a state that is not a named type — but the status register could express
+  only `Not a named type` and `Unbounded`. A data-derived label whose value set
+  happened to be small would therefore score `state-display-name: Enumerated`
+  plus `metrics-cardinality: Bounded`, resolve as admissible, and contribute
+  `nothing`: the one class the instrument most needs to catch could be filed as
+  clean evidence, silently. **The register edit was chosen over narrowing the
+  prose because the document had already committed to the register reading in
+  three places** — the Option B paragraph ("Cardinality and naming defects are
+  better placed where they belong: in admissibility"), the architectural
+  rationale ("Cardinality is a property of the value set, names synthesized
+  from data are an upstream defect … which is why this record gates them
+  instead"), and D4's rationale ("still detects the dangerous case of a name
+  synthesized from data"). Narrowing the prose to what the old register could
+  express would have falsified all three and left D4's stated purpose
+  unimplemented. The remedy is the one the ADR's own Option C paragraph
+  prescribes: the register gains the row and `fixtures.rs` gains it in the same
+  change, which `INV-REGISTERS` requires and this round performed.
+  `INV-ADMISSIBILITY` enumerates its cases from the live register, so the new
+  blocking row is covered without a new `#[case]` — the suite's own design made
+  the fixture edit the whole of the test-side cost. The new status is
+  deliberately *not* a narrowing of `String`: a `String` drawn from a fixed set
+  stays enumerable, and only a label *built* from data is blocked, however few
+  values it can produce. **Carried lesson:** three of the round's four findings
+  were count or grammar drift in this plan's own text, and the two count
+  findings were both under-reported by the reviewer — one named two of three
+  sites, the other two of three. A finding can be right about the defect and
+  wrong about its extent, so the repair is to search for the *class* the
+  finding names rather than to patch the lines it cites, and on
+  `mdtablefix`-wrapped prose that search must fold whitespace first.
+  Date/Author: 2026-09-27, implementing agent, actioning the seventeenth
+  round's four findings.
 
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
@@ -3033,21 +3098,25 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All twenty-eight were accounted
-for; the disposition of each follows. The section holds seventy-six top-level
-entries in all; the other forty-eight are `Decision log` records D1–D48, which
+for; the disposition of each follows. The section holds seventy-seven top-level
+entries in all; the other forty-nine are `Decision log` records D1–D49, which
 are decisions rather than observations and are dispositioned in their own
-section. **D47 and D48 are the two entries added after this reconciliation was
-first written** — D47 by the rebase that closed the divergence the
-`Residual gaps` section once recorded, D48 by the sixteenth review round, which
-is the first to reach analysis after the two preceding rounds aborted five
-attempts between them. Both are decisions about how a record is accepted rather
-than discoveries about a document, so they are dispositioned here by being
-named rather than by being checked against an upstream artefact. Ten
-observations were recorded during or after the EP-M5 gate runs: a
-prose-wrapping rule, a correction to how this plan had been probing the
-formatter, the post-fix review round's falsification record, the
-record-versus-line discovery that closed the third round's `major` subject, the
-two the fourth and fifth rounds produced between them, the
+section. **D47, D48 and D49 are the three entries added after this
+reconciliation was first written** — D47 by the rebase that closed the
+divergence the `Residual gaps` section once recorded, D48 by the sixteenth
+review round, which is the first to reach analysis after the two preceding
+rounds aborted four attempts between them, and D49 by the seventeenth, whose
+`major` sent a register row and its `fixtures.rs` pin upstream together. D47
+and D48 are decisions about how a record is accepted rather than discoveries
+about a document, so they are dispositioned here by being named rather than by
+being checked against an upstream artefact. **D49 is the exception among the
+three**: it amended ADR 004's *Admissibility* prose and its status register, so
+its downstream impact is dispositioned with the other upstream corrections
+below rather than discharged by naming. Ten observations were recorded during
+or after the EP-M5 gate runs: a prose-wrapping rule, a correction to how this
+plan had been probing the formatter, the post-fix review round's falsification
+record, the record-versus-line discovery that closed the third round's `major`
+subject, the two the fourth and fifth rounds produced between them, the
 attribution-versus-arithmetic finding the seventh round forced, the ninth
 round's measurement that an inline link cannot be wrapped, the fourteenth
 round's distinction between an aborted stream and a scored one, and the
@@ -3520,7 +3589,7 @@ binary and no externally observable workflow beyond `make test`, which is
 itself the acceptance command.
 
 Behavioural coverage is delivered as scenario-named `rstest` cases over the
-filled-note fixture and its eight documented defects —
+filled-note fixture and its ten documented defects —
 `committed_state_name_notes_are_usable` and the `INV-FILLED` controls
 constitute the fill-and-gate workflow. The `docs/developers-guide.md` addition
 carries the prose walkthrough. If the dependency cost declined under Q3 is
@@ -3933,17 +4002,18 @@ from the verdict axis, reintroduced one level down.
 Between `<!-- status-register:begin -->` and `<!-- status-register:end -->`:
 
 ```markdown
-| Field               | Status            | Admissible | Contributes  |
-| ------------------- | ----------------- | ---------- | ------------ |
-| state-display-name  | Enumerated        | yes        | nothing      |
-| state-display-name  | Not a named type  | no         | nothing      |
-| identifier-need     | None              | yes        | Sufficient   |
-| identifier-need     | Property required | yes        | Insufficient |
-| metrics-cardinality | Bounded           | yes        | nothing      |
-| metrics-cardinality | Unbounded         | no         | nothing      |
-| tracing-use         | Full              | yes        | nothing      |
-| tracing-use         | Partial           | yes        | nothing      |
-| tracing-use         | None              | yes        | nothing      |
+| Field               | Status                | Admissible | Contributes  |
+| ------------------- | --------------------- | ---------- | ------------ |
+| state-display-name  | Enumerated            | yes        | nothing      |
+| state-display-name  | Not a named type      | no         | nothing      |
+| state-display-name  | Synthesized from data | no         | nothing      |
+| identifier-need     | None                  | yes        | Sufficient   |
+| identifier-need     | Property required     | yes        | Insufficient |
+| metrics-cardinality | Bounded               | yes        | nothing      |
+| metrics-cardinality | Unbounded             | no         | nothing      |
+| tracing-use         | Full                  | yes        | nothing      |
+| tracing-use         | Partial               | yes        | nothing      |
+| tracing-use         | None                  | yes        | nothing      |
 ```
 
 *Table 2: Every admissible status for every field, whether it blocks the note,
@@ -4679,3 +4749,64 @@ re-permits in tests.
   reconciliation tallies move to 76 entries over D1–D48. The bar EP-M5 states
   is a zero-finding pass and this one returned a finding, so the item stays
   unticked and the next pass is over the commit carrying this repair.
+- 2026-09-27, the seventeenth review round returns four findings over `3c25662`,
+  all adopted. The pass completed in 257 seconds over the same 27 files, the
+  second consecutive completion and no abort. Three of the four are drift in
+  this plan's own measurement text and the fourth is substantive. The counts:
+  `committed_state_name_notes_are_rejected` carries ten `#[case]` attributes
+  while three passages still said eight, and two aborted-attempt totals said
+  five where rounds fourteen and fifteen produced four between them — two each,
+  which D44 and three other passages already stated correctly. **Both count
+  findings under-reported their own extent**, naming two of the three affected
+  sites each; the third "five" site was found only after folding whitespace,
+  because `mdtablefix --wrap` had broken the phrase across a line and a
+  line-based search reported no match. The grammar finding is
+  `docs/contents.md` line 20, where the sentence's two singular verbs disagreed
+  with its plural link label; the label is now `Validation notes directory`,
+  matching the singular sibling labels and the file's own H1, which the style
+  guide's contents-file section governs by "a short descriptive phrase". The
+  `major` is the admissibility gap: the register could not express a
+  data-synthesized label whose value set is finite, so the document's own three
+  statements that naming defects are gated were not implementable through it.
+  The register gains
+  `state-display-name: Synthesized from data, Admissible: no`, the
+  `fixtures.rs` pin moves with it in the same change as `INV-REGISTERS`
+  requires, and the template and *Admissibility* prose now name the row.
+  Recorded as D49. No new test case was needed: `INV-ADMISSIBILITY` enumerates
+  its cases from the live register. The bar EP-M5 states remains unmet at four
+  findings, so both it and roadmap task 1.1.3 stay unticked and the next pass
+  is over the commit carrying this repair.
+- Observation: **the mid-run-edit race was reintroduced while repairing the
+  very defect class D45 and D46 describe, and by the agent that recorded that
+  lesson.** A final read of the ADR's rewritten *Admissibility* paragraph found
+  a dangling numeric reference of this plan's own making:
+  `those two kinds of defect` followed an enumeration of **three** register
+  rows, because the new `Synthesized from data` row had made the original
+  two-defect sentence stale. The repair is two words —
+  `those two naming defects` — chosen over a larger rewrite because the
+  document's own partition at the *Options considered* paragraph distinguishes
+  exactly these two ("Cardinality and naming defects are better placed where
+  they belong"), so the two are the naming pair and the third row is the
+  cardinality one. **The edit was made at 03:31:18 while the seven-gate run was
+  between its fourth and fifth gate**, so the four gates that had already
+  finished describe bytes that no longer existed: `check-fmt` (03:30:45–47),
+  `lint` (03:30:53–56), `test` (03:31:04–08) and `markdownlint` (03:31:14–17)
+  were all stale for the ADR, and `markdownlint` missed the edit by one second.
+  The rule D45 and D46 state is *bytes, not exit codes*, and it was broken by
+  the agent that wrote it down. A read-only check of that edit's reach (no test
+  names the phrase; the changed lines sit outside the `status-register` block
+  at lines 128–141 and inside the 80-column limit) predicts the four gates are
+  insensitive to it, **but a prediction is not the gate's own evidence**, and
+  this plan has already recorded a prediction that was wrong — the greedy-wrap
+  model the `mdtablefix` probe refuted. The repair therefore lands as a new
+  revision and is re-gated whole, exactly as the rule requires. **A second
+  instance followed within the hour and is the sharper lesson:** this very
+  observation was written while the re-run of those four gates was in flight,
+  breaking the same rule a second time in the act of recording it, and the run
+  had to be stopped — its partial evidence discarded — so that the final bytes
+  could be gated once. **Carried lesson: an agent cannot repair a gate-evidence
+  race by reasoning about it while continuing to edit.** The gate window must
+  be closed by *finishing the read-through first* and scheduling the run once;
+  a defect found by a post-gate review is a new revision, and each new revision
+  needs a new full run, so gates scheduled before the review is complete are
+  always wasted work.

@@ -126,17 +126,18 @@ cells select; a note selecting two different contributions is contradictory and
 is rejected rather than resolved.
 
 <!-- status-register:begin -->
-| Field               | Status            | Admissible | Contributes  |
-| ------------------- | ----------------- | ---------- | ------------ |
-| state-display-name  | Enumerated        | yes        | nothing      |
-| state-display-name  | Not a named type  | no         | nothing      |
-| identifier-need     | None              | yes        | Sufficient   |
-| identifier-need     | Property required | yes        | Insufficient |
-| metrics-cardinality | Bounded           | yes        | nothing      |
-| metrics-cardinality | Unbounded         | no         | nothing      |
-| tracing-use         | Full              | yes        | nothing      |
-| tracing-use         | Partial           | yes        | nothing      |
-| tracing-use         | None              | yes        | nothing      |
+| Field               | Status                | Admissible | Contributes  |
+| ------------------- | --------------------- | ---------- | ------------ |
+| state-display-name  | Enumerated            | yes        | nothing      |
+| state-display-name  | Not a named type      | no         | nothing      |
+| state-display-name  | Synthesized from data | no         | nothing      |
+| identifier-need     | None                  | yes        | Sufficient   |
+| identifier-need     | Property required     | yes        | Insufficient |
+| metrics-cardinality | Bounded               | yes        | nothing      |
+| metrics-cardinality | Unbounded             | no         | nothing      |
+| tracing-use         | Full                  | yes        | nothing      |
+| tracing-use         | Partial               | yes        | nothing      |
+| tracing-use         | None                  | yes        | nothing      |
 <!-- status-register:end -->
 
 *Table 2: Every admissible status for every field, whether it blocks the note,
@@ -150,7 +151,11 @@ would leave `metrics-cardinality: Bounded` as an unaudited assertion, and a
 reviewer at task 3.2.1 would decide the fate of a `&'static str` without ever
 seeing the strings. With the names enumerated, the cardinality bound is
 derivable from the note rather than asserted by its author, and the stability
-case can be argued against concrete labels.
+case can be argued against concrete labels. A label built from data rather than
+drawn from a fixed set is recorded as `Synthesized from data` and blocks
+instead, even where the values it can produce happen to be few: a small set of
+data-built strings is still not a *name* of the state, so a finite bound does
+not make `Enumerated` true of it.
 
 Three obligations on the evidence cells are checked, not merely asked for.
 
@@ -184,11 +189,16 @@ does not silently become a verdict, and it does not become a verdict by being
 ignored.
 
 The repair for a blocked note belongs to the phase that owns the annotated
-code, not to Statelet. A name synthesized from data, a `String` label, or a
-state that is not a named type at all is an upstream finding: the note records
-a link to the upstream issue and blocks the *Statelet* gate. This record never
-instructs a Phase 2 engineer to land a refactor in a repository this roadmap
-does not own.
+code, not to Statelet. Each defect the register blocks is an upstream finding,
+and the note names it by the row it selects: `Not a named type` for a state
+that is not a named type at all, `Synthesized from data` for a label built from
+data rather than drawn from a fixed set, and `Unbounded` for a label set that
+is not finite. A `String` label is blocked when it is one of those two naming
+defects and not merely because it is a `String`: a `String` drawn from a fixed
+set is enumerated like any other label, and one built from data is blocked
+however few values it can produce. The note records a link to the upstream
+issue and blocks the *Statelet* gate. This record never instructs a Phase 2
+engineer to land a refactor in a repository this roadmap does not own.
 
 Blocking is therefore not a dead end. A blocked note is still committed: it
 names its blocker, and it contributes nothing to the verdict. If every note is

@@ -56,12 +56,15 @@ of `None`: the absence of a need is itself an observation, and it has a place.
   return, so that the cardinality bound below is derivable from the note rather
   than asserted by its author. A field recording only whether a named type
   exists is not admissible, because a reviewer deciding the fate of a
-  `&'static str` would never see the strings. Neither is a cell whose evidence
-  is the citation alone: `mdtablefix@abc1234:src/process.rs` on its own says
-  where an observation was made and never what was observed. The citation is
-  required here as it is everywhere, and here it is not sufficient: the
-  contract checks its shape, and the reviewer at task 3.2.1 judges whether the
-  words beside it name the strings.
+  `&'static str` would never see the strings. Nor is `Enumerated` true of a
+  label built from data rather than drawn from a fixed set: record
+  `Synthesized from data`, which blocks however few values the label can
+  produce. Neither is a cell whose evidence is the citation alone:
+  `mdtablefix@abc1234:src/process.rs` on its own says where an observation was
+  made and never what was observed. The citation is required here as it is
+  everywhere, and here it is not sufficient: the contract checks its shape, and
+  the reviewer at task 3.2.1 judges whether the words beside it name the
+  strings.
 - `identifier-need` names at least one consumer drawn from the search set — the
   tracing subscriber, the metrics recorder or its documented absence, any model
   checker, and generated documentation — or states that none of them exist. The
