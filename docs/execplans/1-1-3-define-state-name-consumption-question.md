@@ -3417,23 +3417,34 @@ design.
   entry of a list that has none. The result read as a claim that the crate
   measures 45 to 1 — a false figure, grammatically seamless, with the real one
   gone. **Three things make this an entry rather than a one-line fix.** It is
-  *reproducible in one command*: a probe file holding a wrapped bullet whose
-  continuation starts with a two-digit numeral comes back renumbered, and the
-  probe also shows the trap is narrower than the earlier record of this tool
-  suggests — the entry at line 1142 describes a *word* being swallowed, where
-  this rewrites a numeral and leaves the sentence standing, which is harder to
-  notice because nothing looks absent. It is *invisible to the format gate by
-  construction*: that gate compares the formatter's output against the
-  formatter's output, so once the rewritten numeral is on disk it is the stable
-  fixed point, and every later run reports that the tree is already formatted.
-  The gate is not merely silent about the corruption, it is the thing holding
-  it still. And the **first diagnosis was wrong in the cheaper direction**:
-  reading the line, the obvious story was that an edit of mine had truncated
-  it, and the repair that story implies — retype the figure — would have held
-  for exactly one run before the formatter re-corrupted it. What falsified that
-  story was a `git diff --numstat` reporting **88 insertions and 0 deletions**,
-  which placed the rewritten numeral in the previous commit rather than in my
-  working tree. The durable fix moves the numeral off the line boundary, so no
+  *reproducible from a probe file*, and probing it sharpened the rule rather
+  than confirming the guess. The trigger is **any numeral followed by a full
+  stop opening a line** — `4.`, `9.`, `75.` and `100.` are all rewritten
+  identically, so this is not a two-digit phenomenon — and it fires in
+  top-level prose as well as inside a list item. The subtler half is the
+  ordering: the renumbering step runs on the input's line structure *before*
+  the wrapping step, so a numeral already at a line start is rewritten in the
+  same pass, while a numeral the wrap pushes to a line start is rewritten by
+  the *next* pass. That is why the trap can take two runs to fire and why the
+  first formatting pass looks clean. It is also the second silent-damage
+  finding on this document, and the two share a shape while differing in what
+  they damage: the fence-ignore entry above concerns a *checker* that stops
+  reading, where this rewrites a numeral and leaves the sentence standing. That
+  one is a gap in a gate's *reading*, so a probe finds it by deliberately
+  misspelling a word inside the shadowed region; this one leaves nothing absent
+  at all, so only a search for the specific value finds it. It is *invisible to
+  the format gate by construction*: that gate compares the formatter's output
+  against the formatter's output, and a numeral that is already `1.` is not
+  renumbered again, so the corrupted form is a byte-stable fixed point and
+  every later run reports that the tree is already formatted. The gate is not
+  merely silent about the corruption, it is the thing holding it still. And the
+  **first diagnosis was wrong in the cheaper direction**: reading the line, the
+  obvious story was that an edit of mine had truncated it, and the repair that
+  story implies — retype the figure — would have held for exactly one run
+  before the formatter re-corrupted it. What falsified that story was a
+  `git diff --numstat` reporting **88 insertions and 0 deletions**, which
+  placed the rewritten numeral in the previous commit rather than in my working
+  tree. The durable fix moves the numeral off the line boundary, so no
   continuation can open with it, and a full formatting cycle was then run and
   the figure re-read to prove the fix holds instead of assuming it. **Carried
   lesson: a formatter that is idempotent on its own damage reports success over
