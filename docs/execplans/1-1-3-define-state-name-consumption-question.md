@@ -1126,19 +1126,36 @@ outcome, and a reviewer should approve it on that understanding.
 - [x] The renumbering-trap entry's citation is repaired, and the repair was
       re-read after the formatter ran. The entry had compared the trap against
       "the entry at line 1142", which it said describes a *word* being
-      swallowed. That pointer was mine and it was false: line 1142 carries
-      review five's four declines, and this plan contains no record of a
-      swallowed word. The comparison is now made against the fence-ignore
-      entry's actual content, **by relative position rather than by line
-      number** — a line number in a living document is a claim that decays on
-      the next edit, which is exactly how the false one arose, while a relative
-      pointer survives insertion above it. The four other self-referential
-      pointers in the section were checked and all four resolve. Committed as
+      swallowed. That pointer was mine and it was false twice over: no entry
+      in this plan describes a swallowed *word*, and the number named no
+      entry at all. At `07ce9c7`, the revision it was written against, line
+      1142 held the tail of the review-five item's adopted-findings list —
+      the declines follow 5 lines below it, and the region that swallows
+      *lines* is the fence-ignore entry, then 423 lines further down — and
+      which sat at line 1142 in no revision of this branch. Those positions
+      are given as offsets rather than as numbers for the reason this entry
+      is about; where a number is needed it is bound to the revision it is
+      true of. The comparison is now made against the
+      fence-ignore entry's actual content, **by relative position rather than
+      by line number** — a line number in a living document is a claim that
+      decays on the next edit, which is exactly how the false one arose,
+      while a relative pointer survives insertion above it. The four other
+      self-referential pointers in the section were checked and all four
+      resolve. Committed as
       `9c9fb5c`, pushed, and the three Markdown gates re-run over the committed
       bytes: `check-fmt` exit 0 and idempotent on re-run, `markdownlint` 0
-      errors over 29 files, `nixie` validated all diagrams. The seven `45 to
-      75` figures the trap destroyed last time are intact, and no wrapped
-      continuation in the document opens with a numeral.
+      errors over 29 files, `nixie` validated all diagrams. The `45 to 75`
+      figures survived the repair, and no wrapped continuation in the document
+      opens with a numeral. That "seven" was one of the four false numerals
+      `b2708cb` introduced, caught by counting rather than by reading. Its
+      replacement states no total at all. Named revisions are safe to count:
+      the figure was 3 at `88a6e19` and 4 at `9c9fb5c`, and each is one `git
+      show` away. The present tree is not, because a document that quotes a
+      phrase to discuss it adds occurrences of that phrase — this sentence
+      included, which moved the count as it was written. A reader wanting
+      today's number has `grep -c '45 to 75'`, which is one command and
+      always right; a number written here would be true of one revision and
+      silently false of the next.
 - [x] The CodeScene code-health check is recorded, and its one live finding
       is left open deliberately. It has failed on this branch continuously, and
       the plan had never mentioned it. Adjudicated rather than fixed: the
@@ -1152,6 +1169,39 @@ outcome, and a reviewer should approve it on that understanding.
       `parse.rs` at 9.09 and `registers.rs` at 9.38 — and all three are new on
       this branch. Thirteen of the sixteen contract modules score 10.0, so the
       bar is demonstrably achievable and this is not a gate that cannot be met.
+- [x] The twenty-second round's one finding is actioned, and its record is
+      corrected. Over `9c9fb5c` the pass returned **one finding, no warning**,
+      at `notes.rs:189`: setup asked `root.exists()` where the sibling
+      `committed_notes` already asks `try_exists`, so a scratch root that could
+      not be inspected was read as absent, the rebuild was skipped, and
+      `create_dir_all` succeeded over a stale directory. Adopted, because the
+      file contradicted a rule its own comment documents one branch up. Applied
+      as `300a318` with the inspection error propagated rather than swallowed;
+      `make test` reports 119/119 and all seven acceptance gates exit 0.
+      **The bar EP-M5 states is still unmet**: one finding is not zero. What
+      this round also produced is a correction rather than a finding: recording
+      it exposed that the passage it records carried **six numerals with no
+      referent**. Three were positional claims about line 1142, each falsified
+      by the command that says what is there; one placed the declines at line
+      2385 "in a `Progress` checklist item" when 2385 is in `Surprises &
+      discoveries` and the `Progress` copy of those declines is at 1147 in
+      `07ce9c7`; one counted "the seven `45 to 75` figures" where the figure
+      was four; and one reported a `git diff --numstat` of "88 insertions and
+      0 deletions" that matches **no commit on the branch** — the corruption
+      entered at `4012c27` (137/47) and `88a6e19` (67/38) diagnosed it. All
+      six are repaired in this file, and the Observation above now carries
+      them as evidence rather than merely as a caution. Four
+      entered at `b2708cb`, whose subject is this very trap, and two at
+      `07ce9c7` before it — the original pointer, and the numstat figure — which
+      makes the commit recording the danger the source of four fresh instances
+      of it, written by an agent that had just finished diagnosing it. That is
+      the argument for the record being an Observation with evidence rather
+      than a resolved finding. The tally is itself evidence: the version of
+      this item that preceded the one you are reading said "four of the five
+      entered in the one commit — `b2708cb`", which gets the split right and
+      the total wrong, the total being six. A numeral composed to fit a
+      sentence rather than read from a command is what the six above have in
+      common, and the item recording them is not exempt.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3471,14 +3521,18 @@ design.
   obvious story was that an edit of mine had truncated it, and the repair that
   story implies — retype the figure — would have held for exactly one run
   before the formatter re-corrupted it. What falsified that story was a
-  `git diff --numstat` reporting **88 insertions and 0 deletions**, which
-  placed the rewritten numeral in the previous commit rather than in my working
-  tree. The durable fix moves the numeral off the line boundary, so no
-  continuation can open with it, and a full formatting cycle was then run and
-  the figure re-read to prove the fix holds instead of assuming it. **Carried
-  lesson: a formatter that is idempotent on its own damage reports success over
-  it, so a claim repaired inside a formatted document must be re-read *after*
-  the formatter runs, not before.**
+  `git diff --numstat`, which reported far more insertions than deletions and
+  so placed the rewritten numeral in an earlier commit rather than in my
+  working tree. Re-measured while repairing this entry, since the number first
+  written here — "88 insertions and 0 deletions" — matches no commit on the
+  branch: the corruption entered at `4012c27` (137/47) and was diagnosed by its
+  direct successor `88a6e19` (67/38), and the figure as stated was another
+  numeral with no referent. The durable fix moves the numeral off the line
+  boundary, so no continuation can open with it, and a full formatting cycle
+  was then run and the figure re-read to prove the fix holds instead of
+  assuming it. **Carried lesson: a formatter that is idempotent on its own
+  damage reports success over it, so a claim repaired inside a formatted
+  document must be re-read *after* the formatter runs, not before.**
 
 - Observation: **a line number cited inside a document that is still being
   edited is a claim with a half-life, and it is falsifiable by the same command
@@ -3487,30 +3541,53 @@ design.
   itself against "the entry at line 1142", which it said described a *word*
   being swallowed. A `grep -n 'swallow'` over the whole plan returns the
   fence-ignore entry, the trap entry's own prose, and nothing else — no entry
-  describes a swallowed word. The number had no referent either, but not in the
-  way first assumed: **line 1142 never held the declines.** At `07ce9c7`, when
-  the pointer was written, line 1142 held ADR 004's worked example, and the
-  declines it was said to name were at line 2385 of that same revision, in a
-  `Progress` checklist item. So the numeral was not a drifted pointer at all —
-  it was invented, and the "review five's four declines" reading I first gave
-  it was itself a guess about a line I had not read. It was written under
-  memory of a different revision of a different file, and survived into the
-  tree because nothing checks it: the plan is an input to three gates and all
-  three read *format*, not reference. Impact: the repair replaced the number
-  with a relative position ("the fence-ignore entry above"), which cannot
-  drift, and the four other self-referential pointers in the section were then
-  checked and all four resolve — a number among them survived only because
-  nothing above it had been inserted since. **The failure then reproduced
-  itself inside this very entry, one draft earlier.** That draft cited line
-  1142 as evidence of what the numeral had been pointing at, and the Progress
-  entry added above it moved line 1142 before the text below it was even read —
-  inserting at line 1126 pushed everything after it down, so the evidence line
-  the draft named no longer held what the draft said. Neither draft read the
-  file; both inferred the contents from the number, and the second inference
-  was false in the same way as the first, in the same entry, within the hour.
-  **Carried lesson: a cross-reference is evidence about a population of edits,
-  so it is verified the way a count is — by reading what is at the position
-  now, not by trusting what was there when it was written.**
+  describes a swallowed word. The number named nothing either, and **the two
+  corrections I wrote for it were both false, in different ways** — which is
+  the finding. Draft one said line 1142 held "review five's four declines"; it
+  held that item's adopted-findings list, and the declines sit 5 lines below it
+  at 1147, inside the same item. Draft two, written to replace draft one and
+  asserting that 1142 "held ADR 004's worked example", failed on a subtler
+  test: the *words* "ADR 004's worked example" are there, as review five's last
+  adopted finding, but the worked example itself is not — it lives in
+  `docs/adr-004-…md`, and this plan only ever lists it. A grep for the phrase
+  finds the line; a read finds a finding *about* the illustration. The declines
+  draft two then moved to "line 2385, in a `Progress` checklist item" are at
+  2385 in `Surprises & discoveries`, which is D32's record — the `Progress`
+  copy of the same four declines is at 1147 in `07ce9c7`, and at a line whose
+  number this entry does not need to state. So the numeral was invented rather
+  than drifted, and each attempt to say what it *had* meant substituted a fresh
+  unread line number for the last: three positional claims, three falsified by
+  the command that reads the position. What survived every draft is the thing
+  that never needed a number — the referent is the fence-ignore entry, and a
+  relative pointer names it without arithmetic. The numeral was written under
+  memory of a different revision and survived into the tree because nothing
+  checks it: the plan is an input to three gates and all three read *format*,
+  not reference. Impact: the repair replaced the number with a relative
+  position ("the fence-ignore entry above"), which cannot drift, and the four
+  other self-referential pointers in the section were then checked and all four
+  resolve — a number among them survived only because nothing above it had been
+  inserted since. **The failure then reproduced itself inside this very entry,
+  one draft earlier.** That draft cited line 1142 as evidence of what the
+  numeral had been pointing at, and the Progress entries added by the same
+  commit moved it before the text below was read: they begin at line 1126 and
+  are 29 lines long, so the review-five item they precede starts at 1155 and
+  line 1142 now holds the CodeScene item's opening. The draft's evidence line
+  was correct when written and false by the time it was committed, in the same
+  commit. Neither draft read the file; both inferred the contents from the
+  number, and the second inference was false in the same way as the first, in
+  the same entry, within the hour. **Carried lesson: a cross-reference is
+  evidence about a population of edits, so it is verified the way a count is —
+  by reading what is at the position now, not by trusting what was there when
+  it was written.** **One more numeral from the same commit fell to the same
+  test:** the same Progress item reported "the seven `45 to 75` figures" as
+  intact, where the figure was 3 at `88a6e19` and 4 at `9c9fb5c`, the repair
+  adding the difference. Unlike the line number it has no referent at all: a
+  search of every revision of this plan for a seven-strong set of these figures
+  returns only the sentence claiming one, so the numeral was composed to fit
+  the sentence rather than borrowed from a real count that drifted. `grep -c`
+  settles it in one command — which is why this entry counts only revisions
+  that are named, since the tree being edited counts its own discussion of the
+  figure.
 
 - Observation: **the code-health service that fails on every revision was never
   recorded, and its failure is a fact about the ruleset rather than about the
