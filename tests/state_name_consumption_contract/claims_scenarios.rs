@@ -95,8 +95,8 @@ fn a_ref_citing_cell_is_rejected_without_leaking_its_path() -> Result<(), String
         names_a_consumer(ref_citing),
         false,
         "{ref_citing} names no consumer outside its citation, but the path inside the citation \
-         supplied one — so the citation was left in the text the keyword scan reads. The path of a \
-         cell whose revision is refused must leave the scan with the rest of the citation."
+         supplied one — so the citation was left in the text the keyword scan reads. The path of \
+         a cell whose revision is refused must leave the scan with the rest of the citation."
     );
     assert_eq!(
         names_a_consumer("the tracing subscriber was considered"),

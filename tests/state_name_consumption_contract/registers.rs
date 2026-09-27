@@ -184,9 +184,7 @@ pub(crate) fn aggregate_resolutions(
 /// form `check_aggregation_total` uses — so that reflowing the remainder of the
 /// cell does not break it. The outcome string is what a Phase 2 engineer reads;
 /// pinning the whole sentence here would duplicate the document in the test.
-pub(crate) fn outcome_amends_design(outcome: &str) -> bool {
-    outcome.starts_with("Amend")
-}
+pub(crate) fn outcome_amends_design(outcome: &str) -> bool { outcome.starts_with("Amend") }
 
 /// Checks that the aggregation register's preconditions are reachable, and that
 /// its vocabulary is closed.

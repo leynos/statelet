@@ -161,17 +161,18 @@ pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str) -> Resu
     match graded.as_slice() {
         [] => {
             return Err(format!(
-                "docs/roadmap.md no longer carries a task title naming {CRITERION_TASK_FRAGMENT:?}, \
-                 which is how this check finds the task the success criterion grades. Repair: \
-                 restore that task's title, or revise this contract together with the task."
+                "docs/roadmap.md no longer carries a task title naming \
+                 {CRITERION_TASK_FRAGMENT:?}, which is how this check finds the task the success \
+                 criterion grades. Repair: restore that task's title, or revise this contract \
+                 together with the task."
             ));
         }
         [record] => {
             if !record.text.contains(&clause) {
                 return Err(format!(
                     "docs/roadmap.md no longer contains the 1.1.3 success criterion. Repair: \
-                     restore {SUCCESS_CRITERION_CLAUSE:?}, or revise this contract together with the \
-                     task."
+                     restore {SUCCESS_CRITERION_CLAUSE:?}, or revise this contract together with \
+                     the task."
                 ));
             }
         }
@@ -183,8 +184,8 @@ pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str) -> Resu
                 .join(", ");
             return Err(format!(
                 "docs/roadmap.md: the title fragment {CRITERION_TASK_FRAGMENT:?} names {} tasks \
-                 ({titles}), so the success criterion resolves against more than one. Repair: use a \
-                 fragment specific to the task this contract grades.",
+                 ({titles}), so the success criterion resolves against more than one. Repair: use \
+                 a fragment specific to the task this contract grades.",
                 records.len()
             ));
         }

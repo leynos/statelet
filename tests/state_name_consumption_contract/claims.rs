@@ -85,8 +85,7 @@ fn citation_parts(word: &str) -> Option<(&str, &str, &str)> {
     let inner = trimmed.strip_prefix('`')?.strip_suffix('`')?;
     let (repo, rest) = inner.split_once('@')?;
     let (revision, path) = rest.split_once(':')?;
-    (!repo.is_empty() && !revision.is_empty() && !path.is_empty())
-        .then_some((repo, revision, path))
+    (!repo.is_empty() && !revision.is_empty() && !path.is_empty()).then_some((repo, revision, path))
 }
 
 /// Whether one word is citation-shaped, whatever revision it names.
@@ -246,25 +245,21 @@ fn is_negated(before: &str) -> bool {
         .map(bare_word)
         .collect::<Vec<&str>>();
     let window = words.len().saturating_sub(NEGATION_WINDOW);
-    words
-        .iter()
-        .enumerate()
-        .skip(window)
-        .any(|(offset, word)| {
-            if REQUIREMENT_NEGATIONS.contains(word) {
-                return true;
-            }
-            // "not" and the `n't` contractions. What they deny is what follows
-            // them: a requirement verb names the requirement and so takes it
-            // away, and anything else — the property word itself above all —
-            // leaves the requirement standing and negates the value instead. A
-            // contraction is the same adverb, so it is read the same way:
-            // "doesn't need ordering" denies, "isn't stable" does not.
-            if *word != "not" && !word.ends_with("n't") {
-                return false;
-            }
-            words
-                .get(offset + 1)
-                .is_some_and(|next| REQUIREMENT_VERBS.contains(next))
-        })
+    words.iter().enumerate().skip(window).any(|(offset, word)| {
+        if REQUIREMENT_NEGATIONS.contains(word) {
+            return true;
+        }
+        // "not" and the `n't` contractions. What they deny is what follows
+        // them: a requirement verb names the requirement and so takes it
+        // away, and anything else — the property word itself above all —
+        // leaves the requirement standing and negates the value instead. A
+        // contraction is the same adverb, so it is read the same way:
+        // "doesn't need ordering" denies, "isn't stable" does not.
+        if *word != "not" && !word.ends_with("n't") {
+            return false;
+        }
+        words
+            .get(offset + 1)
+            .is_some_and(|next| REQUIREMENT_VERBS.contains(next))
+    })
 }

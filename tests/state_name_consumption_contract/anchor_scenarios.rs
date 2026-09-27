@@ -277,10 +277,11 @@ fn live_gate_table_binds_the_live_roadmap() -> Result<(), String> {
     // denied — a control that returns `Result` reports rather than crashes.
     let gates = gate_rows(ADR).map_err(|error| error.to_string())?;
     if gates.is_empty() {
-        return Err("ADR 004's gate table parsed to no rows, so this scenario would pass while \
-                    binding nothing. Repair: restore the gate-table block, or revise this \
-                    contract with it."
-            .to_owned());
+        return Err(
+            "ADR 004's gate table parsed to no rows, so this scenario would pass while binding \
+             nothing. Repair: restore the gate-table block, or revise this contract with it."
+                .to_owned(),
+        );
     }
     check_gate_titles(ADR, ROADMAP)
 }

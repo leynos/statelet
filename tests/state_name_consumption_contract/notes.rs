@@ -183,12 +183,14 @@ impl ScratchNotes {
         // scanned as though this run had written it, and the scenario would then
         // be asserting over a directory it does not control.
         if root.exists() {
-            fs::remove_dir_all(&root)
-                .map_err(|error| format!("{root}: the previous scratch root cannot be removed: {error}"))?;
+            fs::remove_dir_all(&root).map_err(|error| {
+                format!("{root}: the previous scratch root cannot be removed: {error}")
+            })?;
         }
         let directory = root.join(NOTES_DIR);
-        fs::create_dir_all(&directory)
-            .map_err(|error| format!("{directory}: the scratch notes directory cannot be created: {error}"))?;
+        fs::create_dir_all(&directory).map_err(|error| {
+            format!("{directory}: the scratch notes directory cannot be created: {error}")
+        })?;
         Ok(Self { root })
     }
 

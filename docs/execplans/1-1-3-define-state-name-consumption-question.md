@@ -3564,11 +3564,12 @@ formatter by running `make fmt` before fixtures are written and by
   sentence in the task's own success bullet, so the same sentence in the page's
   introduction, a phase's framing prose, or another task's rationale is not the
   criterion; a check over the whole document cannot make that distinction and
-  would report the criterion as intact while the task it grades had lost it. The
-  binding is by title rather than by number so that completing or renumbering
-  the roadmap does not break the build — the rule D7 states and the gate table
-  follows — and the fragment is checked against `record.title` while the clause
-  is checked against `record.text`, because the two live in different places.
+  would report the criterion as intact while the task it grades had lost it.
+  The binding is by title rather than by number so that completing or
+  renumbering the roadmap does not break the build — the rule D7 states and the
+  gate table follows — and the fragment is checked against `record.title` while
+  the clause is checked against `record.text`, because the two live in
+  different places.
 - **Artefact**: test `anchor_scenarios::success_criterion_still_maps`, with the
   region control in
   `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion` and the
@@ -3580,9 +3581,9 @@ formatter by running `make fmt` before fixtures are written and by
   introduction, breaks the task's own copy, and asserts the check still fails —
   after first asserting that exactly one copy of the clause survives; and the
   attribution control removes the clause from the graded task, plants it in
-  another task's record, and asserts the check still fails — after asserting the
-  plant really landed inside a *different* task's record, so it cannot pass by
-  demonstrating only that the clause was deleted.
+  another task's record, and asserts the check still fails — after asserting
+  the plant really landed inside a *different* task's record, so it cannot pass
+  by demonstrating only that the clause was deleted.
 
 ### INV-TEMPLATE — the blank form matches the register it instantiates
 

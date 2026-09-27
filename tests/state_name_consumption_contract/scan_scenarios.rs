@@ -22,8 +22,8 @@ use super::{
     live_status,
     notes::{self, ScratchNotes, committed_notes},
     parse::{aggregation_rows, note_rows},
-    policy::{check_note_cells, resolve_note},
     path_exists,
+    policy::{check_note_cells, resolve_note},
     registers::{aggregate_resolutions, check_aggregation_total, outcome_amends_design},
     types::{AggRow, Resolution},
     workspace_root,
@@ -243,7 +243,11 @@ fn a_populated_notes_directory_is_scanned_end_to_end() -> Result<(), String> {
             resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?;
         }
     }
-    assert_eq!(reported.len(), 1, "exactly one planted note is invalid: {reported:?}");
+    assert_eq!(
+        reported.len(),
+        1,
+        "exactly one planted note is invalid: {reported:?}"
+    );
     if !reported
         .first()
         .is_some_and(|message| message.starts_with("2.2.1-unfinished.md: "))
@@ -280,7 +284,11 @@ fn the_verdict_follows_the_aggregation_register() -> Result<(), String> {
     };
     let cases: [(&str, &[Resolution], bool); 4] = [
         ("no note contributes", std::slice::from_ref(&blocked), false),
-        ("every note blocked", &[blocked.clone(), blocked.clone()], false),
+        (
+            "every note blocked",
+            &[blocked.clone(), blocked.clone()],
+            false,
+        ),
         ("one sufficient note", &[Resolution::Sufficient], false),
         (
             "a sufficient note and an insufficient one",
@@ -298,7 +306,11 @@ fn the_verdict_follows_the_aggregation_register() -> Result<(), String> {
              aggregation register's rows against the state this case reaches — the middle column \
              asks whether *any* contributor is insufficient, and a rule reading any as all would \
              disagree here.",
-            if amends { "must amend" } else { "must not amend" }
+            if amends {
+                "must amend"
+            } else {
+                "must not amend"
+            }
         );
     }
     // The conflict's outcome is the one a Phase 2 engineer acts on, so it is
@@ -336,10 +348,12 @@ fn an_uncovered_multiset_state_is_rejected() -> Result<(), String> {
         .collect::<Vec<AggRow>>();
     assert_eq!(
         aggregate_resolutions(&trimmed, &[Resolution::Insufficient]),
-        Err("docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
+        Err(
+            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
              cover One or more contributing notes with any insufficient Yes, which 1 committed \
              note(s) reach. Repair: add that row; the verdict has no outcome to take."
-            .to_owned())
+                .to_owned()
+        )
     );
     Ok(())
 }

@@ -27,6 +27,8 @@
 
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
 mod anchor_scenarios;
+#[path = "state_name_consumption_contract/claim_properties.rs"]
+mod claim_properties;
 #[path = "state_name_consumption_contract/claims.rs"]
 mod claims;
 #[path = "state_name_consumption_contract/claims_scenarios.rs"]
