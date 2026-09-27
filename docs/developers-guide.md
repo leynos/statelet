@@ -89,10 +89,12 @@ resolution, `registers.rs` for the cross-register checks and the status
 register's own consistency, and `roadmap.rs` for the roadmap's task-record
 grammar, the gate table, and the success criterion. `notes.rs` holds the
 read-only scan of `docs/validation-notes/`, and `fixtures.rs` the row constants
-the negative controls build documents from. The scenarios sit in
-`anchor_scenarios.rs`, `note_scenarios.rs`, `register_scenarios.rs` and
-`scan_scenarios.rs`, one per invariant class, so that the 400-line cap binds
-each part of the contract alike.
+the negative controls build documents from. `claim_properties.rs` is not a
+scenario module: it holds the property suite over the evidence predicates —
+generated properties rather than named scenarios. The scenarios sit in
+`anchor_scenarios.rs`, `claims_scenarios.rs`, `criterion_scenarios.rs`,
+`note_scenarios.rs`, `register_scenarios.rs` and `scan_scenarios.rs`, one per
+invariant class, so that the 400-line cap binds each part of the contract alike.
 
 The contract reads ADR 004, the template, `docs/design.md`, `docs/roadmap.md`,
 and `docs/adr-002-transition-boundary-scope.md` with `include_str!` and parses

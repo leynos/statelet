@@ -1202,6 +1202,33 @@ outcome, and a reviewer should approve it on that understanding.
       the total wrong, the total being six. A numeral composed to fit a
       sentence rather than read from a command is what the six above have in
       common, and the item recording them is not exempt.
+- [x] The twenty-third round returned **three findings, no warning**, and the
+      two defects behind them are repaired. Its scope is worth stating plainly:
+      the pass ran over `origin/main...HEAD` as CodeRabbit scopes it by default
+      — **32 files**, all six commits since `e98b685` — not over the
+      `300a318..8ba3e4a` plan-only range this entry records. So the findings
+      land in `docs/repository-layout.md` and `docs/developers-guide.md`,
+      which the reviewed commit never touches. Both are this branch's own
+      prose: `origin/main` carries neither section. The defect is real and
+      pre-existing: each file enumerates the contract's child modules, each
+      named **four** scenario modules, and the contract ships **six**.
+      `claims_scenarios.rs` and `criterion_scenarios.rs` landed at `e4eab2b`,
+      which touched no document, and neither file named them — nor
+      `claim_properties.rs`, added by `3a46358`. D30 records that both files
+      "and the plan's own module enumerations were updated because all three
+      list the child modules" — and **that was true when written**: `7df6f53`,
+      its commit, updates both documents, and both then named the four scenario
+      modules that then existed. The record aged rather than lied, and the
+      drift is **verifiable in one command** — `git log --format='%h %s' --
+      docs/repository-layout.md docs/developers-guide.md` lists every commit
+      that touched either, and neither `e4eab2b` nor `3a46358` is among them.
+      The plan's own enumeration was still correct ("six scenario modules", at
+      the module-inventory passage), which is how a claim can hold in one of
+      the three places that carry it and fall behind in the other two. Repaired
+      by naming all six modules and describing the property suite as **not** a
+      scenario module, in both files, with **no total stated anywhere** — the
+      count "four" is what drifted, so the enumeration no longer carries a
+      numeral that can. Recorded as **D54**.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3347,6 +3374,46 @@ design.
   from a complete one. Date/Author: 2026-09-27, implementing agent, after
   verifying the target list against the `Makefile` and the acceptance list and
   re-running the omitted gate.
+
+- D54: **A module enumeration states its members and not its total, because the
+  total is the part that drifts.** The twenty-third round returned three
+  findings in two files, `docs/repository-layout.md:83` and
+  `docs/developers-guide.md:77`, and they reduce to one defect reported three
+  ways: both files enumerated the contract's child modules and both said the
+  scenario modules numbered **four**, where the contract ships **six**.
+  `claims_scenarios.rs` and `criterion_scenarios.rs` arrived at `e4eab2b` and
+  `claim_properties.rs` at `3a46358`; neither document was updated for any of
+  the three, and neither had ever named them. The plan's own record makes this
+  look worse than it is, and the distinction matters. D30 records that
+  "`docs/developers-guide.md`, `docs/repository-layout.md` and the plan's own
+  module enumerations were updated because all three list the child modules",
+  and **that sentence was true when written**: `7df6f53`, its commit, does
+  update both documents, and at that revision both correctly named the four
+  scenario modules that then existed. The drift is not a false record but an
+  **aged** one — `e4eab2b` added the fifth and sixth modules six days later and
+  touched no document, and `3a46358` added the property suite and touched none
+  either, so the two enumerations fell behind a record that had described them
+  accurately at the time. Verified in one command:
+  `git log --format='%h %s' -- docs/repository-layout.md
+  docs/developers-guide.md`
+  lists every commit that touched either file, and neither `e4eab2b` nor
+  `3a46358` is among them. The lesson is about the *form* of the claim rather
+  than its truth: "the enumerations were updated" has no shelf life, because
+  the next module loudly un-makes it. **The remedy removes the numeral rather
+  than correcting it.** Both files now name all six modules and describe
+  `claim_properties.rs` as explicitly *not* a scenario module, and neither
+  states how many there are. A list is self-checking — every name resolves to a
+  file, so a reader can verify it — while a total is a claim about the list
+  that nothing reads, which is the property that let "four" survive two module
+  additions and a review round. The three findings were two distinct defects:
+  findings two and three quote the same `developers-guide.md` paragraph. Scope,
+  stated because it decides what this round means: the pass reviewed
+  `origin/main...HEAD` as CodeRabbit scopes by default, all 32 files across six
+  commits, not the evidence-1 range. Both defects are this branch's own prose —
+  `origin/main` carries neither section — but neither was introduced by the
+  commit under review, so this round is a **latent**-defect round like the
+  eighteenth. Date/Author: 2026-09-27, implementing agent, actioning the
+  twenty-third round after verifying each finding against the tree.
 
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
