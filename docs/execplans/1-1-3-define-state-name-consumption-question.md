@@ -1022,6 +1022,29 @@ outcome, and a reviewer should approve it on that understanding.
       Synthesized from data, Admissible: no`, with its `fixtures.rs` pin in the
       same change, as the ADR's own Option C paragraph prescribes. Recorded as
       D49. **The bar EP-M5 states is still unmet**: four findings, not zero.
+- [x] CodeRabbit review eighteen — **three findings, returned 2026-09-27 over
+      `99cece6`**, and the round that tested D49's repair rather than adding
+      to it. The pass completed in 275 seconds over the same 27 files with no
+      abort, the third consecutive clean completion, and **every finding is in
+      this plan file**: no finding touched ADR 004, the status register, its
+      `fixtures.rs` pin, or any Rust source, so last round's `major` — the one
+      finding whose remedy changed shipped documents rather than prose — drew
+      no repeat. Findings one and three are one defect reported twice: the
+      rerun rule says a docs-only commit may leave "the other five" where
+      EP-M5 names seven gates and this file feeds three, so four remain, and
+      `make typecheck` stays separate as the eighth non-gate run the paragraph
+      already distinguishes. The second is ordering, not arithmetic: Stage D
+      ticked the roadmap after *any* review where EP-M5 requires a
+      zero-finding one, contradicting Step 9's own requirement that findings
+      be actioned, re-gated and reviewed again before the tick. Both are
+      repaired. **Both defects pre-date the reviewed commit** — the count
+      entered at `29c4c87`, the ordering at `8ed07ff` in the original approved
+      draft — so the round found latent defects in text `99cece6` never
+      touched rather than regressions it introduced, and the class search D49
+      made standing found two more instances the reviewer did not name.
+      Recorded as D50. **The bar EP-M5 states is still unmet**: three
+      findings, not zero, so the item stays unticked and the next pass is over
+      the commit carrying this repair.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -1085,7 +1108,12 @@ outcome, and a reviewer should approve it on that understanding.
       over `227d975`, six over `33c79aa`, five over `b1c8295`, six over
       `cd458d5`, five over `e5ef763`, and four over `787a716` — each actioned
       and gated in turn, and each leaving the bar unmet, so the item is still
-      unticked. Every one of those eight found something. The seventh through
+      unticked. Every one of those eight found something. **Three more have
+      followed since the rebase**, each completing without an abort: one
+      finding over the rebased tip, four over `3c25662`, and three over
+      `99cece6` — and the last is the first pass whose findings are all
+      inside this plan file, none touching the ADR, the status register, its
+      `fixtures.rs` pin or the Rust. The seventh through
       tenth
       rounds' findings were themselves about this plan's own records rather than
       about the work, which is the checklist-vs-evidence class D33 and D34
@@ -1161,6 +1189,23 @@ outcome, and a reviewer should approve it on that understanding.
       so the archives show the rule being followed rather than stated. Recorded
       as D43, plus the observation that a green gate describes the bytes it read
       and no others.
+- [x] The eighteenth round's repair is gated over the bytes it will ship. All
+      seven EP-M5 gates ran sequentially over the working tree carrying the
+      repair and every one exited 0, with each sidecar pairing
+      `head_sha=99cece6` and `worktree_clean=no` — the field that records the
+      tree was dirty, so the run's subject is the bytes a review round is
+      *about to read* rather than the bytes a commit already carries. The
+      sha256 taken immediately before and again immediately after the run is
+      the same `823679c5…`, which is what pins those bytes: a sidecar on a
+      dirty tree names the revision *around* them, and only a digest outside
+      it reaches the bytes themselves. Writing this item changes those bytes,
+      so that run is evidence for a superseded revision and the round now owed
+      reads the run over the commit carrying them. Figures in
+      `Artefacts and notes`; sidecars beside their logs under `/tmp`. Recorded
+      because the gate window closes only once: an agent that edits while a run
+      is in flight leaves that run's evidence describing bytes that no longer
+      exist, which D45 and D46 record and which this run avoided by finishing
+      the read-through before dispatching.
 
 The gate set, run one gate at a time from the repository root at revision
 `dd5b37c`, the tree D30 delivers. `make lint`'s log is the load-bearing one: the
@@ -2278,7 +2323,9 @@ design.
   tables, and it offered twenty-four for the first count by counting every
   top-level bullet in the section rather than the `- Observation:` ones — the
   section's other thirty-two entries were `Decision log` records D1–D32 (D33
-  itself brings the tally to thirty-three; the tally has since grown to D48,
+  itself brings the tally to thirty-three; it has since reached D50, and a
+  count quoted at one revision is a fact about that revision — which is why
+  this one names the register it was taken against rather than saying "now" —
   and the same count-by-top-level-bullet method is what the
   `Outcomes & retrospective` section uses below). The lesson is D31's, one
   level down: a review is an input to be verified, and that applies to a
@@ -3018,6 +3065,33 @@ design.
   Date/Author: 2026-09-27, implementing agent, actioning the seventeenth
   round's four findings.
 
+- D50: **The eighteenth round returned three findings and two distinct
+  defects, both in this plan's own instructions, and both pre-date the commit
+  under review.** Findings one and three are the same defect twice: the rerun
+  rule says a docs-only commit "may leave the other five" where EP-M5 names
+  seven gates and this file feeds three of them, so four remain. The second is
+  the ordering: Stage D's summary read "Run every gate sequentially, obtain
+  review, tick the roadmap, and set this plan to `COMPLETE`", which ticks the
+  roadmap on *any* review, where EP-M5 requires a zero-finding one and Step 9
+  requires findings to be actioned, re-gated and reviewed again before the
+  tick. Both are repaired: the count now reads "the other four", the
+  `make typecheck` line stays separated as the eighth non-gate run the same
+  paragraph already distinguishes, and Stage D now names the bar it shares with
+  Step 9 and EP-M5 rather than a weaker one. **Neither defect is mine — the
+  count entered at `29c4c87` and the ordering at `8ed07ff`, in the original
+  approved draft, and `99cece6` touched neither line** — and that is the
+  round's most useful fact rather than a footnote: a `minor` finding on an
+  untouched line is a *latent* defect the review's broader diff context
+  surfaced, not a regression. The round also tested D49's repair and found it
+  sound: no finding touched the ADR, the status register, `fixtures.rs`, or any
+  Rust file, so the register row, the prose that enumerates three blocking rows
+  and the `fixtures.rs` pin drew no repeat — and D49's `major` was the one
+  finding last round whose remedy changed shipped behaviour rather than prose.
+  The bar EP-M5 states is still unmet at three findings, so both it and roadmap
+  task 1.1.3 stay unticked and the next pass is over the commit carrying this
+  repair. Date/Author: 2026-09-27, implementing agent, actioning the eighteenth
+  round's three findings after attributing both defects to earlier commits.
+
 - Observation: **the gate-evidence rule is about bytes, not exit codes.** The
   three Markdown gates read this plan file, so after the transcript was added
   the previous green described a tree that no longer existed — the gates had
@@ -3074,6 +3148,37 @@ design.
   than tidy it. Date/Author: 2026-09-26, implementing agent, on the ninth
   review round's `docs/contents.md` finding.
 
+- Observation: **a stale complement outlives the base it was computed
+  against, and the damaging case is the one where a document names its base.**
+  Round eighteen's gate-count defect is the clearest instance this workstream
+  has produced, because the commit that introduced it was *already repairing*
+  the thing it broke: `29c4c87` narrowed "all eight gates were run" to the
+  seven EP-M5 names — a genuine repair — and left the complement at five. Two
+  further instances surfaced in this revision, and **neither was named by the
+  reviewer**: three commit messages on this branch still say "the other five
+  cannot read this file", and a live tally claim in `Decision log` D33 said the
+  count "has since grown to D48" after D49 was added. The tally was repaired
+  here; the commit messages cannot be, and the difference is precise rather
+  than an accident of what is mutable: a phrase that never names its base can
+  be read against the eight transcript lines, where five is right, while a
+  phrase reading "three of the seven … the other five" cannot be read any way
+  that makes it true. An immutable bad count is the better outcome because it
+  is *checkable* — the reader can see what it was computed against — so the
+  lesson is not "reword the messages" but "record which population a count was
+  taken over". **And the rule caught the agent writing this entry, which is the
+  only reason to trust it.** Its first draft said the post-rebase passes
+  numbered five, counting the four aborted attempts as though they had run
+  after the rebase; `git merge-base --is-ancestor` puts `48703e3` and `27bdda9`
+  off this branch's history entirely, and the log mtimes put every completed
+  post-rebase pass at 01:22 or later. The claim was written from recollection
+  and falsified by the two commands that check it, which is D45's and D46's
+  rule one level up: a count in a record is evidence about the population it
+  was measured over, and an unmeasured one is a guess wearing a number's
+  clothes. **Carried lesson: when a population is narrowed, every claim about
+  its complement must be recomputed against the new base rather than inherited
+  from the old one — and a count worth writing is worth naming its base for,
+  because that is what lets the next reader check it.**
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -3097,34 +3202,43 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All twenty-eight were accounted
-for; the disposition of each follows. The section holds seventy-seven top-level
-entries in all; the other forty-nine are `Decision log` records D1–D49, which
-are decisions rather than observations and are dispositioned in their own
-section. **D47, D48 and D49 are the three entries added after this
-reconciliation was first written** — D47 by the rebase that closed the
-divergence the `Residual gaps` section once recorded, D48 by the sixteenth
-review round, which is the first to reach analysis after the two preceding
-rounds aborted four attempts between them, and D49 by the seventeenth, whose
-`major` sent a register row and its `fixtures.rs` pin upstream together. D47
-and D48 are decisions about how a record is accepted rather than discoveries
-about a document, so they are dispositioned here by being named rather than by
-being checked against an upstream artefact. **D49 is the exception among the
-three**: it amended ADR 004's *Admissibility* prose and its status register, so
-its downstream impact is dispositioned with the other upstream corrections
-below rather than discharged by naming. Ten observations were recorded during
-or after the EP-M5 gate runs: a prose-wrapping rule, a correction to how this
-plan had been probing the formatter, the post-fix review round's falsification
-record, the record-versus-line discovery that closed the third round's `major`
-subject, the two the fourth and fifth rounds produced between them, the
+the artefacts named in `Conformance basis`. All twenty-nine were accounted for;
+the disposition of each follows. The section holds seventy-nine top-level
+entries in all; the other fifty are `Decision log` records D1–D50, which are
+decisions rather than observations and are dispositioned in their own section.
+**D47, D48, D49 and D50 are the four entries added after this reconciliation
+was first written** — D47 by the rebase that closed the divergence the
+`Residual gaps` section once recorded, D48 by the sixteenth review round, which
+is the first to reach analysis after the two preceding rounds aborted four
+attempts between them, D49 by the seventeenth, whose `major` sent a register
+row and its `fixtures.rs` pin upstream together, and D50 by the eighteenth,
+whose two defects are in this plan's own rerun rule and its Stage D ordering
+and pre-date the commit the round reviewed. D47 and D48 are decisions about how
+a record is accepted rather than discoveries about a document, so they are
+dispositioned here by being named rather than by being checked against an
+upstream artefact. **D49 is the exception among the four**: it amended ADR
+004's *Admissibility* prose and its status register, so its downstream impact
+is dispositioned with the other upstream corrections below rather than
+discharged by naming. **D50 is the second exception and the first decision in
+this section whose subject is this plan's *instructions* rather than its
+evidence** — it repairs the rerun rule and the Stage D completion summary — so
+its downstream impact is bounded by this file and there is no upstream artefact
+to check it against; the state that must move is the plan's own. Eleven
+observations were recorded during or after the EP-M5 gate runs: a
+prose-wrapping rule, a correction to how this plan had been probing the
+formatter, the post-fix review round's falsification record, the
+record-versus-line discovery that closed the third round's `major` subject, the
+two the fourth and fifth rounds produced between them, the
 attribution-versus-arithmetic finding the seventh round forced, the ninth
 round's measurement that an inline link cannot be wrapped, the fourteenth
-round's distinction between an aborted stream and a scored one, and the
-gate-evidence rule that a green gate describes the bytes it read and no others.
-None bears on any upstream artefact, and the second review round — recorded as
-D29 rather than here, because its findings are decisions rather than
-observations — forced one upstream correction of its own, to ADR 004's
-stable-identifier paragraph, which is dispositioned below.
+round's distinction between an aborted stream and a scored one, the
+gate-evidence rule that a green gate describes the bytes it read and no others,
+and the stale-complement rule the eighteenth round's defect produced, which is
+that a narrowed population invalidates every claim about its complement. None
+bears on any upstream artefact, and the second review round — recorded as D29
+rather than here, because its findings are decisions rather than observations —
+forced one upstream correction of its own, to ADR 004's stable-identifier
+paragraph, which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -3637,8 +3751,11 @@ go green in turn, committing at each coherent point.
 ### Stage D — sync and delivery (EP-M4, EP-M5)
 
 Apply the documentation sync map, including the discoverability pointers under
-Q4, which was approved. Run every gate sequentially, obtain review, tick the
-roadmap, and set this plan to `COMPLETE`.
+Q4, which was approved. Run every gate sequentially, obtain a review that
+returns no findings, and only then tick the roadmap and set this plan to
+`COMPLETE`. A review that returns findings is not the bar: action them, re-run
+the gates over the repaired bytes, and request another pass, as Step 9 and
+EP-M5 both require.
 
 ## Milestones and plateaus
 
@@ -4202,7 +4319,7 @@ input to exactly three of the seven gates — `make check-fmt` (through
 others: no test under `tests/` mentions `docs/execplans`
 (`grep -rn execplans tests/` returns nothing) and no Rust source reads it. So a
 commit whose only change is to this file must re-run those three and may leave
-the other five, while a commit touching Rust sources must re-run all seven. The
+the other four, while a commit touching Rust sources must re-run all seven. The
 `.stale-d4fb5ba-2026-09-26T06-42-25` archives beside each canonical log show
 the rule being followed: they preserve the superseded run of the three Markdown
 gates rather than overwriting it, because the check that matters is not whether
@@ -4295,6 +4412,82 @@ it: the log visits 28 files and closes with
 Markdown — in `docs/design.md`, `docs/documentation-style-guide.md` and
 `docs/rstest-bdd-users-guide.md` — are named here with the grep that finds
 them, so a reader re-checks by looking rather than re-deriving.
+
+**The run that carried the eighteenth round's repair, and the one respect in
+which its evidence differs from the sets above.** Its subject is a working tree
+dirty by exactly one file — this plan — rather than a committed revision, and
+so its sidecars, at the canonical paths with the `-r20-` infix, pair a
+`head_sha=99cece6eae816768c355c07f640add96d0e30c8c` with a `worktree_clean=no`.
+The distinction is worth drawing narrowly, because the obvious version of it is
+false: a run over uncommitted bytes is not new here — the `plan_sha256`-carrying
+`postrebase16` families exist precisely because it happened before — and the
+difference is in the fields. This run's sidecars carry `worktree_clean`, which
+*names* the dirty state — `grep -l 'worktree_clean=no' /tmp/*.exit` matches
+these seven and no others on this host — while those families instead pin the
+bytes directly and do not record cleanliness at all. All seven were dispatched
+sequentially and all seven exited 0:
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy clean; whitaker clean
+make test                         exit 0   99 tests run: 99 passed, 0 skipped; 1 doctest
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   45 crate dependencies scanned; none matched
+make test-workflow-contracts      exit 0   116 passed
+```
+
+The run opened at `2026-09-27T04:09:49+02:00` and closed at `04:12:22+02:00`,
+153 seconds in total, and the gates did not overlap: the sidecars show each
+`end` preceding the next `start`. Seven gates make six intervals, and five of
+the six run 3–6 seconds, which is the wrapper's own `git rev-parse`,
+`git branch`, `git status --porcelain` and the dispatch between gates. The
+sixth is not, and it is worth stating because the wrong reading of it is the
+natural one: 102 seconds separate `make test` closing at `04:10:02` from
+`make markdownlint` opening at `04:11:44`. **That interval sits between two
+sidecars rather than inside either gate's window** — `make markdownlint`'s own
+window is 4 seconds, and its log accounts for the whole of it, spelling chain
+included: the `spelling-helper-test` → `spelling-config` →
+`spelling-phrase-check` → `spelling` → `markdownlint-cli2` sequence the target
+pulls in ahead of itself completes within those 4 seconds, its `ruff`, `pytest`
+and coverage stages reporting clean in the same log. So a reader who times this
+suite from outside and sees the biggest target named last should not conclude
+that it is the expensive one: none of the seven carries the 102 seconds, and
+this record does not attribute it further than the measurement reaches.
+
+**The one field these sidecars do not carry, and how the gap was closed
+instead.** They are the canonical ten-field form, which predates D43's
+`plan_sha256`, so on a dirty tree they name the revision *around* the bytes and
+not the bytes — the limit the earlier paragraph states in general, and which the
+`postrebase16` families met by carrying the field. This run did not adopt that
+field, and closed the gap from outside the sidecar instead: the plan file was
+digested immediately before the run and again immediately after the last
+sidecar was written, and a third read followed, all three returning
+`823679c550642b782dbf2c5ce7f180c66691e33a4f09ff111c6b9c38e01b56e4`. So the
+bytes this run gated are pinned by a measurement taken around it rather than by
+a field carried in it, and a reader who wants to reproduce that pin needs the
+digest from here and the sidecars from `/tmp`, because neither is sufficient
+alone.
+
+**The revision this transcript is part of, and the run it is owed.** Writing
+the paragraphs above changes this file, so `823679c5` is no longer the blob
+this commit ships and the `r20` run is evidence for a superseded revision — the
+ordinary consequence of D43, and the reason this section records figures rather
+than promises. The run owed for the bytes carrying this transcript is therefore
+gated the other way round from the one above, and the choice is the section's
+own: **gate the clean tree at the commit that contains them, rather than a
+dirty tree around them.** Both are sound and the second is what `r20` did, but
+the first is stronger because it needs no external digest — a sidecar pairing
+`head_sha` with `worktree_clean=yes` already pins the bytes, since a clean tree
+at a named commit can only have been the content of that commit. So the
+acceptance run for this revision is made *after* the commit that carries it,
+its sidecars will read `worktree_clean=yes`, and the `r20` sidecars stay where
+they are as the superseded run rather than being overwritten. That ordering is
+also what "gate each commit" means when read literally, since a commit can only
+be gated once it exists. Per the rule that governs every block here, this
+paragraph asserts no figure for that run and no member list: its outcome is
+read from the sidecars beside its logs, and where those and this prose
+disagree, the sidecars are the measurement.
 
 **The earlier runs, kept for the reds they record.** First at `aebe29d`, then
 re-run after the post-fix round at `26da23f`, whose figures the block below
@@ -4810,3 +5003,28 @@ re-permits in tests.
   a defect found by a post-gate review is a new revision, and each new revision
   needs a new full run, so gates scheduled before the review is complete are
   always wasted work.
+- 2026-09-27, the eighteenth review round returns three findings over `99cece6`,
+  two distinct defects, both inside this plan and both pre-dating the revision
+  the round read. The pass completed in 275 seconds over the same 27 files with
+  no abort, the third consecutive clean completion. The first defect is
+  arithmetic: the rerun rule let a docs-only commit skip "the other five" where
+  EP-M5 names seven gates and this file feeds three, so four remain. The second
+  is ordering: Stage D ticked the roadmap after any review, where EP-M5
+  requires a zero-finding one and Step 9 requires the findings actioned,
+  re-gated and re-reviewed first. Neither line was touched by `99cece6` — the
+  count entered with `29c4c87`'s legitimate narrowing of "all eight gates" to
+  the seven, and the ordering with `8ed07ff`, the original approved draft — so
+  the round's findings are latent defects surfaced by broader diff context
+  rather than regressions. **Nothing in the ADR, the status register, its
+  `fixtures.rs` pin or any Rust file drew a finding**, so D49's remedy held
+  under an independent pass. Repairing the count exposed the class behind it,
+  and the search for that class found two instances the review did not name:
+  three commit messages on this branch that say "the other five" — quiescent,
+  since a phrase that never names its base reads correctly against the eight
+  transcript lines — and a live tally claim in D33 that outlived D49. That
+  search is recorded as an observation, and the general rule it yields is that
+  a narrowed population invalidates every claim about its complement. Recorded
+  as D50; the reconciliation tallies move to 79 entries over D1–D50, all counts
+  re-measured against the live section rather than adjusted by hand. The bar
+  EP-M5 states remains unmet at three findings, so both it and roadmap task
+  1.1.3 stay unticked and the next pass is over the commit carrying this repair.
