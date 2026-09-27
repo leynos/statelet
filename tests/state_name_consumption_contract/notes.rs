@@ -182,7 +182,19 @@ impl ScratchNotes {
         // Rebuilt rather than reused: a note left by an earlier run would be
         // scanned as though this run had written it, and the scenario would then
         // be asserting over a directory it does not control.
-        if root.exists() {
+        //
+        // `try_exists` rather than `exists`, for the reason `committed_notes`
+        // gives one branch up. `exists()` answers "false" both for a root that
+        // is genuinely absent and for one that cannot be inspected at all, and
+        // reading the second as the first would skip the rebuild. The danger
+        // there is not the error itself but its transience: a root that fails
+        // to inspect once may be removable a moment later, so `create_dir_all`
+        // would then succeed *over* the stale directory, leaving the previous
+        // run's notes in place for a scan that believes it wrote them.
+        if root
+            .try_exists()
+            .map_err(|error| format!("{root}: the scratch root cannot be inspected: {error}"))?
+        {
             fs::remove_dir_all(&root).map_err(|error| {
                 format!("{root}: the previous scratch root cannot be removed: {error}")
             })?;
