@@ -1232,6 +1232,35 @@ outcome, and a reviewer should approve it on that understanding.
       scenario module, in both files, with **no total stated anywhere** — the
       count "four" is what drifted, so the enumeration no longer carries a
       numeral that can. Recorded as **D54**.
+- [x] The twenty-fourth round returned **one finding, no warning**, and it is
+      repaired. All seven gates exit 0 at `bc56e21` (nextest 119/119, `make
+      audit` 76 packages with no advisories, `make test-workflow-contracts`
+      116 passed, Markdown gates 0 errors over 29 files, spelling chain green).
+      The pass ran 148 s over the default `origin/main...HEAD` scope, 32 files,
+      completed normally — no abort and no rate limit. The finding is
+      *(minor)* at `tests/state_name_consumption_contract/claim_properties.rs:71`
+      and it is **valid**: the line read "A word no predicate can **recognise**"
+      where the repository's convention is **en-GB-oxendict**, which prefers
+      `-ize`. Fixed to `recognize`, matching the two `recognized` already in
+      `parse.rs:17` and `fixtures.rs:57` and the `normalizes` in `clauses.rs:72`.
+      The finding is worth more than its size because of **why no gate caught
+      it**. The spelling target is
+      `git ls-files -z '*.md' | xargs -0 typos --config typos.toml`
+      (`Makefile:95-99`) — it reads **Markdown only**. So the entire Rust
+      surface of this contract is outside the spelling gate, and a mis-spelling
+      in a Rust doc comment is unreachable by every one of the seven gates. A
+      search of the Oxford `-ize` class across `tests/` and `src/` after the fix
+      returns only the correct forms, so the instance was isolated rather than
+      representative — but nothing in the repository would have said so.
+      Contrast the reverse case: `docs/whitaker-users-guide.md:479` carries
+      "recognised" inside a `rust` fence, where the gate would skip it anyway
+      and the branch does not own the line. Recorded as **D55**.
+      Scope, since it decides the round's meaning: the reviewed commit
+      `bc56e21` is docs-only, so this finding — in a Rust file it never touched
+      — is a **latent** defect like the twenty-third round's two, and it was
+      found by the broader default scope rather than by the commit's own
+      content. One finding is not zero, so EP-M5 and roadmap 1.1.3 stay
+      unticked.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3454,6 +3483,37 @@ design.
   actioning the twenty-third round after verifying each finding against the
   tree.
 
+- D55: **The spelling gate reads Markdown and nothing else, so the Rust prose
+  of this contract is outside every gate the branch has.** The twenty-fourth
+  round returned one finding — *(minor)*, at
+  `tests/state_name_consumption_contract/claim_properties.rs:71` — and it was
+  valid and correctly located: the line read "A word no predicate can
+  recognise" where the repository's convention is **en-GB-oxendict**, which
+  prefers `-ize`. The tree around it was already right — `parse.rs:17` and
+  `fixtures.rs:57` both say `recognized`, `clauses.rs:72` says `normalizes` —
+  so the one hold-out sat inside a file whose neighbours all gave it the
+  answer. Verified afterwards by searching the Oxford `-ize` class across
+  `tests/` and `src/`: only correct forms remain, so the instance is isolated.
+  What makes it worth a decision rather than a one-character commit is that
+  **no gate could have caught it**. The target is
+  `git ls-files -z '*.md' | xargs -0 typos@... --config typos.toml`
+  (`Makefile:95-99`). A mis-spelling in a doc comment, a module header, or a
+  test's failure message is reachable by none of the seven gates; it is
+  reachable only by an independent reviewer reading context, which is exactly
+  how this one surfaced and why it arrived in a Rust file on a docs-only
+  commit. That also moves the tally of what "zero-finding pass" actually tests:
+  the bar is not only "are the gates green" but "has a reader looked at the
+  parts no gate reads". The reverse case is worth recording because it is the
+  trap next to this one: `docs/whitaker-users-guide.md:479` contains
+  "recognised" **inside a `rust` fence**, where the gate would skip it in any
+  event and where this branch does not own the line
+  (`git diff --stat e98b685..HEAD` names it zero times). A repo-wide search for
+  the class therefore returns that line plus the `typos.toml` dictionary
+  entries, and neither is a defect. Separating a real instance from a fenced or
+  vendored one is the whole of the search; a match count alone would have
+  reported three problems where there is one. Date/Author: 2026-09-27,
+  implementing agent, actioning the twenty-fourth round after verifying the
+  finding against the tree and the gate definition.
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that

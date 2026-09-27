@@ -68,7 +68,7 @@ fn path_tokens() -> Vec<&'static str> {
         .collect()
 }
 
-/// A word no predicate can recognise.
+/// A word no predicate can recognize.
 ///
 /// Drawn from consonants alone, and that is what makes it inert: every token
 /// either predicate scans for contains a vowel, so a vowel-free word can
