@@ -1092,9 +1092,37 @@ outcome, and a reviewer should approve it on that understanding.
       the scanned token is the two-word `compact encoding`. **The bar EP-M5
       states is still unmet**: a warning is not zero findings. Recorded as D52,
       which also corrects this plan's own Q3 and D9 cost figures — the 185 they
-      attributed to `proptest` is `rstest-bdd`'s, and `proptest` measures 45 to
-      1. Gates on the delivered tree: `check-fmt`, `lint`, `test` (119
-      passed), `spelling`.
+      attributed to `proptest` is `rstest-bdd`'s, and `proptest` measures
+      45 to 75. Gates on the delivered tree: `check-fmt`, `lint`, `test`
+      (119 passed), `spelling`.
+- [x] The twenty-first round's repair is gated over the bytes it will ship.
+      Seven gates ran sequentially over the clean tree at `88a6e19` and every
+      one exited 0; the eighth, `make typecheck`, is carried beside them as the
+      non-gate run the acceptance list excludes. `make test` reports **119
+      tests run: 119 passed, 0 skipped** — up from 99 at the rebase, because
+      this round added the property suite and the controls the twentieth
+      review's findings asked for. The contract binary now collects **79 cases
+      across 49 functions** of the 119; the other 40 are the five binaries this
+      branch did not touch (`v0_1_exit_register_contract` 27,
+      `codegen_backend_contract` 7, `dev_fast_contract` 3, `coverage_contract`
+      2, `stub` 1), and those five numbers sum to 40, so 79 + 40 = 119 closes
+      against the total — which is how the claim is checkable rather than
+      asserted. `make audit`'s line reads **76**, one more than the 75 the
+      lockfile resolves: the scan counts every `[[package]]` entry, and the
+      root `statelet` package is one of them, so its figure is packages
+      scanned rather than dependencies resolved. Both numbers are right and
+      they differ by exactly the workspace's own package. The rebase's run
+      scanned 45, so the closure `proptest` brings is the difference and the
+      scan is broader for it.
+      `make test-workflow-contracts` is the one acceptance gate the run did not
+      carry, and the omission was mine rather than the tool's: the instruction
+      named seven gates but transcribed the list wrong — `make mermaid` for
+      `make nixie`, and no contract gate at all. The phantom target is worth
+      naming because nothing in the repository could have produced it: `make
+      mermaid` was never a target (`Makefile:112` defines `nixie`, and
+      `AGENTS.md` names it as the Mermaid gate), so the substitution would have
+      read as a pass had the agent not reported it as a substitution. It was
+      run over the same tree to close the set, and exits 0.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -2379,25 +2407,27 @@ design.
   tables, and it offered twenty-four for the first count by counting every
   top-level bullet in the section rather than the `- Observation:` ones — the
   section's other thirty-two entries were `Decision log` records D1–D32 (D33
-  itself brings the tally to thirty-three; it has since reached D50, and a
-  count quoted at one revision is a fact about that revision — which is why
-  this one names the register it was taken against rather than saying "now" —
-  and the same count-by-top-level-bullet method is what the
-  `Outcomes & retrospective` section uses below). The lesson is D31's, one
-  level down: a review is an input to be verified, and that applies to a
-  review's *arithmetic* as much as to its arguments. The useful half of each
-  finding was the pointer to the paragraph, not the replacement text. The
-  reconciliation paragraph had been corrected by hand in an earlier round and
-  drifted again, so its replacement names the denominator explicitly — "every
-  `- Observation:` entry" — to make the next drift detectable rather than
-  silent. This round's `make markdownlint` then went red, and for the same
-  reason twice over: the gate's `spelling` prerequisite runs **before** the
-  linting step, so the two `-ise` forms the round had just written left the
-  Markdown lint unreached. The word is "parameterized", and the *review* spells
-  it with an `s`, so transcribing its wording carried the reviewer's spelling
-  into the document that quotes it — the same class of defect as D32's, where a
-  quoted command's punctuation arrived with the quote. Date/Author: 2026-09-26,
-  implementing agent, actioning the review the scrutineer returned after D32.
+  itself brings the tally to thirty-three, and the register has grown since —
+  its present extent is simply the highest id in `Decision log`, which is where
+  a reader should take it from rather than from this sentence, because a count
+  quoted at one revision is a fact about that revision and this one names the
+  register it was taken against rather than saying "now" — and the same
+  count-by-top-level-bullet method is what the `Outcomes & retrospective`
+  section uses below). The lesson is D31's, one level down: a review is an
+  input to be verified, and that applies to a review's *arithmetic* as much as
+  to its arguments. The useful half of each finding was the pointer to the
+  paragraph, not the replacement text. The reconciliation paragraph had been
+  corrected by hand in an earlier round and drifted again, so its replacement
+  names the denominator explicitly — "every `- Observation:` entry" — to make
+  the next drift detectable rather than silent. This round's
+  `make markdownlint` then went red, and for the same reason twice over: the
+  gate's `spelling` prerequisite runs **before** the linting step, so the two
+  `-ise` forms the round had just written left the Markdown lint unreached. The
+  word is "parameterized", and the *review* spells it with an `s`, so
+  transcribing its wording carried the reviewer's spelling into the document
+  that quotes it — the same class of defect as D32's, where a quoted command's
+  punctuation arrived with the quote. Date/Author: 2026-09-26, implementing
+  agent, actioning the review the scrutineer returned after D32.
 
 - Observation: **a control written against a token-list predicate can be
   defeated by the predicate's own breadth, and only a Red replay catches it.**
@@ -3216,6 +3246,29 @@ design.
   actioning the twentieth round's property-testing warning after re-measuring
   the cost and reading why Q3 declined the earlier proposal.
 
+- D53: **The gate set is transcribed rather than recalled, and the run's absent
+  gate is closed by running it.** The twenty-first round's gate run was
+  dispatched with a seven-gate list that named `make mermaid` — a target that
+  has never existed, where `Makefile:112` defines `nixie` and `AGENTS.md` names
+  it as the Mermaid gate — and omitted `make test-workflow-contracts`, one of
+  the seven the acceptance list actually requires. The run returned green over
+  six gates plus a substitution, which is green and incomplete, and the
+  substitution is the only reason it was visible: the agent reported it rather
+  than silently reporting the set as complete. Two decisions follow. The first
+  is that a gate list handed to a subagent is a claim about the repository and
+  gets checked against `Makefile` and `AGENTS.md` before dispatch, because the
+  cost of checking it is seconds and the cost of a green-but-short run is a
+  review requested over evidence that was never gathered. The second is that
+  the missing gate was run over the same tree rather than inferred from the
+  earlier run that carried it — `make test-workflow-contracts` collects 116
+  cases and exits 0, matching the rebase run, so the suite `main` contributed
+  is still carried unbroken. Recorded rather than merely fixed because the
+  failure mode — a green transcript that is one gate short — leaves no trace in
+  the transcript itself, and the next reader would have no way to tell that run
+  from a complete one. Date/Author: 2026-09-27, implementing agent, after
+  verifying the target list against the `Makefile` and the acceptance list and
+  re-running the omitted gate.
+
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
@@ -3328,6 +3381,65 @@ design.
   starts. **Carried lesson: state the quantity, not just the number — "the body
   `locate_section` returns" is checkable, and "915 bytes" was not.**
 
+- Observation: **an instruction this agent writes can be the defect, and no gate
+  reads it.** The twenty-first round's gate run was dispatched naming seven
+  gates, and the list it named was wrong in two ways at once: it asked for
+  `make mermaid`, a target that has never existed — `Makefile:112` defines
+  `nixie`, and `AGENTS.md` names that as this project's Mermaid gate — and it
+  named only six real gates, omitting `make test-workflow-contracts`, which is
+  one of the seven the plan's own acceptance list requires. So the run it
+  produced was *green and incomplete*: every gate that ran exited 0, and the
+  set was one gate short with a phantom standing in for another. The phantom is
+  the more instructive half. The agent did not silently accept it — it reported
+  the substitution explicitly and ran `make nixie` in its place, which is why
+  the defect was catchable at all — but the failure mode that would have gone
+  unnoticed is available, because `make -n mermaid` and `make nixie` are
+  indistinguishable from a green transcript when the wrapper is a subagent
+  instructed to report exits. **The instruction, not the run, was the thing to
+  verify**, and it was verified by the three commands that check it
+  (`grep mermaid Makefile`, `sed -n '288,302p' AGENTS.md`, and reading the
+  acceptance list at `EP-M5 — delivery`) — none of which is a gate, and none of
+  which the gate suite would ever run. This is the mirror of the entry above:
+  where that one found a *measurement* with no method, this found an
+  *instruction* with no check, and both fail the same way — the artefact looks
+  authoritative because it is specific. **Carried lesson: when dispatching an
+  agent with a list, the list is a claim about the repository and is cheaper to
+  check than the work it commissions is to redo.**
+
+- Observation: **the renumbering step of `mdtablefix` can corrupt a sentence
+  that ends in a number, and the corrupted form then passes the formatting gate
+  forever — so the gate certifies the damage rather than catching it.** The
+  twenty-first round's repair wrote a wrapped line ending on the words
+  "measures 45 to", whose continuation began with the numeral seventy-five
+  followed by a full stop. The renumbering step rewrote that continuation to
+  `1.`, because a line opening with a two-digit numeral and a full stop is an
+  ordered-list item to a Markdown renumberer looking for the seventy-fifth
+  entry of a list that has none. The result read as a claim that the crate
+  measures 45 to 1 — a false figure, grammatically seamless, with the real one
+  gone. **Three things make this an entry rather than a one-line fix.** It is
+  *reproducible in one command*: a probe file holding a wrapped bullet whose
+  continuation starts with a two-digit numeral comes back renumbered, and the
+  probe also shows the trap is narrower than the earlier record of this tool
+  suggests — the entry at line 1142 describes a *word* being swallowed, where
+  this rewrites a numeral and leaves the sentence standing, which is harder to
+  notice because nothing looks absent. It is *invisible to the format gate by
+  construction*: that gate compares the formatter's output against the
+  formatter's output, so once the rewritten numeral is on disk it is the stable
+  fixed point, and every later run reports that the tree is already formatted.
+  The gate is not merely silent about the corruption, it is the thing holding
+  it still. And the **first diagnosis was wrong in the cheaper direction**:
+  reading the line, the obvious story was that an edit of mine had truncated
+  it, and the repair that story implies — retype the figure — would have held
+  for exactly one run before the formatter re-corrupted it. What falsified that
+  story was a `git diff --numstat` reporting **88 insertions and 0 deletions**,
+  which placed the rewritten numeral in the previous commit rather than in my
+  working tree. The durable fix moves the numeral off the line boundary, so no
+  continuation can open with it, and a full formatting cycle was then run and
+  the figure re-read to prove the fix holds instead of assuming it. **Carried
+  lesson: a formatter that is idempotent on its own damage reports success over
+  it, so a claim repaired inside a formatted document must be re-read *after*
+  the formatter runs, not before.**
+
 ## Outcomes & retrospective
 
 ### What was delivered
@@ -3351,11 +3463,14 @@ selection rather than as prose.
 ### Reconciliation of discoveries against the conformance basis
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
-the artefacts named in `Conformance basis`. All thirty-two were accounted for;
-the disposition of each follows. The section holds eighty-four top-level
-entries in all; the other fifty-two are `Decision log` records D1–D52, which
+the artefacts named in `Conformance basis`. All thirty-three were accounted
+for; the disposition of each follows. The section holds eighty-six top-level
+entries in all; the other fifty-three are `Decision log` records D1–D53, which
 are decisions rather than observations and are dispositioned in their own
-section. **D47, D48, D49, D50, D51 and D52 are the six entries added after this
+section. Both figures were recounted over the section body rather than carried
+forward, because D53 falsified both and a tally that moves must move by
+arithmetic: 33 + 53 = 86 closes against the `^-` count directly. **D47, D48,
+D49, D50, D51, D52 and D53 are the seven entries added after this
 reconciliation was first written** — D47 by the rebase that closed the
 divergence the `Residual gaps` section once recorded, D48 by the sixteenth
 review round, which is the first to reach analysis after the two preceding
@@ -3364,47 +3479,57 @@ rounds aborted four attempts between them, D49 by the seventeenth, whose
 the eighteenth, whose two defects are in this plan's own rerun rule and its
 Stage D ordering and pre-date the commit the round reviewed, D51 by the
 nineteenth, whose `major` is a requested semantics change ADR 004's own
-rejected Option B had already refused, and D52 by the twentieth, which reverses
+rejected Option B had already refused, D52 by the twentieth, which reverses
 this plan's own refusal of `proptest` on a re-measurement and a changed
-subject. D47, D48 and D51 are decisions about how a record is accepted or about
-wording rather than discoveries about a document, so they are dispositioned
-here by being named rather than by being checked against an upstream artefact.
-**D52 is dispositioned the same way and for a reason that overlaps D51's**: its
-subject is a dependency and a cost figure rather than a document's *sentence*,
-and the only two artefacts it moves are this plan's own `Q3` and `D9` entries,
-which are the records it corrects. **D49 is the exception among the six**: it
-amended ADR 004's *Admissibility* prose and its status register, so its
-downstream impact is dispositioned with the other upstream corrections below
-rather than discharged by naming. **D50 is the second exception and the first
-decision in this section whose subject is this plan's *instructions* rather
-than its evidence** — it repairs the rerun rule and the Stage D completion
-summary — so its downstream impact is bounded by this file and there is no
-upstream artefact to check it against; the state that must move is the plan's
-own. **D51 is the third and the only one of the six whose subject is a
-*sentence* in an upstream document**: its accepted half reworded ADR 004's
-admissibility prose and this plan's `Risks` copy of it, and the rewording
-restates a rule the register already enforced rather than changing it, so like
-D49's it is dispositioned below among the upstream corrections and, unlike
-D49's, it moved no test. Fourteen observations were recorded during or after
-the EP-M5 gate runs: a prose-wrapping rule, a correction to how this plan had
-been probing the formatter, the post-fix review round's falsification record,
-the record-versus-line discovery that closed the third round's `major` subject,
-the two the fourth and fifth rounds produced between them, the
-attribution-versus-arithmetic finding the seventh round forced, the ninth
-round's measurement that an inline link cannot be wrapped, the fourteenth
-round's distinction between an aborted stream and a scored one, the
-gate-evidence rule that a green gate describes the bytes it read and no others,
-and the stale-complement rule the eighteenth round's defect produced, which is
-that a narrowed population invalidates every claim about its complement; the
-nineteenth round's count-versus-revision rule, that a total is a claim only
-once the revision it measures is named; the span bound its checklist-item
-question exposed, which is recorded as a residual gap rather than fixed; and
-this revision's quantity-versus-number rule, that a measurement which does not
-say which quantity it measured cannot be checked. None bears on any upstream
-artefact, and the second review round — recorded as D29 rather than here,
-because its findings are decisions rather than observations — forced one
-upstream correction of its own, to ADR 004's stable-identifier paragraph, which
-is dispositioned below.
+subject, and D53 by the twenty-first, which fixes how the gate list is
+transcribed and closes the gate the run omitted. D47, D48 and D51 are decisions
+about how a record is accepted or about wording rather than discoveries about a
+document, so they are dispositioned here by being named rather than by being
+checked against an upstream artefact. **D52 is dispositioned the same way and
+for a reason that overlaps D51's**: its subject is a dependency and a cost
+figure rather than a document's *sentence*, and the only two artefacts it moves
+are this plan's own `Q3` and `D9` entries, which are the records it corrects.
+**D53 joins D47, D48 and D51 in the named-only group**, for the same reason:
+its subject is this plan's own dispatch instruction and the gate set that
+instruction named, so its downstream impact is bounded by this file. **D49 is
+the exception among the seven**: it amended ADR 004's *Admissibility* prose and
+its status register, so its downstream impact is dispositioned with the other
+upstream corrections below rather than discharged by naming. **D50 is the
+second exception and the first decision in this section whose subject is this
+plan's *instructions* rather than its evidence** — it repairs the rerun rule
+and the Stage D completion summary — so its downstream impact is bounded by
+this file and there is no upstream artefact to check it against; the state that
+must move is the plan's own. **D51 is the third and the only one of the seven
+whose subject is a *sentence* in an upstream document**: its accepted half
+reworded ADR 004's admissibility prose and this plan's `Risks` copy of it, and
+the rewording restates a rule the register already enforced rather than
+changing it, so like D49's it is dispositioned below among the upstream
+corrections and, unlike D49's, it moved no test. Sixteen observations were
+recorded during or after the EP-M5 gate runs: a prose-wrapping rule, a
+correction to how this plan had been probing the formatter, the post-fix review
+round's falsification record, the record-versus-line discovery that closed the
+third round's `major` subject, the two the fourth and fifth rounds produced
+between them, the attribution-versus-arithmetic finding the seventh round
+forced, the ninth round's measurement that an inline link cannot be wrapped,
+the fourteenth round's distinction between an aborted stream and a scored one,
+the gate-evidence rule that a green gate describes the bytes it read and no
+others, and the stale-complement rule the eighteenth round's defect produced,
+which is that a narrowed population invalidates every claim about its
+complement; the nineteenth round's count-versus-revision rule, that a total is
+a claim only once the revision it measures is named; the span bound its
+checklist-item question exposed, which is recorded as a residual gap rather
+than fixed; this revision's quantity-versus-number rule, that a measurement
+which does not say which quantity it measured cannot be checked; this agent's
+own dispatch-list rule, that a gate list handed to a subagent is a claim about
+the repository and is checked against the `Makefile` before the run; and the
+renumbering trap, that `mdtablefix` can rewrite a numeral beginning a wrapped
+line and that the format gate then holds the corrupted form stable forever. The
+count is the post-gate-runs group only and is not the section's total, which is
+33 and is stated with its arithmetic in the reconciliation above. None bears on
+any upstream artefact, and the second review round — recorded as D29 rather
+than here, because its findings are decisions rather than observations — forced
+one upstream correction of its own, to ADR 004's stable-identifier paragraph,
+which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
@@ -4873,6 +4998,49 @@ make audit                        exit 0   45 dependencies scanned, no advisorie
 make test-workflow-contracts      exit 0   6 passed
 ```
 
+The most recent run, over the clean tree at `88a6e19` — the twenty-first
+round's repair, and the revision the next review reads. Sequential, one gate at
+a time, each logged under
+`/tmp/gate-<name>-1-1-3-define-state-name-consumption-question.out`.
+
+```plaintext
+make check-fmt                    exit 0   28 files left unchanged
+make lint                         exit 0   doc + clippy + whitaker all reached
+make test                         exit 0   119 tests run: 119 passed, 0 skipped; 1 doctest
+make spelling                     exit 0   ruff + typos clean; helper pytest 3 passed
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   76 packages scanned; none vulnerable
+make typecheck                    exit 0   cargo check --all-targets --all-features
+```
+
+Two rows in that block need a word, because both differ from every earlier
+transcript in this section and a reader comparing them would otherwise have to
+guess which is the defect. `make audit`'s **76** is not drift, and it is also
+not the 75 the lockfile resolves: the scan counts every `[[package]]` entry in
+`Cargo.lock` and the root `statelet` package is one of them, so the gate's own
+figure is packages scanned. The rebase's run scanned 45 of those, making
+`proptest`'s transitive closure the difference. A gate that scans more packages
+is strictly more evidence, so the number moving is the gate working, and the
+row above is worded for what it counts rather than restating the dependency
+total. And `make test`'s **119** is the sum, not a sample: the contract binary
+collects 79 cases across 49 functions and the five untouched binaries collect
+40 between them — 27, 7, 3, 2 and 1 — which closes exactly. The earlier 99 was
+the same tree less the property suite and the controls this round added.
+
+`make lint`'s Whitaker leg needs the reading the earlier runs gave it: its log
+ends at the whitaker line with no diagnostic, because a lint that does not fire
+prints nothing, and what separates "ran and found nothing" from "never ran" is
+that `whitaker` is the last command in the target, so the target's exit status
+*is* the leg's. `make test-workflow-contracts` is absent from the block above
+because the run that produced it did not carry it — see the Progress entry for
+why, and for the phantom target that made the omission invisible from the
+transcript alone. Run separately over the same tree it collects **116** cases
+in 12.37s and exits 0, which is the figure the rebase run also recorded: the
+suite `main` contributed is still being carried unbroken. All eight sidecars
+now sit beside their logs, and the tree the next review reads has a complete
+set rather than a set with one gate's evidence inferred.
+
 The `make lint` leg needs the same reading the earlier runs did. The log ends
 at the whitaker line with no per-lint diagnostic, because a lint that does not
 fire prints nothing; what distinguishes "ran and found nothing" from "never
@@ -5322,4 +5490,8 @@ re-permits in tests.
   findings, so both it and roadmap task 1.1.3 stay unticked and the next pass
   is over the commit carrying this repair. (The tally this paragraph records is
   D51's own and is left at 82 over D1–D51; the twentieth round's D52 moves it
-  to 83 over D1–D52.)
+  to 83 over D1–D52, and the twenty-first's D53 to 86 over D1–D53 — 33
+  observations and 53 decisions, recounted over the section body rather than
+  carried forward. The chain is left visible rather than flattened to the
+  latest figure, because each link is true of the revision that wrote it and
+  that is the property the whole growth is evidence for.)
