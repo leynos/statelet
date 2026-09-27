@@ -1205,13 +1205,16 @@ outcome, and a reviewer should approve it on that understanding.
 - [x] The twenty-third round returned **three findings, no warning**, and the
       two defects behind them are repaired. Its scope is worth stating plainly:
       the pass ran over `origin/main...HEAD` as CodeRabbit scopes it by default
-      — **32 files**, all six commits since `e98b685` — not over the
-      `300a318..8ba3e4a` plan-only range this entry records. So the findings
+      — **32 files** across the **66 commits** of `e98b685..8ba3e4a` — not over
+      the `300a318..8ba3e4a` plan-only range this entry records. So the findings
       land in `docs/repository-layout.md` and `docs/developers-guide.md`,
       which the reviewed commit never touches. Both are this branch's own
       prose: `origin/main` carries neither section. The defect is real and
       pre-existing: each file enumerates the contract's child modules, each
-      named **four** scenario modules, and the contract ships **six**.
+      named **four** scenario modules, and the contract ships **six**. One
+      carried the shortfall as the word "four" and the other as a bare inline
+      list of four names, so only one of the two was reachable by grepping for
+      a stale number.
       `claims_scenarios.rs` and `criterion_scenarios.rs` landed at `e4eab2b`,
       which touched no document, and neither file named them — nor
       `claim_properties.rs`, added by `3a46358`. D30 records that both files
@@ -3377,25 +3380,36 @@ design.
 
 - D54: **A module enumeration states its members and not its total, because the
   total is the part that drifts.** The twenty-third round returned three
-  findings in two files, `docs/repository-layout.md:83` and
-  `docs/developers-guide.md:77`, and they reduce to one defect reported three
-  ways: both files enumerated the contract's child modules and both said the
-  scenario modules numbered **four**, where the contract ships **six**.
-  `claims_scenarios.rs` and `criterion_scenarios.rs` arrived at `e4eab2b` and
-  `claim_properties.rs` at `3a46358`; neither document was updated for any of
-  the three, and neither had ever named them. The plan's own record makes this
-  look worse than it is, and the distinction matters. D30 records that
-  "`docs/developers-guide.md`, `docs/repository-layout.md` and the plan's own
-  module enumerations were updated because all three list the child modules",
-  and **that sentence was true when written**: `7df6f53`, its commit, does
-  update both documents, and at that revision both correctly named the four
-  scenario modules that then existed. The drift is not a false record but an
-  **aged** one — `e4eab2b` added the fifth and sixth modules six days later and
-  touched no document, and `3a46358` added the property suite and touched none
-  either, so the two enumerations fell behind a record that had described them
-  accurately at the time. Verified in one command:
-  `git log --format='%h %s' -- docs/repository-layout.md
-  docs/developers-guide.md`
+  findings in two files — cited by the reviewer at
+  `docs/repository-layout.md:83` and `docs/developers-guide.md:77`, though the
+  second lands on a section heading and the defective list is at `:91` — and
+  they reduce to one defect reported three ways: both files enumerated the
+  contract's child modules, and both named **four** scenario modules where the
+  contract ships **six**. The two files carried the shortfall differently,
+  which matters for the remedy. At the pre-repair revision `8ba3e4a`,
+  `docs/repository-layout.md:88` wrote the total as a word — "fixtures, and the
+  **four** scenario modules — `anchor_scenarios.rs` …" — where
+  `docs/developers-guide.md:91` wrote a bare inline list with no numeral at
+  all: "The scenarios sit in `anchor_scenarios.rs`, `note_scenarios.rs`,
+  `register_scenarios.rs` and `scan_scenarios.rs`". A numeral is the easier
+  defect to find and the easier to fix; the list is the more dangerous one,
+  because it reads as complete, states nothing that is false, and no grep for a
+  stale number can reach it. `claims_scenarios.rs` and `criterion_scenarios.rs`
+  arrived at `e4eab2b` and `claim_properties.rs` at `3a46358`; neither document
+  was updated for any of the three, and neither had ever named them. The plan's
+  own record makes this look worse than it is, and the distinction matters. D30
+  records that "`docs/developers-guide.md`, `docs/repository-layout.md` and the
+  plan's own module enumerations were updated because all three list the child
+  modules", and **that sentence was true when written**: `7df6f53`, its commit,
+  does update both documents, and at that revision both correctly named the
+  four scenario modules that then existed. The drift is not a false record but
+  an **aged** one — `e4eab2b` added the fifth and sixth modules six days later
+  (2026-09-21 to 2026-09-27 by commit date, 6.8 days elapsed) and touched no
+  document, and `3a46358` added the property suite 24 minutes later (1444 s by
+  commit date, both on 2026-09-27) and touched none either, so the two
+  enumerations fell behind a record that had described them accurately at the
+  time. Verified in one command:
+  `git log --format='%h %s' -- docs/repository-layout.md docs/developers-guide.md`
   lists every commit that touched either file, and neither `e4eab2b` nor
   `3a46358` is among them. The lesson is about the *form* of the claim rather
   than its truth: "the enumerations were updated" has no shelf life, because
@@ -3406,14 +3420,39 @@ design.
   file, so a reader can verify it — while a total is a claim about the list
   that nothing reads, which is the property that let "four" survive two module
   additions and a review round. The three findings were two distinct defects:
-  findings two and three quote the same `developers-guide.md` paragraph. Scope,
-  stated because it decides what this round means: the pass reviewed
-  `origin/main...HEAD` as CodeRabbit scopes by default, all 32 files across six
-  commits, not the evidence-1 range. Both defects are this branch's own prose —
-  `origin/main` carries neither section — but neither was introduced by the
-  commit under review, so this round is a **latent**-defect round like the
-  eighteenth. Date/Author: 2026-09-27, implementing agent, actioning the
-  twenty-third round after verifying each finding against the tree.
+  findings two and three quote the same `developers-guide.md` paragraph.
+
+  **This entry was audited by running it rather than reading it, and the audit
+  found the class repeatedly inside the passage that records it.** Here is what
+  it caught — listed, not counted, because a total is exactly what this entry
+  exists to warn against. The first draft said both files "said the scenario
+  modules numbered four", where the numeral is in one and the other carries a
+  bare list of four names; the cited `developers-guide.md:77` is a section
+  heading, with the list at `:91`; "six days later" was a calendar-date reading
+  of a 6.8-day interval; `3a46358` was said to follow "seventeen minutes" after
+  `e4eab2b` where the measured gap is 1444 s; **"all six commits since
+  `e98b685` "** — written twice, here and in the `Progress` item above — where
+  the range holds **66**; the repair of that last one introduced "the
+  three-commit plan-only range", where `300a318..8ba3e4a` is one commit. Each
+  was found by running a command, not by re-reading, and a clause of this
+  paragraph would have made a further one: a count of the instances is a number
+  this sentence wants and no command supplies, so the count is the item
+  omitted. That is the class's real signature: it is not a lapse that better
+  attention prevents but a **default output** of prose written under a need for
+  a number. Every surviving figure here is therefore bound to a command — `66`
+  to `git log --oneline e98b685..8ba3e4a | wc -l`, `1444 s` and `6.8 days` to
+  `git show -s --format=%at` — and the clauses that had no measured number lost
+  their numeral rather than gaining one.
+
+  Scope, stated because it decides what this round means: the pass reviewed
+  `origin/main...HEAD` as CodeRabbit scopes by default — all 32 files across
+  the 66 commits of `e98b685..8ba3e4a` — not the plan-only range this entry
+  itself records, which is the single commit `8ba3e4a`. Both defects are this
+  branch's own prose — `origin/main` carries neither section — but neither was
+  introduced by the commit under review, so this round is a **latent**-defect
+  round like the eighteenth. Date/Author: 2026-09-27, implementing agent,
+  actioning the twenty-third round after verifying each finding against the
+  tree.
 
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
