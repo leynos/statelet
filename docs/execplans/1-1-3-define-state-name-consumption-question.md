@@ -281,6 +281,17 @@ carries the prose walkthrough. This is a proportionality judgement, not a
 refusal — if the dependency cost is acceptable, the scenarios convert to
 Gherkin mechanically.
 
+**Superseded in part by D52, 2026-09-27.** The `proptest` half of this decision
+is reversed. Two things were wrong with it here. The 185 figure is
+`rstest-bdd`'s, not `proptest`'s: `proptest` alone measures 45 to 75. And the
+proposal this entry refuses is not the one the twentieth review round asked for
+— the refused property round-tripped the parser against a same-file renderer,
+which is the vacuous oracle the reasoning correctly rejects, whereas
+`claims.rs`'s predicates take arbitrary text and admit oracles built
+independently of the implementation. The `rstest-bdd` refusal stands unchanged,
+and the rest of this entry is left as written because it is the chronological
+record of the decision as taken.
+
 **Q4 — may this plan add pointers to roadmap tasks 2.2.1, 2.2.2, and 3.1.2, and
 to design §12?** Without them a Phase 2 engineer will not find the template:
 task 2.2.1 cites only design §12, which would not mention it. The edits add one
@@ -489,8 +500,8 @@ ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
                       -> register_scenarios::aggregation_register_is_total
 ```
 
-Each leaf names its module as well as its test, because the contract is
-thirteen modules and two of its scenario names differ by one letter:
+Each leaf names its module as well as its test, because the contract is sixteen
+modules and two of its scenario names differ by one letter:
 `note_scenarios::committed_state_name_note_is_usable` is the accepting witness,
 and `scan_scenarios::committed_state_name_notes_are_usable` is the
 committed-note scan. A bare `tests::` prefix would leave a reader to grep for
@@ -1066,6 +1077,24 @@ outcome, and a reviewer should approve it on that understanding.
       EP-M5 states is still unmet**: two findings, not zero. This round also
       produced the `r21` run, which the gate section records as superseded in
       form and sound in content. Recorded as D51.
+- [x] CodeRabbit review twenty — **one warning and seven findings**, the
+      property-testing warning among them, actioned 2026-09-27 on
+      `3a46358` and its predecessors. The four documentation findings, the two
+      predicate findings and the two failed-check halves all landed earlier in
+      this branch; this entry covers the last open item, the warning asking for
+      property coverage of `claims.rs`'s predicates over arbitrary text. Four
+      properties now hold over generated text with independently built oracles,
+      plus three plain non-vacuity witnesses — the generators' vocabularies are
+      shown to satisfy the predicates they are drawn for, and the inert filler
+      is shown to name nothing. The witnesses earned their place immediately:
+      the first draft's "neutral" prose was `[a-z]{1,7}`, which spells `stable`
+      and `tracing`, and its property vocabulary carried a bare `compact` where
+      the scanned token is the two-word `compact encoding`. **The bar EP-M5
+      states is still unmet**: a warning is not zero findings. Recorded as D52,
+      which also corrects this plan's own Q3 and D9 cost figures — the 185 they
+      attributed to `proptest` is `rstest-bdd`'s, and `proptest` measures 45 to
+      1. Gates on the delivered tree: `check-fmt`, `lint`, `test` (119
+      passed), `spelling`.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -1758,7 +1787,11 @@ design.
   would prove that an injective function has an image the size of its domain, a
   restatement of injectivity and precisely the vacuous proof the standard
   forbids. `proptest` and `rstest-bdd` — see Q3; measured at 45 to 185
-  packages. Date/Author: 2026-09-18, planning agent.
+  packages. **The `proptest` half of this entry is reversed by D52**, which
+  re-measured it at 45 to 75 — the 185 belongs to the `rstest-bdd` bundle and
+  was never `proptest`'s cost. The `rstest-bdd` refusal, and the `insta`,
+  `kani`, `verus` and `cargo-mutants` refusals, stand. Date/Author: 2026-09-18,
+  planning agent.
 
 - D10: One generic delimited-table parser, with typed mappers layered over it.
   Rationale: the existing contract conflates syntax and typing in one parser,
@@ -2165,15 +2198,17 @@ design.
   answers *oblige*; the roadmap's task-record grammar moved out of `parse.rs`
   into `roadmap.rs`, which is its only consumer, leaving `parse.rs` with the
   delimited-table syntax its own module doc claims ("one delimited-table syntax
-  function") and no other document's grammar. The contract is thirteen modules;
-  tolerance 5's three — `types.rs`, `parse.rs`, `policy.rs` — are the ones it
-  bounds, and all three are clear of the 300-line trigger, `policy.rs` at 189
-  and `parse.rs` at 220. No requirement, register field, register row, gate
-  binding, invariant, or repair-message obligation changed;
-  `docs/developers-guide.md`, `docs/repository-layout.md` and the plan's own
-  module enumerations were updated because all three list the child modules.
-  Date/Author: 2026-09-21, implementing agent, actioning the review the
-  scrutineer returned after D29.
+  function") and no other document's grammar. The contract was thirteen modules
+  at this point, and is sixteen at delivery — D52's property suite, and the
+  fifth and sixth scenario modules the 400-line cap forced when the citation
+  and negation controls landed; tolerance 5's three — `types.rs`, `parse.rs`,
+  `policy.rs` — are the ones it bounds, and all three are clear of the 300-line
+  trigger, `policy.rs` at 189 and `parse.rs` at 220. No requirement, register
+  field, register row, gate binding, invariant, or repair-message obligation
+  changed; `docs/developers-guide.md`, `docs/repository-layout.md` and the
+  plan's own module enumerations were updated because all three list the child
+  modules. Date/Author: 2026-09-21, implementing agent, actioning the review
+  the scrutineer returned after D29.
 
 - D31: **The fourth CodeRabbit pass returned fourteen findings in eight
   locations, and four of the eight subjects were adopted** — the round reported
@@ -3157,6 +3192,30 @@ design.
   two findings after measuring the count and reading the register's semantics
   against the code.
 
+- D52: **D9's and Q3's `proptest` refusal is reversed, on a re-measurement and
+  a changed subject.** D9 and Q3 declined `proptest` alongside `rstest-bdd` on
+  a single figure — "measured at 45 to 185 packages" — but that figure was
+  measured for the `rstest-bdd` bundle, and it was never `proptest`'s cost.
+  `proptest` alone measures **45 to 75** resolved packages in a probe lockfile
+  built from this repository's real dependency set, so the number those entries
+  attach to `proptest` is false of it and has been corrected in both places.
+  The subject has changed too, and this is the weightier half. Q3 declined a
+  property because the one proposed "round-trips the parser against a renderer
+  written in the same file, so it proves `parse ∘ render = id` for a renderer
+  no document uses" — a fair refusal of a self-referential oracle, which is the
+  vacuous shape the standard forbids. **What the review asked for is a
+  different proposal**: properties over `claims.rs`'s predicates, whose oracles
+  are built independently of the implementation — the stripping invariant
+  compares a verdict against the same question asked of text that never had a
+  citation in it. The predicate suite is exactly the case Q3's own reasoning
+  admits and the refused round-trip was not. Also recorded: the user stated
+  "proptest is an authorized dependency", which is the authority Q3's
+  constraint on `Cargo.toml` required. **D52 does not reopen the `rstest-bdd`
+  refusal**, which stands on its own 45 → 185 figure and on a scenario count a
+  case table already expresses. Date/Author: 2026-09-27, implementing agent,
+  actioning the twentieth round's property-testing warning after re-measuring
+  the cost and reading why Q3 declined the earlier proposal.
+
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
@@ -3259,7 +3318,7 @@ design.
 Roadmap task 1.1.3 is linked, and its tick waits on EP-M5's zero-finding review
 (D31). ADR 004 defines the `StateName` consumption evidence;
 `docs/phase-2-validation-note-template.md` is the form a Phase 2 engineer
-copies; `tests/state_name_consumption_contract.rs` and its thirteen child
+copies; `tests/state_name_consumption_contract.rs` and its sixteen child
 modules guard both against drift. The task's own success criterion is itself
 checked, so the instrument is bound to the sentence that grades it.
 
@@ -3276,22 +3335,27 @@ selection rather than as prose.
 
 Every `- Observation:` entry in `Surprises & discoveries` was checked against
 the artefacts named in `Conformance basis`. All thirty-one were accounted for;
-the disposition of each follows. The section holds eighty-two top-level entries
-in all; the other fifty-one are `Decision log` records D1–D51, which are
-decisions rather than observations and are dispositioned in their own section.
-**D47, D48, D49, D50 and D51 are the five entries added after this
+the disposition of each follows. The section holds eighty-three top-level
+entries in all; the other fifty-two are `Decision log` records D1–D52, which
+are decisions rather than observations and are dispositioned in their own
+section. **D47, D48, D49, D50, D51 and D52 are the six entries added after this
 reconciliation was first written** — D47 by the rebase that closed the
 divergence the `Residual gaps` section once recorded, D48 by the sixteenth
 review round, which is the first to reach analysis after the two preceding
 rounds aborted four attempts between them, D49 by the seventeenth, whose
 `major` sent a register row and its `fixtures.rs` pin upstream together, D50 by
 the eighteenth, whose two defects are in this plan's own rerun rule and its
-Stage D ordering and pre-date the commit the round reviewed, and D51 by the
+Stage D ordering and pre-date the commit the round reviewed, D51 by the
 nineteenth, whose `major` is a requested semantics change ADR 004's own
-rejected Option B had already refused. D47, D48 and D51 are decisions about how
-a record is accepted or about wording rather than discoveries about a document,
-so they are dispositioned here by being named rather than by being checked
-against an upstream artefact. **D49 is the exception among the five**: it
+rejected Option B had already refused, and D52 by the twentieth, which reverses
+this plan's own refusal of `proptest` on a re-measurement and a changed
+subject. D47, D48 and D51 are decisions about how a record is accepted or about
+wording rather than discoveries about a document, so they are dispositioned
+here by being named rather than by being checked against an upstream artefact.
+**D52 is dispositioned the same way and for a reason that overlaps D51's**: its
+subject is a dependency and a cost figure rather than a document's *sentence*,
+and the only two artefacts it moves are this plan's own `Q3` and `D9` entries,
+which are the records it corrects. **D49 is the exception among the six**: it
 amended ADR 004's *Admissibility* prose and its status register, so its
 downstream impact is dispositioned with the other upstream corrections below
 rather than discharged by naming. **D50 is the second exception and the first
@@ -3299,7 +3363,7 @@ decision in this section whose subject is this plan's *instructions* rather
 than its evidence** — it repairs the rerun rule and the Stage D completion
 summary — so its downstream impact is bounded by this file and there is no
 upstream artefact to check it against; the state that must move is the plan's
-own. **D51 is the third and the only one of the five whose subject is a
+own. **D51 is the third and the only one of the six whose subject is a
 *sentence* in an upstream document**: its accepted half reworded ADR 004's
 admissibility prose and this plan's `Risks` copy of it, and the rewording
 restates a rule the register already enforced rather than changing it, so like
@@ -3821,12 +3885,18 @@ Chosen: exact equality with `pretty_assertions` for structural comparisons;
 exhaustive `rstest` case tables for the two- and three-element domains;
 `googletest` matchers where an assertion is about shape; named policy
 predicates only where their failure message carries an argument a reader needs;
-a runtime directory scan for committed notes.
+a runtime directory scan for committed notes; and lightweight `proptest`
+properties over the predicates that read arbitrary text — `claims.rs`'s
+citation shape and keyword scans, whose cases cannot be enumerated because the
+eleventh phrasing arrives with the next note. The properties are chosen at the
+lightweight rung: ranges and regex literals, no `prop_compose!`, no state
+machine, and each generator's vocabulary held to its own non-vacuity witness
+rather than trusted. See D52, which reverses D9's refusal of this one crate.
 
-Refused, each with a reason in D9: `insta`, `kani`, `verus`, `proptest`,
-`rstest-bdd`, `cargo-mutants`. End-to-end tests are also refused: there is no
-binary and no externally observable workflow beyond `make test`, which is
-itself the acceptance command.
+Refused, each with a reason in D9: `insta`, `kani`, `verus`, `rstest-bdd`,
+`cargo-mutants`. End-to-end tests are also refused: there is no binary and no
+externally observable workflow beyond `make test`, which is itself the
+acceptance command.
 
 Behavioural coverage is delivered as scenario-named `rstest` cases over the
 filled-note fixture and its ten documented defects —
@@ -3996,10 +4066,14 @@ requirement is satisfied by the documents the scan actually reads.
 
 Create the contract described in `Interfaces and dependencies` — thirteen child
 modules, of which four are the scenario modules — including every negative
-control, before any register exists. Create `dylint.toml` first, with the
-single path-scoped exemption defined in D20: without it the `notes.rs` module
-fails `make lint`, and creating it now keeps the exemption visible from the
-moment the code that needs it exists rather than retro-fitted at delivery.
+control, before any register exists. (The delivered split grew to sixteen; see
+"The split as delivered" below. This step is left as scoped because it is the
+instruction the work started from, and the three later modules were forced by
+the 400-line cap and by D52 rather than being foreseeable at this point.) Create
+`dylint.toml` first, with the single path-scoped exemption defined in D20:
+without it the `notes.rs` module fails `make lint`, and creating it now keeps
+the exemption visible from the moment the code that needs it exists rather than
+retro-fitted at delivery.
 
 ### Step 4 — observe red
 
@@ -4167,7 +4241,7 @@ the evidence section. Not a panic, not an index-out-of-bounds, not a bare
 **Green evidence.** After Step 7, `make test` passes and the binary
 `state_name_consumption_contract` reports every scenario named in the
 `Verification plan`. Named with their modules, because two of them differ by
-one letter and the contract is thirteen modules:
+one letter and the contract is sixteen modules:
 `anchor_scenarios::success_criterion_still_maps`,
 `anchor_scenarios::template_matches_the_status_register`,
 `anchor_scenarios::quoted_passages_still_resolve`,
@@ -4823,27 +4897,41 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
-The split as delivered is thirteen modules: the five below, plus `clauses.rs`
+The split as delivered is sixteen modules: the five below, plus `clauses.rs`
 for quoted-clause resolution and `registers.rs` for the cross-register checks
-(D21), four scenario modules — `anchor_scenarios.rs`, `note_scenarios.rs`,
-`register_scenarios.rs`, `scan_scenarios.rs` — that hold the contract's tests
-rather than a share of the crate root (D26), `roadmap.rs` for the roadmap's
-task-record grammar and the two checks that bind it (D30), and `claims.rs` for
-what an evidence cell says, as against what `policy.rs` decides it obliges
-(D30). Each module owns one invariant class. The first two additions keep
-`policy.rs` from carrying three unrelated ones; the scenario modules exist
-because the root file had reached 788 lines against AGENTS.md's 400-line cap,
-and because a scenario module per invariant class keeps every file small enough
-to stay there. The last two answer tolerance 5's 300-line trigger, which both
-`policy.rs` and `parse.rs` passed once the roadmap bindings landed (D30).
+(D21), six scenario modules — `anchor_scenarios.rs`, `claims_scenarios.rs`,
+`criterion_scenarios.rs`, `note_scenarios.rs`, `register_scenarios.rs`,
+`scan_scenarios.rs` — that hold the contract's tests rather than a share of the
+crate root (D26), `roadmap.rs` for the roadmap's task-record grammar and the
+two checks that bind it (D30), `claims.rs` for what an evidence cell says, as
+against what `policy.rs` decides it obliges (D30), and `claim_properties.rs`
+for the property suite over those predicates (D52). Each module owns one
+invariant class. The first two additions keep `policy.rs` from carrying three
+unrelated ones; the scenario modules exist because the root file had reached
+788 lines against AGENTS.md's 400-line cap, and because a scenario module per
+invariant class keeps every file small enough to stay there. `clauses.rs` and
+`claims.rs` answer tolerance 5's 300-line trigger, which both `policy.rs` and
+`parse.rs` passed once the roadmap bindings landed (D30). The three latest —
+the fifth and sixth scenario modules, and the properties — were forced by the
+same 400-line cap arriving from the other direction: `note_scenarios.rs`
+reached 535 lines when the citation and negation controls landed, and the split
+that relieved it left the keyword-scan controls in a module of their own, with
+the properties beside them rather than in a scenario file they do not share a
+subject with.
 
 ```rust,ignore
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
 mod anchor_scenarios;
+#[path = "state_name_consumption_contract/claim_properties.rs"]
+mod claim_properties;
 #[path = "state_name_consumption_contract/claims.rs"]
 mod claims;
+#[path = "state_name_consumption_contract/claims_scenarios.rs"]
+mod claims_scenarios;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
+#[path = "state_name_consumption_contract/criterion_scenarios.rs"]
+mod criterion_scenarios;
 #[path = "state_name_consumption_contract/fixtures.rs"]
 mod fixtures;
 #[path = "state_name_consumption_contract/note_scenarios.rs"]
@@ -5203,4 +5291,6 @@ re-permits in tests.
   D1–D51, and the checkpoint paragraph in the gate transcripts now names
   `dd5b37c` and points at the delivered totals. The bar EP-M5 states remains
   unmet at two findings, so both it and roadmap task 1.1.3 stay unticked and
-  the next pass is over the commit carrying this repair.
+  the next pass is over the commit carrying this repair. (The tally this
+  paragraph records is D51's own and is left at 82 over D1–D51; the twentieth
+  round's D52 moves it to 83 over D1–D52.)
