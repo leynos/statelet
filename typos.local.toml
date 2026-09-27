@@ -13,6 +13,9 @@ accepted = []
 [patterns]
 # Preserve complete formal names while allowing Markdown line wrapping.
 ignore = [
+  # Inline code spans, which this repository's spelling check has always
+  # masked; preserved through the migration to the shared gate.
+  '`[^`\n]+`',
   # "mold" names the linker (https://github.com/rui314/mold) in these
   # contexts only; the mould correction stays active elsewhere.
   "-fuse-ld=mold",
@@ -20,7 +23,6 @@ ignore = [
   "Cranelift \\+ mold",
   "Cranelift and mold",
   "`mold`",
-  "Azure Architecture\\s+Center\\s+\\|\\s+Microsoft Learn",
   "GitHub\\s+Flavored\\s+Markdown",
 ]
 
