@@ -1239,7 +1239,7 @@ outcome, and a reviewer should approve it on that understanding.
       The pass ran 148 s over the default `origin/main...HEAD` scope, 32 files,
       completed normally — no abort and no rate limit. The finding is
       *(minor)* at `tests/state_name_consumption_contract/claim_properties.rs:71`
-      and it is **valid**: the line read "A word no predicate can **recognise**"
+      and it is **valid**: the line read "A word no predicate can `recognise`"
       where the repository's convention is **en-GB-oxendict**, which prefers
       `-ize`. Fixed to `recognize`, matching the two `recognized` already in
       `parse.rs:17` and `fixtures.rs:57` and the `normalizes` in `clauses.rs:72`.
@@ -1247,13 +1247,13 @@ outcome, and a reviewer should approve it on that understanding.
       it**. The spelling target is
       `git ls-files -z '*.md' | xargs -0 typos --config typos.toml`
       (`Makefile:95-99`) — it reads **Markdown only**. So the entire Rust
-      surface of this contract is outside the spelling gate, and a mis-spelling
+      surface of this contract is outside the spelling gate, and a misspelling
       in a Rust doc comment is unreachable by every one of the seven gates. A
       search of the Oxford `-ize` class across `tests/` and `src/` after the fix
       returns only the correct forms, so the instance was isolated rather than
       representative — but nothing in the repository would have said so.
       Contrast the reverse case: `docs/whitaker-users-guide.md:479` carries
-      "recognised" inside a `rust` fence, where the gate would skip it anyway
+      `recognised` inside a `rust` fence, where the gate would skip it anyway
       and the branch does not own the line. Recorded as **D55**.
       Scope, since it decides the round's meaning: the reviewed commit
       `bc56e21` is docs-only, so this finding — in a Rust file it never touched
@@ -1261,6 +1261,53 @@ outcome, and a reviewer should approve it on that understanding.
       found by the broader default scope rather than by the commit's own
       content. One finding is not zero, so EP-M5 and roadmap 1.1.3 stay
       unticked.
+- [x] The pull request body was audited against the tip and carried the same
+      class of stale claim the plan's own records had: it asserted the decision
+      log ran to **D48** where the tree holds **D55**; that `make test` reported
+      **99 passed** and `make audit` **45 dependencies** where the measured
+      figures at `bc56e21` are **119** and **76**; that "proptest and rstest-bdd
+      were declined" where **D52 reversed the proptest refusal** and the crate
+      now sits under `[dev-dependencies]` (`Cargo.toml:90`); that there was "no
+      dependency change" where the branch adds 276 lines across `Cargo.toml` and
+      `Cargo.lock`; and that the rebase replayed **51 commits** where
+      `git range-diff e98b685..3018d5f origin/main..3018d5f` prints **52**
+      lines, all 52 `=`. Each figure was re-measured before it was written, and
+      each surviving one now names the command that produces it. The body also
+      gained the round-24 gate-coverage caveat, since it is the honest
+      qualification of its own "all gates green" claim. Recorded here rather
+      than only in the PR, because a body is not under version control and the
+      next reader of this plan cannot see it.
+      unticked.
+- [x] The twenty-fifth round **did not run a review**: gate 4 failed, so
+      `scrutineer` stopped before requesting CodeRabbit, exactly as the
+      standing rule requires. The failure is the plan's own, and the reading is
+      worth recording because the first diagnosis of it was *wrong twice*. The
+      gate was `make markdownlint`, whose prerequisite chain is
+      `markdownlint: spelling`, and the six reported tokens were
+      `recognise`/`recognised`/`mis-spelling` inside this file. The first
+      wrong reading: that the gate was stale or misconfigured, since these are
+      quotations of *rejected* spellings and a spelling gate ought not to
+      police them. The second wrong reading: that fixing them to the Oxford
+      forms was the remedy at all — it would have deleted the evidence the
+      sentences exist to carry, and line 865 of this very file had already
+      refused that reasoning once, *for the same word*: "cited *as the spelling
+      the gate rejected*, so the non-Oxford form is the datum and renaming it
+      would delete the evidence". The remedy that was already written down is
+      the backtick: `typos.toml`'s `extend-ignore-re` ignores any backticked
+      span — one backtick each side of text holding no backtick — which is why
+      `recognises` at 865 passes and `recognise` at 1242 did not. The two
+      `mis-spelling` tokens are the one part of the six that is a *genuine*
+      defect rather than evidence: Oxford writes `misspelling`, and this branch
+      wrote `mis-spelling` in its own prose twice. Recorded as **D56**.
+      **Why `make fmt` never surfaced this:** it chains `markdownlint-cli2
+      --fix` but *not* `spelling` (`Makefile:81-84`), and `check-fmt` chains
+      `cargo fmt` and `mdtablefix --check` and nothing else (`Makefile:86-88`).
+      Only `make markdownlint` reaches `spelling` (`Makefile:90-93`). So the
+      routine of "run `make fmt`, then `make check-fmt`" is *structurally*
+      incapable of reporting a spelling failure, however many times it is run
+      and however green it comes back — which is precisely how this branch
+      reached a twenty-fifth round with six tokens a gate would have caught
+      deterministically had the gate been the one being run.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3488,7 +3535,7 @@ design.
   round returned one finding — *(minor)*, at
   `tests/state_name_consumption_contract/claim_properties.rs:71` — and it was
   valid and correctly located: the line read "A word no predicate can
-  recognise" where the repository's convention is **en-GB-oxendict**, which
+  `recognise`" where the repository's convention is **en-GB-oxendict**, which
   prefers `-ize`. The tree around it was already right — `parse.rs:17` and
   `fixtures.rs:57` both say `recognized`, `clauses.rs:72` says `normalizes` —
   so the one hold-out sat inside a file whose neighbours all gave it the
@@ -3497,7 +3544,7 @@ design.
   What makes it worth a decision rather than a one-character commit is that
   **no gate could have caught it**. The target is
   `git ls-files -z '*.md' | xargs -0 typos@... --config typos.toml`
-  (`Makefile:95-99`). A mis-spelling in a doc comment, a module header, or a
+  (`Makefile:95-99`). A misspelling in a doc comment, a module header, or a
   test's failure message is reachable by none of the seven gates; it is
   reachable only by an independent reviewer reading context, which is exactly
   how this one surfaced and why it arrived in a Rust file on a docs-only
@@ -3505,7 +3552,7 @@ design.
   the bar is not only "are the gates green" but "has a reader looked at the
   parts no gate reads". The reverse case is worth recording because it is the
   trap next to this one: `docs/whitaker-users-guide.md:479` contains
-  "recognised" **inside a `rust` fence**, where the gate would skip it in any
+  `recognised` **inside a `rust` fence**, where the gate would skip it in any
   event and where this branch does not own the line
   (`git diff --stat e98b685..HEAD` names it zero times). A repo-wide search for
   the class therefore returns that line plus the `typos.toml` dictionary
@@ -3514,6 +3561,53 @@ design.
   reported three problems where there is one. Date/Author: 2026-09-27,
   implementing agent, actioning the twenty-fourth round after verifying the
   finding against the tree and the gate definition.
+- D56: **A record that quotes a rejected spelling must escape it, because the
+  spelling gate reads this plan's own prose and cannot tell evidence from
+  error.** D55 states that the Rust surface is outside the spelling gate. D56
+  is its converse, discovered the next round: the *Markdown* surface is inside
+  it, so a record that quotes the very tokens a gate rejects is itself a gate
+  failure. The twenty-fifth round never ran — `scrutineer` stopped at gate 4,
+  `make markdownlint`, whose prerequisite chain is `markdownlint: spelling`
+  (`Makefile:90`), and `spelling` reported six tokens in this file: `recognise`
+  and `recognised` twice each, and `mis-spelling` twice. They are not one
+  class, and the split governs the remedy. The four `recognise`/`recognised`
+  tokens are **quotations**, two of them of the very line D55 censures, and
+  rewriting them to the Oxford forms would delete the evidence the sentences
+  exist to carry — the reasoning this file already refused, for the same word,
+  at line 865: "cited *as the spelling the gate rejected*, so the non-Oxford
+  form is the datum and renaming it would delete the evidence". The two
+  `mis-spelling` tokens are **the branch's own prose** and a genuine defect:
+  Oxford writes `misspelling`, and nothing quoted it. The escape for the first
+  class is already in the configuration — `typos.toml` `extend-ignore-re`
+  ignores a backticked span — which is why `recognises` at 865 passes and the
+  unbackticked `recognise` at 1242 did not; `AGENTS.md:375` states the same
+  rule as policy, that a quoted identifier retains its upstream spelling
+  *inside backticks*. So the four were backticked and the two were re-spelled.
+  **Two wrong diagnoses preceded the right one**, both worth recording. The
+  first was that the gate was stale or misconfigured for policing quoted
+  evidence; the second — and this is the one that matters — was that the remedy
+  was to Oxfordize the quotations. Both read the failure as a problem with the
+  gate or with the quotation, when line 865 had already written the answer
+  down. The third reading needed no new knowledge, only a search of the file
+  for the precedent: a record at line 865 that had already solved this exact
+  problem. **The trap is the pairing of D55 and D56.** D55's finding arrived
+  because no gate reads Rust prose; D56's arrived because a gate does read
+  Markdown prose, and a record *about* spelling violations is therefore the one
+  kind of Markdown most likely to contain them. A plan that documents the gate
+  must expect to be read by it. **And the repair broke the gate a second time,
+  one layer further in.** The first draft of this entry wrote the escape
+  pattern as a Markdown code span inside another code span — a double-backtick
+  span — to quote it verbatim. That construct desynchronizes the pattern it
+  quotes: the ignore rule matches one backtick, text with no backtick, one
+  backtick, so a double-backtick span both escapes the token between the first
+  pair and flips backtick parity for everything after it on the line. The gate
+  reported `recognises` and `recognise`, *on the line explaining why those
+  tokens were safe*. Both are now written without nesting a code span inside a
+  code span. The general lesson is narrower than "mind your nesting": **an
+  escape hatch must not be documented using a construct that defeats it**, and
+  the way to check is to run the gate rather than to reason about the regex —
+  which is what caught it. Date/Author: 2026-09-27, implementing agent,
+  repairing the twenty-fifth gate failure before a review was requested.
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
