@@ -1277,7 +1277,6 @@ outcome, and a reviewer should approve it on that understanding.
       qualification of its own "all gates green" claim. Recorded here rather
       than only in the PR, because a body is not under version control and the
       next reader of this plan cannot see it.
-      unticked.
 - [x] The twenty-fifth round **did not run a review**: gate 4 failed, so
       `scrutineer` stopped before requesting CodeRabbit, exactly as the
       standing rule requires. The failure is the plan's own, and the reading is
@@ -1308,6 +1307,29 @@ outcome, and a reviewer should approve it on that understanding.
       and however green it comes back — which is precisely how this branch
       reached a twenty-fifth round with six tokens a gate would have caught
       deterministically had the gate been the one being run.
+- [x] The twenty-sixth round returned **one finding, no warning**, and the
+      repair is a single deleted line. All seven gates exit 0 at `75fc11e` —
+      nextest 119/119 across 7 binaries, `make audit` 76 packages against a
+      RustSec database of 1271 advisories, `make test-workflow-contracts` 116
+      passed, `markdownlint-cli2` 0 errors over 29 files — and gate 4's
+      spelling prerequisite, which failed the previous round, now runs silent.
+      The pass took 185 s over the default `origin/main...HEAD` scope, 32 files
+      and 11288 insertions, and completed with no abort and no rate limit. The
+      finding is *(minor)* at this file's line 1278-1280: "Remove the orphaned
+      'unticked.' line after the PR-body audit item in the plan." **It is valid
+      and it was mine.** The item's own sentence closes at "the next reader of
+      this plan cannot see it." and the trailing `unticked.` hung beneath it
+      with nothing to complete — a fragment copied from the round-24 item above,
+      whose `unticked.` *does* complete "EP-M5 and roadmap 1.1.3 stay /
+      unticked." At `9f7ff46` this file held **one** standalone `unticked.`; at
+      `75fc11e`, the commit that added the PR-body item, it held **two**. So
+      this round's finding is a defect introduced by the previous round's own
+      repair commit, not a latent one like the twenty-third round's two — the
+      distinction the rounds since eighteen have been careful to draw, and this
+      is the first instance on the other side of it. Deleted at the one line;
+      the other nineteen occurrences of the word, several of them also sentence
+      endings, are untouched. Recorded as **D57**. One finding is not zero, so
+      EP-M5 and roadmap 1.1.3 stay unticked.
 - [x] CodeRabbit review five — ten findings, returned 2026-09-26 over
       `253194b`, the **first pass scored on a frozen revision**: `git status`
       was empty and `HEAD` unchanged before and after the review, which is the
@@ -3608,6 +3630,27 @@ design.
   the way to check is to run the gate rather than to reason about the regex —
   which is what caught it. Date/Author: 2026-09-27, implementing agent,
   repairing the twenty-fifth gate failure before a review was requested.
+- D57: **A repaired record can carry a defect of its own that only the next
+  round can see.** The twenty-sixth round returned one finding and no warning,
+  in this file, at line 1278-1280: an orphaned `unticked.` hanging beneath an
+  item whose sentence had already closed — a fragment copied from the round-24
+  item above, where `unticked.` legitimately completes "EP-M5 and roadmap 1.1.3
+  stay / unticked." The measurement that settles its provenance is a count of
+  the standalone form at two revisions: **one** at `9f7ff46`, **two** at
+  `75fc11e`, the commit that added the PR-body item. So the defect was
+  **introduced by the previous round's own repair commit** — which makes this
+  the first round on the branch whose finding is a *regression* rather than a
+  latent defect, the distinction rounds eighteen through twenty-five have been
+  careful to draw and which this round inverts. Nothing about it is subtle
+  except the population it hides in: the word appears twenty times in this file
+  at that revision, most of them sentence endings that are correct, so the
+  orphan is invisible to the obvious check ("does the file say `unticked` in a
+  wrong place?") and visible only to a reader who reads the *line* rather than
+  the word. That is precisely the class of defect the review is for, and it
+  arrived in the one commit on this branch that was written to be a record of
+  review findings rather than a change to the work. Date/Author: 2026-09-27,
+  implementing agent, actioning the twenty-sixth round after verifying the
+  finding against the bytes at both revisions.
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
