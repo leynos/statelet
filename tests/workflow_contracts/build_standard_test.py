@@ -158,9 +158,7 @@ def _development_problems(
             if (LINKER_FLAG in flags) != expects_linker:
                 problems.append(f"`make {target}` on {host} gets `mold` wrong: {flags}")
             if inherited is not None and not _contains(flags, shlex.split(inherited)):
-                problems.append(
-                    f"`make {target}` drops the caller's RUSTFLAGS: {flags}"
-                )
+                problems.append(f"`make {target}` drops the caller's RUSTFLAGS: {flags}")
     return problems
 
 
@@ -243,24 +241,43 @@ def test_coverage_and_release_take_neither_flag(target: str) -> None:
         assert LINKER_FLAG not in flags, f"`make {target}` takes {LINKER_FLAG}"
 
 
+def _linux_jobs() -> list[tuple[str, dict]]:
+    """Return every CI job not placed on Windows or macOS, named by file."""
+    jobs = []
+    for path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        workflow = yaml.safe_load(path.read_text("utf-8")) or {}
+        jobs.extend(
+            (f"{path.name}:{name}", job)
+            for name, job in (workflow.get("jobs") or {}).items()
+            if not re.search(r"windows|macos", str(job.get("runs-on", "")), re.I)
+        )
+    return jobs
+
+
+def _installs_the_linker(step: dict) -> bool:
+    """Report whether a step installs `mold`, by apt or through setup-rust."""
+    run = str(step.get("run", ""))
+    inputs = step.get("with") or {}
+    return bool(re.search(r"apt(-get)?\s+install[^\n]*\bmold\b", run)) or (
+        "setup-rust" in str(step.get("uses", ""))
+        and str(inputs.get("install-mold", "")).lower() == "true"
+    )
+
+
+def _runs_a_gate_target_first(job: dict) -> bool:
+    """Report whether a job runs a gate target before any step installs `mold`."""
+    for step in job.get("steps") or []:
+        if _installs_the_linker(step):
+            return False
+        if GATE_TARGETS & set(MAKE_TARGET_RE.findall(str(step.get("run", "")))):
+            return True
+    return False
+
+
 def _jobs_missing_the_linker() -> list[str]:
     """Return the Linux CI jobs that run a gate target without installing
     `mold` first."""
-    missing = []
-    for path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
-        workflow = yaml.safe_load(path.read_text("utf-8")) or {}
-        for name, job in (workflow.get("jobs") or {}).items():
-            if re.search(r"windows|macos", str(job.get("runs-on", "")), re.I):
-                continue
-            installed = False
-            for step in job.get("steps") or []:
-                run = str(step.get("run", ""))
-                if re.search(r"apt(-get)?\s+install[^\n]*\bmold\b", run):
-                    installed = True
-                if not installed and GATE_TARGETS & set(MAKE_TARGET_RE.findall(run)):
-                    missing.append(f"{path.name}:{name}")
-                    break
-    return missing
+    return [name for name, job in _linux_jobs() if _runs_a_gate_target_first(job)]
 
 
 def test_ci_installs_the_linker_before_gate_targets() -> None:
