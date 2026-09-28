@@ -97,20 +97,14 @@ fn citation_parts(word: &str) -> Option<(&str, &str, &str)> {
 /// path into the keyword predicates on the way to being rejected.
 fn is_citation(word: &str) -> bool { citation_parts(word).is_some() }
 
-/// The fewest quoted spans that can name a type *and* its returned strings:
-/// one for the state, and at least one for what it returns.
-const ENUMERATION_SPANS: usize = 2;
-
-/// The verb stems a cell says the strings are returned with.
+/// The verb forms a cell says the strings are returned with.
 ///
-/// Read as word-initial stems rather than as whole words, so that every
-/// inflection of each stem is the same verb: "returns", "returned", "returning",
-/// "yields", "yielded", "yielding". A closed list of inflections would be the
-/// thing to drift — a note writing "returned" would be refused for a form the
-/// list's author did not happen to think of — and no other English word begins
-/// with either stem without being a form of it, which is what makes the prefix
-/// safe to read as the verb.
-const RETURN_STEMS: [&str; 2] = ["return", "yield"];
+/// A closed list of the four forms an observation is written in. The documents
+/// name two of them — `returns` and `yields` — and the past tense of each is
+/// the only further form an observation naturally takes. Why the list is closed
+/// rather than read as stems is D66's first defect, recorded once below rather
+/// than at every helper that touches it.
+const RETURN_VERBS: [&str; 4] = ["returns", "returned", "yields", "yielded"];
 
 /// Whether a cell lists the strings the annotated state returns.
 ///
@@ -125,27 +119,32 @@ const RETURN_STEMS: [&str; 2] = ["return", "yield"];
 /// derivable from it.
 ///
 /// The strings and the type are both identifiers, so no shape tells one from
-/// the other; what separates them is number. Naming the state takes one quoted
-/// span, and a cell that goes on to enumerate what the state returns quotes at
-/// least one more. The rule is therefore a count of two spans, and it refuses
-/// both shapes that name a type without its strings: one quoting the type
-/// alone, and one quoting nothing at all, as "the enum's names" does.
+/// the other; what separates them is the *order* the cell writes them in, and
+/// the verb that joins them. Naming the state takes one quoted span; a return
+/// verb written outside the quotes then says what it does; and a cell that goes
+/// on to enumerate quotes at least one more span after that verb. The rule is
+/// therefore a quoted state, then a return verb, then a quoted label — read in
+/// that order — and it refuses every shape that names a type without its
+/// strings: one quoting the type alone, one quoting nothing at all as "the
+/// enum's names" does, one quoting the state beside the *reader* of its name,
+/// and one borrowing a verb from a later clause that says nothing about the
+/// state.
 ///
-/// Two spans are the floor and not the whole rule, because a cell can quote the
-/// type and still name no returned string: "`BufferMode` uses `state_name()`"
-/// quotes the state beside the *reader* of its name, and those two spans are
-/// the same shape as a type and its labels. What separates a reader from a
-/// label is the verb, so the cell must also say that the state yields its
-/// strings — the shape ADR 004's worked example writes with "returns". That
-/// vocabulary is small and closed for the reason the citation rule's is: the
-/// check admits the shape the document teaches, and refuses any other with a
-/// message naming it, rather than accepting a cell on a guess about its
-/// meaning.
+/// **Reading the three in order is round thirty's finding, and both its defects
+/// were one mistake.** Two earlier drafts checked the parts independently: the
+/// first paired a count of quoted spans with a whole-cell verb search, so
+/// "`BufferMode` uses `state_name()`; metrics returns labels" was admitted while
+/// naming not one label; the second matched the verb as a word-initial *stem*,
+/// admitting `returnable`. The verb is not a property the cell has somewhere —
+/// it is the connective between the state and its labels, and the check has to
+/// read it where it joins them or it is checking something else. The refusal
+/// message below always said "then"; this is the code that makes "then" true.
 ///
 /// The citation is removed first, for the reason `narrative_text` gives: a path
-/// is chosen by whoever wrote the note, so the `` `src/mode.rs` `` inside a
-/// citation would otherwise count toward the two. Only the citation is taken
-/// out; case is left alone, because a quoted label's case is part of the label.
+/// is chosen by whoever wrote the note, so the `src/mode.rs` inside a citation
+/// would otherwise supply a quoted span. Only the citation is taken out; case is
+/// left alone for the labels, because a quoted label's case is part of the
+/// label, and compared case-insensitively for the verb.
 ///
 /// A label is counted when it is backticked, which is how this repository writes
 /// a code identifier in prose and how the annotated example, the ADR and the
@@ -165,46 +164,64 @@ pub(crate) fn lists_returned_strings(evidence: &str) -> bool {
         .filter(|word| !is_citation(word))
         .collect::<Vec<&str>>()
         .join(" ");
-    // Two marks make a span, so the mark count is twice the span count. The
-    // comparison is written against the doubled bound rather than as a division
-    // of the mark count, which `integer_division` denies outright. An unpaired
-    // mark leaves the count one short of the bound, and reading that as a
-    // refusal is the safe direction: a cell with an unbalanced quote has not
-    // demonstrated the second name.
-    let enough_spans = kept.matches('`').count() >= ENUMERATION_SPANS * 2;
-    enough_spans && names_a_return(&kept)
+    // Splitting on the mark separates the cell into alternating stretches: odd
+    // entries are the insides of quoted spans and even ones the prose between
+    // them, so long as the marks balance. Reading those as overlapping
+    // quadruples — a span, the prose after it, the next span, and the prose
+    // after *that* — gives every candidate state together with the verb that
+    // must follow it and the label that must follow that, in one pass and with
+    // no index arithmetic.
+    //
+    // The fourth entry is what only a *closed* mark leaves behind: the prose
+    // following the label. A cell ending on an unclosed quote has no such entry
+    // at all, so the fourth stream is empty, the zip pairs nothing, and the cell
+    // is refused. Reading three streams instead of four admits it, because an
+    // unclosed tail still lands in an odd, so span-shaped, slot and is non-empty
+    // — which a diagnostic over both cells printed rather than left to be
+    // assumed.
+    let parts = kept.split('`').collect::<Vec<&str>>();
+    let states = parts.iter().copied().skip(1).step_by(2);
+    let text = parts.iter().copied().skip(2).step_by(2);
+    let labels = parts.iter().copied().skip(3).step_by(2);
+    let closed = parts.iter().copied().skip(4).step_by(2);
+    states
+        .zip(text)
+        .zip(labels)
+        .zip(closed)
+        .any(|(((state, between), label), _)| {
+            !state.trim().is_empty() && names_a_return(between) && !label.trim().is_empty()
+        })
 }
 
-/// Whether a cell says the state yields its strings.
+/// Whether the words between a state and a label say the state yields it.
 ///
-/// The second half of the obligation, and the one a span count cannot reach: a
+/// The second half of the obligation, and the half a span count cannot reach: a
 /// cell reading "`BufferMode` uses `state_name()`" quotes the state and the
 /// *reader* of its name, which is the same shape as a type beside its labels.
 /// What separates the two is that a label is what the state returns, so the
-/// cell has to say so — the shape ADR 004's worked example writes with
-/// "returns", and the only shape the check admits. The vocabulary is closed and
-/// the message names it, so an honest note choosing another phrasing is refused
-/// with the repair rather than accepted on a guess about its meaning.
+/// cell has to say so between them.
 ///
-/// The argument is the citation-stripped text, for the reason the two callers
-/// give: a path is chosen by whoever wrote the note, so a citation naming
-/// `src/returns.rs` would otherwise supply the verb that this obligation is the
-/// only one checking. A citation the shape check refuses for naming a ref
-/// rather than a commit is left in the stripped text, and its path is read
-/// here; that cell is refused by the shape check whatever this answers, so the
-/// leak cannot admit a note. It could only make this predicate accept text that
-/// is already being rejected for another reason.
-fn names_a_return(kept: &str) -> bool { kept.to_lowercase().split_whitespace().any(is_return_verb) }
+/// The argument is the prose *between* one quoted span and the next, not the
+/// whole cell, which is the caller's half of D66's first defect; the predicate
+/// above records why that distinction is the whole finding.
+fn names_a_return(between: &str) -> bool {
+    between
+        .to_lowercase()
+        .split_whitespace()
+        .any(is_return_verb)
+}
 
-/// Whether one word is a form of one of the stems above.
+/// Whether one word is one of the verb forms above.
 ///
 /// The punctuation a writer put beside the word is trimmed first, so that
-/// "returns," and "returns." are the verb they are; the stems are compared
-/// against the word's opening characters rather than its whole text, for the
-/// inflection reason the list above gives.
+/// "returns," and "returns." are the verb they are; the comparison is then
+/// against the whole word, which is what keeps `returnable` out. The trimming
+/// keeps the apostrophe for the reason `bare_word` gives, so a contraction is
+/// not silently cut into a verb it is not.
 fn is_return_verb(word: &str) -> bool {
-    let bare = word.trim_matches(|character: char| !character.is_alphanumeric());
-    RETURN_STEMS.iter().any(|stem| bare.starts_with(*stem))
+    let bare =
+        word.trim_matches(|character: char| !character.is_alphanumeric() && character != '\'');
+    RETURN_VERBS.contains(&bare)
 }
 
 /// The words of a cell that make a claim, with its citations removed.

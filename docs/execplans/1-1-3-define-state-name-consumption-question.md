@@ -1557,6 +1557,36 @@ outcome, and a reviewer should approve it on that understanding.
       `f2ddcf8`, which remains true there, and the revision a count belongs to
       is the thing this plan's own convention requires it to name. **It does
       not move the review bar**, which still requires a zero-finding pass.
+- [x] The thirtieth round returned **three findings (2 `major`, 1 `minor`)** on
+      the published tip `aae968e8`, **no execution warnings**, over 8 files; the
+      round is D66's. The review verified the tip it read rather than assuming
+      it, and its `commit_id` matches the recorded head exactly. Neither
+      `major` is a gate failure: both are logic defects in
+      `lists_returned_strings`, invisible to every gate, so the round spent its
+      capacity on what only a reviewer reads. **Both were real, and both were
+      accepted by the predicate as it stood** — the span count and the verb
+      search ran independently, so `` `BufferMode` uses `state_name()`; metrics
+      returns labels `` was admitted, and the verb was matched by word-initial
+      stem, so `returnable` was admitted as a return. The two defects are one
+      mistake: the verb is the *connective* between the state and its labels,
+      not a property the cell has somewhere. The repair reads the ordered
+      sequence the ADR, the template and the contract's own refusal message
+      already specified. Non-vacuity was established by **rebuilding the
+      superseded predicate and running both cells through it**, each printing
+      `ACCEPTED`, rather than by asserting it had been wrong. The third finding
+      is the plan's own prose: D65's entry said the eight gates read this plan
+      file where its next sentence says three, repaired on the base-naming rule
+      this plan has recorded twice before. **A fourth repair is mine rather than
+      the reviewer's**: probing a claim in the repair's own comment showed the
+      first draft of the ordered read *accepted* a cell with an unclosed quote,
+      `` `BufferMode` returns `Text ``, because a three-stream zip never checks
+      that a mark closed the label — the same weaker-than-its-message defect,
+      introduced by the repair itself. A fourth stream carries the closing mark;
+      a two-form probe over eleven cells shows **exactly one disagreeing**, the
+      unclosed label, so the new control is a witness rather than a restatement.
+      The contract suite is **94/94**, up from 91 by exactly the three new
+      controls. EP-M5 and roadmap task 1.1.3 remain unticked: three findings are
+      not zero.
 - [x] The branch is rebased onto the PR's target. `origin/main` at `e98b685`
       is now an ancestor of the tip: `bad9a04..fb22d52` was replayed as 51
       commits with no conflicts, `git range-diff` reports all 51 as `=` so each
@@ -4071,9 +4101,14 @@ design.
   repair D60 makes.
 
 - D63: **The twenty-ninth round found four defects, and two of them are ones
-  the gates had already reported and this conversation had not yet read.** The
-  round is `coderabbitai CHANGES_REQUESTED @ 2026-09-28T05:10:35Z` on
-  `84381d48`, four findings, all `major`, no warnings. Two are *deterministic*:
+  the gates had already reported and this conversation had not yet read.**
+  **Superseded in part by D66, 2026-09-28.** The F4 predicate this entry
+  specifies — a count of quoted spans, plus a return verb read as a
+  word-initial stem — was falsified by round thirty in both halves, and the
+  replacement is D66. The ordering lesson, the `integer_division` repair and
+  the F2 fault-shape finding are untouched and remain as written. The round is
+  `coderabbitai CHANGES_REQUESTED @ 2026-09-28T05:10:35Z` on `84381d48`, four
+  findings, all `major`, no warnings. Two are *deterministic*:
   `integer_division` on `claims.rs`'s division of the quoted-mark count by two,
   and `manual_let_else` on `notes.rs`'s match over the reset outcome. Both had
   already been printed by the Stop hook's own `make lint`, which exited **101**
@@ -4187,16 +4222,108 @@ design.
   `53d11b7d12e2b13014e23b77c6cfd7916ef88c11a52a857dd59fb34abc427800`, 8 files,
   +345/-85, confirming that no gate mutated a tracked file — the concern the
   gate-evidence observation below names. **That fingerprint names the tree the
-  run was taken over**, and it is the tree *before* this entry: the eight gates
-  read this plan file, so adding the paragraph you are reading changed the
-  bytes they had passed over, and a reader recomputing the hash here will not
-  get the value above. The entry is a record of a green run, not a claim that
-  the current tree is green, which is the same distinction the gate-evidence
-  observation draws and the reason the commit made after this entry is gated
-  again rather than inheriting this run's verdict. Date/Author:
+  run was taken over**, and it is the tree *before* this entry: the three
+  Markdown-reading gates read this plan file, so adding the paragraph you are
+  reading changed the bytes they had passed over, and a reader recomputing the
+  hash here will not get the value above. The entry is a record of a green run,
+  not a claim that the current tree is green, which is the same distinction the
+  gate-evidence observation draws and the reason the commit made after this
+  entry is gated again rather than inheriting this run's verdict. Date/Author:
   `2026-09-28T14:53:07+02:00` (`2026-09-28T12:53:07Z`), implementing agent,
   reading each log's own summary line rather than inferring a gate's result
   from its exit status or from the runner's prose.
+
+- D66: **Round thirty found the enumeration predicate weaker than the document
+  it implements, in two ways that are one mistake.** The round is
+  `coderabbitai CHANGES_REQUESTED @ 2026-09-28T13:28:42Z` on `aae968e8`, three
+  findings (2 `major`, 1 `minor`), **no execution warnings**, over 8 files. It
+  verified the tip rather than assuming it, and its own body names the range it
+  read. **The ordering lesson held this time**: neither `major` is a gate
+  failure, and both are logic defects no gate can see, so the round spent its
+  capacity on what only a reviewer reads — which is what D63's lesson asks for,
+  and the first occasion the plan records where the sequence ran in that order
+  by design rather than by luck. The `minor` is a plan-prose defect the
+  reviewer could not post inline, because GitHub refuses an inline comment on a
+  line outside the diff; it arrived as a review-body note naming its lines, and
+  is repaired on the same evidence as the other two. Both defects are in
+  `lists_returned_strings`, and both were **accepted** by the predicate as it
+  stood, which I confirmed by rebuilding the old function verbatim and running
+  the two cells through it rather than by reasoning about them: each printed
+  `ACCEPTED`. That measurement is what makes the two new negative controls
+  non-vacuous; a control that the old code already refused would have proved
+  nothing.
+
+  The first defect is that the span count and the verb search were
+  **independent**: `enough_spans && names_a_return(&kept)` asks whether the
+  cell quotes two spans *somewhere* and says "returns" *somewhere*, so
+  `` `BufferMode` uses `state_name()`; metrics returns labels `` was admitted —
+  it quotes the reader of the name and borrows its verb from a clause about the
+  metrics recorder, and names not one label. The second is that the verb was
+  matched by **word-initial stem**: `bare.starts_with(stem)` admits
+  `returnable`, which is not a verb form at all. The comment defending the
+  prefix claimed "no other English word begins with either stem without being a
+  form of it", which is false, and that is the more useful half of the finding
+  — the code was not merely loose, it was loose for a reason it had written
+  down and never tested.
+
+  **Both defects reduce to one: the verb is not a property the cell has
+  somewhere, it is the connective between the state and its labels.** The
+  repair reads the cell as the ordered sequence the documents already specified
+  — state, verb, label — by splitting on the mark and walking the alternating
+  spans and prose as overlapping runs, and matches the verb against the closed
+  list `returns`, `returned`, `yields`, `yielded`. The vocabulary was already
+  closed in ADR 004, in the template and in this contract's own refusal
+  message; only the code was open. **That is the finding's real shape: the
+  predicate was weaker than the message it printed**, which promised "the state
+  in backticks, then `returns` or `yields`, then each returned string" while
+  checking something looser. A message is a specification, and this one had
+  drifted from the check it described. F3 is a plan-prose defect of the same
+  family in miniature: D65's entry said "the eight gates read this plan file"
+  where its own next sentence and the Progress entry both say three, so the
+  repair is the base-naming rule this plan has recorded twice before.
+
+  The control grew from eight cases to eleven — the three witnesses, named
+  `verb_borrowed_from_another_clause`, `stem_prefixed_non_verb` and
+  `unclosed_label`, kept as separate cases rather than folded into the shapes
+  above because each is the witness for one defect.
+
+  **A third defect in the same predicate was found by probing the repair's own
+  comment, before any gate or review read it.** The triple read carried a
+  parenthetical claiming a half-open quote "reads as a refusal, which is the
+  safe direction". That was an assertion about behaviour the author of the
+  repair had not measured, and a standalone probe over seven cells falsified it
+  in one line: `` `BufferMode` returns `Text `` — no closing mark — was
+  **accepted**, because its split leaves the label in an odd, so span-shaped,
+  slot and a three-stream zip never asks whether a mark closed it. So the
+  predicate admitted a cell that had left its label unbackticked while printing
+  a message demanding "each returned string in backticks": the same
+  weaker-than-its-message defect as the first two, one layer deeper, and this
+  time introduced *by the repair* rather than inherited. The fix is a fourth
+  stream, the prose that only a *closed* mark leaves behind: the unclosed cell
+  has no such entry, the zip yields nothing, and the cell is refused. A second
+  diagnostic printed the parts and the triples for both cells rather than
+  reasoning about them — which is how the mechanism above was corrected, since
+  the first explanation written here ("nothing to pair the label with") was
+  false: the label *was* paired, and accepted. The probe was then rewritten to
+  run both the superseded draft and the repaired form over eleven cells in one
+  run: **exactly one of the eleven disagrees**, the unclosed label, every
+  accepted shape keeping its answer. That single disagreement is the
+  non-vacuity evidence for the new control `unclosed_label`, which is the
+  eleventh case and the only one the sweep changed. The lesson is D63's own,
+  turned on the repair: **a claim about what code does is not evidence about
+  what it does**, and a comment defending a predicate is a claim like any
+  other. It is worth recording that the lesson had to be learned twice inside
+  this one repair — the first explanation of the unclosed-quote acceptance,
+  written into this entry, was itself an unmeasured mechanism claim and was
+  falsified by the diagnostic that printed the triples. The class of error is
+  not "the repair was careless" but "prose about mechanism is written in the
+  same voice whether or not anyone measured it", which is why the plan's
+  convention requires the command beside the claim. The contract suite is
+  **94/94** over the repaired revision, the count having risen from 91 by
+  exactly the three cases. Date/Author: `2026-09-28T16:02:41+02:00`
+  (`2026-09-28T14:02:41Z`), implementing agent, verifying each finding against
+  the bytes before repairing any, and establishing non-vacuity by reproducing
+  the superseded predicate rather than asserting that it was wrong.
 
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three

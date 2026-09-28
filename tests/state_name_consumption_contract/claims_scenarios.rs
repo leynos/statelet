@@ -71,10 +71,18 @@ fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), Strin
 /// exists to refuse. What separates a reader from a label is the verb, and this
 /// control is the one that holds the predicate to reading it.
 ///
-/// The accepted forms are the verb stems the predicate admits, shown through the
+/// The accepted forms are the verbs the predicate admits, shown through the
 /// same cell text so that a change to the span rule cannot pass by making every
 /// form fail: a case here that stopped being accepted would report the refusal
 /// rather than a false acceptance.
+///
+/// The three rejected cases at the end each witness a defect the predicate
+/// itself had, which is the only reason to keep them apart rather than fold
+/// them into the shapes above. Two are round thirty's, one per defect it found;
+/// the third, `unclosed_label`, was found here by probing the first repair's own
+/// comment and belongs to no review. All three were *accepted* by the predicate
+/// as it stood when their case was written, so none is a restatement of a
+/// refusal that already happened.
 #[rstest]
 #[case::returns("`BufferMode` returns `Text`, `Table`", true)]
 #[case::yields("`BufferMode` yields `Text`, `Table`", true)]
@@ -84,16 +92,25 @@ fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), Strin
 #[case::reader_and_type_name("`BufferMode` implements `StateName::state_name`", false)]
 #[case::no_verb_at_all("`BufferMode`, `Text`, `Table`", false)]
 #[case::one_span_only("`BufferMode` returns nothing", false)]
+#[case::verb_borrowed_from_another_clause(
+    "`BufferMode` uses `state_name()`; metrics returns labels",
+    false
+)]
+#[case::stem_prefixed_non_verb("`BufferMode` returnable `Text`, `Table`", false)]
+#[case::unclosed_label("`BufferMode` returns `Text", false)]
 fn the_enumerated_obligation_reads_the_return_verb(#[case] cell: &str, #[case] expected: bool) {
     let evidence = format!("`mdtablefix@abc1234:src/process.rs`, {cell}");
     assert_eq!(
         lists_returned_strings(&evidence),
         expected,
         "the cell {evidence:?} must be {} by the enumeration predicate. Repair: the predicate \
-         requires the state in backticks, a return verb (`returns` or `yields`, and their \
-         inflections), and then each returned string in backticks — the shape ADR 004 illustrates \
-         — and a cell naming the reader of the name instead carries the same two spans without \
-         naming a single label.",
+         requires the state in backticks, then a return verb (`returns`, `returned`, `yields` or \
+         `yielded`) written between it and the labels, and then each returned string in backticks \
+         — the ordered shape ADR 004 illustrates. A cell naming the reader of the name carries \
+         the same two spans without naming a single label; one borrowing its verb from a later \
+         clause says nothing about the state; one writing `returnable` has not written a verb at \
+         all; and one leaving its last quote unclosed has not backticked its label, so the string \
+         it names is prose rather than the quoted span the message asks for.",
         if expected { "accepted" } else { "refused" }
     );
 }
