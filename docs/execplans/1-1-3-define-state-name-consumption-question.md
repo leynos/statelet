@@ -2277,8 +2277,8 @@ design.
   exemption's behaviour is not merely unvalidated until a clippy-clean run
   exists — it is *unexecuted*, and an earlier green claim from a partial gate
   would have been true of a gate that never reached the lint it names.
-  Date/Author: 2026-09-19, implementing agent, after the Step 9 rerun was
-  dispatched.
+  Date/Author: 2026-09-20T00:33:30+02:00 (2026-09-19T22:33:30Z), implementing
+  agent, after the Step 9 rerun was dispatched.
 
 - D26: **The first CodeRabbit pass over the contract found nine issues; four
   were blocking, and the fixes are recorded here.** F1/F9 (a live-document
@@ -2319,8 +2319,9 @@ design.
   register has one power to overturn the default belongs with the register. No
   requirement, register field, repair-message obligation, or shipped document
   changed; `docs/repository-layout.md` and `docs/developers-guide.md` were
-  updated because both enumerate the child modules. Date/Author: 2026-09-20,
-  implementing agent, actioning the review the scrutineer returned after D25.
+  updated because both enumerate the child modules. Date/Author:
+  2026-09-20T01:59:37+02:00 (2026-09-19T23:59:37Z), implementing agent,
+  actioning the review the scrutineer returned after D25.
 
 - D27: The EP-M5 gate run failed `make check-fmt` on this plan, and the finding
   is a **prose-wrapping rule rather than a defect**, so the remedy is to state
@@ -2479,8 +2480,8 @@ design.
   field, register row, gate binding, invariant, or repair-message obligation
   changed; `docs/developers-guide.md`, `docs/repository-layout.md` and the
   plan's own module enumerations were updated because all three list the child
-  modules. Date/Author: 2026-09-21, implementing agent, actioning the review
-  the scrutineer returned after D29.
+  modules. Date/Author: 2026-09-21T00:32:47+02:00 (2026-09-20T22:32:47Z),
+  implementing agent, actioning the review the scrutineer returned after D29.
 
 - D31: **The fourth CodeRabbit pass returned fourteen findings in eight
   locations, and four of the eight subjects were adopted** — the round reported
@@ -2624,19 +2625,19 @@ design.
   not use. **Declined four** (`docs/contents.md`, reference-style links):
   falsified twice. `markdownlint` reports zero errors on the file because MD013
   exempts a line with no whitespace beyond the limit, and the style guide says
-  "Prefer inline links using `[text](url)`". Date/Author: 2026-09-26,
-  implementing agent, actioning the review the scrutineer returned after D31.
-  The ten findings carry four declines across four distinct subjects, and each
-  is a convention the repository does not use rather than a defect in the work
-  — the date's full stop is the style guide's own, the guide's headings follow
-  the sixteen of `docs/`'s twenty-two documents that are unnumbered, and
-  `markdownlint` reports no error on the file the fourth asks to rewrap. Two of
-  the four are **repeats of already-settled subjects**: the heading number
-  returns in the next pass, and the date's full stop had been falsified in the
-  post-fix round. Their reappearance is evidence about what the reviewer
-  consistently expects rather than about the branch, and recorded here so that
-  a later pass raising them again is read as recurrence rather than as new
-  information.
+  "Prefer inline links using `[text](url)`". Date/Author:
+  2026-09-26T00:38:00+02:00 (2026-09-25T22:38:00Z), implementing agent,
+  actioning the review the scrutineer returned after D31. The ten findings
+  carry four declines across four distinct subjects, and each is a convention
+  the repository does not use rather than a defect in the work — the date's
+  full stop is the style guide's own, the guide's headings follow the sixteen of
+  `docs/`'s twenty-two documents that are unnumbered, and `markdownlint`
+  reports no error on the file the fourth asks to rewrap. Two of the four are
+  **repeats of already-settled subjects**: the heading number returns in the
+  next pass, and the date's full stop had been falsified in the post-fix round.
+  Their reappearance is evidence about what the reviewer consistently expects
+  rather than about the branch, and recorded here so that a later pass raising
+  them again is read as recurrence rather than as new information.
 
 - D33: **The sixth pass returned four findings in three subjects, all accepted,
   and all three are stale figures in this plan rather than defects in the
@@ -2670,8 +2671,9 @@ design.
   word is "parameterized", and the *review* spells it with an `s`, so
   transcribing its wording carried the reviewer's spelling into the document
   that quotes it — the same class of defect as D32's, where a quoted command's
-  punctuation arrived with the quote. Date/Author: 2026-09-26, implementing
-  agent, actioning the review the scrutineer returned after D32.
+  punctuation arrived with the quote. Date/Author: 2026-09-26T00:50:53+02:00
+  (2026-09-25T22:50:53Z), implementing agent, actioning the review the
+  scrutineer returned after D32.
 
 - Observation: **a control written against a token-list predicate can be
   defeated by the predicate's own breadth, and only a Red replay catches it.**
@@ -2766,8 +2768,8 @@ design.
   ordinal is not. The lesson is D31's and D33's, applied to *provenance*:
   reading the log against the entry that claims to summarize it is what
   surfaced both, and neither would have been found by reading the plan alone.
-  Date/Author: 2026-09-26, implementing agent, actioning the review the
-  scrutineer returned after D33.
+  Date/Author: 2026-09-26T01:55:36+02:00 (2026-09-25T23:55:36Z), implementing
+  agent, actioning the review the scrutineer returned after D33.
 
 - D35: **The eighth pass returned five findings over `227d975`, two adopted and
   three declined.** The freeze held again (`HEAD` at `227d975` and `git status`
@@ -3317,8 +3319,8 @@ design.
   `2026-09-26T23:01:57Z` names the same instant and a bare date cannot say
   which of the two a reader should take; `3f20bdc`'s committer timestamp and
   the rebase log's mtime carry it independently of each other. Date/Author:
-  2026-09-27, implementing agent, on the rebase the user directed, before
-  publication.
+  2026-09-27T01:18:30+02:00 (2026-09-26T23:18:30Z), implementing agent, on the
+  rebase the user directed, before publication.
 
 - D48: **The same finding re-found on a third round is evidence about the
   record, not about the reviewer, so the third occurrence was adopted and the
@@ -3356,8 +3358,9 @@ design.
   two rounds were answered rather than satisfied, and the cost of the two
   declines is now recorded rather than absorbed: the branch's review cost three
   rounds to be told what one round would have been right to say twice.
-  Date/Author: 2026-09-27, implementing agent, actioning the sixteenth round's
-  single finding after verifying its premise false and its substance true.
+  Date/Author: 2026-09-27T01:43:52+02:00 (2026-09-26T23:43:52Z), implementing
+  agent, actioning the sixteenth round's single finding after verifying its
+  premise false and its substance true.
 
 - D49: **A register that cannot record a defect the prose says it gates is a
   document disagreeing with itself, and the prose was right.** The seventeenth
@@ -3665,8 +3668,9 @@ design.
   code span. The general lesson is narrower than "mind your nesting": **an
   escape hatch must not be documented using a construct that defeats it**, and
   the way to check is to run the gate rather than to reason about the regex —
-  which is what caught it. Date/Author: 2026-09-27, implementing agent,
-  repairing the twenty-fifth gate failure before a review was requested.
+  which is what caught it. Date/Author: 2026-09-28T00:08:59+02:00
+  (2026-09-27T22:08:59Z), implementing agent, repairing the twenty-fifth gate
+  failure before a review was requested.
 - D57: **A repaired record can carry a defect of its own that only the next
   round can see.** The twenty-sixth round returned one finding and no warning,
   in this file, at line 1278-1280: an orphaned `unticked.` hanging beneath an
@@ -3685,9 +3689,10 @@ design.
   wrong place?") and visible only to a reader who reads the *line* rather than
   the word. That is precisely the class of defect the review is for, and it
   arrived in the one commit on this branch that was written to be a record of
-  review findings rather than a change to the work. Date/Author: 2026-09-27,
-  implementing agent, actioning the twenty-sixth round after verifying the
-  finding against the bytes at both revisions.
+  review findings rather than a change to the work. Date/Author:
+  2026-09-28T00:22:21+02:00 (2026-09-27T22:22:21Z), implementing agent,
+  actioning the twenty-sixth round after verifying the finding against the
+  bytes at both revisions.
 - D58: **A supersession note repairs the decision it names and not the scope
   that decision moves, so the scope must be swept separately.** The
   twenty-seventh round returned three findings and they reduce to two subjects.
@@ -3732,11 +3737,59 @@ design.
   finding now returns at a fixed interval of reviews, so the disposal costs a
   paragraph each time and buys nothing the first decline did not already
   establish. A future round that raises it should cite this entry and the two
-  before it rather than re-deriving the ADR's scope. Date/Author: 2026-09-28,
-  implementing agent, actioning the twenty-seventh round after verifying each
-  finding against the bytes at the tip, measuring the provenance of every scope
-  claim at `caabd3e`, and reading ADR 004's obligation list against the
-  reviewer's requested fourth.
+  before it rather than re-deriving the ADR's scope. Date/Author:
+  2026-09-28T01:25:40+02:00 (2026-09-27T23:25:40Z), implementing agent,
+  actioning the twenty-seventh round after verifying each finding against the
+  bytes at the tip, measuring the provenance of every scope claim at `caabd3e`,
+  and reading ADR 004's obligation list against the reviewer's requested
+  fourth. **Superseded in part by D59**, which supplies the offset this stamp
+  was written without.
+
+- D59: **A bare date is ambiguous only when the record was written inside the
+  window where local and UTC name different days — local midnight to local
+  02:00 — so the class is bounded by the *instant*, not by the date.** The
+  twenty-eighth round returned one finding, *(minor)*, at this file's
+  `Date/Author` line for D58: correct the date so it is "not future-dated
+  relative to the surrounding records", or write an explicit offset if
+  `2026-09-28` is retained. **Adopted, and the premise is false in the way
+  D48's was.** D58's date is not future-dated: `7f22304` is stamped
+  `2026-09-28T01:25:40+02:00`, and `2026-09-28` is its own local day. What is
+  real is narrower, and the reviewer put a finger on the right surface while
+  naming the wrong fault: **the log appears to jump a day across a span that
+  rounds to 77 minutes.** The span is measured — `75fc11e` at
+  `2026-09-28T00:08:59+02:00`, `83dc862` at `2026-09-28T00:22:21+02:00`, and
+  `7f22304` at `2026-09-28T01:25:40+02:00`, a first-to-last interval of **4601
+  seconds** — and each carries a bare `2026-09-27` or `2026-09-28`. The writing
+  session crossed local midnight, so `+02:00` and `Z` disagreed about the day,
+  and **the branch answered with both rules by turns** rather than one: of the
+  twelve stamps written inside that window, **nine wrote the local date and
+  three wrote the UTC date**, each true of its instant and neither labelled
+  with the zone that makes it readable. `2026-09-28` was never wrong; a reader
+  had no way to see that, which is D48's finding exactly, arriving a round
+  after the entry that settled it. **The class is the twelve, and it was found
+  by measuring rather than by reading the cited line**: the window closes at
+  local 02:00, where `+02:00` reaches `Z`, so a stamp written outside it names
+  the same day in every zone and is left bare — which is why **53 of this
+  file's 66 `Date/Author` stamps** are untouched: at `7f22304` the file carried
+  65, all bare, so the repair's twelve are drawn from those, and the
+  sixty-sixth is this entry's own. All twelve now read `local+offset (UTC)`; no
+  date value was changed, and both readings name the same instant, so the
+  repair is checkable against the commit it cites. **Two things this round
+  taught about how such a class must be measured**, both of which produced a
+  false answer first. `git blame` is not an attribution tool for this question:
+  it credits a rewrapped line to whoever last wrapped it, so a search keyed on
+  it reported **five** sites where the true count is **twelve** — the seven it
+  missed were lines an earlier commit had rewrapped without touching the date.
+  And `%aI` ignores `TZ`, so a scan using it reports every stamp as "local
+  equals UTC" and returns **zero** sites; the honest clock is
+  `--date=format-local`. A composed numeral and a broken clock both read as
+  measurements, and each was caught only by computing the same quantity a
+  second way. That is the rule this entry exists to leave behind: **when a
+  count decides a repair's scope, compute it twice by different methods, and
+  treat disagreement as evidence about the method rather than about the
+  count.** Date/Author: `2026-09-28T03:12:22+02:00` (`2026-09-28T01:12:22Z`) —
+  implementing agent, actioning the twenty-eighth round by measuring the window
+  instead of reading the reviewer's premise.
 
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
@@ -3779,7 +3832,8 @@ design.
   hand-corrected count does. The remedy is the one already adopted for the
   reconciliation paragraph — name the primary source, here the log path, so the
   next reader can check the claim rather than repeating it. Date/Author:
-  2026-09-26, implementing agent, on the seventh review round's count findings.
+  2026-09-26T01:55:36+02:00 (2026-09-25T23:55:36Z), implementing agent, on the
+  seventh review round's count findings.
 
 - Observation: **an inline link cannot be wrapped, so a long link line is a
   formatting floor rather than an unfinished job.** Three review rounds have
