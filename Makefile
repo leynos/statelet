@@ -20,6 +20,9 @@ STANDARD_RUSTFLAGS = $(STANDARD_THREADS_FLAG)$(if $(filter Linux,$(BUILD_HOST_OS
 # Release builds take neither flag: assigning `RUSTFLAGS`, even to an empty
 # inherited value, displaces every `rustflags` source in the configuration.
 RELEASE_RUSTFLAGS = RUSTFLAGS="$${RUSTFLAGS-}"
+# Debug builds keep a caller's exported flags and add the standard ones,
+# since an inherited `RUSTFLAGS` would otherwise displace the configuration.
+DEBUG_RUSTFLAGS = RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(STANDARD_RUSTFLAGS)"
 RUSTDOC_FLAGS ?=
 RUSTDOC_FLAGS := -D warnings $(RUSTDOC_FLAGS)
 CARGO_FLAGS ?= --all-targets --all-features
@@ -72,7 +75,7 @@ test-workflow-contracts: ## Validate the workflow contracts (mutation testing, C
 	uv run --with 'pytest>=8' --with 'pyyaml>=6' pytest tests/workflow_contracts -q
 
 target/%/$(TARGET): ## Build binary in debug or release mode
-	$(if $(findstring release,$(@)),$(RELEASE_RUSTFLAGS) )$(CARGO) build $(BUILD_JOBS) $(if $(findstring release,$(@)),--release)
+	$(if $(findstring release,$(@)),$(RELEASE_RUSTFLAGS),$(DEBUG_RUSTFLAGS)) $(CARGO) build $(BUILD_JOBS) $(if $(findstring release,$(@)),--release)
 
 coverage: ## Generate lcov coverage with lld for llvm-tools compatibility
 	@echo "coverage linker flags: $(COVERAGE_LINKER_FLAGS)"
