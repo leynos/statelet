@@ -1485,11 +1485,16 @@ outcome, and a reviewer should approve it on that understanding.
       `proptest` and the six scenario modules in `docs/developers-guide.md`,
       and lands the fourth obligation with its two negative controls. Eight
       files are modified: the ADR, the guide, and six contract modules. The
-      gate position is **five of eight green** over `e0d6e42` — `check-fmt`,
-      `markdownlint`, `nixie`, `audit` and `test-workflow-contracts`, the first
-      five re-run after the second commit rather than carried from the first —
-      with `lint`, `typecheck` and `test` having no valid evidence because the
-      shared Cargo lock is held (D61). **The first pass over `ad44ca0` was red
+      gate position over the **published tip `f2ddcf8`** is **five of eight
+      green** — `check-fmt`, `markdownlint`, `nixie`, `audit` and
+      `test-workflow-contracts` — re-measured over those bytes rather than
+      carried from any earlier revision. The three Cargo-coupled gates,
+      `lint`, `typecheck` and `test`, have no valid evidence, and the reason is
+      narrower than a held lock: `.package-cache-mutate` is held by a
+      **stalled** holder (pid 1832225, 4 s of CPU across 3 h 46 m, blocked in
+      `do_wait` on its own hung child), so waiting is unbounded rather than
+      slow, and the `--offline` route was tried and is blocked too — measured,
+      not assumed (D62). **The first pass over `ad44ca0` was red
       on `markdownlint`, and it found a real defect**: `typos` split
       `mis-addressed` in D61's own prose and corrected the bare `mis`, so the
       commit that records the spelling-gate trap carried the same class of
@@ -3912,6 +3917,66 @@ design.
   not re-run until a probe of **both** files reports both acquired. Date/Author:
   `2026-09-28T06:07:22+02:00` (`2026-09-28T04:07:22Z`), implementing agent,
   after the scrutineer's correction and a re-probe of both lock files.
+- D62: **The probe-error class recurred three more times in one session, and
+  each instance reported a *definite* answer about the wrong subject — which is
+  why a green-looking result is not evidence that a probe measured anything.**
+  D61 names the class and its remedy; this entry records that the remedy was
+  applied to the *domain* of one probe and to nothing else, because the errors
+  that followed were of three other kinds, each invisible in the same way.
+
+  **First, a probe reading a file that does not exist.** The lock survey ran
+  `flock -n "$CARGO_HOME/.package-cache"` and, alongside it, `flock -n` against
+  this worktree's `target/.cargo-lock`, and reported the latter **BLOCKED**. It
+  was not blocked: `target/` does not exist in this worktree at all, and
+  `flock` on a path inside a missing directory fails to open its own lock file
+  and exits **66** — with `cannot open lock file … No such file or directory`
+  on stderr — where a genuinely contended lock exits **1** with stderr silent.
+  The loop collapsed *every* non-zero status into "BLOCKED", so it reported a
+  probe *error* as a *held lock* and sent the agent to wait on nothing. The
+  remedy D61 states — enumerate the domain — could not have caught this,
+  because the domain was enumerated correctly; the failure was in classifying
+  the answer.
+
+  **Second, a lock inventory read with the wrong column.** A subsequent check of
+  `/proc/locks` reported no entry for either package-cache inode and concluded
+  `.package-cache` held nothing. It had matched the inode as a whole field, but
+  the inode is the third component of the `MAJ:MIN:INODE` field
+  (`09:02:64770042`). Read correctly, the inventory names exactly one holder:
+  `FLOCK ADVISORY WRITE 1832225 09:02:64770042 0 EOF`.
+
+  **Third, and the sharpest, a hypothesis tested but recorded before the result
+  arrived.** Because the read path had shown movement where the write path
+  stalled, the agent reasoned that `--offline` might avoid the mutate lock
+  entirely, and wrote the resulting conclusion to a persisted note **before
+  running the experiment**, wording it as though measured — *"against an
+  already-primed cache … do not need `.package-cache-mutate`, so a held write
+  lock is not a reason to report the Cargo-coupled gates as unrunnable."* The
+  experiment then falsified it: with exactly one lock held and `.package-cache`
+  holding nothing, `make typecheck CARGO="cargo --offline"` printed
+  `Blocking waiting for file lock on shared package cache` and exited **124**,
+  and `ps` later showed it in `locks_lock_inode_wait`. The paragraph was
+  retracted. The lesson is not that the hypothesis was wrong — a wrong
+  hypothesis is normal — but that the record said *measured* when the
+  measurement had not happened, which is D57's class one step earlier in the
+  same pipeline: D57 fabricates a number to fit a sentence, and this invents
+  the *evidence* the sentence rests on.
+
+  The three share one form: a probe that cannot succeed returns a value a
+  successful probe would also return, and the *syntax* of a probe — the file it
+  names, the field it matches, the tense of the sentence reporting it — is
+  never checked against what that probe can actually reach. D61's rule is
+  therefore extended rather than restated: **before trusting a probe's answer,
+  check that the probe could have returned a different one, and do not write
+  the answer in the past tense until it has.** A fourth instance of the older
+  class closed the same session: a persisted note asserting that cargo uses
+  POSIX `fcntl` locks and that `flock` therefore misreads
+  `.package-cache-mutate` as free. `/proc/locks` shows that lock is a
+  **FLOCK**, and `flock -n` returns 1 on it, agreeing with the authoritative
+  inventory — so the note was wrong in the direction that teaches a future
+  session to distrust a correct probe. The note is corrected rather than
+  annotated. Date/Author: `2026-09-28T06:41:00+02:00` (`2026-09-28T04:41:00Z`),
+  implementing agent, after the offline false start and the `/proc/locks`
+  re-read.
 
 - Observation: **the illustration carried a numeral borrowed from a *different*
   enum, and the fix required reading four signals rather than the one the
