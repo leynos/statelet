@@ -82,6 +82,15 @@ standard for development, test, lint, and proof builds. On Linux,
 quickly. That table is keyed on `cfg(target_os = "linux")`, so it covers every
 Linux architecture rather than a single triple.
 
+Every `rustflags` source in `.cargo/config.toml`, the `[build]` table and the
+Linux table alike, enables the parallel `rustc` frontend with `-Zthreads=8`.
+Cargo applies one `rustflags` source and an assigned `RUSTFLAGS` replaces them
+all, so the Makefile restates both flags as `STANDARD_RUSTFLAGS` for the
+targets that assign `RUSTFLAGS`. Release builds assign an empty inherited
+`RUSTFLAGS` and coverage assigns its own, so neither takes the standard flags.
+`tests/workflow_contracts/build_standard_test.py` holds the configuration
+sources and those recipes to this.
+
 That selector suits native builds, where clang defaults to the host triple. It
 would also match a cross-compilation to a non-host Linux target, and clang
 would then need a `--target` flag and a sysroot that the configuration does not
