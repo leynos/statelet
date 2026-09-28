@@ -87,14 +87,33 @@ naming admissibility and the note verdict. The checks that bind two documents
 to each other are one module per binding: `clauses.rs` for quoted-clause
 resolution, `registers.rs` for the cross-register checks and the status
 register's own consistency, and `roadmap.rs` for the roadmap's task-record
-grammar, the gate table, and the success criterion. `notes.rs` holds the
-read-only scan of `docs/validation-notes/`, and `fixtures.rs` the row constants
-the negative controls build documents from. `claim_properties.rs` is not a
-scenario module: it holds the property suite over the evidence predicates —
-generated properties rather than named scenarios. The scenarios sit in
-`anchor_scenarios.rs`, `claims_scenarios.rs`, `criterion_scenarios.rs`,
-`note_scenarios.rs`, `register_scenarios.rs` and `scan_scenarios.rs`, one per
-invariant class, so that the 400-line cap binds each part of the contract alike.
+grammar, the gate table, and the success criterion. `notes.rs` holds the scan of
+`docs/validation-notes/` and the scratch roots its controls scan instead, and
+`fixtures.rs` the row constants the negative controls build documents from.
+`claim_properties.rs` is not a scenario module: it holds the property suite
+over the evidence predicates — generated properties rather than named
+scenarios. That module is why `proptest` appears under `[dev-dependencies]` in
+`Cargo.toml`: the evidence predicates read arbitrary text, so their invariants
+are properties rather than cases, and `proptest` is the only dependency the
+contract adds. It is test-only and reaches no shipped binary.
+
+The scenarios sit in six modules, one per invariant class, so that the 400-line
+cap binds each part of the contract alike:
+
+- `anchor_scenarios.rs` — the template and the roadmap as bindings: does the
+  blank form instantiate the register, and does the roadmap still carry the
+  nouns the register maps?
+- `claims_scenarios.rs` — what an evidence cell may say: accepted citation
+  shapes, and the words a cell may and may not use for a consumer or a property.
+- `criterion_scenarios.rs` — which copy of a sentence is the success criterion
+  when the same clause is quoted in more than one document.
+- `note_scenarios.rs` — a note's cells and the verdict they resolve to,
+  including the blocking statuses and the contradictions.
+- `register_scenarios.rs` — how the registers parse, and their internal
+  consistency.
+- `scan_scenarios.rs` — the directory scan: which files it reads, what an
+  unreadable or absent directory means, and the end-to-end path over a
+  populated scratch tree.
 
 The contract reads ADR 004, the template, `docs/design.md`, `docs/roadmap.md`,
 and `docs/adr-002-transition-boundary-scope.md` with `include_str!` and parses

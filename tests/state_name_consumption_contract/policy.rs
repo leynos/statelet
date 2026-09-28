@@ -13,9 +13,15 @@
 //! `claims.rs`'s; this module decides what those answers oblige.
 
 use super::{
-    claims::{is_citation_shaped, names_a_consumer, names_a_property},
+    claims::{is_citation_shaped, lists_returned_strings, names_a_consumer, names_a_property},
     types::{NoteRow, Resolution, StatusRow, field_order},
 };
+
+/// The field whose `Enumerated` status obliges the cell to list the strings.
+pub(crate) const STATE_DISPLAY_NAME: &str = "state-display-name";
+
+/// The status recording that the state's returned strings were enumerated.
+pub(crate) const ENUMERATED: &str = "Enumerated";
 
 /// The field whose status can overturn the `&'static str` default.
 pub(crate) const IDENTIFIER_NEED: &str = "identifier-need";
@@ -125,7 +131,8 @@ fn contribution(rows: &[StatusRow], note: &[NoteRow]) -> Result<Resolution, Stri
 }
 
 /// Checks a note's cells independently of its verdict: residual placeholders,
-/// unknown statuses, citation shape, and the `identifier-need` obligations.
+/// unknown statuses, citation shape, the `Enumerated` list, and the
+/// `identifier-need` obligations.
 pub(crate) fn check_note_cells(rows: &[StatusRow], note: &[NoteRow]) -> Result<(), String> {
     for row in note {
         if row.status.contains("TBD") || row.evidence.contains("TBD") {
@@ -154,7 +161,42 @@ pub(crate) fn check_note_cells(rows: &[StatusRow], note: &[NoteRow]) -> Result<(
             ));
         }
     }
+    check_state_display_name_evidence(note)?;
     check_identifier_need_evidence(note)
+}
+
+/// Checks the obligation ADR 004 places on an `Enumerated` cell.
+///
+/// The ADR's own definition: `state-display-name` is `Enumerated` "only when
+/// the note lists the actual strings each annotated state can return". A cell
+/// whose status is `Enumerated` and which names only the type is refused here,
+/// because the status would otherwise be doing the work of the list: it is the
+/// list that makes the `metrics-cardinality` bound derivable from the note, and
+/// a reviewer deciding the fate of the `&'static str` at task 3.2.1 would be
+/// reading a bound asserted by the note's author.
+///
+/// Only `Enumerated` obliges this. `Not a named type` and `Synthesized from
+/// data` both block the note before its verdict is taken, so a cell carrying
+/// either is already refused, and a missing list there is not what is wrong
+/// with it.
+fn check_state_display_name_evidence(note: &[NoteRow]) -> Result<(), String> {
+    let Some(row) = note
+        .iter()
+        .find(|row| row.field == STATE_DISPLAY_NAME && row.status == ENUMERATED)
+    else {
+        return Ok(());
+    };
+    if lists_returned_strings(&row.evidence) {
+        return Ok(());
+    }
+    Err(format!(
+        "a StateName note records state-display-name: {ENUMERATED} without listing the strings \
+         the state returns; its evidence names the type and no label. Repair: name the state and \
+         then its returned strings in backticks — '`<repo>@<sha>:<path>`, `TheType` returns \
+         `First`, `Second`' — because the Enumerated status is what makes the metrics-cardinality \
+         bound derivable from the note. The strings are read from the annotated example, not \
+         invented."
+    ))
 }
 
 /// Checks the two obligations ADR 004 places on the `identifier-need` cell.

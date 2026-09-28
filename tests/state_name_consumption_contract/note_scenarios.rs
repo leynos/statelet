@@ -102,7 +102,7 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
     Ok(())
 }
 
-/// Accepts the fixture note and rejects the ten documented note defects.
+/// Accepts the fixture note and rejects the twelve documented note defects.
 ///
 /// Each case supplies the note's four rows directly. A control that instead
 /// edited the assembled note with `String::replace` would be silently skipped
@@ -194,6 +194,26 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
     "a StateName note records evidence for field \"metrics-cardinality\" that is not a citation of \
      the shape <repo>@<sha>:<path>. Repair: cite the revision the observation was made against."
 )]
+#[case::enumerated_names_only_the_type(
+    note_with_rows(&["| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs` \
+                      lists `BufferMode` |",
+                     IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
+    "a StateName note records state-display-name: Enumerated without listing the strings the state \
+     returns; its evidence names the type and no label. Repair: name the state and then its \
+     returned strings in backticks — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' \
+     — because the Enumerated status is what makes the metrics-cardinality bound derivable from \
+     the note. The strings are read from the annotated example, not invented."
+)]
+#[case::enumerated_names_no_strings_at_all(
+    note_with_rows(&["| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`; \
+                      the enum's names were not recorded |",
+                     IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
+    "a StateName note records state-display-name: Enumerated without listing the strings the state \
+     returns; its evidence names the type and no label. Repair: name the state and then its \
+     returned strings in backticks — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' \
+     — because the Enumerated status is what makes the metrics-cardinality bound derivable from \
+     the note. The strings are read from the annotated example, not invented."
+)]
 fn committed_state_name_notes_are_rejected(
     #[case] note: String,
     #[case] expected: &str,
@@ -258,8 +278,8 @@ fn contradictory_notes_are_rejected() -> Result<(), String> {
     // refused, naming the cell to repair, rather than ratified on the two
     // cells that happen to agree.
     let blocked = note_rows(&note_with_rows(&[
-        "| state-display-name | Not a named type | `mdtablefix@abc1234:src/process.rs` lists \
-         LineMode |",
+        "| state-display-name | Not a named type | `mdtablefix@abc1234:src/process.rs` tracks a \
+         bool in_table |",
         IDENTIFIER_NEED_ROW,
         METRICS_CARDINALITY_ROW,
         TRACING_USE_ROW,

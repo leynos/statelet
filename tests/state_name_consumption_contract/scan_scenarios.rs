@@ -206,7 +206,7 @@ fn committed_state_name_notes_are_usable() -> Result<(), String> {
 /// would fail two tests on one edit.
 #[test]
 fn a_populated_notes_directory_is_scanned_end_to_end() -> Result<(), String> {
-    let scratch = ScratchNotes::new("populated")?;
+    let scratch = ScratchNotes::fresh_tree("populated")?;
     scratch.write("2.2.1-state-name.md", &state_name_note())?;
     scratch.write("1.2.3-benchmark.md", &benchmark_note())?;
     scratch.write(

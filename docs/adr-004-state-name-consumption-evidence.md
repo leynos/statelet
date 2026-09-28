@@ -157,7 +157,7 @@ instead, even where the values it can produce happen to be few: a small set of
 data-built strings is still not a *name* of the state, so a finite bound does
 not make `Enumerated` true of it.
 
-Three obligations on the evidence cells are checked, not merely asked for.
+Four obligations on the evidence cells are checked, not merely asked for.
 
 First, every evidence cell carries a citation of the shape
 `<repo>@<sha>:<path>`, so that a status is always traceable to an observation
@@ -165,13 +165,24 @@ rather than asserted. This applies to every field, including a field whose
 status is `None`: the absence of a need is itself an observation, and it has a
 place.
 
-Second, the evidence cell for `identifier-need` names at least one consumer
+Second, an evidence cell whose status is `Enumerated` lists the actual strings
+the state returns, in backticks, alongside the type that returns them. The
+status is not self-certifying: it is the list below it that makes the
+`metrics-cardinality` bound derivable from the note rather than asserted by its
+author, and a cell naming only the type would leave a reviewer at task 3.2.1
+deciding the fate of a `&'static str` without seeing a single string. A cell
+naming the type and no label is refused with the message that says so. The
+check bounds the cell's *shape*; matching the listed strings against the
+annotated code is the reviewer's, because the contract reads documents and
+holds no view of the enum.
+
+Third, the evidence cell for `identifier-need` names at least one consumer
 drawn from the search set — the tracing subscriber, the metrics recorder or its
 documented absence, any model checker, and generated documentation — or states
 that none of them exist. The search set is what makes "no identifier is needed"
 an observation rather than a bare negative existential.
 
-Third, the evidence cell for `identifier-need` agrees with its status about
+Fourth, the evidence cell for `identifier-need` agrees with its status about
 whether a property is required. A cell that names one of equality, stability
 across releases, ordering, or compact encoding must accompany the status that
 records a required property, and a cell that names none must not. A property
@@ -255,16 +266,20 @@ Roadmap task: 2.2.1.
 <!-- note-register:begin -->
 | Field | Status | Evidence |
 | --- | --- | --- |
-| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`, `LineMode` |
+| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table` |
 | identifier-need | None | `mdtablefix@abc1234:src/process.rs`, subscriber, metrics and docs; no unmet property |
-| metrics-cardinality | Bounded | `mdtablefix@abc1234:src/process.rs`, three names |
+| metrics-cardinality | Bounded | `mdtablefix@abc1234:src/process.rs`, two names |
 | tracing-use | Full | `mdtablefix@abc1234:src/process.rs`, emits `transition.state.before` |
 <!-- note-register:end -->
 
 ## Observations
 
-The named state this note enumerates is `LineMode`: that is the state task
-2.2.1 annotated, and it is what the `Enumerated` status above covers.
+The named state this note enumerates is `BufferMode`, the enum ADR 002's
+annotated example derives for `ProcessBuffer`: that is the state task 2.2.1
+annotated, and it is what the `Enumerated` status above covers. The strings
+listed are its variants, `Text` and `Table` — taken from that example's
+`#[derive(StateName)]` block, not invented here, which is why the row shows a
+two-name state and the `metrics-cardinality` bound above reads accordingly.
 
 The `bool in_table` local in `ProcessBuffer` is explicitly out of scope here.
 It is not a named type, so it cannot carry a `StateName` implementation, and a
@@ -275,7 +290,17 @@ belongs to the phase that owns the annotated code. Recording it here as an
 out-of-scope observation, rather than folding it into the status above, is what
 keeps `Enumerated` an honest claim about the state it names. A note is read
 through *one* subject — the template names the file `<task>-<subject>.md` for
-that reason — and this note's subject is `LineMode`, not the local.
+that reason — and this note's subject is `BufferMode`, not the local.
+
+The distinction matters because the two are one step apart: ADR 002 records
+that `ProcessBuffer` tracks table mode as `bool in_table` today and that the
+project roadmap "already proposes promoting that boolean to a small enum". That
+enum is `BufferMode`, and it is the proposed form the illustration shows. A note
+written before the promotion lands would find only the boolean and record
+`state-display-name` as `Not a named type`; a note written after it lands
+enumerates the two strings above. Naming the type the promotion produces, rather
+than the local it replaces, is what keeps this illustration a shape for the
+note task 2.2.1 will actually write.
 ```
 
 The heading is not decoration. The blank form in

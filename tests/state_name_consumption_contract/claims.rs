@@ -65,9 +65,10 @@ fn is_commit_revision(revision: &str) -> bool {
 ///
 /// A citation ends the clause that cites it, so it arrives wearing the
 /// punctuation that closed that clause. ADR 004's own worked example writes
-/// "`mdtablefix@abc1234:src/process.rs`, `LineMode`", and an engineer copying
-/// that shape writes a comma; a cell ending its citation with a full stop
-/// writes a full stop. Trailing sentence punctuation is therefore stripped
+/// "`mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table`",
+/// and an engineer copying that shape writes a comma; a cell ending its citation
+/// with a full stop writes a full stop. Trailing sentence punctuation is
+/// therefore stripped
 /// before the shape is read, or the one shape the document teaches would be the
 /// shape the check refused.
 ///
@@ -95,6 +96,54 @@ fn citation_parts(word: &str) -> Option<(&str, &str, &str)> {
 /// not name a commit, or a cell the shape check rejects would still leak its
 /// path into the keyword predicates on the way to being rejected.
 fn is_citation(word: &str) -> bool { citation_parts(word).is_some() }
+
+/// Whether a cell lists the strings the annotated state returns.
+///
+/// The `state-display-name` obligation is the one ADR 004 states in prose
+/// rather than as a shape: "`Enumerated` only when the note lists the *actual*
+/// strings each annotated state can return". The predicate reads for the
+/// strings, not for a word such as "lists", because the word is the defect it
+/// exists to catch: a cell reading "lists `BufferMode`" says "lists" and lists
+/// nothing, naming the type where the ADR asks for its labels. That is the
+/// status the ADR says would "leave `metrics-cardinality: Bounded` as an
+/// unaudited assertion" — a bound asserted by the note's author rather than
+/// derivable from it.
+///
+/// The strings and the type are both identifiers, so no shape tells one from
+/// the other; what separates them is number. Naming the state takes one quoted
+/// span, and a cell that goes on to enumerate what the state returns quotes at
+/// least one more. The rule is therefore a count of two, and it refuses both
+/// shapes that name a type without its strings: one quoting the type alone, and
+/// one quoting nothing at all, as "the enum's names" does.
+///
+/// The citation is removed first, for the reason `narrative_text` gives: a path
+/// is chosen by whoever wrote the note, so the `` `src/mode.rs` `` inside a
+/// citation would otherwise count toward the two. Only the citation is taken
+/// out; case is left alone, because a quoted label's case is part of the label.
+///
+/// A label is counted when it is backticked, which is how this repository writes
+/// a code identifier in prose and how the annotated example, the ADR and the
+/// template all write these strings. A note quoting its labels with plain
+/// quotation marks is refused with the rest, and its repair is to backtick them
+/// as the documents it copies from do; the message names that shape rather than
+/// leaving the author to guess which mark is wanted.
+///
+/// What this cannot check is completeness — a three-variant state whose cell
+/// listed two of its names would pass — because the predicate has no view of the
+/// enum. That is the division ADR 004 draws: the cell's *shape* is checked here,
+/// and "the actual strings" are matched against the annotated code by the
+/// reviewer at task 3.2.1, who is the only reader holding both.
+pub(crate) fn lists_returned_strings(evidence: &str) -> bool {
+    let kept = evidence
+        .split_whitespace()
+        .filter(|word| !is_citation(word))
+        .collect::<Vec<&str>>()
+        .join(" ");
+    // Backticks come in pairs, so the span count is half the mark count. An
+    // unpaired mark rounds down, which is the safe direction: a cell with an
+    // unbalanced quote has not demonstrated the second name.
+    kept.matches('`').count() / 2 >= 2
+}
 
 /// The words of a cell that make a claim, with its citations removed.
 ///
@@ -145,7 +194,7 @@ pub(crate) fn names_a_consumer(evidence: &str) -> bool {
     .any(|consumer| lowered.contains(consumer))
 }
 
-/// The four properties ADR 004 admits, as its third obligation names them,
+/// The four properties ADR 004 admits, as its fourth obligation names them,
 /// plus the adjective one of them is normally written with.
 ///
 /// The array holds five tokens for four properties: "stable" is the

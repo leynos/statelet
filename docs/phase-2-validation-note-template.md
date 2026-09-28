@@ -62,9 +62,11 @@ of `None`: the absence of a need is itself an observation, and it has a place.
   produce. Neither is a cell whose evidence is the citation alone:
   `mdtablefix@abc1234:src/process.rs` on its own says where an observation was
   made and never what was observed. The citation is required here as it is
-  everywhere, and here it is not sufficient: the contract checks its shape, and
-  the reviewer at task 3.2.1 judges whether the words beside it name the
-  strings.
+  everywhere, and here it is not sufficient: the contract checks the cell's
+  shape — the citation, and that the type named beside it is followed by the
+  state's returned strings in backticks — and the reviewer at task 3.2.1 judges
+  whether those strings are the ones the annotated code returns, which is the
+  one part of this obligation no contract reading documents can decide.
 - `identifier-need` names at least one consumer drawn from the search set — the
   tracing subscriber, the metrics recorder or its documented absence, any model
   checker, and generated documentation — or states that none of them exist. The

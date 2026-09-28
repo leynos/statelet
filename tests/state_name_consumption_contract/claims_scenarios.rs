@@ -29,19 +29,24 @@ use super::{
 ///
 /// A citation ends the clause that cites it, so it arrives with whatever mark
 /// ended that clause. ADR 004's own worked example writes
-/// "`mdtablefix@abc1234:src/process.rs`, `LineMode`", which is the comma case
-/// below: an engineer copying the shape the document teaches writes one, and a
-/// citation that ends its cell wears a full stop or a semicolon instead. All
-/// three name the same revision, so a check that refused them would refuse the
-/// shape the document teaches.
+/// "`mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table`",
+/// which is the comma case below: an engineer copying the shape the document
+/// teaches writes one, and a citation that ends its cell wears a full stop or a
+/// semicolon instead. All five name the same revision, so a check that refused
+/// them would refuse the shape the document teaches.
+///
+/// The enumeration is held constant across the cases, because the punctuation is
+/// what varies: each cell keeps the two quoted names `Enumerated` obliges it to
+/// carry, so a case that failed would fail on the mark after the citation and
+/// not on a missing list.
 #[rstest]
-#[case::comma("`mdtablefix@abc1234:src/process.rs`, LineMode")]
-#[case::period("`mdtablefix@abc1234:src/process.rs`. Observed in ProcessBuffer.")]
-#[case::semicolon("`mdtablefix@abc1234:src/process.rs`; three names")]
-#[case::upper_case("`mdtablefix@ABC1234:src/process.rs`. Observed in ProcessBuffer.")]
+#[case::comma("`mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table`")]
+#[case::period("`mdtablefix@abc1234:src/process.rs`. `BufferMode` returns `Text`, `Table`.")]
+#[case::semicolon("`mdtablefix@abc1234:src/process.rs`; `BufferMode` returns `Text`, `Table`")]
+#[case::upper_case("`mdtablefix@ABC1234:src/process.rs`. `BufferMode` returns `Text`, `Table`.")]
 #[case::full_sha(
-    "`mdtablefix@abc1234def5678901234567890abcdef5678901:src/process.rs`. Observed in \
-     ProcessBuffer."
+    "`mdtablefix@abc1234def5678901234567890abcdef5678901:src/process.rs`. `BufferMode` returns \
+     `Text`, `Table`."
 )]
 fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), String> {
     let rows = live_status()?;
@@ -130,7 +135,7 @@ fn a_ref_citing_cell_is_rejected_without_leaking_its_path() -> Result<(), String
 /// Accepts a cell that denies a consumer exists, in either of the two phrasings
 /// the obligation admits.
 ///
-/// ADR 004 words the second obligation as naming a consumer "or stat[ing] that
+/// ADR 004 words the third obligation as naming a consumer "or stat[ing] that
 /// none of them exist", and the template repeats that sentence verbatim, so a
 /// note that follows the document has to write those words. The consumer
 /// predicate scans a token list, and the list once carried only the shorter

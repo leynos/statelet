@@ -24,6 +24,8 @@ use std::fs;
 
 use camino::{Utf8Path, Utf8PathBuf};
 
+use super::path_exists;
+
 /// The directory holding committed validation notes.
 const NOTES_DIR: &str = "docs/validation-notes";
 
@@ -172,13 +174,28 @@ pub(crate) struct ScratchNotes {
     root: Utf8PathBuf,
 }
 
+/// The directory every scratch root sits under.
+///
+/// Extracted so that the boundary control can place its fault at the same base
+/// `fresh_tree` builds from, rather than restating the path: a control that
+/// restated it would silently stop testing the real root the first time the
+/// construction changed.
+fn scratch_base() -> Utf8PathBuf {
+    Utf8PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("target")
+        .join("state-name-contract")
+}
+
 impl ScratchNotes {
-    /// Creates an empty root with `docs/validation-notes/` beneath it.
-    pub(crate) fn new(name: &str) -> Result<Self, String> {
-        let root = Utf8PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("target")
-            .join("state-name-contract")
-            .join(name);
+    /// Creates a fresh scratch tree at `name`, deleting any existing tree at
+    /// that scratch root.
+    ///
+    /// The name says what the call does, because the deletion is the part a
+    /// reader has to know: this returns an *empty* root, never an existing one,
+    /// and a caller that assumed otherwise would be reasoning about a directory
+    /// it does not control.
+    pub(crate) fn fresh_tree(name: &str) -> Result<Self, String> {
+        let root = scratch_base().join(name);
         // Rebuilt rather than reused: a note left by an earlier run would be
         // scanned as though this run had written it, and the scenario would then
         // be asserting over a directory it does not control.
@@ -220,4 +237,101 @@ impl ScratchNotes {
         fs::write(&path, text)
             .map_err(|error| format!("{path}: the scratch note cannot be written: {error}"))
     }
+}
+
+/// Refuses to reset a scratch root whose existing tree cannot be inspected.
+///
+/// The boundary control for `fresh_tree`'s `try_exists` inspection. It is not
+/// covered by `unreadable_entries_are_an_error_not_a_skip`: that control drives
+/// `read_marked_note`, a different function, whose failure it reaches by handing
+/// it a directory and asking it to read one *note*. This one never calls the
+/// scan at all — its subject is the reset `fresh_tree` performs on its own root,
+/// which that control cannot reach however many notes it reads.
+///
+/// The fault is placed by making the scratch root a *file*. Every path beneath a
+/// file fails with `ENOTDIR`, which is what makes the two obligations separable:
+///
+/// 1. **The failure names the root.** The message must open with the root path, so an engineer is
+///    sent to the directory to clear. A bare `ENOTDIR` would name neither the root nor the fact
+///    that a previous run left it.
+/// 2. **The reset does not proceed.** The file must survive the call. This is the obligation that
+///    gives the control its teeth: `try_exists` is chosen over `exists` precisely because
+///    `exists()` answers `false` here — see `fresh_tree`'s own comment — so a regression to
+///    `exists` would fall through to `create_dir_all` and *replace the file with a directory*. A
+///    control asserting only `is_err()` could not tell that from a correct failure, because it
+///    would still be an `Err` from `create_dir_all`; hence the survival assertion below rather than
+///    a message match alone.
+///
+/// `fresh_tree` fails here for the reason the module documents: the failure is
+/// transient-looking and would otherwise be read as "no tree exists", skipping
+/// the reset.
+#[test]
+fn an_uninspectable_scratch_root_is_refused_before_the_reset() -> Result<(), String> {
+    let root = scratch_base().join("uninspectable");
+    let notes_dir = root.join(NOTES_DIR);
+
+    // The precondition: there is no tree at the root to inspect, so the file
+    // this control plants is the only thing there. A root left as a *file* by
+    // an earlier failed run is cleared as a file, so a failure does not make
+    // this control un-runnable a second time.
+    let base = scratch_base();
+    fs::create_dir_all(&base)
+        .map_err(|error| format!("{base}: the control cannot create its scratch base: {error}"))?;
+    if root.is_dir() {
+        fs::remove_dir_all(&root).map_err(|error| {
+            format!("{root}: the control cannot clear its scratch root: {error}")
+        })?;
+    } else if path_exists(&root)? {
+        fs::remove_file(&root).map_err(|error| {
+            format!("{root}: the control cannot clear its leftover fault: {error}")
+        })?;
+    }
+
+    // A *file* at the scratch root. This is the fault: every path beneath it
+    // fails with `ENOTDIR`, and `try_exists` reports that failure rather than
+    // answering `false`.
+    fs::write(&root, "not a directory\n")
+        .map_err(|error| format!("{root}: the control cannot plant its fault: {error}"))?;
+
+    let outcome = ScratchNotes::fresh_tree("uninspectable");
+
+    // Obligation 1: the failure names the root.
+    let message = match outcome {
+        Err(message) => message,
+        Ok(_) => {
+            return Err(format!(
+                "{root} is a file, yet the reset proceeded. Repair: inspect the root with \
+                 `try_exists` and fail on an inspection error, rather than falling through to \
+                 `create_dir_all` over a root that was never read."
+            ));
+        }
+    };
+    if !message.starts_with(&format!("{root}: ")) {
+        return Err(format!(
+            "the inspection failure was reported as {message:?}, which does not name {root}. \
+             Repair: name the root in the message, so an engineer is sent to the directory that a \
+             previous run left behind."
+        ));
+    }
+
+    // Obligation 2: the reset did not proceed. The file is still a file, and no
+    // directory was created over it.
+    if !root.is_file() {
+        return Err(format!(
+            "{root} is no longer a file, so the reset proceeded past an inspection error. Repair: \
+             return before `remove_dir_all`; a root that cannot be inspected must not be reset."
+        ));
+    }
+    if path_exists(&notes_dir)? {
+        return Err(format!(
+            "{notes_dir} exists beneath a root that could not be inspected, so the reset \
+             proceeded. Repair: return before `create_dir_all`."
+        ));
+    }
+
+    // Leave the shared scratch base as it was found, so a later scenario
+    // building the same name is not refused by this control's fault.
+    fs::remove_file(&root)
+        .map_err(|error| format!("{root}: the control cannot clear its fault: {error}"))?;
+    Ok(())
 }

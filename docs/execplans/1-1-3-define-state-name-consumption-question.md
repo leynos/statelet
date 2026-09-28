@@ -1387,7 +1387,10 @@ outcome, and a reviewer should approve it on that understanding.
       `Enumerated` while the prose beneath said the state was unnamed — the
       illustration now names `LineMode` as its single subject and puts `bool
       in_table` explicitly out of scope, in the `Not a named type` /
-      `Not resolved` terms the status register already defines. The four
+      `Not resolved` terms the status register already defines. **Superseded by
+      D60**: the subject it names here is wrong, and the sentence is left as
+      the record of round five's repair rather than rewritten, because the
+      mistake it made is the observation D60's archaeology entry records. The four
       declines are `docs/roadmap.md` (tick 1.1.3 — reverses D31, whose reading
       is EP-M5's own bar), the ADR date's full stop (the style guide writes it,
       and three of four ADRs carry it), the developers-guide heading number
@@ -1470,7 +1473,21 @@ outcome, and a reviewer should approve it on that understanding.
       the exact nested chain D44 measures — which is evidence *against* the
       transient fault a fifth retry would be betting on. `27bdda9` is therefore
       recorded as unreviewed, and the retrying stops here rather than at a
-      threshold picked in advance.
+      threshold picked in advance. **The twenty-eighth round is D59's and the
+      work order it was followed by is D60's**, whose scope is wider than a
+      review repair: it renames `ScratchNotes::new` to state that it creates a
+      *fresh* tree by deleting any existing one, adds the boundary test for
+      the scratch-root inspection failure (which the existing
+      `read_marked_note` directory control does **not** cover), documents
+      `proptest` and the six scenario modules in `docs/developers-guide.md`,
+      and lands the fourth obligation with its two negative controls. Eight
+      files are modified: the ADR, the guide, and six contract modules. The
+      gate position at the time of writing is **five of eight green**
+      (`check-fmt`, `markdownlint`, `nixie`, `audit`,
+      `test-workflow-contracts`), with `lint`, `typecheck` and `test` having no
+      valid evidence because the shared Cargo lock is held — D61. EP-M5 stays
+      unticked, and roadmap task 1.1.3 with it, for that reason and for the
+      review bar the paragraph above records.
 - [x] The branch is rebased onto the PR's target. `origin/main` at `e98b685`
       is now an ancestor of the tip: `bad9a04..fb22d52` was replayed as 51
       commits with no conflicts, `git range-diff` reports all 51 as `=` so each
@@ -2535,54 +2552,56 @@ design.
   requirement binds 2.2.3, 3.1.3 and 4.3.1, not 1.1.3, so unticking is safe in
   both directions. **Subject four** (`policy.rs`, `major` at both locations):
   reject `state-display-name: Enumerated` evidence that is a citation and
-  nothing else. Declined. The ADR states "three obligations on the evidence
-  cells are checked": citation shape, the `identifier-need` consumer set, and
-  the `identifier-need` property agreement. "Reject citation-only `Enumerated`
-  evidence" is a fourth, and it appears in ADR 004 only as *prose* — "the note
-  lists the actual strings", in the paragraph explaining what `Enumerated`
-  means — never as a checked obligation, and all three obligations are scoped to
-  `identifier-need` or to every cell's citation. The requirement itself is
-  real and is stated in the template, which says a citation-only cell "is
-  required here as it is everywhere, and here it is not sufficient"; but the
-  template's *guidance* is not a machine-checked obligation, and the plan
-  places the judgement of an adequate cell with the reviewer at task 3.2.1.
-  Making it checked here would also mean encoding "the actual strings" as a
-  syntactic property, which no rule in either document defines. **Subject five**
-  (`docs/developers-guide.md`, `minor` at both locations):
-  `"what the Rust expected"` is ungrammatical. Adopted as a wording fix.
-  **Subject six** (`docs/design.md`, `major`/`minor` — the round's one mixed
-  location): name explicit rename support in the deferred decision. Declined —
-  it would pre-empt task 3.2.1. ADR 004's `Outstanding decisions` already
-  states that rename support "is part of the same verdict, because the rename
-  support is the cheap remedy that a stability finding selects", and design.md
-  §14's bullet already points at 3.2.1 and at ADR 004. Resolving it in
-  design.md would breach constraint 2 ("No verdict") by fixing an outcome ahead
-  of the evidence. **Subject seven** (`docs/context.md`, `minor`): reconcile
-  the glossary's `State name` entry with ADR 004. Adopted. The entry describes
-  a stable name without recording that "stable" is undecided, while the
-  `State identifier` entry beside it does record that 3.2.1 decides. **Subject
-  eight** (`plan`, `minor`): the completion records are future-dated. Declined
-  after checking the clock: the plan's own timestamps are **local** time
-  (Europe/Berlin, +0200) and the entries were written at `2026-09-21 00:32`
-  local, which is the date they carry. The finding compares against UTC, where
-  that instant is still `2026-09-20`; ADR 002 already carries a date of
-  `2026-07-22.` recorded the same way and the round accepted it. Four of the
-  eight subjects were therefore adopted — subject one's first half against a
-  measured defect, subjects three, five and seven against the documents they
-  reconcile — and four declined: subject two as vacuous, subject four because
-  the obligation it asks for is stated nowhere as checked, subject six because
-  it would pre-empt task 3.2.1, subject eight against the clock. Date/Author:
-  2026-09-25, implementing agent, actioning the review the scrutineer returned
-  after D30. **Corrected 2026-09-25**, in the same revision: this entry's first
-  draft said the round reported every finding "at a `major` and a `minor`
-  severity", which the log contradicts — five locations carry `major` twice —
-  and it recorded only the first half of subject one, silently dropping the
-  `is_negated` request that the same two findings also carry. Both were caught
-  by reading `/tmp/coderabbit4-….out` against the entry rather than by trusting
-  the summary that produced it. The lesson is the round's own: a record of a
-  review is a claim like any other and needs the primary evidence checked
-  against it, which is how D31's subject one was found to have been
-  half-recorded and D30's `major`/`minor` pattern found not to generalize.
+  nothing else. Declined — **superseded by D60**, which adopts it on the user's
+  direct requirement and supplies the discriminator this decline found missing.
+  The ADR states "three obligations on the evidence cells are checked":
+  citation shape, the `identifier-need` consumer set, and the `identifier-need`
+  property agreement. "Reject citation-only `Enumerated` evidence" is a fourth,
+  and it appears in ADR 004 only as *prose* — "the note lists the actual
+  strings", in the paragraph explaining what `Enumerated` means — never as a
+  checked obligation, and all three obligations are scoped to `identifier-need`
+  or to every cell's citation. The requirement itself is real and is stated in
+  the template, which says a citation-only cell "is required here as it is
+  everywhere, and here it is not sufficient"; but the template's *guidance* is
+  not a machine-checked obligation, and the plan places the judgement of an
+  adequate cell with the reviewer at task 3.2.1. Making it checked here would
+  also mean encoding "the actual strings" as a syntactic property, which no
+  rule in either document defines. **Subject five** (`docs/developers-guide.md`,
+  `minor` at both locations): `"what the Rust expected"` is ungrammatical.
+  Adopted as a wording fix. **Subject six** (`docs/design.md`, `major`/
+  `minor` — the round's one mixed location): name explicit rename support in
+  the deferred decision. Declined — it would pre-empt task 3.2.1. ADR 004's
+  `Outstanding decisions` already states that rename support "is part of the
+  same verdict, because the rename support is the cheap remedy that a stability
+  finding selects", and design.md §14's bullet already points at 3.2.1 and at
+  ADR 004. Resolving it in design.md would breach constraint 2 ("No verdict")
+  by fixing an outcome ahead of the evidence. **Subject seven**
+  (`docs/context.md`, `minor`): reconcile the glossary's `State name` entry
+  with ADR 004. Adopted. The entry describes a stable name without recording
+  that "stable" is undecided, while the `State identifier` entry beside it does
+  record that 3.2.1 decides. **Subject eight** (`plan`, `minor`): the
+  completion records are future-dated. Declined after checking the clock: the
+  plan's own timestamps are **local** time (Europe/Berlin, +0200) and the
+  entries were written at `2026-09-21 00:32` local, which is the date they
+  carry. The finding compares against UTC, where that instant is still
+  `2026-09-20`; ADR 002 already carries a date of `2026-07-22.` recorded the
+  same way and the round accepted it. Four of the eight subjects were therefore
+  adopted — subject one's first half against a measured defect, subjects three,
+  five and seven against the documents they reconcile — and four declined:
+  subject two as vacuous, subject four because the obligation it asks for is
+  stated nowhere as checked, subject six because it would pre-empt task 3.2.1,
+  subject eight against the clock. Date/Author: 2026-09-25, implementing agent,
+  actioning the review the scrutineer returned after D30. **Corrected
+  2026-09-25**, in the same revision: this entry's first draft said the round
+  reported every finding "at a `major` and a `minor` severity", which the log
+  contradicts — five locations carry `major` twice — and it recorded only the
+  first half of subject one, silently dropping the `is_negated` request that
+  the same two findings also carry. Both were caught by reading
+  `/tmp/coderabbit4-….out` against the entry rather than by trusting the
+  summary that produced it. The lesson is the round's own: a record of a review
+  is a claim like any other and needs the primary evidence checked against it,
+  which is how D31's subject one was found to have been half-recorded and D30's
+  `major`/`minor` pattern found not to generalize.
 
 - D32: **The fifth CodeRabbit pass returned ten findings, and the round is the
   first scored on a frozen revision.** The four previous rounds could not be
@@ -2850,17 +2869,19 @@ design.
   the plan and says why. The second subject is the template's
   `state-display-name` bullet, which said a citation-only cell "is not
   sufficient" and left the enforcer unnamed. ADR 004 already draws that line —
-  three obligations are "checked, not merely asked for", and the adequacy of
-  the strings is the reviewer's judgement at task 3.2.1 — so the bullet now
-  says which is which, and a Phase 2 engineer copying the form cannot mistake
-  the contract for the judge of a rule it does not implement. **Declined
-  three.** The `docs/contents.md` rewrap returns for a third time, and this
-  round the falsification is stronger than review five's: a `markdown-it` probe
-  shows the remedy cannot be applied at all. Putting the text on one line and
-  `](url)` on the next stops the link rendering — `href` is `undefined` in
-  every variant tried, indented or not — because CommonMark will not split a
-  link's destination from its `](`; and the shortest reference-style definition
-  that keeps one line under 80 is 79 columns, which is why review five's
+  three obligations are "checked, not merely asked for" — **four since D60,
+  which checks the cell's shape and leaves the adequacy of the listed strings
+  where this sentence puts it** — and the adequacy of the strings is the
+  reviewer's judgement at task 3.2.1 — so the bullet now says which is which,
+  and a Phase 2 engineer copying the form cannot mistake the contract for the
+  judge of a rule it does not implement. **Declined three.** The
+  `docs/contents.md` rewrap returns for a third time, and this round the
+  falsification is stronger than review five's: a `markdown-it` probe shows the
+  remedy cannot be applied at all. Putting the text on one line and `](url)` on
+  the next stops the link rendering — `href` is `undefined` in every variant
+  tried, indented or not — because CommonMark will not split a link's
+  destination from its `](`; and the shortest reference-style definition that
+  keeps one line under 80 is 79 columns, which is why review five's
   reference-link remedy was already falsified against the style guide's "Prefer
   inline links". The four cited lines are therefore long by necessity, not by
   neglect, and MD013 exempts them because no whitespace follows column 80. The
@@ -3723,7 +3744,9 @@ design.
   adopted and the template bullet now names the enforcer), raised again in
   round twenty-one (plan 2498-2511, subject four), and now in round
   twenty-seven. **Declined for the reason both earlier rounds give**, which is
-  checkable rather than a preference: ADR 004 states "three obligations on the
+  checkable rather than a preference — **and falsified by D60**, which adopts
+  the subject this entry declined a third time; the supersession chain is D36,
+  2498-2511, this entry, then D60. ADR 004 stated "three obligations on the
   evidence cells are checked, not merely asked for", and they are citation
   shape on every cell, the `identifier-need` consumer set, and the
   `identifier-need` property agreement. "The note lists the actual strings"
@@ -3790,6 +3813,133 @@ design.
   count.** Date/Author: `2026-09-28T03:12:22+02:00` (`2026-09-28T01:12:22Z`) —
   implementing agent, actioning the twenty-eighth round by measuring the window
   instead of reading the reviewer's premise.
+
+- D60: **A requirement the user states directly outranks a decline whose
+  reasoning was that no rule defined the property — so the third recurrence of
+  "reject citation-only `Enumerated` evidence" is adopted, and ADR 004's
+  obligation count moves with it.** The subject is the one D58 declined as a
+  *third* recurrence, and D36 (round nine) and plan 2498-2511 (round
+  twenty-one) declined as the first and second. All three declines turn on the
+  same sentence in ADR 004: "three obligations on the evidence cells are
+  checked, not merely asked for", with the cells scoped to every citation, the
+  `identifier-need` consumer set, and the `identifier-need` property agreement.
+  The plan's own reasoning was that "the note lists the actual strings" appears
+  only as prose inside the `Enumerated` explanation, never as a listed
+  obligation, and that encoding it "would mean encoding 'the actual strings' as
+  a syntactic property, which no rule in either document defines". **What
+  changed is not the evidence but the authority.** The user's work order states
+  the requirement directly and adds the two constraints that make it
+  implementable: "Add the actual returned strings to the fixture and
+  illustration, and add a negative control for a type name without those
+  strings. **Do not invent the strings; take them from the annotated
+  example.**" The first sentence resolves the objection to the *check*: it is
+  now required rather than inferred. The second resolves the objection that no
+  rule defines the property, by supplying the discriminator the earlier
+  declines said was missing — **the enumeration is a count, and the count is of
+  quoted spans.** Naming the state takes one backticked span; a cell that goes
+  on to enumerate what the state returns quotes at least one more; so the
+  predicate requires two, and it refuses both shapes that name a type without
+  its strings: one quoting the type alone, as the `lists BufferMode` control
+  does, and one quoting nothing at all, as the "the enum's names were not
+  recorded" control writes. This is what the earlier declines were right about
+  and what they missed: the predicate still cannot check *completeness*,
+  because it holds no view of the enum, so matching the listed strings against
+  the annotated code stays with the reviewer at task 3.2.1. What is checked is
+  the cell's shape, and the shape is decidable from the bytes. **The ADR's own
+  sentence had to move in the same change.** Leaving "three obligations … are
+  checked" while adding a fourth would make the ADR state a falsehood about its
+  own contract — the defect the round-five illustration repair existed to
+  avoid, in the other direction. The count therefore reads **four**, the new
+  obligation is listed *Second* (keeping the three existing obligations'
+  relative order, so citation shape stays First and the two `identifier-need`
+  obligations become Third and Fourth), and the three sites recording the old
+  count — **D36**, the round-twenty-one decline (the Progress bullet whose
+  subject is "**Subject four** (`policy.rs`, `major` at both locations)"), and
+  **D58** — are left legible as the record of the declines they were written
+  for, with this entry as their supersession. The identifiers replace the three
+  line numbers these sites carried in the first draft of this entry, which were
+  stale on arrival: an earlier edit in this same revision had moved all three,
+  which is the half-life the line-number observation above describes. **The
+  strings are measured, not chosen**: ADR 002's annotated derivation of
+  `BufferMode`, the enum whose variants are `Text` and `Table`, supplies
+  exactly two, and no commit on this branch had ever listed them. Date/Author:
+  `2026-09-28T06:07:22+02:00` (`2026-09-28T04:07:22Z`), implementing agent,
+  actioning the user's work order after verifying each earlier decline against
+  the bytes at its own revision.
+
+- D61: **A probe that measures the wrong subject reads exactly like a
+  measurement, and this one was reported to the user as one.** Waiting on the
+  shared Cargo package cache, the implementing agent ran
+  `flock --nonblock "$CARGO_HOME/.package-cache"` — which **acquired** the lock
+  — and reported to the user that "the Cargo package-cache lock is **free** —
+  the multi-session stall has cleared, and disk is healthy (781 G). This is the
+  first moment the real gates can run." Both halves were wrong about the same
+  thing. Cargo uses **two** package-cache lock files in the same directory,
+  `.package-cache` and `.package-cache-mutate`, and the one serializing a
+  mutating `cargo test` is the second; the blocking holder was pid 1832225
+  (`cargo test --all-targets --all-features` in another worktree, elapsed
+  3h13m). The `scrutineer` subagent, told to run the gates, reported the
+  correction rather than the three failures the probe predicted, and its Next
+  Action names the remedy: "the planner's precondition check must also probe
+  `/home/leynos/.cargo/.package-cache-mutate`, not just `.package-cache`." The
+  probe was re-run over *both* files and the corrected result recorded —
+  `.package-cache` (inode 64763336) acquired, `.package-cache-mutate` (inode
+  64770042) held. **The class this belongs to is the one this plan has now
+  recorded four times** — D57's composed numerals, D59's broken clock, and the
+  `Row`/`not` count that was invented to fit a sentence — and D59 states the
+  rule they share: a count that decides scope must be computed twice by
+  different methods. This instance sharpens it in a way none of the first three
+  did: the quantity was not miscounted but **mis-addressed**. Every method
+  agrees with every other when they all read the same wrong file, so the
+  two-method rule would not have caught it. The rule this instance adds is
+  therefore about the *subject* rather than the arithmetic: **enumerate the
+  probe's full domain before trusting a single member of it, because a partial
+  domain returns a definite answer about nothing.** The checkable form is the
+  one the correction takes — `for f in .package-cache .package-cache-mutate` —
+  which is why the loop is recorded here rather than the single command it
+  replaced. Carried consequence: `lint`, `typecheck` and `test` have no valid
+  evidence at this revision, and EP-M5 stays unticked for that reason as well
+  as for the review bar. They are not re-run until a probe of **both** files
+  reports both acquired. Date/Author: `2026-09-28T06:07:22+02:00`
+  (`2026-09-28T04:07:22Z`), implementing agent, after the scrutineer's
+  correction and a re-probe of both lock files.
+
+- Observation: **the illustration carried a numeral borrowed from a *different*
+  enum, and the fix required reading four signals rather than the one the
+  numeral came from.** D60 supplies the strings; this records where the old row
+  went wrong, because the wrong row is still legible in the history and a
+  future reader deserves the measurement rather than a correction with no
+  provenance. Two facts are measured rather than argued. First, `LineMode`
+  **exists in no repository** — `git grep -In 'LineMode'` over this tree
+  returns one hit, this plan's own Progress bullet describing the illustration,
+  and the `femtologging` matches that a wider search produces are Go symbols
+  inside a vendored `nektos/act` binary, not a Rust type. Second, both
+  `LineMode` and "three names" entered in the *same* commit, `2426ea9`, the one
+  that first wrote ADR 004's prose — and round five, `160bb4d`, did not
+  introduce them; it rewrote a hedged Observations sentence ("only `LineMode`
+  was annotated for this note") into a positive assertion that task 2.2.1
+  annotated it. So the defect was created and then *strengthened*, which is
+  worth naming, because the strengthening commit is the one a reader would
+  expect to be a repair. The borrowed numeral is now measurable:
+  `ContinuationMode` — which ADR 002 places in `src/wrap/paragraph/pending.rs`
+  and which roadmap task **2.2.2** owns, not 2.2.1 — declares exactly three
+  variants, `Normalize`, `TightCodeSpan` and `VerbatimFlush`. "three names" is
+  that enum's cardinality, carried into an illustration whose subject is the
+  *other* enum. **Four independent signals bind the subject to `BufferMode`**,
+  which is why the repair is not a guess: the citation path
+  `mdtablefix@abc1234:src/process.rs`; the task binding, since 2.2.1 annotates
+  `ProcessBuffer` and 2.2.2 is a separate task; the illustration's own prose,
+  which puts `bool in_table` in `ProcessBuffer` explicitly out of scope; and
+  ADR 002's annotated example, whose `handle_table_line` consumes
+  `self.mode.state_name()` where `self.mode` is a `BufferMode`. The rule this
+  leaves behind is the one the `three names` instance demonstrates: **a
+  cardinality is only meaningful beside the type it was counted from, and a
+  number copied to a neighbouring subject inherits none of its evidence.** The
+  checkable form is the one now in the fixture — the strings themselves, `Text`
+  and `Table`, which cannot drift from their enum the way a count can.
+  Date/Author: `2026-09-28T06:07:22+02:00` (`2026-09-28T04:07:22Z`),
+  implementing agent, measuring `2426ea9` and `160bb4d` before recording the
+  repair D60 makes.
 
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
@@ -4094,15 +4244,28 @@ entries in all; the other fifty-three are `Decision log` records D1–D53, which
 are decisions rather than observations and are dispositioned in their own
 section. Both figures were recounted over the section body rather than carried
 forward, because D53 falsified both and a tally that moves must move by
-arithmetic: 33 + 53 = 86 closes against the `^-` count directly. **D47, D48,
-D49, D50, D51, D52 and D53 are the seven entries added after this
-reconciliation was first written** — D47 by the rebase that closed the
-divergence the `Residual gaps` section once recorded, D48 by the sixteenth
-review round, which is the first to reach analysis after the two preceding
-rounds aborted four attempts between them, D49 by the seventeenth, whose
-`major` sent a register row and its `fixtures.rs` pin upstream together, D50 by
-the eighteenth, whose two defects are in this plan's own rerun rule and its
-Stage D ordering and pre-date the commit the round reviewed, D51 by the
+arithmetic: 33 + 53 = 86 closes against the `^-` count directly.
+
+**Re-measured at D61, 2026-09-28, by two methods that agree.** The figures
+above are D53's and are left as it wrote them. The section now holds
+**ninety-six** entries: **thirty-six** observations and **sixty** decisions
+D1–D60. Measured first by counting the bullets that open `- Observation:` and
+`- D<digits>:`, and second by extracting the D-ids and checking them against
+`seq 1 60` for duplicates and gaps — the second method is what D59 requires,
+and it reports none of either. The periodic re-derivation is deliberate: three
+entries were added since D53 (D54–D56), then three more (D57–D59), then two at
+D60 and D61, and no tally was moved for any of the six, so the paragraph above
+was stale by six before this measurement. Whether later entries restore the
+per-entry tally this section once carried is a question for the next revision
+rather than this one; what matters here is that the live count has a
+measurement under it. **D47, D48, D49, D50, D51, D52 and D53 are the seven
+entries added after this reconciliation was first written** — D47 by the rebase
+that closed the divergence the `Residual gaps` section once recorded, D48 by
+the sixteenth review round, which is the first to reach analysis after the two
+preceding rounds aborted four attempts between them, D49 by the seventeenth,
+whose `major` sent a register row and its `fixtures.rs` pin upstream together,
+D50 by the eighteenth, whose two defects are in this plan's own rerun rule and
+its Stage D ordering and pre-date the commit the round reviewed, D51 by the
 nineteenth, whose `major` is a requested semantics change ADR 004's own
 rejected Option B had already refused, D52 by the twentieth, which reverses
 this plan's own refusal of `proptest` on a re-measurement and a changed

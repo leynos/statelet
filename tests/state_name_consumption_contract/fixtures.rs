@@ -110,8 +110,16 @@ pub(crate) fn status_register_without(field: &str) -> String {
 }
 
 /// The `state-display-name` row of the note fixture.
+///
+/// The strings are `BufferMode`'s, taken from the annotated example in ADR 002
+/// §"`mdtablefix`: conventions baseline" — the enum that example derives for the
+/// `ProcessBuffer` this note is about, and the one whose `state_name()` its
+/// `handle_table_line` transition consumes. They are not invented here: the
+/// contract's subject is the state task 2.2.1 annotates, and a row that named
+/// only the type would be the cell `check_note_cells` now refuses.
+#[rustfmt::skip]
 pub(crate) const STATE_DISPLAY_NAME_ROW: &str =
-    "| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs` lists LineMode |";
+    "| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table` |";
 
 /// The `identifier-need` row of the note fixture.
 ///
@@ -125,8 +133,13 @@ pub(crate) const IDENTIFIER_NEED_ROW: &str =
     "| identifier-need | None | subscriber, metrics, model checker and generated documentation considered; `mdtablefix@abc1234:src/process.rs` records no unmet property |";
 
 /// The `metrics-cardinality` row of the note fixture.
+///
+/// "two names" and not "three": the count is a claim about the row above, whose
+/// state has two variants. It is not checked against that row — the ADR leaves
+/// the cardinality to the reviewer — but a fixture pairing a three-name claim
+/// with a two-name list would teach a Phase 2 engineer to copy the inconsistency.
 pub(crate) const METRICS_CARDINALITY_ROW: &str =
-    "| metrics-cardinality | Bounded | `mdtablefix@abc1234:src/process.rs` yields three names |";
+    "| metrics-cardinality | Bounded | `mdtablefix@abc1234:src/process.rs` yields two names |";
 
 /// The `tracing-use` row of the note fixture.
 #[rustfmt::skip]
