@@ -97,6 +97,21 @@ fn citation_parts(word: &str) -> Option<(&str, &str, &str)> {
 /// path into the keyword predicates on the way to being rejected.
 fn is_citation(word: &str) -> bool { citation_parts(word).is_some() }
 
+/// The fewest quoted spans that can name a type *and* its returned strings:
+/// one for the state, and at least one for what it returns.
+const ENUMERATION_SPANS: usize = 2;
+
+/// The verb stems a cell says the strings are returned with.
+///
+/// Read as word-initial stems rather than as whole words, so that every
+/// inflection of each stem is the same verb: "returns", "returned", "returning",
+/// "yields", "yielded", "yielding". A closed list of inflections would be the
+/// thing to drift — a note writing "returned" would be refused for a form the
+/// list's author did not happen to think of — and no other English word begins
+/// with either stem without being a form of it, which is what makes the prefix
+/// safe to read as the verb.
+const RETURN_STEMS: [&str; 2] = ["return", "yield"];
+
 /// Whether a cell lists the strings the annotated state returns.
 ///
 /// The `state-display-name` obligation is the one ADR 004 states in prose
@@ -112,9 +127,20 @@ fn is_citation(word: &str) -> bool { citation_parts(word).is_some() }
 /// The strings and the type are both identifiers, so no shape tells one from
 /// the other; what separates them is number. Naming the state takes one quoted
 /// span, and a cell that goes on to enumerate what the state returns quotes at
-/// least one more. The rule is therefore a count of two, and it refuses both
-/// shapes that name a type without its strings: one quoting the type alone, and
-/// one quoting nothing at all, as "the enum's names" does.
+/// least one more. The rule is therefore a count of two spans, and it refuses
+/// both shapes that name a type without its strings: one quoting the type
+/// alone, and one quoting nothing at all, as "the enum's names" does.
+///
+/// Two spans are the floor and not the whole rule, because a cell can quote the
+/// type and still name no returned string: "`BufferMode` uses `state_name()`"
+/// quotes the state beside the *reader* of its name, and those two spans are
+/// the same shape as a type and its labels. What separates a reader from a
+/// label is the verb, so the cell must also say that the state yields its
+/// strings — the shape ADR 004's worked example writes with "returns". That
+/// vocabulary is small and closed for the reason the citation rule's is: the
+/// check admits the shape the document teaches, and refuses any other with a
+/// message naming it, rather than accepting a cell on a guess about its
+/// meaning.
 ///
 /// The citation is removed first, for the reason `narrative_text` gives: a path
 /// is chosen by whoever wrote the note, so the `` `src/mode.rs` `` inside a
@@ -139,10 +165,46 @@ pub(crate) fn lists_returned_strings(evidence: &str) -> bool {
         .filter(|word| !is_citation(word))
         .collect::<Vec<&str>>()
         .join(" ");
-    // Backticks come in pairs, so the span count is half the mark count. An
-    // unpaired mark rounds down, which is the safe direction: a cell with an
-    // unbalanced quote has not demonstrated the second name.
-    kept.matches('`').count() / 2 >= 2
+    // Two marks make a span, so the mark count is twice the span count. The
+    // comparison is written against the doubled bound rather than as a division
+    // of the mark count, which `integer_division` denies outright. An unpaired
+    // mark leaves the count one short of the bound, and reading that as a
+    // refusal is the safe direction: a cell with an unbalanced quote has not
+    // demonstrated the second name.
+    let enough_spans = kept.matches('`').count() >= ENUMERATION_SPANS * 2;
+    enough_spans && names_a_return(&kept)
+}
+
+/// Whether a cell says the state yields its strings.
+///
+/// The second half of the obligation, and the one a span count cannot reach: a
+/// cell reading "`BufferMode` uses `state_name()`" quotes the state and the
+/// *reader* of its name, which is the same shape as a type beside its labels.
+/// What separates the two is that a label is what the state returns, so the
+/// cell has to say so — the shape ADR 004's worked example writes with
+/// "returns", and the only shape the check admits. The vocabulary is closed and
+/// the message names it, so an honest note choosing another phrasing is refused
+/// with the repair rather than accepted on a guess about its meaning.
+///
+/// The argument is the citation-stripped text, for the reason the two callers
+/// give: a path is chosen by whoever wrote the note, so a citation naming
+/// `src/returns.rs` would otherwise supply the verb that this obligation is the
+/// only one checking. A citation the shape check refuses for naming a ref
+/// rather than a commit is left in the stripped text, and its path is read
+/// here; that cell is refused by the shape check whatever this answers, so the
+/// leak cannot admit a note. It could only make this predicate accept text that
+/// is already being rejected for another reason.
+fn names_a_return(kept: &str) -> bool { kept.to_lowercase().split_whitespace().any(is_return_verb) }
+
+/// Whether one word is a form of one of the stems above.
+///
+/// The punctuation a writer put beside the word is trimmed first, so that
+/// "returns," and "returns." are the verb they are; the stems are compared
+/// against the word's opening characters rather than its whole text, for the
+/// inflection reason the list above gives.
+fn is_return_verb(word: &str) -> bool {
+    let bare = word.trim_matches(|character: char| !character.is_alphanumeric());
+    RETURN_STEMS.iter().any(|stem| bare.starts_with(*stem))
 }
 
 /// The words of a cell that make a claim, with its citations removed.

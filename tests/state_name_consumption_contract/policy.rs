@@ -169,11 +169,19 @@ pub(crate) fn check_note_cells(rows: &[StatusRow], note: &[NoteRow]) -> Result<(
 ///
 /// The ADR's own definition: `state-display-name` is `Enumerated` "only when
 /// the note lists the actual strings each annotated state can return". A cell
-/// whose status is `Enumerated` and which names only the type is refused here,
+/// whose status is `Enumerated` and which does not list them is refused here,
 /// because the status would otherwise be doing the work of the list: it is the
 /// list that makes the `metrics-cardinality` bound derivable from the note, and
 /// a reviewer deciding the fate of the `&'static str` at task 3.2.1 would be
 /// reading a bound asserted by the note's author.
+///
+/// The shape the ADR's illustration writes is what the predicate admits: the
+/// state in backticks, the verb `returns` or `yields`, and then at least one
+/// returned string in backticks. A cell quoting the state beside a *reader* of
+/// its name, as "`BufferMode` uses `state_name()`" does, carries the same
+/// number of quoted spans and is refused for saying where the name comes from
+/// rather than what it is; the refusal is what the message below names, so an
+/// author who wrote that shape is told which part is missing.
 ///
 /// Only `Enumerated` obliges this. `Not a named type` and `Synthesized from
 /// data` both block the note before its verdict is taken, so a cell carrying
@@ -191,11 +199,11 @@ fn check_state_display_name_evidence(note: &[NoteRow]) -> Result<(), String> {
     }
     Err(format!(
         "a StateName note records state-display-name: {ENUMERATED} without listing the strings \
-         the state returns; its evidence names the type and no label. Repair: name the state and \
-         then its returned strings in backticks — '`<repo>@<sha>:<path>`, `TheType` returns \
-         `First`, `Second`' — because the Enumerated status is what makes the metrics-cardinality \
-         bound derivable from the note. The strings are read from the annotated example, not \
-         invented."
+         the state returns; its evidence names the type and no label. Repair: write the shape the \
+         ADR illustrates — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' — naming \
+         the state in backticks, then `returns` or `yields`, then each returned string in \
+         backticks, because the Enumerated status is what makes the metrics-cardinality bound \
+         derivable from the note. The strings are read from the annotated example, not invented."
     ))
 }
 

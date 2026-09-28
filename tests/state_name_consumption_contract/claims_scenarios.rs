@@ -11,7 +11,7 @@ use pretty_assertions::assert_eq;
 use rstest::rstest;
 
 use super::{
-    claims::{is_citation_shaped, names_a_consumer},
+    claims::{is_citation_shaped, lists_returned_strings, names_a_consumer},
     fixtures::{
         IDENTIFIER_NEED_ROW,
         METRICS_CARDINALITY_ROW,
@@ -60,6 +60,42 @@ fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), Strin
     check_note_cells(&rows, &cells)?;
     assert_eq!(resolve_note(&rows, &cells)?, Resolution::Sufficient);
     Ok(())
+}
+
+/// Refuses a cell that names the state and its *reader* rather than its strings.
+///
+/// The shape a span count alone cannot separate. "`BufferMode` uses
+/// `state_name()`" quotes the state beside the method that reads its name, so it
+/// carries the two spans a type and its labels carry, and a predicate counting
+/// only spans accepts it — which is the reading of `Enumerated` the obligation
+/// exists to refuse. What separates a reader from a label is the verb, and this
+/// control is the one that holds the predicate to reading it.
+///
+/// The accepted forms are the verb stems the predicate admits, shown through the
+/// same cell text so that a change to the span rule cannot pass by making every
+/// form fail: a case here that stopped being accepted would report the refusal
+/// rather than a false acceptance.
+#[rstest]
+#[case::returns("`BufferMode` returns `Text`, `Table`", true)]
+#[case::yields("`BufferMode` yields `Text`, `Table`", true)]
+#[case::inflected("`BufferMode` returned `Text`, `Table`", true)]
+#[case::sentence_verb("`BufferMode` returns `Text` and `Table`.", true)]
+#[case::reader_only("`BufferMode` uses `state_name()`", false)]
+#[case::reader_and_type_name("`BufferMode` implements `StateName::state_name`", false)]
+#[case::no_verb_at_all("`BufferMode`, `Text`, `Table`", false)]
+#[case::one_span_only("`BufferMode` returns nothing", false)]
+fn the_enumerated_obligation_reads_the_return_verb(#[case] cell: &str, #[case] expected: bool) {
+    let evidence = format!("`mdtablefix@abc1234:src/process.rs`, {cell}");
+    assert_eq!(
+        lists_returned_strings(&evidence),
+        expected,
+        "the cell {evidence:?} must be {} by the enumeration predicate. Repair: the predicate \
+         requires the state in backticks, a return verb (`returns` or `yields`, and their \
+         inflections), and then each returned string in backticks — the shape ADR 004 illustrates \
+         — and a cell naming the reader of the name instead carries the same two spans without \
+         naming a single label.",
+        if expected { "accepted" } else { "refused" }
+    );
 }
 
 /// Rejects a citation whose revision names a ref, and keeps its path out of the

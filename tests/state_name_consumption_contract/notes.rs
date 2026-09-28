@@ -248,81 +248,103 @@ impl ScratchNotes {
 /// scan at all — its subject is the reset `fresh_tree` performs on its own root,
 /// which that control cannot reach however many notes it reads.
 ///
-/// The fault is placed by making the scratch root a *file*. Every path beneath a
-/// file fails with `ENOTDIR`, which is what makes the two obligations separable:
+/// The fault is a *file at a parent component* of the inspected root, and the
+/// placement is what makes the control discriminating. A file at the root
+/// itself would not: `try_exists` answers `Ok(true)` for a path that *is* a
+/// file, so the inspection succeeds, the removal proceeds and the control never
+/// reaches the branch it exists to test. A file one level up makes the lookup
+/// of the root itself fail with `ENOTDIR`, because resolving the path has to
+/// traverse the file, and that is the only shape in which inspection *errors*.
 ///
-/// 1. **The failure names the root.** The message must open with the root path, so an engineer is
-///    sent to the directory to clear. A bare `ENOTDIR` would name neither the root nor the fact
-///    that a previous run left it.
-/// 2. **The reset does not proceed.** The file must survive the call. This is the obligation that
-///    gives the control its teeth: `try_exists` is chosen over `exists` precisely because
-///    `exists()` answers `false` here — see `fresh_tree`'s own comment — so a regression to
-///    `exists` would fall through to `create_dir_all` and *replace the file with a directory*. A
-///    control asserting only `is_err()` could not tell that from a correct failure, because it
-///    would still be an `Err` from `create_dir_all`; hence the survival assertion below rather than
-///    a message match alone.
+/// The two obligations then separate, and only the first is discriminating:
+///
+/// 1. **The failure names the inspected root.** The message must open with the root path, so an
+///    engineer is sent to the component that a previous run left behind. This is what a regression
+///    to `exists()` fails: `exists()` answers `Ok(false)` for the same path, so the removal is
+///    skipped and `create_dir_all` fails instead, with a message opening on the *notes* directory
+///    beneath the root. Both are `Err`, so an `is_err()` assertion could not tell them apart — the
+///    prefix can, and does so for a reason the implementation states rather than one this comment
+///    assumes.
+/// 2. **The reset does not proceed.** The file survives, and no directory appears beneath the root.
+///    This assertion holds under a correct implementation and under a reverted one, so it is stated
+///    as the invariant the reset owes rather than counted as a second discriminator. The fault that
+///    would give it teeth independently — a root whose inspection is denied by permissions — is out
+///    of this module's reach, and its own doc comment says why: the write it would need is not
+///    covered by the `dylint.toml` exemption, and it would pass vacuously wherever the suite runs
+///    as root.
 ///
 /// `fresh_tree` fails here for the reason the module documents: the failure is
 /// transient-looking and would otherwise be read as "no tree exists", skipping
 /// the reset.
 #[test]
 fn an_uninspectable_scratch_root_is_refused_before_the_reset() -> Result<(), String> {
-    let root = scratch_base().join("uninspectable");
+    // The parent component the fault is planted at, and the root beneath it
+    // that `fresh_tree` is asked to build. The name is a *path*, not a single
+    // component, because the fault has to sit above the root rather than on it.
+    let base = scratch_base();
+    let blocked = base.join("uninspectable-parent");
+    let root = blocked.join("uninspectable");
     let notes_dir = root.join(NOTES_DIR);
 
-    // The precondition: there is no tree at the root to inspect, so the file
-    // this control plants is the only thing there. A root left as a *file* by
-    // an earlier failed run is cleared as a file, so a failure does not make
-    // this control un-runnable a second time.
-    let base = scratch_base();
+    // The precondition: the base exists, and nothing is left at the blocked
+    // component. A parent left as a *file* by an earlier failed run is cleared
+    // as a file, so a failure does not make this control un-runnable a second
+    // time.
     fs::create_dir_all(&base)
         .map_err(|error| format!("{base}: the control cannot create its scratch base: {error}"))?;
-    if root.is_dir() {
-        fs::remove_dir_all(&root).map_err(|error| {
-            format!("{root}: the control cannot clear its scratch root: {error}")
+    if blocked.is_dir() {
+        fs::remove_dir_all(&blocked).map_err(|error| {
+            format!("{blocked}: the control cannot clear its blocked component: {error}")
         })?;
-    } else if path_exists(&root)? {
-        fs::remove_file(&root).map_err(|error| {
-            format!("{root}: the control cannot clear its leftover fault: {error}")
+    } else if path_exists(&blocked)? {
+        fs::remove_file(&blocked).map_err(|error| {
+            format!("{blocked}: the control cannot clear its leftover fault: {error}")
         })?;
     }
 
-    // A *file* at the scratch root. This is the fault: every path beneath it
-    // fails with `ENOTDIR`, and `try_exists` reports that failure rather than
-    // answering `false`.
-    fs::write(&root, "not a directory\n")
-        .map_err(|error| format!("{root}: the control cannot plant its fault: {error}"))?;
+    // A *file* at the blocked component. This is the fault: resolving any path
+    // beneath it fails with `ENOTDIR`, so the root cannot be inspected at all.
+    fs::write(&blocked, "not a directory\n")
+        .map_err(|error| format!("{blocked}: the control cannot plant its fault: {error}"))?;
 
-    let outcome = ScratchNotes::fresh_tree("uninspectable");
+    let outcome = ScratchNotes::fresh_tree("uninspectable-parent/uninspectable");
 
-    // Obligation 1: the failure names the root.
-    let message = match outcome {
-        Err(message) => message,
-        Ok(_) => {
-            return Err(format!(
-                "{root} is a file, yet the reset proceeded. Repair: inspect the root with \
-                 `try_exists` and fail on an inspection error, rather than falling through to \
-                 `create_dir_all` over a root that was never read."
-            ));
-        }
+    // Obligation 1: the failure names the inspected root. The prefix is the
+    // discriminating assertion, because it is the one thing a reverted
+    // implementation cannot produce.
+    let Err(message) = outcome else {
+        return Err(format!(
+            "{blocked} is a file, yet the reset proceeded. Repair: inspect the root with \
+             `try_exists` and fail on an inspection error, rather than falling through to \
+             `create_dir_all` over a root that was never read."
+        ));
     };
     if !message.starts_with(&format!("{root}: ")) {
         return Err(format!(
             "the inspection failure was reported as {message:?}, which does not name {root}. \
-             Repair: name the root in the message, so an engineer is sent to the directory that a \
-             previous run left behind."
+             Repair: name the inspected root in the message — a message opening on {notes_dir} \
+             means the failure came from `create_dir_all` and not from the inspection branch, so \
+             the root was never inspected. An engineer must be sent to the component a previous \
+             run left behind."
         ));
     }
 
-    // Obligation 2: the reset did not proceed. The file is still a file, and no
-    // directory was created over it.
-    if !root.is_file() {
+    // Obligation 2: the reset did not proceed. The blocked component is still a
+    // file, and no directory was created beneath it.
+    if !blocked.is_file() {
         return Err(format!(
-            "{root} is no longer a file, so the reset proceeded past an inspection error. Repair: \
-             return before `remove_dir_all`; a root that cannot be inspected must not be reset."
+            "{blocked} is no longer a file, so the reset proceeded past an inspection error. \
+             Repair: return before `remove_dir_all`; a root that cannot be inspected must not be \
+             reset."
         ));
     }
-    if path_exists(&notes_dir)? {
+    // The infallible query, and it has to be: `path_exists` would return `Err`,
+    // because the fault that makes the root uninspectable makes everything
+    // beneath it uninspectable too, so the `?` would report a probe error as a
+    // failure of the subject. `is_dir` answers `false` for exactly this case —
+    // no such directory, whether absent or unreadable — which is the question
+    // obligation 2 asks.
+    if notes_dir.is_dir() {
         return Err(format!(
             "{notes_dir} exists beneath a root that could not be inspected, so the reset \
              proceeded. Repair: return before `create_dir_all`."
@@ -330,8 +352,10 @@ fn an_uninspectable_scratch_root_is_refused_before_the_reset() -> Result<(), Str
     }
 
     // Leave the shared scratch base as it was found, so a later scenario
-    // building the same name is not refused by this control's fault.
-    fs::remove_file(&root)
-        .map_err(|error| format!("{root}: the control cannot clear its fault: {error}"))?;
+    // building beneath it is not refused by this control's fault. The fault is a
+    // *parent* component, so leaving it in place would block `create_dir_all`
+    // for every other scratch tree in this test binary, not merely this one.
+    fs::remove_file(&blocked)
+        .map_err(|error| format!("{blocked}: the control cannot clear its fault: {error}"))?;
     Ok(())
 }

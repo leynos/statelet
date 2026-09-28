@@ -1502,6 +1502,61 @@ outcome, and a reviewer should approve it on that understanding.
       is recorded as such rather than as an erratum. EP-M5 stays unticked, and
       roadmap task 1.1.3 with it, for that reason and for the review bar the
       paragraph above records.
+- [x] The twenty-ninth round returned **four findings, all `major`**, on the
+      published tip `84381d48`; the round is D63's, and the D60/D61/D62 work
+      order was carried out before the review was requested. Two of the four
+      are **deterministic CI failures** — `integer_division` and
+      `manual_let_else`, both already printed by `make lint` at exit 101 — which
+      is the standing rule's one prohibition: CodeRabbit spent capacity on what
+      a gate catches. The other two are substantive. F2 falsifies the boundary
+      control's own premise: a file at the scratch root is **not** an
+      uninspectable root, because `try_exists` answers `Ok(true)` for a path
+      that is a file, so the control was passing without reaching its subject.
+      The repair plants the fault at a parent component — measured first:
+      `try_exists` yields `Err(NotADirectory)` where `exists()` yields `false` —
+      and the prefix assertion is verified by mutation, the control failing
+      against a reverted `exists()` with a message opening on the notes
+      directory. That same mutation pass caught a defect the repair itself had
+      introduced: obligation 2's `path_exists(&notes_dir)?` can only return
+      `Err` beneath a parent-component fault, so a correct implementation would
+      have been reported as broken; it is now the infallible `is_dir()`. F4
+      tightens D60's span count past the shape D60 specified, refusing
+      "`BufferMode` uses `state_name()`", which quotes the reader of the name
+      rather than its labels. The contract suite is **91/91** over the repaired
+      revision. EP-M5 and roadmap task 1.1.3 remain unticked: four findings are
+      not zero.
+- [x] The round-29 repair is gated green. The first run over the repair was
+      **three-red and all three were the repair's own** — two rustfmt diffs, a
+      clippy `unnecessary_wraps`, and 15 markdownlint errors that turned out to
+      be a tools conflict rather than a prose defect (D64). After repairing
+      those three, the full eight-gate set was re-run **sequentially by a
+      scrutineer sub-agent** over the dirty tree and every gate exited 0:
+      `check-fmt` with both halves clean, `lint` with zero `error:` lines,
+      `typecheck`, `test` at **131/131** plus one doctest, `markdownlint` at
+      `0 error(s)` over 29 files with its chained spelling leg green, `nixie`,
+      `audit` at 76 crates against 1273 advisories, and
+      `test-workflow-contracts` at **116 passed**. The runner also confirmed
+      the working-tree digest unchanged before and after the run, so no gate
+      mutated a tracked file. **That run's subject is the working-tree digest
+      `53d11b7d…`, and this plan file has been edited since** — recording the
+      run is itself an edit — so the gates that read this file are re-run over
+      the final bytes with their superseded logs archived beside them. They are
+      named rather than counted, because the count is easy to get wrong:
+      `markdownlint` reads every `*.md` under the root and chains the `spelling`
+      prerequisite that reads them again; `check-fmt` reaches it through
+      `mdtablefix`; and `nixie` walks it, which its own log shows by naming this
+      path. `lint`, `typecheck`, `test` and `test-workflow-contracts` are
+      unaffected, and that is measured rather than assumed: no test
+      `include_str!`s this plan, so they read Rust and the four documents these
+      edits do not touch. The three Cargo-coupled gates that D62's
+      stalled lock had blocked now complete in seconds, so the stall is gone
+      rather than merely waited out. Recorded as D65; the transcript is in
+      `Artefacts and notes`. **This moves the newest gate position from
+      five-of-eight to eight-of-eight without falsifying the older one**: the
+      five-of-eight EP-M5 records below is a claim about the published tip
+      `f2ddcf8`, which remains true there, and the revision a count belongs to
+      is the thing this plan's own convention requires it to name. **It does
+      not move the review bar**, which still requires a zero-finding pass.
 - [x] The branch is rebased onto the PR's target. `origin/main` at `e98b685`
       is now an ancestor of the tip: `bad9a04..fb22d52` was replayed as 51
       commits with no conflicts, `git range-diff` reports all 51 as `=` so each
@@ -4015,6 +4070,134 @@ design.
   implementing agent, measuring `2426ea9` and `160bb4d` before recording the
   repair D60 makes.
 
+- D63: **The twenty-ninth round found four defects, and two of them are ones
+  the gates had already reported and this conversation had not yet read.** The
+  round is `coderabbitai CHANGES_REQUESTED @ 2026-09-28T05:10:35Z` on
+  `84381d48`, four findings, all `major`, no warnings. Two are *deterministic*:
+  `integer_division` on `claims.rs`'s division of the quoted-mark count by two,
+  and `manual_let_else` on `notes.rs`'s match over the reset outcome. Both had
+  already been printed by the Stop hook's own `make lint`, which exited **101**
+  with "could not compile `statelet` (test `state_name_consumption_contract`)
+  due to 3 previous errors" — so the round spent review capacity on what a gate
+  catches, which is the one thing the standing rule says CodeRabbit must not be
+  used for. **The lesson is about ordering, not about the lints**: a gate
+  failure was in hand before the review was requested, and requesting it anyway
+  is what made the round partly redundant. F1 is repaired by comparing the mark
+  count against the doubled bound, `ENUMERATION_SPANS * 2`, which is the same
+  predicate with no division, and the comment that read "the span count is half
+  the mark count" is corrected to the reading that is true. F3 adopts clippy's
+  own suggested let-else form. **F2 is the finding that matters**, and it
+  falsifies a claim the plan had asserted rather than measured: the control
+  `an_uninspectable_scratch_root_is_refused_before_the_reset` plants a file at
+  the scratch root and calls it "uninspectable", but `try_exists` answers
+  `Ok(true)` for a path that *is* a file — the inspection succeeds, the removal
+  proceeds, and the control never reaches the branch it exists to test. It was
+  therefore passing without exercising its subject, and a revert to `exists`
+  would have passed it too. The repair moves the fault to a **parent
+  component**, which is the only placement in which inspection *errors*, and
+  the measurement is recorded because the repair rests on it: with a file at
+  `…/uninspectable-parent` and the root at
+  `…/uninspectable-parent/uninspectable`, `try_exists` returns
+  `Err(NotADirectory)` where `exists()` returns `false`, and the reverted
+  implementation's message opens on the *notes* directory rather than the root.
+  The prefix assertion is consequently the discriminating one, and it was
+  verified by mutation: with `fresh_tree` temporarily reverted to `exists()`,
+  the control **fails** with the message above, and passes again once restored.
+  The same mutation pass found a defect the repair itself introduced —
+  obligation 2 called `path_exists` on the notes directory, which beneath a
+  parent-component fault can only return `Err`, so a *correct* implementation
+  would have been reported as a failure; the query is now the infallible
+  `is_dir()`, whose `false` is the answer the obligation asks for. **F4 adopts
+  the request that rounds nine, twenty-one and twenty-seven were declined on**
+  — D60 having already settled the authority — and tightens the predicate past
+  what D60 specified: a span count alone accepts a cell quoting the state
+  beside the *reader* of its name rather than its labels, so the predicate now
+  also requires a return verb (`returns`, `returned`, `yields` and `yielded`,
+  read as word-initial stems so every inflection is the same verb). ADR 004's
+  "four obligations" sentence and the Note-register definition were already
+  narrowed by D60; this entry adds the negative control for the reader shape
+  and the direct predicate control
+  `the_enumerated_obligation_reads_the_return_verb`. Date/Author:
+  `2026-09-28T14:13:44+02:00` (`2026-09-28T12:13:44Z`), implementing agent,
+  verifying each finding against the bytes before repairing any, and measuring
+  the F2 fault shape before relying on it.
+
+- D64: **The first gate run over the D63 repair came back three-red, and all
+  three failures were the repair's own.** The run was sequential and complete —
+  eight gates, eight logs — and five were green: `make typecheck` (never
+  previously run at this tip), `make test` (**131 passed**, 0 skipped, plus one
+  doctest), `make nixie`, `make audit` (76 crates against 1273 advisories), and
+  `make test-workflow-contracts` (**116 passed**). The Cargo cache stall that
+  D62 recorded as blocking three gates is **gone**: `lint`, `typecheck` and
+  `test` all ran to completion in seconds. The three failures were
+  `make check-fmt` (two rustfmt diffs, both in D63's own new code), `make lint`
+  (`clippy::unnecessary_wraps` on D63's new predicate control, which ended
+  `Ok(())` with no `Err` path and so was declared as returning a `Result` it
+  never used), and `make markdownlint` (**15 errors, every one of them inside
+  the D63 entry and nowhere else in the repository**). The markdownlint failure
+  is the one worth recording, because its cause is a tools conflict rather than
+  a prose defect, and it was **measured** rather than inferred. The entry had
+  quoted code spans that *contain a literal backtick* — the two clippy
+  findings' own expressions, and the double-backtick span naming the reader
+  shape — and `mdtablefix --wrap` splits such a span across a line boundary
+  when the paragraph has to wrap near it. A probe reproduced this in isolation:
+  a span holding a backtick was broken after the interior mark, leaving an
+  unpaired backtick at the end of one line and an orphaned one at the start of
+  the next, which flips span parity for the rest of the paragraph and makes
+  `markdownlint` read the wrapped code as spaces inside a span (`MD038`), the
+  `+1` in a diff as inline HTML (`MD033`), and the joined text as an over-long
+  line (`MD013`). This is the same class of defect as the typos fence-ignore
+  blind spot the plan already records, from the other side: a construct an
+  earlier tool canonicalizes into a shape that a later gate refuses. The repair
+  is to stop writing an interior backtick inside a span — the expressions are
+  described in words or carried in a fenced block instead — not to weaken
+  either tool. Date/Author: `2026-09-28T14:33:21+02:00`
+  (`2026-09-28T12:33:21Z`), implementing agent, reading each failing gate's own
+  log before repairing and reproducing the mdtablefix behaviour in a scratch
+  probe before writing it down.
+
+- D65: **The second gate run over the D63 repair came back eight-green, and the
+  three-repairs are confirmed by the gates rather than by my own checks.** The
+  run was sequential and complete, in the same order as D64's, with each gate
+  logged under
+  `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out` and
+  its superseded predecessor rotated aside to the same name suffixed
+  `.replaced-2026-09-28T12-35-39Z`, so the two runs' evidence cannot be
+  confused for one another. `check-fmt` ran both halves clean, the rustfmt leg
+  producing no diff and `mdtablefix --check` reporting **"28 files left
+  unchanged"**, which is the point D64's non-idempotency lesson turns on: the
+  second run's `--check` is run over a tree the first run already
+  canonicalized, so agreement here is evidence that the repair is a fixed point
+  and not merely a passing state. `lint` carries **zero `error:` lines** and the
+  `unnecessary_wraps` finding is gone. `test` reports **131 run, 131 passed, 0
+  skipped** across seven binaries, plus **1 doctest passed**. `markdownlint`
+  reports **"Summary: 0 error(s)"** over 29 files, with every chained spelling
+  leg green — `ruff format` "2 files already formatted", `ruff check` "All
+  checks passed!", the `typos_rollout_check` suite **3 passed at 95.45%**
+  coverage against its 90% floor, and `typos --config typos.toml` completing.
+  `nixie` reports "All diagrams validated successfully!". `audit` loads **1273
+  advisories** and scans **76 crate dependencies** with no advisory reported.
+  `test-workflow-contracts` reports **116 passed**. **The run was performed by
+  a scrutineer sub-agent, not by me**, which matters for the reason D64's own
+  ordering lesson gives: the repair's author re-running the gates that judged
+  their repair is a weaker form of evidence than an independent runner doing
+  so, and the standing rule reserves gate execution to that sub-agent for
+  precisely this reason. The independent runner also re-measured the working
+  tree fingerprint after all eight gates and found it **unchanged** at
+  `53d11b7d12e2b13014e23b77c6cfd7916ef88c11a52a857dd59fb34abc427800`, 8 files,
+  +345/-85, confirming that no gate mutated a tracked file — the concern the
+  gate-evidence observation below names. **That fingerprint names the tree the
+  run was taken over**, and it is the tree *before* this entry: the eight gates
+  read this plan file, so adding the paragraph you are reading changed the
+  bytes they had passed over, and a reader recomputing the hash here will not
+  get the value above. The entry is a record of a green run, not a claim that
+  the current tree is green, which is the same distinction the gate-evidence
+  observation draws and the reason the commit made after this entry is gated
+  again rather than inheriting this run's verdict. Date/Author:
+  `2026-09-28T14:53:07+02:00` (`2026-09-28T12:53:07Z`), implementing agent,
+  reading each log's own summary line rather than inferring a gate's result
+  from its exit status or from the runner's prose.
+
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
@@ -5924,6 +6107,65 @@ prose controls and the ambiguity control's derived count) and
 property each named only inside a citation) — plus the two functions those
 controls hang off. Every module is under the 400-line cap; tolerance 5's three
 named modules are clear of its 300-line trigger at 228, 220 and 189.
+
+The run over the **dirty** working tree carrying the D63 repair — `HEAD` still
+`84381d48`, eight files modified and nothing untracked. It is named by its
+subject rather than by an ordinal, because the numbering in this section is
+already uneven and a composed "Nth run" would be a count fitted to the sentence
+rather than read from anything. Sequential, one gate at a time, each logged
+under `/tmp/<gate>-statelet-1-1-3-define-state-name-consumption-question.out`
+with a matching `.out.exit` sidecar and a `.meta` file carrying its start, end
+and duration; the run's own predecessor was rotated aside to the same names
+suffixed `.replaced-2026-09-28T12-35-39Z` rather than overwritten, so the
+three-red run D64 records and this eight-green one are distinguishable from
+each other and neither is lost. Run by a scrutineer sub-agent, which is the
+standing rule's division of labour: the repair's author does not grade it.
+
+```plaintext
+make check-fmt                    exit 0   rustfmt clean; 28 files left unchanged
+make lint                         exit 0   0 error lines; doc + clippy + whitaker
+make typecheck                    exit 0   cargo check --all-targets --all-features
+make test                         exit 0   131 tests run: 131 passed, 0 skipped; 1 doctest
+make markdownlint                 exit 0   Summary: 0 error(s) — 29 files; spelling leg green
+make nixie                        exit 0   All diagrams validated successfully
+make audit                        exit 0   1273 advisories; 76 crate dependencies scanned
+make test-workflow-contracts      exit 0   116 passed in 2.95s
+```
+
+The subject of that run is a dirty tree, so the revision in the rows above is
+the one *around* the bytes rather than the bytes themselves — the distinction
+the eighteenth-round entry in `Progress` draws, which is also where the
+`worktree_clean=no` field it turns on is explained; the digest that pins these
+bytes is `53d11b7d12e2b13014e23b77c6cfd7916ef88c11a52a857dd59fb34abc427800`,
+taken before the run and again after it by the same runner, unchanged.
+**Writing this paragraph changed those bytes**, so this block is evidence for
+the revision it measured and not for the tree a reader now sees — which is why
+the commit carrying the repair is gated again rather than inheriting this run's
+verdict. **The paragraph you are reading is itself the second instance of
+that**: two corrections were made to it while the run above was in flight — the
+ordinal was composed rather than measured and is now the subject, and a
+cross-reference pointed at a section that sits above this one — so the digest
+the runner confirmed is the tree *before* those corrections and not the tree
+they produced. The deltas are confined to this file; the Rust and ADR bytes the
+run measured are the ones being committed, and the Markdown gates are re-run
+over the corrected bytes before the commit, with the resulting log naming its
+own subject. The recurrence is recorded rather than quietly repaired because
+the eighteenth-round entry in `Progress` states the rule and the plan's own
+observation beside it already records the race being broken twice — once by an
+edit landing between a run's fourth and fifth gate, and again by the
+observation recording that, which was written while the re-run was in flight
+and had to be stopped so its partial evidence could be discarded. The rule is
+the one those three share: an edit issued while a gate run is in flight leaves
+that run describing bytes that no longer exist, and no amount of running gates
+afterwards repairs it — only naming the revision the evidence belongs to does.
+`make markdownlint`'s spelling leg is the prerequisite that runs before the
+linter, and it is the reason the row above names it: the target chains it, so a
+`0 error(s)` summary alone would not distinguish "the spelling gate passed"
+from "the spelling gate never ran". The twenty-fifth round is the revision
+where that distinction cost something — no review ran at all that round,
+because the prerequisite failed and the linter never started — and its Progress
+entry is the one that records why a routine of `make fmt` plus `make check-fmt`
+cannot surface such a failure however green it returns.
 
 ## Interfaces and dependencies
 

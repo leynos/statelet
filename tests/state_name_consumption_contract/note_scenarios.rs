@@ -199,20 +199,33 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
                       lists `BufferMode` |",
                      IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
     "a StateName note records state-display-name: Enumerated without listing the strings the state \
-     returns; its evidence names the type and no label. Repair: name the state and then its \
-     returned strings in backticks — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' \
-     — because the Enumerated status is what makes the metrics-cardinality bound derivable from \
-     the note. The strings are read from the annotated example, not invented."
+     returns; its evidence names the type and no label. Repair: write the shape the ADR \
+     illustrates — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' — naming the state \
+     in backticks, then `returns` or `yields`, then each returned string in backticks, because the \
+     Enumerated status is what makes the metrics-cardinality bound derivable from the note. The \
+     strings are read from the annotated example, not invented."
 )]
 #[case::enumerated_names_no_strings_at_all(
     note_with_rows(&["| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`; \
                       the enum's names were not recorded |",
                      IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
     "a StateName note records state-display-name: Enumerated without listing the strings the state \
-     returns; its evidence names the type and no label. Repair: name the state and then its \
-     returned strings in backticks — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' \
-     — because the Enumerated status is what makes the metrics-cardinality bound derivable from \
-     the note. The strings are read from the annotated example, not invented."
+     returns; its evidence names the type and no label. Repair: write the shape the ADR \
+     illustrates — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' — naming the state \
+     in backticks, then `returns` or `yields`, then each returned string in backticks, because the \
+     Enumerated status is what makes the metrics-cardinality bound derivable from the note. The \
+     strings are read from the annotated example, not invented."
+)]
+#[case::enumerated_names_the_reader_not_the_labels(
+    note_with_rows(&["| state-display-name | Enumerated | `mdtablefix@abc1234:src/process.rs`, \
+                      `BufferMode` uses `state_name()` |",
+                     IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
+    "a StateName note records state-display-name: Enumerated without listing the strings the state \
+     returns; its evidence names the type and no label. Repair: write the shape the ADR \
+     illustrates — '`<repo>@<sha>:<path>`, `TheType` returns `First`, `Second`' — naming the state \
+     in backticks, then `returns` or `yields`, then each returned string in backticks, because the \
+     Enumerated status is what makes the metrics-cardinality bound derivable from the note. The \
+     strings are read from the annotated example, not invented."
 )]
 fn committed_state_name_notes_are_rejected(
     #[case] note: String,

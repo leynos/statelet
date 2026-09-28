@@ -166,15 +166,19 @@ status is `None`: the absence of a need is itself an observation, and it has a
 place.
 
 Second, an evidence cell whose status is `Enumerated` lists the actual strings
-the state returns, in backticks, alongside the type that returns them. The
-status is not self-certifying: it is the list below it that makes the
-`metrics-cardinality` bound derivable from the note rather than asserted by its
-author, and a cell naming only the type would leave a reviewer at task 3.2.1
-deciding the fate of a `&'static str` without seeing a single string. A cell
-naming the type and no label is refused with the message that says so. The
-check bounds the cell's *shape*; matching the listed strings against the
-annotated code is the reviewer's, because the contract reads documents and
-holds no view of the enum.
+the state returns, in backticks, alongside the type that returns them and the
+verb that says they are returned — the shape the illustration below writes: the
+state, then `returns` or `yields`, then each returned string. The status is not
+self-certifying: it is the list below it that makes the `metrics-cardinality`
+bound derivable from the note rather than asserted by its author, and a cell
+naming only the type would leave a reviewer at task 3.2.1 deciding the fate of a
+`&'static str` without seeing a single string. Quoted spans alone do not
+settle it, because a cell can quote the state beside the *reader* of its name —
+`` `BufferMode` uses `state_name()` `` names where the name comes from and not
+one label, and the verb is what tells the two apart. A cell naming the type and
+no label is refused with the message that says so. The check bounds the cell's
+*shape*; matching the listed strings against the annotated code is the
+reviewer's, because the contract reads documents and holds no view of the enum.
 
 Third, the evidence cell for `identifier-need` names at least one consumer
 drawn from the search set — the tracing subscriber, the metrics recorder or its
