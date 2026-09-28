@@ -3889,20 +3889,20 @@ design.
   `Row`/`not` count that was invented to fit a sentence — and D59 states the
   rule they share: a count that decides scope must be computed twice by
   different methods. This instance sharpens it in a way none of the first three
-  did: the quantity was not miscounted but **mis-addressed**. Every method
-  agrees with every other when they all read the same wrong file, so the
-  two-method rule would not have caught it. The rule this instance adds is
-  therefore about the *subject* rather than the arithmetic: **enumerate the
-  probe's full domain before trusting a single member of it, because a partial
-  domain returns a definite answer about nothing.** The checkable form is the
-  one the correction takes — `for f in .package-cache .package-cache-mutate` —
-  which is why the loop is recorded here rather than the single command it
-  replaced. Carried consequence: `lint`, `typecheck` and `test` have no valid
-  evidence at this revision, and EP-M5 stays unticked for that reason as well
-  as for the review bar. They are not re-run until a probe of **both** files
-  reports both acquired. Date/Author: `2026-09-28T06:07:22+02:00`
-  (`2026-09-28T04:07:22Z`), implementing agent, after the scrutineer's
-  correction and a re-probe of both lock files.
+  did: the quantity was not miscounted but **misdirected** — the probe read a
+  real lock file and read it correctly. Every method agrees with every other
+  when they all read the same wrong file, so the two-method rule would not have
+  caught it. The rule this instance adds is therefore about the *subject*
+  rather than the arithmetic: **enumerate the probe's full domain before
+  trusting a single member of it, because a partial domain returns a definite
+  answer about nothing.** The checkable form is the one the correction takes —
+  `for f in .package-cache .package-cache-mutate` — which is why the loop is
+  recorded here rather than the single command it replaced. Carried consequence:
+  `lint`, `typecheck` and `test` have no valid evidence at this revision, and
+  EP-M5 stays unticked for that reason as well as for the review bar. They are
+  not re-run until a probe of **both** files reports both acquired. Date/Author:
+  `2026-09-28T06:07:22+02:00` (`2026-09-28T04:07:22Z`), implementing agent,
+  after the scrutineer's correction and a re-probe of both lock files.
 
 - Observation: **the illustration carried a numeral borrowed from a *different*
   enum, and the fix required reading four signals rather than the one the

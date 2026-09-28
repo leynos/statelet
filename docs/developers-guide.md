@@ -82,20 +82,22 @@ for [ADR 004](adr-004-state-name-consumption-evidence.md). Its child modules
 each own one invariant class rather than a share of the text: `parse.rs` holds
 the one delimited-table syntax function, `types.rs` the register vocabulary and
 the `ParseError` messages, `claims.rs` what an evidence cell's words say — a
-citation, a consumer, a property — and `policy.rs` what those answers oblige,
-naming admissibility and the note verdict. The checks that bind two documents
-to each other are one module per binding: `clauses.rs` for quoted-clause
-resolution, `registers.rs` for the cross-register checks and the status
-register's own consistency, and `roadmap.rs` for the roadmap's task-record
-grammar, the gate table, and the success criterion. `notes.rs` holds the scan of
-`docs/validation-notes/` and the scratch roots its controls scan instead, and
-`fixtures.rs` the row constants the negative controls build documents from.
-`claim_properties.rs` is not a scenario module: it holds the property suite
-over the evidence predicates — generated properties rather than named
-scenarios. That module is why `proptest` appears under `[dev-dependencies]` in
-`Cargo.toml`: the evidence predicates read arbitrary text, so their invariants
-are properties rather than cases, and `proptest` is the only dependency the
-contract adds. It is test-only and reaches no shipped binary.
+citation, a consumer, a required property, or the strings an `Enumerated` cell
+must list — and `policy.rs` what those answers oblige, naming admissibility,
+the note verdict, and the four obligations each cell carries. The checks that
+bind two documents to each other are one module per binding: `clauses.rs` for
+quoted-clause resolution, `registers.rs` for the cross-register checks and the
+status register's own consistency, and `roadmap.rs` for the roadmap's
+task-record grammar, the gate table, and the success criterion. `notes.rs`
+holds the scan of `docs/validation-notes/` and the scratch roots its controls
+scan instead, and `fixtures.rs` the row constants the negative controls build
+documents from. `claim_properties.rs` is not a scenario module: it holds the
+property suite over the evidence predicates — generated properties rather than
+named scenarios. That module is why `proptest` appears under
+`[dev-dependencies]` in `Cargo.toml`: the evidence predicates read arbitrary
+text, so their invariants are properties rather than cases, and `proptest` is
+the only dependency the contract adds. It is test-only and reaches no shipped
+binary.
 
 The scenarios sit in six modules, one per invariant class, so that the 400-line
 cap binds each part of the contract alike:
