@@ -1342,7 +1342,10 @@ outcome, and a reviewer should approve it on that understanding.
       narrative-text requirement): **declined as a third recurrence**, already
       raised and disposed of in the twenty-first round (plan lines 2498-2511)
       and in the ninth (D36), on ADR 004's own scoping. Recorded as **D58**;
-      repaired in the commit that carries this item. Three findings is not
+      repaired in the commit that carries this item. **Superseded by D60**,
+      which adopts the subject this item declined: the plan's disposition of
+      the round-27 findings stands as written, but the third recurrence is no
+      longer a decline. Three findings is not
       zero, so EP-M5 and roadmap 1.1.3 stay unticked.
 - [x] The twenty-sixth round returned **one finding, no warning**, and the
       repair is a single deleted line. All seven gates exit 0 at `75fc11e` —
@@ -1482,12 +1485,18 @@ outcome, and a reviewer should approve it on that understanding.
       `proptest` and the six scenario modules in `docs/developers-guide.md`,
       and lands the fourth obligation with its two negative controls. Eight
       files are modified: the ADR, the guide, and six contract modules. The
-      gate position at the time of writing is **five of eight green**
-      (`check-fmt`, `markdownlint`, `nixie`, `audit`,
-      `test-workflow-contracts`), with `lint`, `typecheck` and `test` having no
-      valid evidence because the shared Cargo lock is held — D61. EP-M5 stays
-      unticked, and roadmap task 1.1.3 with it, for that reason and for the
-      review bar the paragraph above records.
+      gate position is **five of eight green** over `e0d6e42` — `check-fmt`,
+      `markdownlint`, `nixie`, `audit` and `test-workflow-contracts`, the first
+      five re-run after the second commit rather than carried from the first —
+      with `lint`, `typecheck` and `test` having no valid evidence because the
+      shared Cargo lock is held (D61). **The first pass over `ad44ca0` was red
+      on `markdownlint`, and it found a real defect**: `typos` split
+      `mis-addressed` in D61's own prose and corrected the bare `mis`, so the
+      commit that records the spelling-gate trap carried the same class of
+      defect the trap describes — D56's pairing again, which is why the repair
+      is recorded as such rather than as an erratum. EP-M5 stays unticked, and
+      roadmap task 1.1.3 with it, for that reason and for the review bar the
+      paragraph above records.
 - [x] The branch is rebased onto the PR's target. `origin/main` at `e98b685`
       is now an ancestor of the tip: `bad9a04..fb22d52` was replayed as 51
       commits with no conflicts, `git range-diff` reports all 51 as `=` so each
