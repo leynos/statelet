@@ -39,9 +39,10 @@ The generated `Makefile` exposes these public targets:
 - `make audit` derives the Rust workspace root with `cargo metadata` and runs
   `cargo audit` once from that root.
 - `make markdownlint` checks Markdown files.
-- `make spelling` checks the shared en-GB-oxendict configuration for drift,
-  runs the consumer phrase scanner, and checks tracked Markdown prose with the
-  pinned `typos` release.
+- `make spelling` runs the pinned `typos-config-builder gate`, which
+  regenerates `typos.toml` from the shared en-GB-oxendict dictionary, checks
+  tracked Markdown prose, and applies the shared phrase corrections. It never
+  drift checks `typos.toml`.
 - `make nixie` validates Mermaid diagrams.
 
 GitHub Actions Act validation lives in `.github/workflows/act-validation.yml`.
