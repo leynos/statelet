@@ -4,6 +4,10 @@ codegen-backend = true
 [profile.dev]
 codegen-backend = "cranelift"
 
+# The parallel `rustc` frontend is the default for every development build.
+[build]
+rustflags = ["-Zthreads=8"]
+
 # mold is the estate's default linker and supports every Linux architecture,
 # so the table is keyed on the operating system rather than on one triple:
 # `x86_64-unknown-linux-gnu` alone left aarch64 Linux on the default linker.
@@ -19,6 +23,12 @@ codegen-backend = "cranelift"
 # passed anywhere, and `rust-toolchain.toml` installs no extra targets. Add
 # those settings alongside the first cross target, rather than discovering it
 # at link time.
+#
+# Cargo selects a single `rustflags` source rather than merging them: this
+# Linux table replaces `[build] rustflags` outright on Linux. Every flag is
+# therefore repeated in each source, and the Makefile restates them where it
+# assigns `RUSTFLAGS` for the gate targets. Coverage and release builds assign
+# `RUSTFLAGS` themselves and so take neither the parallel frontend nor mold.
 [target.'cfg(target_os = "linux")']
 linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+rustflags = ["-Zthreads=8", "-C", "link-arg=-fuse-ld=mold"]
