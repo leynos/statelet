@@ -16,7 +16,11 @@ RUST_FLAGS := -D warnings $(RUST_FLAGS)
 STANDARD_THREADS_FLAG ?= -Zthreads=8
 STANDARD_MOLD_FLAG ?= -Clink-arg=-fuse-ld=mold
 BUILD_HOST_OS := $(shell uname -s)
-STANDARD_RUSTFLAGS = $(STANDARD_THREADS_FLAG)$(if $(filter Linux,$(BUILD_HOST_OS)), $(STANDARD_MOLD_FLAG))
+# mold is added only when the machine doing the build is Linux (only Make can
+# tell whether it has mold) and the compilation target is Linux too, which is
+# the host unless `CARGO_BUILD_TARGET` names another triple.
+STANDARD_TARGET_IS_LINUX = $(if $(CARGO_BUILD_TARGET),$(findstring -linux-,$(CARGO_BUILD_TARGET)),yes)
+STANDARD_RUSTFLAGS = $(STANDARD_THREADS_FLAG)$(if $(filter Linux,$(BUILD_HOST_OS)),$(if $(STANDARD_TARGET_IS_LINUX), $(STANDARD_MOLD_FLAG)))
 # Release builds take neither flag: assigning `RUSTFLAGS`, even to an empty
 # inherited value, displaces every `rustflags` source in the configuration.
 RELEASE_RUSTFLAGS = RUSTFLAGS="$${RUSTFLAGS-}"
@@ -85,8 +89,8 @@ coverage: ## Generate lcov coverage with lld for llvm-tools compatibility
 		$(CARGO) llvm-cov --lcov --output-path lcov.info $(TEST_FLAGS)
 
 lint: ## Run Clippy and the Whitaker Dylint suite with warnings denied
-	RUSTDOCFLAGS="$(RUSTDOC_FLAGS)" $(CARGO) doc --no-deps
-	$(CARGO) clippy $(CLIPPY_FLAGS)
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" RUSTDOCFLAGS="$(RUSTDOC_FLAGS)" $(CARGO) doc --no-deps
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) clippy $(CLIPPY_FLAGS)
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(WHITAKER) --all -- $(CARGO_FLAGS)
 
 typecheck: ## Type-check without building
