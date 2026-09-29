@@ -88,10 +88,11 @@ Cargo applies one `rustflags` source and an assigned `RUSTFLAGS` replaces them
 all, so the Makefile restates both flags as `STANDARD_RUSTFLAGS` for the
 targets that assign `RUSTFLAGS`, adding them to any `RUSTFLAGS` the recipe
 inherits (setup-rust exports one in CI) rather than replacing it. Release
-builds assign an empty inherited `RUSTFLAGS` and coverage assigns its own, so
-neither takes the standard flags. CI installs `mold` before any job runs a gate
-target. `tests/workflow_contracts/build_standard_test.py` holds the
-configuration sources and those recipes to this.
+builds assign the inherited `RUSTFLAGS`, which is empty when the caller exports
+none, and coverage assigns its own, so neither takes the standard flags. CI
+installs `mold` before any job runs a gate target.
+`tests/workflow_contracts/build_standard_test.py` holds the configuration
+sources and those recipes to this.
 
 That selector suits native builds, where clang defaults to the host triple. It
 would also match a cross-compilation to a non-host Linux target, and clang
