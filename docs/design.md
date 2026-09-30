@@ -13,8 +13,10 @@ Companion documents:
 - `docs/adr-001-proving-ground-candidates.md`
 - `docs/adr-002-transition-boundary-scope.md`
 - `docs/adr-003-v0-1-exit-register.md`
+- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/phase-2-validation-note-template.md`
 
-Last substantive revision: 2026-08-22
+Last substantive revision: 2026-09-19
 
 ## 1. Design context
 
@@ -210,6 +212,13 @@ the first slice. If instrumentation, metrics, or downstream dashboards need a
 stable numeric discriminant or other low-cardinality identifier, record that
 before publishing `StateName`. The default remains `&'static str` until a real
 example consumes something stronger.
+
+What that scrutiny records, and the rule that reads several such records into
+an outcome, are fixed by [ADR 004](adr-004-state-name-consumption-evidence.md)
+and the [validation note template](phase-2-validation-note-template.md) it is
+instantiated from. This section states the requirement; those documents state
+the instrument, and neither pronounces the verdict. That remains roadmap task
+3.2.1's decision, taken against evidence this section cannot foresee.
 
 ### 6.2 Transition outcome vocabulary
 
@@ -608,6 +617,15 @@ candidate is needed. Before publishing the macro, the project must either
 validate `statelet` in the accepted second example or record why the candidate
 changed.
 
+Both phases of this spike, and the second-example validation that follows,
+record their observations as validation notes. The blank form is
+`docs/phase-2-validation-note-template.md`, the filled notes live in
+`docs/validation-notes/`, and the rule that reads them is
+[ADR 004](adr-004-state-name-consumption-evidence.md). Recording is a step of
+the validation task, not a separate exercise: a spike whose observation is not
+written down in this shape has produced no evidence the return-shape decision
+can read.
+
 ## 13. Failure modes
 
 ### 13.1 Macro hides control flow
@@ -678,6 +696,9 @@ The implementation should resolve these before publishing v0.1:
 - Whether `async fn` support is explicitly tested in v0.1 or documented as
   unsupported. The default answer is unsupported until tracing across `.await`
   is proven safe and unsurprising.
+- Whether `StateName` returns `&'static str`, or a value carrying a stronger
+  stability guarantee, as decided by roadmap task 3.2.1 from the validation
+  notes defined in ADR 004.
 - Project licence, MSRV, and crates.io metadata.
 
 ## Appendix A. Comparison with `stateless`

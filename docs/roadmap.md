@@ -49,7 +49,8 @@ outcome informs every later implementation slice. See terms-of-reference.md
   - Decide what `mdtablefix` must consume to prove whether `&'static str` is
     enough or whether a stable numeric identifier is needed.
   - Success: the Phase 2 validation note template has fields for state display
-    name, optional identifier need, metrics cardinality, and tracing use.
+    name, optional identifier need, metrics cardinality, and tracing use:
+    [ADR 004](adr-004-state-name-consumption-evidence.md).
   - See design.md §6.1 and context.md "State name".
 
 ### 1.2. Establish the validation spine
@@ -137,6 +138,8 @@ ships conventions only, or proceeds to a macro spike. See design.md §§11.1,
   - Success: branch logic remains in ordinary Rust and the validation note can
     compare before/after reviewability.
   - See design.md §12.
+  - See [the Phase 2 validation note
+    template](phase-2-validation-note-template.md).
 - [ ] 2.2.2. Annotate `mdtablefix` continuation handling with the baseline.
   - Requires 2.2.1.
   - Cover continuation mode handling and at least one fallible or infallible
@@ -144,6 +147,8 @@ ships conventions only, or proceeds to a macro spike. See design.md §§11.1,
   - Success: the validation note records boilerplate, diagnostics, tracing
     fields, and any `StateName` identifier pressure.
   - See design.md §§6.1 and 12.
+  - See [the Phase 2 validation note
+    template](phase-2-validation-note-template.md).
 - [ ] 2.2.3. Decide the Phase 2 exit.
   - Requires 2.2.1 and 2.2.2.
   - Compare plain `#[tracing::instrument]`, the conventions baseline, and the
@@ -187,6 +192,8 @@ B1 and B6 before any macro work. See terms-of-reference.md §§7-9, design.md
   - Success: the validation note records reviewability, diagnostic value,
     boilerplate, and whether the conventions carry across domains.
   - See design.md §§9, 11.1, and 12.
+  - See [the Phase 2 validation note
+    template](phase-2-validation-note-template.md).
 - [ ] 3.1.3. Decide whether the runtime/conventions crate earns publication.
   - Requires 3.1.2.
   - Success: the decision cites both `mdtablefix` and `wireframe`; it either

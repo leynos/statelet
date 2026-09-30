@@ -1,0 +1,17 @@
+# Whitaker's `no_std_fs_operations` denies ambient `std::fs` calls. Exactly one
+# module of the StateName consumption contract needs them: `notes.rs` enumerates
+# `docs/validation-notes/` and reads each note's text.
+#
+# The note set is deliberately open. A Phase 2 engineer adds a note months from
+# now, and its arrival must not require a Rust edit, so the contents cannot be
+# embedded with `include_str!`. `camino`, the repository's path crate, enumerates
+# a directory but exposes no content-read API, and roadmap task 1.1.3's third
+# constraint forbids adding `cap-std` as a dev-dependency. The exemption is
+# therefore path-scoped to the single reading module, so the parsers, policies
+# and fixtures of the same test crate remain under the lint. An entry here is
+# auditable in a way an in-source `#[allow]` is not, which is what the deviation
+# buys in exchange for the coverage it withdraws.
+#
+# See Q5 and D20 in `docs/execplans/1-1-3-define-state-name-consumption-question.md`.
+[no_std_fs_operations]
+excluded_paths = ["state_name_consumption_contract::notes"]

@@ -1,0 +1,359 @@
+//! Directory-scan scenarios over `docs/validation-notes/`.
+//!
+//! These are `INV-FILLED`'s controls on the *scan* rather than on a note's
+//! cells: which files it reads, what it does when a read fails, and what an
+//! absent directory means. They live apart from `note_scenarios.rs` because
+//! each answers a question about the directory as a whole, and because the
+//! scan's four controls would otherwise push the note-cell module past the
+//! 400-line cap with no room for the next one.
+
+use pretty_assertions::assert_eq;
+
+use super::{
+    ADR,
+    fixtures::{
+        IDENTIFIER_NEED_ROW,
+        STATE_DISPLAY_NAME_ROW,
+        TRACING_USE_ROW,
+        benchmark_note,
+        note_with_rows,
+        state_name_note,
+    },
+    live_status,
+    notes::{self, ScratchNotes, committed_notes},
+    parse::{aggregation_rows, note_rows},
+    path_exists,
+    policy::{check_note_cells, resolve_note},
+    registers::{aggregate_resolutions, check_aggregation_total, outcome_amends_design},
+    types::{AggRow, Resolution},
+    workspace_root,
+};
+
+/// Ignores a note without the marker rather than reading its fields as a
+/// `StateName` note's.
+///
+/// This is the accepting end of `INV-FILLED`'s marker control. The note is
+/// well-formed Markdown and parses like any other; the marker is what makes it
+/// a `StateName` note, and the scan reads the marker rather than globbing the
+/// directory, so a note belonging to roadmap task 1.2.3 cannot fail this
+/// suite's checks by arriving.
+///
+/// The three shapes are asserted against `declares_marker` directly, one case
+/// each: a note that declares the marker, a note that declares another
+/// contract's, and a mention of the marker inside a code span. The first two
+/// are the fixture and the benchmark note; the third is built here rather than
+/// read from `docs/validation-notes/README.md`, because the rule is a property
+/// of the text and a control that read the live README would fail for a reason
+/// that is not this rule — the file being renamed, or moved.
+///
+/// The live directory is still scanned. That is the end-to-end half: it shows
+/// the rule reaches the real `README.md`, which documents the marker in a code
+/// span, without that file being read as a note.
+///
+/// The assertions return through the error channel rather than panicking, so
+/// that every way this control can fail names the artefact it read.
+#[test]
+fn unmarked_notes_are_ignored() -> Result<(), String> {
+    let declared = state_name_note();
+    if !notes::declares_marker(&declared) {
+        return Err(
+            "the fixture note no longer declares the marker, so this control cannot show that a \
+             note declaring it is read."
+                .to_owned(),
+        );
+    }
+    let other_contract = benchmark_note();
+    if notes::declares_marker(&other_contract) {
+        return Err(
+            "the benchmark note declares the StateName marker, so it belongs to this contract as \
+             well as its own and the control cannot show that an unmarked note is ignored."
+                .to_owned(),
+        );
+    }
+    // A code span mentioning the marker, worded as `docs/validation-notes/README.md`
+    // words it. A substring test reads this as a declaration; a rule matching a
+    // line of its own does not.
+    let mentioned = format!(
+        "The marker `{}` is what tells the contract this file is a note.\n",
+        notes::MARKER
+    );
+    if notes::declares_marker(&mentioned) {
+        return Err(
+            "a code-span mention of the marker was read as a declaration. A scan matching the \
+             marker as a substring would treat any prose about it as a note and then reject it \
+             for carrying no note register."
+                .to_owned(),
+        );
+    }
+    let committed = committed_notes(&workspace_root())?;
+    if committed.iter().any(|note| note.file_name == "README.md") {
+        return Err(
+            "docs/validation-notes/README.md was read as a committed note. It documents the \
+             marker inside a code span without declaring it, so the scan must match the marker as \
+             a line of its own."
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
+/// Rejects a directory entry that cannot be read, naming the path.
+///
+/// `INV-FILLED`'s third control. The scan's other controls all read a note that
+/// *is* readable, so without this one the module's doc comment — that a failed
+/// read is an error and never `None` — is an unchecked claim. The control turns
+/// on the path being an existing directory, which every filesystem this
+/// repository targets refuses to read as a file; that it is the fixture's own
+/// directory is incidental, and chosen so the control cannot pass vacuously
+/// because the path is simply absent.
+#[test]
+fn unreadable_entries_are_an_error_not_a_skip() -> Result<(), String> {
+    let directory = workspace_root().join("docs/validation-notes");
+    if !path_exists(&directory)? {
+        return Err(format!(
+            "{directory} does not exist, so the control cannot show that an unreadable entry is \
+             an error rather than a skip."
+        ));
+    }
+    match notes::read_marked_note(&directory) {
+        Err(message) if message.starts_with(&format!("{directory}: ")) => Ok(()),
+        Err(message) => Err(format!(
+            "the read failure was reported as {message:?}, which does not name {directory}. \
+             Repair: name the path in every read failure, so an engineer is sent to the file."
+        )),
+        Ok(_) => Err(format!(
+            "{directory} was read as a note, so this control is vacuous. Repair: pass a path that \
+             cannot be read as a file."
+        )),
+    }
+}
+
+/// Accepts an absent notes directory rather than failing over it.
+///
+/// The other half of the set: the scan must distinguish an absent directory
+/// (no note can honestly exist yet) from a present one it cannot read. The root
+/// here has no `docs/validation-notes`, standing for a checkout before task
+/// 2.2.1 has annotated anything. Cargo creates nothing at that path, so the
+/// precondition holds by construction rather than by luck.
+#[test]
+fn an_absent_notes_directory_yields_no_notes() -> Result<(), String> {
+    let absent = workspace_root().join("target/state-name-contract-absent-root");
+    if path_exists(&absent)? {
+        return Err(format!(
+            "{absent} exists, so this control cannot show that an absent directory is not a \
+             failure. Repair: name a path under `target/` that nothing creates."
+        ));
+    }
+    assert_eq!(committed_notes(&absent), Ok(Vec::new()));
+    Ok(())
+}
+
+/// Scans the live notes directory, checks every marked note, and aggregates the
+/// resolutions through ADR 004's aggregation register.
+///
+/// A failure names the note it came from. A message saying only that some note
+/// holds a `TBD` would send a Phase 2 engineer to the directory rather than to
+/// the file.
+///
+/// The resolutions are *retained* rather than discarded, because the register's
+/// question is about the multiset and a note is only ever half the answer. A
+/// scan that checked each note and dropped its verdict would leave the second
+/// half of ADR 004 unread: the register could say anything at all about the
+/// combination, and this contract would not notice. Reading it here is what
+/// makes Table 3 a tested rule rather than a described one.
+///
+/// An empty directory passes: no note can honestly exist until roadmap task
+/// 2.2.1 has annotated something, so a failure there would demand a fabricated
+/// observation. The non-vacuity for the multiset half is supplied by
+/// `the_verdict_follows_the_aggregation_register`, which drives the same
+/// aggregation over constructed resolutions including the empty one.
+#[test]
+fn committed_state_name_notes_are_usable() -> Result<(), String> {
+    let rows = live_status()?;
+    let register = aggregation_rows(ADR).map_err(|error| error.to_string())?;
+    let mut resolutions = Vec::new();
+    for note in committed_notes(&workspace_root())? {
+        let name = note.file_name.as_str();
+        let cells = note_rows(&note.text).map_err(|error| format!("{name}: {error}"))?;
+        check_note_cells(&rows, &cells).map_err(|error| format!("{name}: {error}"))?;
+        resolutions.push(resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?);
+    }
+    aggregate_resolutions(&register, &resolutions)?;
+    Ok(())
+}
+
+/// Scans a populated scratch directory and rejects the one note that must be
+/// rejected.
+///
+/// The scan's accepting half over *notes* rather than over strings. Every other
+/// note scenario hands `check_note_cells` and `resolve_note` a fixture directly,
+/// which proves what those functions answer and says nothing about whether the
+/// scan reaches them: a `committed_notes` that returned an empty vector for
+/// every root would leave the whole suite green, and it would do so on any
+/// directory whose notes were unreadable.
+///
+/// Three notes are planted, and each is load-bearing. The valid one is the
+/// accepting witness: without it the scenario would pass over an empty scan.
+/// The unmarked one is ignored rather than rejected, which is the marker rule
+/// reaching the directory scan. The invalid one carries a `TBD` and must be
+/// reported — a scan that skipped it would answer "no notes" for a directory
+/// that holds one, which is the silent skip the module exists to refuse.
+///
+/// The rejection is asserted as the *message prefix naming the file*, not as the
+/// full text: what this scenario owns is that the failure surfaced from the scan
+/// at all and names the note it came from. The wording of the cell check is
+/// `committed_state_name_notes_are_rejected`'s subject, and pinning it twice
+/// would fail two tests on one edit.
+#[test]
+fn a_populated_notes_directory_is_scanned_end_to_end() -> Result<(), String> {
+    let scratch = ScratchNotes::fresh_tree("populated")?;
+    scratch.write("2.2.1-state-name.md", &state_name_note())?;
+    scratch.write("1.2.3-benchmark.md", &benchmark_note())?;
+    scratch.write(
+        "2.2.1-unfinished.md",
+        &note_with_rows(&[
+            STATE_DISPLAY_NAME_ROW,
+            IDENTIFIER_NEED_ROW,
+            "| metrics-cardinality | TBD | `mdtablefix@abc1234:src/process.rs` |",
+            TRACING_USE_ROW,
+        ]),
+    )?;
+
+    let notes = committed_notes(scratch.root())?;
+    assert_eq!(
+        notes
+            .iter()
+            .map(|note| note.file_name.as_str())
+            .collect::<Vec<&str>>(),
+        vec!["2.2.1-state-name.md", "2.2.1-unfinished.md"],
+        "the scan must read both marked notes and ignore the benchmark note, which declares \
+         another contract's marker"
+    );
+
+    let rows = live_status()?;
+    let mut reported = Vec::new();
+    for note in &notes {
+        let name = note.file_name.as_str();
+        let cells = note_rows(&note.text).map_err(|error| format!("{name}: {error}"))?;
+        if let Err(error) = check_note_cells(&rows, &cells) {
+            reported.push(format!("{name}: {error}"));
+        } else {
+            // Only reached by the valid note: the other must have failed, or
+            // this scenario is asserting a rejection that did not happen.
+            resolve_note(&rows, &cells).map_err(|error| format!("{name}: {error}"))?;
+        }
+    }
+    assert_eq!(
+        reported.len(),
+        1,
+        "exactly one planted note is invalid: {reported:?}"
+    );
+    if !reported
+        .first()
+        .is_some_and(|message| message.starts_with("2.2.1-unfinished.md: "))
+    {
+        return Err(format!(
+            "the rejection must name the note it came from, so a reader is sent to the file \
+             rather than to the directory: {reported:?}"
+        ));
+    }
+    Ok(())
+}
+
+/// Drives the aggregation over every state of the multiset the register covers,
+/// including the conflict between a sufficient and an insufficient note.
+///
+/// This is `INV-AGGREGATE`'s non-vacuity. The live scan proves the register is
+/// *read*; it cannot prove the register is *right*, because the committed notes
+/// today resolve to one state and the directory may hold none at all. The cases
+/// below supply the states the directory cannot, and each asserts the outcome
+/// the register's third row selects — the one outcome that overturns the
+/// default, and so the one whose absence would make the register decorative.
+///
+/// The multi-note conflict is the case the register exists for: three notes
+/// reach task 3.2.1, and one of them recording a required property amends the
+/// design however many of the others ratify it. A rule reading "all" rather
+/// than "any" would ratify there, and the case below fails on it.
+#[test]
+fn the_verdict_follows_the_aggregation_register() -> Result<(), String> {
+    let register = aggregation_rows(ADR).map_err(|error| error.to_string())?;
+    check_aggregation_total(&register)?;
+    let blocked = Resolution::NotResolved {
+        field: "state-display-name".to_owned(),
+        status: "Not a named type".to_owned(),
+    };
+    let cases: [(&str, &[Resolution], bool); 4] = [
+        ("no note contributes", std::slice::from_ref(&blocked), false),
+        (
+            "every note blocked",
+            &[blocked.clone(), blocked.clone()],
+            false,
+        ),
+        ("one sufficient note", &[Resolution::Sufficient], false),
+        (
+            "a sufficient note and an insufficient one",
+            &[Resolution::Sufficient, Resolution::Insufficient],
+            true,
+        ),
+    ];
+    for (case, resolutions, amends) in cases {
+        let outcome = aggregate_resolutions(&register, resolutions)
+            .map_err(|error| format!("{case}: {error}"))?;
+        assert_eq!(
+            outcome_amends_design(&outcome),
+            amends,
+            "{case}: the register yields {outcome:?}, which {} the design. Repair: check the \
+             aggregation register's rows against the state this case reaches — the middle column \
+             asks whether *any* contributor is insufficient, and a rule reading any as all would \
+             disagree here.",
+            if amends {
+                "must amend"
+            } else {
+                "must not amend"
+            }
+        );
+    }
+    // The conflict's outcome is the one a Phase 2 engineer acts on, so it is
+    // pinned as the register words it rather than as a prefix. This cannot break
+    // on a reflow — the string is read out of the register, not written here —
+    // and it breaks exactly when someone rewords the outcome, which is a change
+    // to the instruction the task ends in.
+    assert_eq!(
+        aggregate_resolutions(
+            &register,
+            &[Resolution::Sufficient, Resolution::Insufficient]
+        )?,
+        "Amend design 6.1 before publish"
+    );
+    Ok(())
+}
+
+/// Rejects a multiset state the register does not cover.
+///
+/// The register is a document and can lose a row; `check_aggregation_total`
+/// catches that when the register is read, and this catches the other direction
+/// — an aggregator that reaches for a state no row covers and, if it were
+/// written with a fallback, would silently take the wrong outcome instead.
+#[test]
+fn an_uncovered_multiset_state_is_rejected() -> Result<(), String> {
+    let register = aggregation_rows(ADR).map_err(|error| error.to_string())?;
+    let amended_row = register
+        .iter()
+        .find(|row| row.contributing_notes == "One or more" && row.any_insufficient == "Yes")
+        .ok_or("the live register no longer covers the insufficient state")?;
+    let trimmed = register
+        .iter()
+        .filter(|row| row != &amended_row)
+        .cloned()
+        .collect::<Vec<AggRow>>();
+    assert_eq!(
+        aggregate_resolutions(&trimmed, &[Resolution::Insufficient]),
+        Err(
+            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
+             cover One or more contributing notes with any insufficient Yes, which 1 committed \
+             note(s) reach. Repair: add that row; the verdict has no outcome to take."
+                .to_owned()
+        )
+    );
+    Ok(())
+}
