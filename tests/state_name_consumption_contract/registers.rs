@@ -96,7 +96,12 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
 }
 
 /// Whether an aggregation row covers one reachable state.
-fn matches_state(row: &AggRow, notes: &str, insufficient: &str) -> bool {
+///
+/// Shared with the register scenarios rather than restated there: a scenario
+/// that asked a *second* copy of this predicate would be testing a condition
+/// the check beside it does not use, and the two could drift apart without
+/// either failing.
+pub(crate) fn matches_state(row: &AggRow, notes: &str, insufficient: &str) -> bool {
     row.contributing_notes == notes && (notes == "None" || row.any_insufficient == insufficient)
 }
 

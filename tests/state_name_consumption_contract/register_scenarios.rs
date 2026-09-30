@@ -19,6 +19,7 @@ use super::{
         check_aggregation_vocabulary,
         check_exclusions,
         check_vocabulary,
+        matches_state,
     },
     types::{ParseError, Register},
 };
@@ -140,13 +141,13 @@ fn aggregation_register_is_total(
     // Both columns must be matched in one predicate. Filtering after `find`
     // would test only the first row carrying the notes count, so a case asking
     // for `One or more` *and* `Yes` would never reach the row that answers it.
+    // The predicate is `matches_state`, the same function
+    // `check_aggregation_total` uses, so this control cannot pass against a
+    // condition the check beside it does not share.
     let row = rows
         .iter()
-        .find(|row| {
-            row.contributing_notes == notes
-                && (notes == "None" || row.any_insufficient == insufficient)
-        })
-        .expect("the aggregation register must cover every reachable state");
+        .find(|row| matches_state(row, notes, insufficient))
+        .ok_or("the aggregation register must cover every reachable state")?;
     assert_that!(row.outcome.as_str(), starts_with(expected));
     Ok(())
 }
