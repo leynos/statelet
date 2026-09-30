@@ -76,13 +76,17 @@ fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), Strin
 /// form fail: a case here that stopped being accepted would report the refusal
 /// rather than a false acceptance.
 ///
-/// The three rejected cases at the end each witness a defect the predicate
+/// The four rejected cases at the end each witness a defect the predicate
 /// itself had, which is the only reason to keep them apart rather than fold
 /// them into the shapes above. Two are round thirty's, one per defect it found;
-/// the third, `unclosed_label`, was found here by probing the first repair's own
-/// comment and belongs to no review. All three were *accepted* by the predicate
-/// as it stood when their case was written, so none is a restatement of a
-/// refusal that already happened.
+/// the third, `unclosed_label`, was found here by probing the first repair's
+/// own comment; the fourth, `unclosed_final_label`, is round thirty-one's. The
+/// last two are one root cause probed twice — a label left unclosed — because
+/// the first repair's probe stopped at a cell whose *only* label was open, and
+/// a predicate that refuses that one still accepts an enumeration whose earlier
+/// pair completes and whose last label never closes. All four were *accepted*
+/// by the predicate as it stood when their case was written, so none is a
+/// restatement of a refusal that already happened.
 #[rstest]
 #[case::returns("`BufferMode` returns `Text`, `Table`", true)]
 #[case::yields("`BufferMode` yields `Text`, `Table`", true)]
@@ -98,6 +102,7 @@ fn punctuated_citations_are_accepted(#[case] evidence: &str) -> Result<(), Strin
 )]
 #[case::stem_prefixed_non_verb("`BufferMode` returnable `Text`, `Table`", false)]
 #[case::unclosed_label("`BufferMode` returns `Text", false)]
+#[case::unclosed_final_label("`BufferMode` returns `Text`, `Table", false)]
 fn the_enumerated_obligation_reads_the_return_verb(#[case] cell: &str, #[case] expected: bool) {
     let evidence = format!("`mdtablefix@abc1234:src/process.rs`, {cell}");
     assert_eq!(
@@ -109,8 +114,9 @@ fn the_enumerated_obligation_reads_the_return_verb(#[case] cell: &str, #[case] e
          — the ordered shape ADR 004 illustrates. A cell naming the reader of the name carries \
          the same two spans without naming a single label; one borrowing its verb from a later \
          clause says nothing about the state; one writing `returnable` has not written a verb at \
-         all; and one leaving its last quote unclosed has not backticked its label, so the string \
-         it names is prose rather than the quoted span the message asks for.",
+         all; and one leaving a quote unclosed has not backticked the label that follows it, \
+         whether that is the only label or the last of several, so the string it names is prose \
+         rather than the quoted span the message asks for.",
         if expected { "accepted" } else { "refused" }
     );
 }

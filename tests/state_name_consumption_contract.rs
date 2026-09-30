@@ -33,6 +33,8 @@ mod claim_properties;
 mod claims;
 #[path = "state_name_consumption_contract/claims_scenarios.rs"]
 mod claims_scenarios;
+#[path = "state_name_consumption_contract/clause_scenarios.rs"]
+mod clause_scenarios;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
 #[path = "state_name_consumption_contract/criterion_scenarios.rs"]

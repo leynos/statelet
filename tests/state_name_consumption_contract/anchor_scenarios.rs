@@ -1,9 +1,9 @@
-//! Anchor scenarios: the template, the quoted clauses, and the roadmap bindings.
+//! Anchor scenarios: the template and the roadmap bindings.
 //!
 //! Each of these checks a *link* between two documents: the blank form against
-//! the register it instantiates, the clauses ADR 004 quotes against the
-//! sections they came from, and the gate table against the live roadmap. A
-//! drift on either side of any pair fails here. The success criterion's own
+//! the register it instantiates, and the gate table against the live roadmap. A
+//! drift on either side of either pair fails here. The clauses ADR 004 quotes
+//! are checked in `clause_scenarios.rs`, and the success criterion's own
 //! controls, which ask *which* copy of a sentence is the criterion rather than
 //! where a fragment resolves, live in `criterion_scenarios.rs`.
 
@@ -12,19 +12,16 @@ use rstest::rstest;
 
 use super::{
     ADR,
-    ADR_002,
     DESIGN,
-    EMPTY_CLAUSE_LIST,
     ROADMAP,
     STRONGER,
-    clauses,
     fixtures::{TEMPLATE, gate_table},
     live_status,
     mutated,
     parse::{gate_rows, note_rows},
     registers::check_deferred_clause,
     roadmap::{check_gate_titles, task_records},
-    types::{Register, field_order},
+    types::field_order,
 };
 
 /// Checks the blank form field-by-field against the register.
@@ -48,87 +45,6 @@ fn template_matches_the_status_register() -> Result<(), String> {
         assert_eq!(row.evidence, "TBD", "field {} must ship blank", row.field);
     }
     Ok(())
-}
-
-/// Resolves the three quoted clauses, and rejects a rewritten clause, a
-/// relocated clause, a fabricated one, a mis-attributed one, and an emptied
-/// evidence section.
-#[test]
-fn quoted_passages_still_resolve() -> Result<(), String> {
-    clauses::check_quoted_clauses(ADR, DESIGN, ROADMAP, ADR_002)?;
-    // The check reports the file a reader must open, not the attribution word
-    // the ADR uses for it.
-    let drifted = |path: &str, quoted: &str| {
-        Err(format!(
-            "{path} no longer contains the quoted clause {quoted:?} under \"6.1 State naming\". \
-             Repair: update ADR 004 and its contract together."
-        ))
-    };
-    // The source no longer carries the clause the ADR quotes. The reported
-    // text is the ADR's quotation, because that is what failed to resolve.
-    let rewritten = mutated(DESIGN, "stronger", "a stronger type");
-    assert_eq!(
-        clauses::check_quoted_clauses(ADR, &rewritten, ROADMAP, ADR_002),
-        drifted("docs/design.md", STRONGER)
-    );
-    // The clause is still in `docs/design.md`, word for word, but a heading now
-    // ends §6.1 before it. A resolver that searched the whole document rather
-    // than the named section would accept it.
-    let relocated = mutated(
-        DESIGN,
-        "The `mdtablefix` baseline",
-        "### 6.1.1 Superseded\n\nThe `mdtablefix` baseline",
-    );
-    assert_eq!(
-        clauses::check_quoted_clauses(ADR, &relocated, ROADMAP, ADR_002),
-        drifted("docs/design.md", STRONGER)
-    );
-    // The ADR quotes a clause its source never carried. The needle is a single
-    // word: `mdtablefix --wrap` breaks the quoted clause between "something"
-    // and "stronger", so any longer needle would be split by the formatter.
-    let fabricated = mutated(ADR, "stronger", "weaker");
-    assert_eq!(
-        clauses::check_quoted_clauses(&fabricated, DESIGN, ROADMAP, ADR_002),
-        drifted(
-            "docs/design.md",
-            "The default remains `&'static str` until a real example consumes something weaker"
-        )
-    );
-    // The clause is real and unmoved, but the ADR now credits it to a document
-    // this contract does not read.
-    let misattributed = mutated(ADR, "— design", "— context");
-    assert_eq!(
-        clauses::check_quoted_clauses(&misattributed, DESIGN, ROADMAP, ADR_002),
-        Err(
-            "docs/adr-004-state-name-consumption-evidence.md attributes a clause to \"context\", \
-             which this contract does not read. Repair: use design, roadmap or adr-002."
-                .to_owned()
-        )
-    );
-    // The evidence section still holds its delimiters but no clause at all.
-    let emptied = empty_evidence_block(ADR);
-    assert_eq!(
-        clauses::check_quoted_clauses(&emptied, DESIGN, ROADMAP, ADR_002),
-        Err(EMPTY_CLAUSE_LIST.to_owned())
-    );
-    Ok(())
-}
-
-/// Empties ADR 004's evidence block while leaving both delimiters in place.
-///
-/// Replacing the quoted text would leave the italic markers and so leave an
-/// (empty-bodied) clause behind; the empty-list failure needs a block that
-/// genuinely holds none.
-fn empty_evidence_block(adr: &str) -> String {
-    let begin = Register::Evidence.begin();
-    let end = Register::Evidence.end();
-    let Some((head, rest)) = adr.split_once(begin) else {
-        return adr.to_owned();
-    };
-    let Some((_, tail)) = rest.split_once(end) else {
-        return adr.to_owned();
-    };
-    format!("{head}{begin}\n\n{end}{tail}")
 }
 
 /// The number of roadmap task titles naming a fragment, counted as the check

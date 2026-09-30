@@ -9,7 +9,8 @@
 
 use super::{
     fold_whitespace,
-    types::{ParseError, Register},
+    roadmap::task_records,
+    types::{ParseError, Register, TaskRecord},
 };
 
 /// Where each supported source document stands in for a clause's attribution.
@@ -47,13 +48,20 @@ pub(crate) fn check_quoted_clauses(
         };
         let path = SOURCES.get(index).map_or("", |(_, path)| *path);
         let source = sources.get(index).copied().unwrap_or_default();
-        let Some(body) = locate_section(source, &section) else {
+        // A roadmap clause resolves against the *record* the section names, and
+        // a heading-shaped one against the section body. Asking the record first
+        // is what keeps `PROSE_RANK`'s long tail from satisfying a task's own
+        // clause; see `task_record`.
+        let Some(body) = task_record(source, &section)
+            .map(|record| record.text)
+            .or_else(|| locate_section(source, &section).map(str::to_owned))
+        else {
             return Err(format!(
                 "{path} has no section {section:?}. Repair: restore it, or revise ADR 004's \
                  quoted clause."
             ));
         };
-        if !fold_whitespace(body).contains(&quoted) {
+        if !fold_whitespace(&body).contains(&quoted) {
             return Err(format!(
                 "{path} no longer contains the quoted clause {quoted:?} under {section:?}. \
                  Repair: update ADR 004 and its contract together."
@@ -61,6 +69,24 @@ pub(crate) fn check_quoted_clauses(
         }
     }
     Ok(())
+}
+
+/// The roadmap task record the section names, when it names one.
+///
+/// A clause quoted from a roadmap task resolves against *that record*, not
+/// against the section that happens to hold it: `PROSE_RANK` lets a record's
+/// body run on to the next `##`, so every task below 3.2.1 would satisfy its
+/// clause, and the ADR could credit "backed by observed example consumption,
+/// not anticipation" to 3.2.2 while quoting it from 3.2.1. The grammar that
+/// delimits a record belongs to `roadmap.rs`, so the record is found through
+/// that module rather than by reading the shape again here. The section carries
+/// the record's number as the roadmap writes it, so `3.2.1` names the record
+/// numbered `3.2.1` and no other; a section naming no record — every
+/// heading-shaped source — answers `None` and is left to `locate_section`.
+pub(crate) fn task_record(roadmap: &str, section: &str) -> Option<TaskRecord> {
+    task_records(roadmap)
+        .into_iter()
+        .find(|record| section.starts_with(&format!("{}. ", record.number)))
 }
 
 /// The body of the named section: what follows its heading, up to the next
@@ -81,7 +107,8 @@ pub(crate) fn check_quoted_clauses(
 /// that a clause quoted from `### 6.1` cannot be satisfied by text that has
 /// drifted into `### 6.2`. A match on a line that is not a heading at all — the
 /// roadmap states one clause's location as a list item — is bounded by the next
-/// `##`.
+/// `##`, which is why a clause quoted from a roadmap *task* is resolved by
+/// `task_record` instead.
 fn locate_section<'a>(source: &'a str, section: &str) -> Option<&'a str> {
     let mut start = 0;
     let mut found = None;

@@ -166,29 +166,30 @@ pub(crate) fn lists_returned_strings(evidence: &str) -> bool {
         .join(" ");
     // Splitting on the mark separates the cell into alternating stretches: odd
     // entries are the insides of quoted spans and even ones the prose between
-    // them, so long as the marks balance. Reading those as overlapping
-    // quadruples — a span, the prose after it, the next span, and the prose
-    // after *that* — gives every candidate state together with the verb that
-    // must follow it and the label that must follow that, in one pass and with
-    // no index arithmetic.
-    //
-    // The fourth entry is what only a *closed* mark leaves behind: the prose
-    // following the label. A cell ending on an unclosed quote has no such entry
-    // at all, so the fourth stream is empty, the zip pairs nothing, and the cell
-    // is refused. Reading three streams instead of four admits it, because an
-    // unclosed tail still lands in an odd, so span-shaped, slot and is non-empty
-    // — which a diagnostic over both cells printed rather than left to be
-    // assumed.
+    // them — but only while the marks pair. An unpaired mark shifts nothing
+    // *before* it, so a span and a label standing ahead of the break read
+    // exactly as they would in a whole cell; the break shows up only as one
+    // stretch too few at the end. A scan that zips those stretches therefore
+    // admits an enumeration whose *last* label was never closed, because the
+    // pair before it completes and satisfies the read. Balance is asked as its
+    // own question, before the scan, rather than left for the zip to notice —
+    // it cannot notice, which is round thirty-one's finding.
     let parts = kept.split('`').collect::<Vec<&str>>();
+    if parts.len().is_multiple_of(2) {
+        return false;
+    }
+    // Reading those stretches as overlapping triples — a span, the prose after
+    // it, and the next span — gives every candidate state with the verb that
+    // must follow it and the label that must follow that, in one pass and with
+    // no index arithmetic. The final state is not a candidate, because no span
+    // follows it to be its label, and the zip stops there of its own accord.
     let states = parts.iter().copied().skip(1).step_by(2);
     let text = parts.iter().copied().skip(2).step_by(2);
     let labels = parts.iter().copied().skip(3).step_by(2);
-    let closed = parts.iter().copied().skip(4).step_by(2);
     states
         .zip(text)
         .zip(labels)
-        .zip(closed)
-        .any(|(((state, between), label), _)| {
+        .any(|((state, between), label)| {
             !state.trim().is_empty() && names_a_return(between) && !label.trim().is_empty()
         })
 }

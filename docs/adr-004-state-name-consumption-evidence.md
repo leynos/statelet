@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted.
+Accepted, 2026-09-19. Statelet records StateName consumption evidence as
+admissible validation notes, and reads their contributions by a total rule that
+leaves the `&'static str` return shape undecided.
 
 ## Date
 

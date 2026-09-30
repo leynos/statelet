@@ -1587,6 +1587,56 @@ outcome, and a reviewer should approve it on that understanding.
       The contract suite is **94/94**, up from 91 by exactly the three new
       controls. EP-M5 and roadmap task 1.1.3 remain unticked: three findings are
       not zero.
+- [x] The thirty-first round returned **one actionable inline finding** on the
+      published tip `b7f8187`, **no execution warnings**, over 3 files; the
+      round is D67's. It is a defect in the repair the previous round produced,
+      and the cell it names is a **second probe of the same root cause**: a
+      *final* label left unclosed, `` `BufferMode` returns `Text`, `Table ``,
+      where the repair's own witness `unclosed_label` left the *only* label
+      open. The completed pair ahead of the break satisfies `.any` before the
+      missing tail is reached, so the fourth stream that fixed round thirty's
+      witness never covered it. Reproduced against the shipped bytes before
+      repairing: `ACCEPTED`, so live rather than stale. The repair asks the
+      reviewer's own question — do the marks pair? — *before* the ordered scan,
+      and deletes the fourth stream, which had been doing the balance test's job
+      by accident and only at the cell's very end. A sixteen-cell probe over the
+      repaired form — both witnesses, all eleven existing cases, and four added
+      shapes — reports **zero unexpected results**. A twelfth control,
+      `unclosed_final_label`, keeps the two witnesses apart because they are one
+      root cause probed twice. The same round's two pre-merge-check warnings are
+      actioned elsewhere: the roadmap quotation is now bound to task 3.2.1's own
+      *record* rather than the section holding it, with a relocation control
+      measured non-vacuous by confirming the section scan still accepts the
+      moved clause; and ADR 004's `Accepted` status now carries the date and
+      decision summary the documentation style guide requires. The two CodeScene
+      diagnostics are static assessments whose own conclusion is to suppress
+      rather than refactor, and the `cs` CLI exposes no suppression command, so
+      both are returned for manual suppression rather than acted on. The
+      contract suite is **96/96**, up from 94 by exactly the two new controls.
+      EP-M5 and roadmap task 1.1.3 remain unticked: one finding is not zero.
+- [x] The round-31 repair is carried by a seventeenth module, and `make lint` is
+      green over it. Two defects that `cargo test` cannot see were found by
+      running the lints the commit gates run: three Clippy errors and one
+      pedantic warning across the repair. `clauses.rs` shadowed `body` with its
+      own `let Some(body)`, denied by `shadow_reuse`; and the relocation control
+      used `assert!` in a `Result`-returning test, denied by
+      `panic_in_result_fn` — the same rule that made `live_gate_table_binds_the_live_roadmap`
+      return `Err` rather than panic, applied to the new control. Folding the
+      record/section lookup into one `let ... else` removed the shadow and the
+      now-unused `map` with it. The third was structural rather than local:
+      `anchor_scenarios.rs` had reached **430 lines** against AGENTS.md's
+      hard 400-line cap and this plan's constraint 7, so the clause controls
+      moved to `clause_scenarios.rs` and the module became the seventeenth. The
+      seam is substantive rather than a line-count cut: the clause controls
+      resolve a *quotation* against a source document, the ones left behind
+      resolve a *gate fragment* against a roadmap task. Every file in the suite
+      is now under the cap — checked by `wc -l` over the module directory rather
+      than by reading — and the largest is `claims.rs` at 394. Clippy reports
+      **no error or warning** from the suite over
+      `cargo clippy --test state_name_consumption_contract --all-features` (the
+      two manifest lints it prints are pre-existing and concern `Cargo.toml`,
+      which this branch does not touch), and the suite is still **96/96** across
+      the split.
 - [x] The branch is rebased onto the PR's target. `origin/main` at `e98b685`
       is now an ancestor of the tip: `bad9a04..fb22d52` was replayed as 51
       commits with no conflicts, `git range-diff` reports all 51 as `=` so each
@@ -1757,6 +1807,37 @@ Timestamps are added as each item completes.
 Findings from the planning phase and from implementation are recorded here
 because none is derivable from the repository alone, and each changed the
 design.
+
+- Observation: **a review tool's default convention is not a repository rule,
+  and the check that invokes it may cite nothing at all.** Round thirty-one's
+  Developer Documentation warning asks that ADR 004's accepted body be kept
+  immutable and amended only through dated `Addendum` sections. The repository
+  has no such rule: the documentation style guide's ADR section requires
+  `Status`, `Date` and `Context and Problem Statement` and nothing else, names
+  no addendum, and states no immutability constraint. No ADR on `origin/main`
+  carries an `Addendum`, and ADR 004 is **not on `origin/main` at all** — this
+  PR introduces it — so there is no accepted record to amend. The warning's
+  resolution text is definite and its explanation detailed, which is exactly
+  what makes it worth checking rather than obeying: a confidently-stated
+  convention with no citation is a hypothesis, and the cost of testing it is one
+  `git cat-file` and one read of the guide. Date/Author:
+  `2026-09-30T16:12:00+02:00` (`2026-09-30T14:12:00Z`), implementing agent.
+
+- Observation: **the two CodeScene diagnostics in this round resolve to
+  "change nothing", and the tooling to close them is not in the CLI.** The
+  `codescene-access` bot reports `String Heavy Function Arguments` on
+  `claims.rs` and an advisory complexity rule on `policy.rs`. CodeRabbit's own
+  replies on both are static assessments concluding that the separation already
+  holds — raw evidence text is the *input* the predicates exist to inspect, so
+  a validating wrapper would exclude exactly the malformed cells they must
+  reject — and prescribing suppression rather than refactoring. `cs --help`
+  offers no `suppress` subcommand, so suppression is a web-UI action: the
+  supplied explanations are handed back for manual suppression rather than
+  applied here. The boundary worth preserving is the one the reply names: a
+  citation's *shape* is stripped from the claim scans independently of whether
+  its revision is valid, because the strip must remove a `main`-citing cell's
+  path even as the revision check rejects it. Date/Author:
+  `2026-09-30T16:14:00+02:00` (`2026-09-30T14:14:00Z`), implementing agent.
 
 - Observation: Whitaker's `no_std_fs_operations` lint denies `std::fs` in
   integration-test crates, and **cannot be suppressed by any Rust attribute**.
@@ -2588,16 +2669,17 @@ design.
   into `roadmap.rs`, which is its only consumer, leaving `parse.rs` with the
   delimited-table syntax its own module doc claims ("one delimited-table syntax
   function") and no other document's grammar. The contract was thirteen modules
-  at this point, and is sixteen at delivery — D52's property suite, and the
-  fifth and sixth scenario modules the 400-line cap forced when the citation
-  and negation controls landed; tolerance 5's three — `types.rs`, `parse.rs`,
-  `policy.rs` — are the ones it bounds, and all three are clear of the 300-line
-  trigger, `policy.rs` at 189 and `parse.rs` at 220. No requirement, register
-  field, register row, gate binding, invariant, or repair-message obligation
-  changed; `docs/developers-guide.md`, `docs/repository-layout.md` and the
-  plan's own module enumerations were updated because all three list the child
-  modules. Date/Author: 2026-09-21T00:32:47+02:00 (2026-09-20T22:32:47Z),
-  implementing agent, actioning the review the scrutineer returned after D29.
+  at this point, and is seventeen at delivery — D52's property suite, and the
+  fifth, sixth and seventh scenario modules the 400-line cap forced when the
+  citation, negation and roadmap-binding controls landed; tolerance 5's three —
+  `types.rs`, `parse.rs`, `policy.rs` — are the ones it bounds, and all three
+  are clear of the 300-line trigger, `policy.rs` at 189 and `parse.rs` at 220.
+  No requirement, register field, register row, gate binding, invariant, or
+  repair-message obligation changed; `docs/developers-guide.md`,
+  `docs/repository-layout.md` and the plan's own module enumerations were
+  updated because all three list the child modules. Date/Author:
+  2026-09-21T00:32:47+02:00 (2026-09-20T22:32:47Z), implementing agent,
+  actioning the review the scrutineer returned after D29.
 
 - D31: **The fourth CodeRabbit pass returned fourteen findings in eight
   locations, and four of the eight subjects were adopted** — the round reported
@@ -4325,6 +4407,91 @@ design.
   the bytes before repairing any, and establishing non-vacuity by reproducing
   the superseded predicate rather than asserting that it was wrong.
 
+- D67: **Round thirty-one found the fourth stream does not close the hole it was
+  added for, and the witness that proved it is a second probe of the same root
+  cause.** The round is `coderabbitai CHANGES_REQUESTED @ 2026-09-28T15:16:18Z`
+  on `b7f8187`, **one actionable inline finding**, no execution warnings, over
+  3 files. Its cell is `` `BufferMode` returns `Text`, `Table `` — a **final**
+  label left unclosed, where mine was the *only* label. That distinction is the
+  whole finding: with a completed pair ahead of the break, `T0` is non-empty and
+  `C0` accepts, and since the zip finalizes on the first `Some` the missing
+  fourth stream at the tail is never reached. The reviewer's prescribed fix —
+  check the retained cell's marks *pair* before scanning — is the right one,
+  and the balance test on `parts.len().is_multiple_of(2)` is what makes the
+  ordered read sound rather than merely ordered. **The repair deletes the
+  fourth stream**, because a balanced cell has no unclosed tail to leave it
+  empty; it is not that the stream was wrong but that it was doing the balance
+  test's job by accident, and only for a break at the very end of the cell. A
+  sixteen-cell probe run over the repaired form in one pass — both review
+  witnesses, all eleven existing cases, and four shapes added to be sure the
+  new clause is not over-strict — returns **zero unexpected results**, with
+  both witnesses refused and every accepted shape keeping its answer.
+
+  The control grows from eleven cases to twelve, and the new case is named
+  `unclosed_final_label` rather than folded into `unclosed_label` because the
+  two are **one root cause probed twice**: the first repair's probe stopped at
+  the cell whose only label was open, so it proved the tail case and missed the
+  mid-cell one. That is the more useful half of the finding. It is the third
+  time this predicate has been weaker than the document it implements and the
+  second time the gap was found *after* a repair had been written for the same
+  class, which is why the plan now records the enumeration predicate's
+  invariant as "the marks pair" rather than "a fourth stream is non-empty".
+
+  Date/Author: `2026-09-30T16:05:00+02:00` (`2026-09-30T14:05:00Z`),
+  implementing agent, reproducing the reviewer's cell against the shipped
+  predicate before repairing (`ACCEPTED`, so live and not stale) and measuring
+  the repaired form rather than reasoning about it.
+
+- D69: **The round's `proptest` warning is real, is not actioned in this round,
+  and needs an oracle design before it can be.** The claim is substantiated by
+  inspection: `claim_properties.rs` imports and covers exactly three predicates,
+  `is_citation_shaped`, `names_a_consumer` and `names_a_property`, and
+  `lists_returned_strings` appears in that file nowhere — its only direct
+  coverage is the twelve-case `rstest` table in `claims_scenarios.rs`. It is
+  also the predicate that has now been wrong three times, twice found only by a
+  reviewer and once by a probe, which is the argument *for* property coverage
+  rather than against it. What the round does not supply is the design, and the
+  obvious shape is unsound: a property that generates text and re-implements
+  the split/zip to predict the predicate would restate the implementation and
+  could pass while both were wrong, which the review itself half-recognizes in
+  asking for a grammar-based oracle "instead of repeating the implementation's
+  `split`/`zip` logic". The oracle that would be genuinely independent is a
+  small grammar over the cell — `state`, a verb, a balanced or unbalanced run
+  of backticked labels — whose production of the *cell* is separate from the
+  predicate's *reading* of it; the useful invariants are then balance itself
+  (unbalanced is always refused, whatever the pair ahead of the break) and the
+  citation law (removing a citation-shaped word cannot change the answer), both
+  of which this round's repairs were about. That is a design worth doing
+  deliberately rather than under a warning, and the plan keeps it as the next
+  candidate; the three named witnesses stand meanwhile as the pinned evidence
+  for the defects actually found. Date/Author: `2026-09-30T16:16:00+02:00`
+  (`2026-09-30T14:16:00Z`), implementing agent, confirming the gap by grep
+  rather than accepting the warning's list.
+
+- D68: **The round's Developer Documentation warning is declined in part, and
+  the part declined is the larger one.** Its resolution asks that ADR 004's
+  body be kept immutable and every post-acceptance change converted into dated
+  `Addendum` entries. That framing is **not this repository's**, and the check
+  that raised it cites no document that says so: the documentation style guide
+  mandates exactly `Status`, `Date` and `Context and Problem Statement` for an
+  ADR, with conditional sections after, and names no addendum convention and no
+  immutability rule (checked by reading the guide's ADR section, not by
+  inferring from the warning). No ADR on `origin/main` carries an `Addendum`,
+  and neither ADR 001 nor ADR 003 writes a dated status summary, so there is no
+  house convention to follow either. And the premise does not hold: **ADR 004
+  is absent from `origin/main`** — this PR introduces it — so there is no
+  published accepted record for an addendum to amend. Writing one would invent
+  a convention from a review tool's default, which rule 1 forbids. The **sound
+  half is actioned**: the style guide *does* require an `Accepted` ADR to carry
+  the date and a brief summary of what was decided, and `claims.rs`'s lesson
+  applies to the document as much as to the code — a status line that says
+  "Accepted" and nothing else is weaker than the rule it is meant to satisfy.
+  The status now reads `Accepted, 2026-09-19.` with the decision summarized, in
+  the shape ADR 002 already uses. Date/Author: `2026-09-30T16:10:00+02:00`
+  (`2026-09-30T14:10:00Z`), implementing agent, distinguishing a review tool's
+  house style from the repository's by reading the guide and the published ADRs
+  rather than by deferring to the warning's confidence.
+
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
@@ -4606,7 +4773,7 @@ design.
 Roadmap task 1.1.3 is linked, and its tick waits on EP-M5's zero-finding review
 (D31). ADR 004 defines the `StateName` consumption evidence;
 `docs/phase-2-validation-note-template.md` is the form a Phase 2 engineer
-copies; `tests/state_name_consumption_contract.rs` and its sixteen child
+copies; `tests/state_name_consumption_contract.rs` and its seventeen child
 modules guard both against drift. The task's own success criterion is itself
 checked, so the instrument is bound to the sentence that grades it.
 
@@ -5564,11 +5731,11 @@ the evidence section. Not a panic, not an index-out-of-bounds, not a bare
 **Green evidence.** After Step 7, `make test` passes and the binary
 `state_name_consumption_contract` reports every scenario named in the
 `Verification plan`. Named with their modules, because two of them differ by
-one letter and the contract is sixteen modules:
-`anchor_scenarios::success_criterion_still_maps`,
+one letter and the contract is seventeen modules:
 `anchor_scenarios::template_matches_the_status_register`,
-`anchor_scenarios::quoted_passages_still_resolve`,
 `anchor_scenarios::gate_titles_resolve`,
+`clause_scenarios::quoted_passages_still_resolve`,
+`clause_scenarios::a_clause_moved_to_another_task_is_rejected`,
 `register_scenarios::status_register_matches_fixture`,
 `register_scenarios::aggregation_register_matches_fixture`,
 `register_scenarios::default_survives_without_a_required_property`,
@@ -6332,27 +6499,33 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
-The split as delivered is sixteen modules: the five below, plus `clauses.rs`
+The split as delivered is seventeen modules: the five below, plus `clauses.rs`
 for quoted-clause resolution and `registers.rs` for the cross-register checks
-(D21), six scenario modules — `anchor_scenarios.rs`, `claims_scenarios.rs`,
-`criterion_scenarios.rs`, `note_scenarios.rs`, `register_scenarios.rs`,
-`scan_scenarios.rs` — that hold the contract's tests rather than a share of the
-crate root (D26), `roadmap.rs` for the roadmap's task-record grammar and the
-two checks that bind it (D30), `claims.rs` for what an evidence cell says, as
-against what `policy.rs` decides it obliges (D30), and `claim_properties.rs`
-for the property suite over those predicates (D52). Each module owns one
-invariant class. The first two additions keep `policy.rs` from carrying three
-unrelated ones; the scenario modules exist because the root file had reached
-788 lines against AGENTS.md's 400-line cap, and because a scenario module per
-invariant class keeps every file small enough to stay there. `clauses.rs` and
-`claims.rs` answer tolerance 5's 300-line trigger, which both `policy.rs` and
-`parse.rs` passed once the roadmap bindings landed (D30). The three latest —
-the fifth and sixth scenario modules, and the properties — were forced by the
-same 400-line cap arriving from the other direction: `note_scenarios.rs`
-reached 535 lines when the citation and negation controls landed, and the split
-that relieved it left the keyword-scan controls in a module of their own, with
-the properties beside them rather than in a scenario file they do not share a
-subject with.
+(D21), seven scenario modules — `anchor_scenarios.rs`, `claims_scenarios.rs`,
+`clause_scenarios.rs`, `criterion_scenarios.rs`, `note_scenarios.rs`,
+`register_scenarios.rs`, `scan_scenarios.rs` — that hold the contract's tests
+rather than a share of the crate root (D26), `roadmap.rs` for the roadmap's
+task-record grammar and the two checks that bind it (D30), `claims.rs` for what
+an evidence cell says, as against what `policy.rs` decides it obliges (D30), and
+`claim_properties.rs` for the property suite over those predicates (D52). Each
+module owns one invariant class. The first two additions keep `policy.rs` from
+carrying three unrelated ones; the scenario modules exist because the root file
+had reached 788 lines against AGENTS.md's 400-line cap, and because a scenario
+module per invariant class keeps every file small enough to stay there.
+`clauses.rs` and `claims.rs` answer tolerance 5's 300-line trigger, which both
+`policy.rs` and `parse.rs` passed once the roadmap bindings landed (D30). The
+four latest — the fifth, sixth and seventh scenario modules, and the properties
+— were forced by the same 400-line cap arriving from the other direction:
+`note_scenarios.rs` reached 535 lines when the citation and negation controls
+landed, and the split that relieved it left the keyword-scan controls in a
+module of their own, with the properties beside them rather than in a scenario
+file they do not share a subject with. The seventh, `clause_scenarios.rs`, is
+the same instrument applied to `anchor_scenarios.rs` at 430 lines once the
+relocation control for the roadmap binding landed: the clause controls resolve
+quoted text against a source, the ones left behind resolve a gate fragment
+against a roadmap task, and that is the seam the cap exposed — not one this
+plan foresaw, since the pre-declared split named the invariant classes and left
+the count to what the caps forced.
 
 ```rust,ignore
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
@@ -6363,6 +6536,8 @@ mod claim_properties;
 mod claims;
 #[path = "state_name_consumption_contract/claims_scenarios.rs"]
 mod claims_scenarios;
+#[path = "state_name_consumption_contract/clause_scenarios.rs"]
+mod clause_scenarios;
 #[path = "state_name_consumption_contract/clauses.rs"]
 mod clauses;
 #[path = "state_name_consumption_contract/criterion_scenarios.rs"]
