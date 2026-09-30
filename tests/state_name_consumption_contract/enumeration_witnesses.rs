@@ -1,4 +1,4 @@
-//! The hand-written witnesses for the enumeration predicate's property suite.
+//! The handwritten witnesses for the enumeration predicate's property suite.
 //!
 //! `enumeration_properties.rs` states the rule over generated text. Two things a
 //! generator cannot assert are asserted here instead, and they are the reason

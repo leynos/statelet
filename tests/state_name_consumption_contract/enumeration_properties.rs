@@ -21,6 +21,8 @@
 //! equality true for the wrong reason, so the vocabulary the generated cells are
 //! drawn from is shown to satisfy the predicate directly.
 
+use std::fmt::Write as _;
+
 use proptest::prelude::*;
 
 use super::{
@@ -39,6 +41,24 @@ use super::{
 /// would not be one span.
 fn span_text() -> impl Strategy<Value = String> { "[a-zA-Z ]{0,12}" }
 
+/// A word with an independent case choice applied to each of its letters.
+///
+/// Extracted from the generator below, where the case step sat at the innermost
+/// of four nested closures — one past the `excessive-nesting` ceiling the rest
+/// of this repository holds to.
+fn with_case_applied(word: &str, upper_case: &[bool]) -> String {
+    word.chars()
+        .zip(upper_case)
+        .map(|(letter, is_upper)| {
+            if *is_upper {
+                letter.to_ascii_uppercase()
+            } else {
+                letter
+            }
+        })
+        .collect()
+}
+
 /// A return verb in arbitrary case.
 ///
 /// The predicate compares the verb case-insensitively, and this is what holds
@@ -50,18 +70,8 @@ fn span_text() -> impl Strategy<Value = String> { "[a-zA-Z ]{0,12}" }
 /// case an engineer actually writes at the head of a note.
 fn varied_case_verb() -> impl Strategy<Value = String> {
     prop::sample::select(ACCEPTED_VERBS.to_vec()).prop_flat_map(|verb| {
-        prop::collection::vec(any::<bool>(), verb.len()).prop_map(move |upper| {
-            verb.chars()
-                .zip(upper)
-                .map(|(letter, is_upper)| {
-                    if is_upper {
-                        letter.to_ascii_uppercase()
-                    } else {
-                        letter
-                    }
-                })
-                .collect()
-        })
+        prop::collection::vec(any::<bool>(), verb.len())
+            .prop_map(move |upper_case| with_case_applied(verb, &upper_case))
     })
 }
 
@@ -208,11 +218,12 @@ proptest! {
         let cell = spans
             .iter()
             .enumerate()
-            .map(|(index, span)| {
+            .fold(String::new(), |mut cell, (index, span)| {
                 let gap = written.get(index).map_or("", String::as_str);
-                format!("`{span}` {gap} ")
-            })
-            .collect::<String>();
+                write!(cell, "`{span}` {gap} ")
+                    .expect("writing into a String cannot fail");
+                cell
+            });
         prop_assert!(
             lists_returned_strings(&cell),
             "the cell {:?} carries its verb in gap {} and must be accepted, because every pair of \

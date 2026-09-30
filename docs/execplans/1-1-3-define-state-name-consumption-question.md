@@ -509,7 +509,7 @@ ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
 ```
 
 Each leaf names its module as well as its test, because the contract is
-seventeen modules and two of its scenario names differ by one letter:
+nineteen modules and two of its scenario names differ by one letter:
 `note_scenarios::committed_state_name_note_is_usable` is the accepting witness,
 and `scan_scenarios::committed_state_name_notes_are_usable` is the
 committed-note scan. A bare `tests::` prefix would leave a reader to grep for
@@ -1901,6 +1901,59 @@ have moved a number.
 
 Timestamps are added as each item completes.
 
+- 2026-09-30, rebased onto the PR's target a second time and re-gated. The
+  wall-clock is `2026-09-30T17:10:00+02:00`, which is `2026-09-30T15:10:00Z`;
+  the offset is written alongside the date because D59's defect class is
+  exactly the bare date read in the wrong zone. The branch was replayed from
+  `OLD_BASE` `e98b685` — the landing commit of parent PR #76 — onto
+  `origin/main` at `cfbc15e` as 84 commits with no conflicts and no changed
+  patches. The boundary was established by positive evidence rather than by
+  guess: `e98b685` is the *direct parent* of the first replayed commit
+  (`4dabbd3`), is an ancestor of `cfbc15e`, and the range contains zero merges,
+  which is the proof the rebase skill demands that no inherited parent commit
+  remains in the replay and no child commit falls outside it. Acceptance is on
+  patch identity, not on the replay's clean exit: `git range-diff` reports all
+  84 commits as `=`, the target-only paths are byte-identical to `cfbc15e`'s
+  versions, and the deletion profiles match. The single overlapping file —
+  `docs/developers-guide.md` — carries *both* sides, with `main`'s
+  `-Zthreads=8` / `STANDARD_RUSTFLAGS` paragraph and this branch's
+  `## StateName consumption contract` section surviving together, and
+  `cfbc15e..NEW_HEAD` showing the guide as a pure `104 0` addition. Weave was
+  registered globally but *not* selected (no `.gitattributes`, no
+  `info/attributes`, `git check-attr merge` → `unspecified`), so Git's built-in
+  merge with `zdiff3` ran; that was confirmed rather than assumed, and the
+  alternative override would have been inert. Six gates were re-run at the new
+  tip `088cd78` and all six exited 0, with `make test` at 136/136 and the
+  contract suite at 96/96. The force-push used `--force-with-lease` bound to
+  the previously recorded remote head, and reported
+  `b528f1b…088cd78 (forced update)`. Recorded as D72. EP-M5 and roadmap task
+  1.1.3 remain unticked on D44's bar, which this rebase does not move.
+- 2026-09-30, the two pre-merge warnings are dispositioned. Wall-clock
+  `2026-09-30T20:40:00+02:00` (`2026-09-30T18:40:00Z`), and **both warnings
+  were still valid against the current head**, so both are actioned rather than
+  declined. The Testing warning's premise is checked directly: the predicate it
+  names, `lists_returned_strings`, carries a twelve-case `rstest` table and no
+  property, and the twelve rows are the shape a table grows when the real
+  relation is a property — six accepted and six refused cells that sample one
+  relation rather than forming a truth table. The Developer Documentation
+  warning asks for ADR 004's accepted body to be frozen and its post-acceptance
+  changes recorded as dated `Addendum` entries; measuring first established
+  that there are **thirteen** such changes, not the two or three the warning's
+  phrasing suggests, so the entry set was derived from `git log --reverse` over
+  the file rather than from the warning's list. This **reverses D68**, which
+  had declined the same request on the grounds that no house convention exists
+  — see D73 for why the reversal is correct and what makes the earlier
+  reasoning insufficient. Committed as `2584929`. Each new property was
+  mutation-tested rather than merely run, and one mutation survived its first
+  pass: a case-sensitive verb comparison, which the predicate documents itself
+  as not making. The generator was widened to emit every verb in arbitrary case
+  and a named witness added, after which the mutation fails. That the *central*
+  property did not catch the whole-cell verb mutation is the reason the
+  displacement property exists, and is written down here so the pair is not
+  later collapsed as duplication.
+
+Timestamps are added as each item completes.
+
 ## Surprises & discoveries
 
 Findings from the planning phase and from implementation are recorded here
@@ -2768,12 +2821,13 @@ design.
   into `roadmap.rs`, which is its only consumer, leaving `parse.rs` with the
   delimited-table syntax its own module doc claims ("one delimited-table syntax
   function") and no other document's grammar. The contract was thirteen modules
-  at this point, and is seventeen at delivery — D52's property suite, and the
-  fifth, sixth and seventh scenario modules the 400-line cap forced when the
-  citation, negation and roadmap-binding controls landed; tolerance 5's three —
-  `types.rs`, `parse.rs`, `policy.rs` — are the ones it bounds, and all three
-  are clear of the 300-line trigger, `policy.rs` at 189 and `parse.rs` at 220.
-  No requirement, register field, register row, gate binding, invariant, or
+  at this point, and is nineteen at delivery — D52's property suite, the
+  enumeration suite added with the pre-merge warnings, and the fifth, sixth and
+  seventh scenario modules the 400-line cap forced when the citation, negation
+  and roadmap-binding controls landed; tolerance 5's three — `types.rs`,
+  `parse.rs`, `policy.rs` — are the ones it bounds, and all three are clear of
+  the 300-line trigger, `policy.rs` at 189 and `parse.rs` at 220. No
+  requirement, register field, register row, gate binding, invariant, or
   repair-message obligation changed; `docs/developers-guide.md`,
   `docs/repository-layout.md` and the plan's own module enumerations were
   updated because all three list the child modules. Date/Author:
@@ -4665,6 +4719,71 @@ design.
   constraint by reading the exemption's comment and measuring the destination
   rather than by deferring to the finding's confidence.
 
+- D72: **A rebase is accepted on patch identity, not on a clean replay, and the
+  boundary must be proved by a parent edge rather than by a plausible
+  merge-base.** The branch was replayed onto the PR's target a second time, from
+  `OLD_BASE` `e98b685` onto `cfbc15e`, as 84 commits with no conflicts and no
+  changed patches. A clean exit is the weakest of the available signals and is
+  not the one accepted here. Three checks carry the acceptance instead, and
+  each answers a question a clean replay cannot. **The boundary is a parent
+  edge, not an inference.** `e98b685` is the *direct parent* of `4dabbd3`, the
+  oldest commit in the replay range, which is the only fact that proves no
+  inherited parent commit remains inside the range and no child commit falls
+  outside it; a merge-base would have supplied the same commit here and would
+  not have distinguished the two cases. The range contains **zero merges**,
+  which the linear replay depends on. **The patches are identical.**
+  `git range-diff` reports all 84 commits as `=`, so each replayed commit
+  carries the same change it carried before. **The target's own paths are
+  untouched.** Of 14 files that `cfbc15e` changed and this branch did not, all
+  14 are byte-identical at `HEAD` to their `cfbc15e` versions — a merge driver
+  had no branch-side change to reconcile there, so any difference would have
+  been a reconstruction artefact. One file overlaps,
+  `docs/developers-guide.md`, and it carries *both* sides: `main`'s
+  `-Zthreads=8` / `STANDARD_RUSTFLAGS` paragraph and this branch's
+  `## StateName consumption contract` section survive together, and
+  `cfbc15e..HEAD` shows the guide as a pure `104 0` addition. Weave was
+  registered globally but **not selected** — no `.gitattributes`, no
+  `info/attributes`, `git check-attr merge` reporting `unspecified` — so Git's
+  built-in merge with `zdiff3` ran. That was confirmed rather than assumed, and
+  matters because the alternative override would have been inert. The
+  force-push used `--force-with-lease` bound to the recorded remote head and
+  reported `b528f1b…088cd78 (forced update)`. Date/Author:
+  `2026-09-30T17:10:00+02:00` (`2026-09-30T15:10:00Z`), implementing agent,
+  accepting on evidence that would have failed a corrupt replay rather than on
+  the replay's own exit status.
+
+- D73: **The round-32 Developer Documentation warning is reversed, and what made
+  D68's reasoning insufficient is the difference between a convention that is
+  written down and one that is merely absent.** D68 declined this request on
+  the ground that no house convention exists for ADR addenda: the style guide
+  names no addendum section, no immutability rule, and no ADR on `origin/main`
+  carries one. Every one of those facts still holds and none is withdrawn. What
+  D68 missed is that they were the wrong question. The finding does not rest on
+  a convention this repository has adopted; it rests on a property of a review
+  artefact — that a reader of an accepted ADR cannot see that one of its
+  arguments was later corrected, because the correction was written *over* the
+  original rather than *beside* it — and that property is true whether or not
+  anyone has written a rule about it. Reading the guide answered "is there a
+  rule?" when the question was "is there a problem?" The distinction is what
+  makes this a reversal rather than a contradiction: D68's evidence is intact
+  and its conclusion does not follow from it. Measuring first also changed the
+  shape of the work. The request implies a handful of changes;
+  `git log --reverse` over the file finds **fourteen** commits touching it, of
+  which **thirteen** follow `782cce6`, the commit that added it — so the entry
+  set was derived from the history rather than from the finding's list, which
+  is the same rule that made D54 state an enumeration's members instead of its
+  total. The change is purely additive — `113 0` — so no accepted argument was
+  edited to make room for the record of its correction. The convention is
+  *established* here rather than followed, and that is stated plainly rather
+  than presented as compliance with a rule that does not exist. The premise D68
+  leaned on hardest is also the one that matters least: ADR 004 is absent from
+  `origin/main` because this PR introduces it, so there is no published record
+  to amend — but there is a *reviewed* one, and the reader who cannot see its
+  corrections is reading this PR's copy. Date/Author:
+  `2026-09-30T20:40:00+02:00` (`2026-09-30T18:40:00Z`), implementing agent,
+  distinguishing an absent convention from an absent problem by asking what a
+  reader loses rather than what a guide mandates.
+
 - Observation: **an edit to the conformance basis is an edit to the test
   contract, not to prose about it.** Repairing the two stale counts turned up
   six citations of the form `<module>::<test>` that named the wrong module:
@@ -4950,12 +5069,32 @@ design.
   reviewed, passing code that no acceptance criterion asks for. What the record
   fixes is the *silence*: an unrecorded red check is indistinguishable from an
   unnoticed one. The measurement also settles that the bar is not impossible:
-  **thirteen of the sixteen** contract modules score 10.0, and the three that
-  do not are `parse.rs` (9.09), `register_scenarios.rs` (9.38) and
-  `registers.rs` (9.38). `claim_properties.rs`, added in the twenty-first
-  round, is among the thirteen — so a module written to this bar reaches it as
-  the ordinary case, and the three short of it are the exceptions that need a
-  reason. **Carried lesson: a check that fails continuously without failing
+  **thirteen of the nineteen** contract modules score 10.0, and the six that do
+  not are `parse.rs` (9.09), `policy.rs`, `register_scenarios.rs` and
+  `registers.rs` (9.38 each), and `claims.rs` and `clauses.rs` (9.68 each).
+  `claim_properties.rs`, added in the twenty-first round, is among the thirteen
+  — so a module written to this bar reaches it as the ordinary case, and the
+  six short of it are the exceptions that need a reason. The tally was
+  **re-measured rather than adjusted** when the enumeration suite added two
+  modules, because a proportion is a claim about its population. The original
+  sentence read "thirteen of the sixteen", and re-measuring `c381d56` — the
+  revision that wrote it — reproduces exactly that: sixteen children, thirteen
+  at 10.0, and `parse.rs`, `register_scenarios.rs` and `registers.rs` below. So
+  the numerator is unchanged while the denominator grew by three, and the *list
+  of exceptions doubled* for reasons that have nothing to do with this branch's
+  new modules. Bisecting each file's own history puts the three later drops on
+  three different commits, none of them this branch's: `policy.rs` fell to 9.38
+  at `a7e09b6` (round 29's landing of the fourth obligation), `claims.rs` at
+  `820413c`, and `clauses.rs` at `680ea40`
+  (`Balance the label marks before reading the enumeration`). A numerator-only
+  edit would have preserved every one of those drops as a success. Both
+  numerals and the whole list of exceptions were therefore re-derived from a
+  fresh `cs review` over every child, and each module whose score had changed
+  was traced to the commit that changed it rather than attributed from the
+  plan's own narrative. Two of the three attributions in the first draft of
+  this sentence were wrong in exactly that way — they named `820413c` for all
+  three — which is why the bisect is recorded here rather than the conclusion
+  alone. **Carried lesson: a check that fails continuously without failing
   anything still needs one adjudication recorded, because "advisory" is a
   conclusion that has to be reached and written down, not a state to be assumed
   from the check being ignored.**
@@ -4967,7 +5106,7 @@ design.
 Roadmap task 1.1.3 is linked, and its tick waits on EP-M5's zero-finding review
 (D31). ADR 004 defines the `StateName` consumption evidence;
 `docs/phase-2-validation-note-template.md` is the form a Phase 2 engineer
-copies; `tests/state_name_consumption_contract.rs` and its seventeen child
+copies; `tests/state_name_consumption_contract.rs` and its nineteen child
 modules guard both against drift. The task's own success criterion is itself
 checked, so the instrument is bound to the sentence that grades it.
 
@@ -5750,14 +5889,14 @@ requirement is satisfied by the documents the scan actually reads.
 
 Create the contract described in `Interfaces and dependencies` — thirteen child
 modules, of which four are the scenario modules — including every negative
-control, before any register exists. (The delivered split grew to seventeen;
-see "The split as delivered" below. This step is left as scoped because it is
-the instruction the work started from, and the four later modules were forced
-by the 400-line cap and by D52 rather than being foreseeable at this point.)
-Create `dylint.toml` first, with the single path-scoped exemption defined in
-D20: without it the `notes.rs` module fails `make lint`, and creating it now
-keeps the exemption visible from the moment the code that needs it exists
-rather than retro-fitted at delivery.
+control, before any register exists. (The delivered split grew to nineteen; see
+"The split as delivered" below. This step is left as scoped because it is the
+instruction the work started from, and the later modules were forced by the
+400-line cap, by D52 and by the enumeration suite rather than being foreseeable
+at this point.) Create `dylint.toml` first, with the single path-scoped
+exemption defined in D20: without it the `notes.rs` module fails `make lint`,
+and creating it now keeps the exemption visible from the moment the code that
+needs it exists rather than retro-fitted at delivery.
 
 ### Step 4 — observe red
 
@@ -5925,7 +6064,7 @@ the evidence section. Not a panic, not an index-out-of-bounds, not a bare
 **Green evidence.** After Step 7, `make test` passes and the binary
 `state_name_consumption_contract` reports every scenario named in the
 `Verification plan`. Named with their modules, because two of them differ by
-one letter and the contract is seventeen modules:
+one letter and the contract is nineteen modules:
 `anchor_scenarios::template_matches_the_status_register`,
 `anchor_scenarios::gate_titles_resolve`,
 `clause_scenarios::quoted_passages_still_resolve`,
@@ -6694,7 +6833,7 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
-The split as delivered is seventeen modules: the five the pre-declared split
+The split as delivered is nineteen modules: the five the pre-declared split
 named — `types.rs`, `parse.rs`, `policy.rs`, `fixtures.rs` and `notes.rs` — plus
 `clauses.rs` for quoted-clause resolution and `registers.rs` for the
 cross-register checks (D21), seven scenario modules — `anchor_scenarios.rs`,
@@ -6703,25 +6842,36 @@ cross-register checks (D21), seven scenario modules — `anchor_scenarios.rs`,
 the contract's tests rather than a share of the crate root (D26), `roadmap.rs`
 for the roadmap's task-record grammar and the two checks that bind it (D30),
 `claims.rs` for what an evidence cell says, as against what `policy.rs` decides
-it obliges (D30), and `claim_properties.rs` for the property suite over those
-predicates (D52). Each module owns one invariant class. The first two additions
-keep `policy.rs` from carrying three unrelated ones; the scenario modules exist
-because the root file had reached 788 lines against AGENTS.md's 400-line cap,
-and because a scenario module per invariant class keeps every file small enough
-to stay there. `clauses.rs` and `claims.rs` answer tolerance 5's 300-line
-trigger, which both `policy.rs` and `parse.rs` passed once the roadmap bindings
-landed (D30). The four latest — the fifth, sixth and seventh scenario modules,
-and the properties — were forced by the same 400-line cap arriving from the
-other direction: `note_scenarios.rs` reached 535 lines when the citation and
-negation controls landed, and the split that relieved it left the keyword-scan
-controls in a module of their own, with the properties beside them rather than
-in a scenario file they do not share a subject with. The seventh,
-`clause_scenarios.rs`, is the same instrument applied to `anchor_scenarios.rs`
-at 430 lines once the relocation control for the roadmap binding landed: the
-clause controls resolve quoted text against a source, the ones left behind
-resolve a gate fragment against a roadmap task, and that is the seam the cap
-exposed — not one this plan foresaw, since the pre-declared split named the
-invariant classes and left the count to what the caps forced.
+it obliges (D30), and three property modules — `claim_properties.rs` for the
+property suite over those predicates (D52), and `enumeration_properties.rs` with
+`enumeration_witnesses.rs` for the suite over `lists_returned_strings`, split
+from each other because the premises a generator rests on are claims in their
+own right and belong beside the properties that depend on them rather than
+buried at the end of them. Each module owns one invariant class. The first two
+additions keep `policy.rs` from carrying three unrelated ones; the scenario
+modules exist because the root file had reached 788 lines against AGENTS.md's
+400-line cap, and because a scenario module per invariant class keeps every
+file small enough to stay there. `clauses.rs` and `claims.rs` answer tolerance
+5's 300-line trigger, which both `policy.rs` and `parse.rs` passed once the
+roadmap bindings landed (D30). The final six — the fifth, sixth and seventh
+scenario modules, and the three property modules — were forced by the same
+400-line cap arriving from the other direction: `note_scenarios.rs` reached 535
+lines when the citation and negation controls landed, and the split that
+relieved it left the keyword-scan controls in a module of their own, with the
+properties beside them rather than in a scenario file they do not share a
+subject with. The seventh, `clause_scenarios.rs`, is the same instrument
+applied to `anchor_scenarios.rs` at 430 lines once the relocation control for
+the roadmap binding landed: the clause controls resolve quoted text against a
+source, the ones left behind resolve a gate fragment against a roadmap task,
+and that is the seam the cap exposed — not one this plan foresaw, since the
+pre-declared split named the invariant classes and left the count to what the
+caps forced. The enumeration suite repeated the instrument once more, on a
+predicate the tables above commemorate but could not state: its properties
+outgrew `enumeration_properties.rs` at the same ceiling, and the split is by
+claim rather than by size, with the witnesses — the attribution of a refusal to
+the parity guard, and the non-vacuity of each generator — in
+`enumeration_witnesses.rs`, so the premises sit beside the properties they
+support instead of trailing them.
 
 ```rust,ignore
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
