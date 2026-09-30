@@ -489,7 +489,7 @@ Traced items:
 
 ```plaintext
 ROADMAP-1.1.3-success -> EP-M1 -> ADR-004 status register
-                      -> anchor_scenarios::success_criterion_still_maps
+                      -> criterion_scenarios::success_criterion_still_maps
 TDD-6.1-stable-id     -> EP-M1 -> ADR-004 status register
                       -> register_scenarios::status_register_matches_fixture
 TDD-6.1-default-str   -> EP-M1 -> ADR-004 R-DEFAULT
@@ -498,9 +498,9 @@ TDD-6.1-cardinality   -> EP-M1 -> ADR-004 admissibility
                       -> register_scenarios::register_confines_insufficient_to_the_required_property,
                          note_scenarios::blocked_notes_resolve_to_not_resolved
 TDD-6.2-no-speculative-api -> ADR-004 rationale -> EP-M1
-                      -> anchor_scenarios::quoted_passages_still_resolve
+                      -> clause_scenarios::quoted_passages_still_resolve
 ADR-002-wireframe-labels -> Finding four -> EP-M1
-                      -> anchor_scenarios::quoted_passages_still_resolve
+                      -> clause_scenarios::quoted_passages_still_resolve
 TDD-9-transition-fields -> field tracing-use -> EP-M2 -> ADR-004 worked example
 ROADMAP-2.2.1/2.2.2/3.1.2 -> gates S1..S3 -> EP-M3
                       -> anchor_scenarios::gate_titles_resolve
@@ -508,8 +508,8 @@ ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
                       -> register_scenarios::aggregation_register_is_total
 ```
 
-Each leaf names its module as well as its test, because the contract is sixteen
-modules and two of its scenario names differ by one letter:
+Each leaf names its module as well as its test, because the contract is
+seventeen modules and two of its scenario names differ by one letter:
 `note_scenarios::committed_state_name_note_is_usable` is the accepting witness,
 and `scan_scenarios::committed_state_name_notes_are_usable` is the
 committed-note scan. A bare `tests::` prefix would leave a reader to grep for
@@ -4492,6 +4492,58 @@ design.
   house style from the repository's by reading the guide and the published ADRs
   rather than by deferring to the warning's confidence.
 
+- D70: **`make audit` needs the session's URL-rewrite disabled to fetch, and
+  the fault is the sandbox's rather than the branch's.** The gate failed at
+  `18:48` with `couldn't fetch advisory database`, caused by
+  `ssh: Could not resolve hostname lody-github` — no advisory identifier, no
+  RustSec result, and no dependency named. The cause is the transport the
+  session injects: `git config --show-origin --get-regexp 'url\.'` returns
+  fourteen entries, all from `command line`, rewriting `https://github.com/` to
+  `lody-github::https/` through a `git-remote-lody-github` helper that lives in
+  the session's own directory and is **not on `PATH`**. Two repairs do not work
+  and are worth recording so they are not tried again. Prefixing the helper's
+  directory to `PATH` fixes `git push`, which invokes the helper as a
+  `git-remote-*` binary, but does nothing here: **`cargo audit` fetches through
+  libgit2**, which cannot execute a remote helper at all, so the failure
+  survives the prefix with `failed to prepare fetch`. `cargo audit --no-fetch`
+  passes and is a *substitute*, not the gate — it audits against whatever
+  advisory copy happens to be on disk. The gate passes under
+  `env GIT_CONFIG_COUNT=0 make audit`, which drops the injected rewrite for
+  that one invocation: `Loaded 1277 security advisories`, 76 crate
+  dependencies, exit 0. The fault is environmental and not this branch's, on
+  three independent measurements — the same `lody-github` URL broke `git push`
+  in the same session; clearing only the rewrite makes the real gate pass
+  untouched; and the branch's own canonical log,
+  `/tmp/audit-statelet-1-1-3-define-state-name-consumption-question.out`,
+  written `2026-09-28T16:29+02:00` with `exit` `0`, shows this same gate
+  fetching from the same `https://github.com/RustSec/advisory-db.git` over the
+  mediated URL and passing, so the mediation was working two days ago and has
+  since regressed. Date/Author: `2026-09-30T18:57:00+02:00`
+  (`2026-09-30T16:57:00Z`), implementing agent, distinguishing a transport
+  fault from a dependency finding by reading the error text rather than the
+  exit code.
+
+- Observation: **an edit to the conformance basis is an edit to the test
+  contract, not to prose about it.** Repairing the two stale counts turned up
+  six citations of the form `<module>::<test>` that named the wrong module:
+  `criterion_scenarios::success_criterion_still_maps`'s three controls were
+  still attributed to `anchor_scenarios`, and
+  `clause_scenarios::quoted_passages_still_resolve` to `anchor_scenarios` as
+  well. These are not cosmetic. The conformance basis exists to trace an
+  upstream requirement to the test that discharges it, and a reader following
+  `anchor_scenarios::quoted_passages_still_resolve` lands in a file where that
+  function does not exist — which is a *worse* failure than a missing entry,
+  because it looks checked. Two of the six were wrong from birth rather than
+  aged: `criterion_scenarios.rs` was added at `e4eab2b` and the records that
+  name it were never updated to match, so the citation was never true. The
+  check that found them is worth repeating whenever a module moves: collect
+  every `<known-module>::<identifier>` from the document, resolve each
+  identifier to its declaring file, and report the mismatches — a grep for the
+  old name finds nothing when the *new* name is what is missing. Date/Author:
+  `2026-09-30T18:57:00+02:00` (`2026-09-30T16:57:00Z`), implementing agent,
+  after a section-scoped sweep distinguished live claims from dated historical
+  ones rather than rewriting both.
+
 - Observation: **a count is only a claim once it names its revision.** The
   nineteenth round's `minor` is one sentence in a plan that carries three
   different case totals — 87, 94 and 99 — each true of the revision that
@@ -5121,11 +5173,11 @@ formatter by running `make fmt` before fixtures are written and by
   gate table follows — and the fragment is checked against `record.title` while
   the clause is checked against `record.text`, because the two live in
   different places.
-- **Artefact**: test `anchor_scenarios::success_criterion_still_maps`, with the
-  region control in
-  `anchor_scenarios::criterion_outside_a_task_is_not_the_criterion` and the
+- **Artefact**: test `criterion_scenarios::success_criterion_still_maps`, with
+  the region control in
+  `criterion_scenarios::criterion_outside_a_task_is_not_the_criterion` and the
   attribution control in
-  `anchor_scenarios::criterion_in_another_task_is_not_the_criterion`.
+  `criterion_scenarios::criterion_in_another_task_is_not_the_criterion`.
 - **Non-vacuity**: a fixture register with `tracing-use` removed must fail
   naming the unmapped noun; a roadmap whose bullet is reworded must fail naming
   the clause; the region control plants an identical sentence in the
@@ -5556,14 +5608,14 @@ requirement is satisfied by the documents the scan actually reads.
 
 Create the contract described in `Interfaces and dependencies` — thirteen child
 modules, of which four are the scenario modules — including every negative
-control, before any register exists. (The delivered split grew to sixteen; see
-"The split as delivered" below. This step is left as scoped because it is the
-instruction the work started from, and the three later modules were forced by
-the 400-line cap and by D52 rather than being foreseeable at this point.) Create
-`dylint.toml` first, with the single path-scoped exemption defined in D20:
-without it the `notes.rs` module fails `make lint`, and creating it now keeps
-the exemption visible from the moment the code that needs it exists rather than
-retro-fitted at delivery.
+control, before any register exists. (The delivered split grew to seventeen;
+see "The split as delivered" below. This step is left as scoped because it is
+the instruction the work started from, and the four later modules were forced
+by the 400-line cap and by D52 rather than being foreseeable at this point.)
+Create `dylint.toml` first, with the single path-scoped exemption defined in
+D20: without it the `notes.rs` module fails `make lint`, and creating it now
+keeps the exemption visible from the moment the code that needs it exists
+rather than retro-fitted at delivery.
 
 ### Step 4 — observe red
 
