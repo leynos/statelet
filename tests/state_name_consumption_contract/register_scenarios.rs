@@ -72,9 +72,9 @@ fn status_register_rejects_a_missing_section() {
 /// Rejects a status token the register's own vocabulary does not define, as the
 /// vocabulary check downstream reports it.
 #[test]
-fn status_register_rejects_an_unknown_status() {
+fn status_register_rejects_an_unknown_status() -> Result<(), String> {
     let mutated = status_register().replace("| yes | nothing |", "| yes | plenty |");
-    let rows = status_rows(&mutated).expect("the mutated register still parses");
+    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_vocabulary(&rows),
         Err(
@@ -83,6 +83,7 @@ fn status_register_rejects_an_unknown_status() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects an admissibility cell that is neither `yes` nor `no`.
@@ -152,12 +153,12 @@ fn aggregation_register_is_total(
 
 /// Rejects an aggregation register that ratifies on no evidence.
 #[test]
-fn aggregation_register_rejects_an_outcome_that_does_not_match() {
+fn aggregation_register_rejects_an_outcome_that_does_not_match() -> Result<(), String> {
     let mutated = aggregation_register().replace(
         "| None | n/a | Blocked: no admissible evidence |",
         "| None | n/a | Ratify the current return type |",
     );
-    let rows = aggregation_rows(&mutated).expect("the mutated register still parses");
+    let rows = aggregation_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_aggregation_total(&rows),
         Err(
@@ -167,14 +168,15 @@ fn aggregation_register_rejects_an_outcome_that_does_not_match() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects an aggregation register missing a reachable state.
 #[test]
-fn aggregation_register_rejects_a_missing_state() {
+fn aggregation_register_rejects_a_missing_state() -> Result<(), String> {
     let mutated =
         aggregation_register().replace("| None | n/a | Blocked: no admissible evidence |\n", "");
-    let rows = aggregation_rows(&mutated).expect("the mutated register still parses");
+    let rows = aggregation_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_aggregation_total(&rows),
         Err(
@@ -184,17 +186,18 @@ fn aggregation_register_rejects_a_missing_state() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a register where a status other than the recorded required property
 /// is made decisive.
 #[test]
-fn register_confines_insufficient_to_the_required_property() {
+fn register_confines_insufficient_to_the_required_property() -> Result<(), String> {
     let mutated = status_register().replace(
         "| metrics-cardinality | Bounded | yes | nothing |",
         "| metrics-cardinality | Bounded | yes | Insufficient |",
     );
-    let rows = status_rows(&mutated).expect("the mutated register still parses");
+    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_exclusions(&rows),
         Err(
@@ -204,6 +207,7 @@ fn register_confines_insufficient_to_the_required_property() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a register where the required-property field carries a decisive
@@ -212,7 +216,7 @@ fn register_confines_insufficient_to_the_required_property() {
 /// The wrong-field half of `check_exclusions` is covered above; this is the
 /// wrong-status half, and the two are separate branches of the check.
 #[test]
-fn register_confines_insufficient_to_the_required_status() {
+fn register_confines_insufficient_to_the_required_status() -> Result<(), String> {
     let mutated = status_register()
         .replace(
             "| identifier-need | None | yes | Sufficient |",
@@ -222,7 +226,7 @@ fn register_confines_insufficient_to_the_required_status() {
             "| identifier-need | Property required | yes | Insufficient |",
             "| identifier-need | Overridden | yes | Insufficient |",
         );
-    let rows = status_rows(&mutated).expect("the mutated register still parses");
+    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_exclusions(&rows),
         Err(
@@ -232,14 +236,15 @@ fn register_confines_insufficient_to_the_required_status() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a status register where every admissible cell overturns the default,
 /// leaving the verdict nothing to be a verdict about.
 #[test]
-fn aggregation_vocabulary_rejects_a_register_without_a_neutral_status() {
+fn aggregation_vocabulary_rejects_a_register_without_a_neutral_status() -> Result<(), String> {
     let mutated = status_register().replace("| nothing |", "| Sufficient |");
-    let rows = status_rows(&mutated).expect("the mutated register still parses");
+    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_aggregation_vocabulary(&rows, &[]),
         Err(
@@ -249,17 +254,18 @@ fn aggregation_vocabulary_rejects_a_register_without_a_neutral_status() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a register that would overturn the default on evidence other than a
 /// recorded required property.
 #[test]
-fn default_survives_without_a_required_property() {
+fn default_survives_without_a_required_property() -> Result<(), String> {
     let mutated = status_register().replace(
         "| identifier-need | None | yes | Sufficient |",
         "| identifier-need | None | yes | Insufficient |",
     );
-    let rows = status_rows(&mutated).expect("the mutated register still parses");
+    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_exclusions(&rows),
         Err(
@@ -269,16 +275,17 @@ fn default_survives_without_a_required_property() {
                 .to_owned()
         )
     );
+    Ok(())
 }
 
 /// Rejects a register that can no longer overturn the default.
 #[test]
-fn register_can_select_insufficient() {
+fn register_can_select_insufficient() -> Result<(), String> {
     let mutated = status_register().replace(
         "| identifier-need | Property required | yes | Insufficient |",
         "| identifier-need | Property required | yes | Sufficient |",
     );
-    let rows = status_rows(&mutated).expect("the mutated register still parses");
+    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
     assert_eq!(
         check_exclusions(&rows),
         Err(
@@ -287,4 +294,5 @@ fn register_can_select_insufficient() {
                 .to_owned()
         )
     );
+    Ok(())
 }

@@ -1800,6 +1800,105 @@ and no test `include_str!`s it, so `lint`, `test`, `audit` and
 Markdown file — was re-run to be certain rather than to rely on the file
 holding no Mermaid block.
 
+- [x] The thirty-second round returned **five actionable inline findings** on
+      the published tip `e698a1c`, **no execution warnings**, over five files;
+      the round is D71's. All five were verified against the current code
+      before any repair, and all five are live. Four are beaten by one class
+      the plan has already named, and the fourth time is worth recording as
+      such: D54's rule — an enumeration states its members and not its total,
+      because the total is the part that drifts — applies to a *count* of
+      `#[case]` attributes exactly as it applied to the count of scenario
+      modules. The doc comment above the note-defect table said "the twelve
+      documented note defects" over a table that carries **fifteen**, and the
+      reviewer repaired it by deleting the numeral rather than by writing a new
+      one, which is the rule working as intended on a class it was not written
+      for. The plan's own "Interfaces and dependencies" section carried the
+      same defect twice in one paragraph: a present-tense "No dependency
+      change" that D52 had already falsified, and a governing-verb agreement
+      failure where a six-entry *set* was said to be *the* six-entry set *it
+      names* over a list of five. The test crate's module doc omitted
+      `clause_scenarios.rs` — the second consecutive round to find a module
+      enumeration short of its members, and the first to find it in Rust
+      source rather than in the two Markdown guides. The two trivial findings
+      are both about failure *paths* rather than about behaviour: eight
+      register scenarios read the mutated register through
+      `.expect("the mutated register still parses")`, which panics and discards
+      the `ParseError` repair message that every sibling module carries through
+      `Result<(), String>`, and the uninspectable-root control cleaned up its
+      planted fault only on the success path. The first was adopted whole and
+      the second **partly declined**, on reasoning the plan records as D71
+      rather than as a silent partial repair.
+- [x] The two halves of the round-32 structural finding were actioned
+      differently, and the difference is the point. The reviewer asked for the
+      uninspectable-root control to move from `notes.rs` into
+      `scan_scenarios.rs`. The cleanup half is a real defect and was repaired:
+      the fault is now cleared before the control returns on *every* path,
+      success or failure, so a failing run cannot leave a file at the parent
+      component that would block `create_dir_all` for every other scratch tree
+      in the binary. The move half was declined, on three independent grounds
+      that a reader can check without taking this record's word for it. The
+      `dylint.toml` exemption from `no_std_fs_operations` is path-scoped to
+      `state_name_consumption_contract::notes`, and the control writes the
+      filesystem three times, so moving it would force a second exempted path
+      and withdraw the lint's coverage across the scenario modules — which is
+      exactly the property that file's own comment claims the exemption has.
+      `fresh_tree`'s pre-reset inspection is internal to the module, so the
+      control is a boundary control for a private function, not a scan scenario.
+      And `scan_scenarios.rs` was **359 lines at `e698a1c`** against AGENTS.md's
+      hard 400-line cap, so a 120-line test would have breached the cap rather
+      than moved under it. The reasoning is recorded in the control's own doc
+      comment, where the next reader meets it, rather than only here.
+- [x] The restructuring the cleanup required was shape-preserving, which the
+      suite's counts confirm rather than assert. Extracting the two obligations
+      into a query function that the test *reads* keeps each obligation's
+      failure text verbatim and lets the test clear the fault before it
+      returns, however it returns: the broken obligation and a failed cleanup
+      are each reported, and when both happen neither is dropped in favour of
+      the other. The contract suite is **96/96** — unchanged, which is the
+      evidence that the eight converted register scenarios and the restructured
+      control kept their subjects. A conversion that had changed what a control
+      asserts would have moved that number. The eight `.expect` calls sat in
+      tests that the reviewer's alternative — `break`-style early return — could
+      not have carried through a `#[test]` returning `()`, and the `?` form
+      required the signature change the reviewer supplied: each scenario now
+      returns `Result<(), String>` and a parse failure arrives as the
+      `ParseError`'s repair message rather than as a panic with the message
+      swallowed. `notes.rs` grows to **392 lines** against the 400-line cap, so
+      it has eight lines of headroom and the next control added there will force
+      the seam rather than fit inside it. EP-M5 and roadmap task 1.1.3 remain
+      unticked: five findings are not zero.
+
+The round-32 repair is gated over the bytes it will ship. All eight gates ran
+sequentially at `e0287109`, one at a time, with the worktree clean before and
+after the run so each log's subject is a revision rather than a moving tree:
+
+```plaintext
+make check-fmt                exit 0   28 files left unchanged
+make lint                     exit 0   doc + clippy + whitaker clean
+make typecheck                exit 0   cargo check --all-targets --all-features
+make test                     exit 0   136 tests run: 136 passed, 0 skipped; 1 doctest
+make markdownlint             exit 0   Summary: 0 error(s) — 29 files; spelling 3 passed, 95%
+make nixie                    exit 0   All diagrams validated successfully
+make audit                    exit 0   1277 advisories; 76 crate dependencies scanned
+make test-workflow-contracts  exit 0   116 passed in 2.97s
+```
+
+`make audit` is gated as `env GIT_CONFIG_COUNT=0 make audit`, for the
+environmental reason D70 records; the other seven run as the Makefile defines
+them. The first attempt at `make lint` went **red on four errors**, and they
+are the reason this item is written after the run rather than before it: the
+restructured control's `match` arms rebound `failure` and `cleanup`, which
+`shadow_reuse` — denied repository-wide, not merely warned — rejects.
+`make test` had already passed over those same bytes, because a shadowed
+binding compiles and runs correctly and only the lint objects. That is the
+second consecutive round in which the commit gate caught a defect the test
+suite could not see, and the repair was to name the arm bindings apart from the
+values they destructure rather than to suppress the lint. `make test`'s figure
+is **unchanged at 136** from `e698a1c`, and the contract suite's own 96/96 is
+the evidence that eight converted scenarios and one restructured control kept
+their subjects: a conversion that had altered what any control asserts would
+have moved a number.
+
 Timestamps are added as each item completes.
 
 ## Surprises & discoveries
@@ -4523,6 +4622,49 @@ design.
   fault from a dependency finding by reading the error text rather than the
   exit code.
 
+- D71: **A boundary control stays with the module that declares the function it
+  probes, even when it reads better beside its siblings.** The thirty-second
+  round asked for the uninspectable-root control to move from `notes.rs` into
+  `scan_scenarios.rs`, on the ground that the module doc says `notes.rs` "reads
+  and decides nothing". The half of the finding that is a defect — the cleanup
+  ran only on the success path, so a failing run left the planted fault at a
+  *parent* component and would have blocked `create_dir_all` for every other
+  scratch tree in the binary — is repaired. The move is **declined**, and the
+  grounds are three, each checkable against the tree rather than against this
+  record. **First, the exemption is path-scoped and the control writes.** The
+  `dylint.toml` exemption from `no_std_fs_operations` names
+  `state_name_consumption_contract::notes` alone, and the control calls
+  `fs::create_dir_all`, `fs::write` and `fs::remove_file`; moving it forces a
+  second exempted path and withdraws the lint's coverage across the scenario
+  modules, which is precisely the property that file's own comment claims the
+  exemption buys. That comment is the ruling, quoted: "**the alternative — a
+  second exempted path — would narrow the coverage the exemption withdraws from
+  nothing while making that claim false**". The reviewer's premise and this
+  module's own doc comment both say the control is not a scan scenario, and the
+  conclusion drawn from that premise is what separates them: `fresh_tree`'s
+  pre-reset inspection is internal to this module, so the control is a boundary
+  control for a *private* function, and a scenario module is the wrong home for
+  a probe of something only this module can reach. **Second, the destination
+  cannot hold it.** `scan_scenarios.rs` was **359 lines at `e698a1c`** against
+  AGENTS.md's hard 400-line cap — 41 lines of headroom for a 120-line test — so
+  the move would breach the cap it is meant to respect, which is the same cap
+  that forced `clause_scenarios.rs` into existence one round earlier.
+  `notes.rs` is **392** after the repair, so this control is now the reason
+  both files sit close to the ceiling, and the next control added to either
+  will force a seam with more thought than a move deserved. **Third, the
+  ownership question the reviewer raises is already answered in this module's
+  own doc comment**, which states that it writes "for one purpose: a scenario
+  that scans a populated directory needs a populated directory", and that
+  keeping those writes here rather than in the scenario module "keeps the
+  exemption to a single module, which is the property `dylint.toml` claims".
+  The finding is therefore not one defect reported twice but two claims with
+  opposite dispositions, and the plan records which half was taken rather than
+  reporting a partial repair as a whole one. Date/Author:
+  `2026-09-30T20:40:00+02:00` (`2026-09-30T18:40:00Z`), implementing agent,
+  distinguishing a structural preference from a lint-coverage and file-size
+  constraint by reading the exemption's comment and measuring the destination
+  rather than by deferring to the finding's confidence.
+
 - Observation: **an edit to the conformance basis is an edit to the test
   contract, not to prose about it.** Repairing the two stale counts turned up
   six citations of the form `<module>::<test>` that named the wrong module:
@@ -6515,15 +6657,16 @@ cannot surface such a failure however green it returns.
 
 ## Interfaces and dependencies
 
-No dependency change. The existing dev-dependencies — `camino`, `googletest`,
-`pretty_assertions`, `rstest`, `toml` — are sufficient. `camino` supplies the
-notes-directory scan *enumeration*, following `tests/dev_fast_contract.rs:19`.
+No dependency change was proposed. The dev-dependencies this section was
+approved with — `camino`, `googletest`, `pretty_assertions`, `rstest`, `toml` —
+were sufficient. `camino` supplies the notes-directory scan *enumeration*,
+following `tests/dev_fast_contract.rs:19`.
 
 **Superseded in part by D52, 2026-09-27.** That decision added `proptest` to
 this set, because the evidence predicates in `claims.rs` read arbitrary text
 and their invariants are therefore properties rather than cases. The paragraph
 above is retained as the scope this section was approved with; the dependency
-in force is the six-entry set it names plus `proptest = "1.11.0"`.
+in force is the set it names plus `proptest = "1.11.0"`.
 
 One module, and only one, steps outside that dependency set. `notes.rs` reads
 the contents of each enumerated note through `std::fs`, and is exempted by name
@@ -6551,33 +6694,34 @@ with `#[path]`, as `tests/v0_1_exit_register_contract/support.rs:5-6` does.
 also what makes the `excluded_paths` entry one module wide rather than
 crate-wide.
 
-The split as delivered is seventeen modules: the five below, plus `clauses.rs`
-for quoted-clause resolution and `registers.rs` for the cross-register checks
-(D21), seven scenario modules — `anchor_scenarios.rs`, `claims_scenarios.rs`,
-`clause_scenarios.rs`, `criterion_scenarios.rs`, `note_scenarios.rs`,
-`register_scenarios.rs`, `scan_scenarios.rs` — that hold the contract's tests
-rather than a share of the crate root (D26), `roadmap.rs` for the roadmap's
-task-record grammar and the two checks that bind it (D30), `claims.rs` for what
-an evidence cell says, as against what `policy.rs` decides it obliges (D30), and
-`claim_properties.rs` for the property suite over those predicates (D52). Each
-module owns one invariant class. The first two additions keep `policy.rs` from
-carrying three unrelated ones; the scenario modules exist because the root file
-had reached 788 lines against AGENTS.md's 400-line cap, and because a scenario
-module per invariant class keeps every file small enough to stay there.
-`clauses.rs` and `claims.rs` answer tolerance 5's 300-line trigger, which both
-`policy.rs` and `parse.rs` passed once the roadmap bindings landed (D30). The
-four latest — the fifth, sixth and seventh scenario modules, and the properties
-— were forced by the same 400-line cap arriving from the other direction:
-`note_scenarios.rs` reached 535 lines when the citation and negation controls
-landed, and the split that relieved it left the keyword-scan controls in a
-module of their own, with the properties beside them rather than in a scenario
-file they do not share a subject with. The seventh, `clause_scenarios.rs`, is
-the same instrument applied to `anchor_scenarios.rs` at 430 lines once the
-relocation control for the roadmap binding landed: the clause controls resolve
-quoted text against a source, the ones left behind resolve a gate fragment
-against a roadmap task, and that is the seam the cap exposed — not one this
-plan foresaw, since the pre-declared split named the invariant classes and left
-the count to what the caps forced.
+The split as delivered is seventeen modules: the five the pre-declared split
+named — `types.rs`, `parse.rs`, `policy.rs`, `fixtures.rs` and `notes.rs` — plus
+`clauses.rs` for quoted-clause resolution and `registers.rs` for the
+cross-register checks (D21), seven scenario modules — `anchor_scenarios.rs`,
+`claims_scenarios.rs`, `clause_scenarios.rs`, `criterion_scenarios.rs`,
+`note_scenarios.rs`, `register_scenarios.rs`, `scan_scenarios.rs` — that hold
+the contract's tests rather than a share of the crate root (D26), `roadmap.rs`
+for the roadmap's task-record grammar and the two checks that bind it (D30),
+`claims.rs` for what an evidence cell says, as against what `policy.rs` decides
+it obliges (D30), and `claim_properties.rs` for the property suite over those
+predicates (D52). Each module owns one invariant class. The first two additions
+keep `policy.rs` from carrying three unrelated ones; the scenario modules exist
+because the root file had reached 788 lines against AGENTS.md's 400-line cap,
+and because a scenario module per invariant class keeps every file small enough
+to stay there. `clauses.rs` and `claims.rs` answer tolerance 5's 300-line
+trigger, which both `policy.rs` and `parse.rs` passed once the roadmap bindings
+landed (D30). The four latest — the fifth, sixth and seventh scenario modules,
+and the properties — were forced by the same 400-line cap arriving from the
+other direction: `note_scenarios.rs` reached 535 lines when the citation and
+negation controls landed, and the split that relieved it left the keyword-scan
+controls in a module of their own, with the properties beside them rather than
+in a scenario file they do not share a subject with. The seventh,
+`clause_scenarios.rs`, is the same instrument applied to `anchor_scenarios.rs`
+at 430 lines once the relocation control for the roadmap binding landed: the
+clause controls resolve quoted text against a source, the ones left behind
+resolve a gate fragment against a roadmap task, and that is the seam the cap
+exposed — not one this plan foresaw, since the pre-declared split named the
+invariant classes and left the count to what the caps forced.
 
 ```rust,ignore
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]

@@ -256,6 +256,14 @@ impl ScratchNotes {
 /// of the root itself fail with `ENOTDIR`, because resolving the path has to
 /// traverse the file, and that is the only shape in which inspection *errors*.
 ///
+/// It sits in this module rather than in `scan_scenarios.rs` because the fault
+/// is this module's to place: `scan_scenarios` is the loader, and `fresh_tree`'s
+/// pre-reset inspection is internal to this module. Every write this control
+/// needs also needs the module's `dylint.toml` exemption from
+/// `no_std_fs_operations`; moving the control would force a second exempted
+/// path and narrow that lint's coverage across the scenario modules, which is
+/// the one property the exemption's comment claims for it.
+///
 /// The two obligations then separate, and only the first is discriminating:
 ///
 /// 1. **The failure names the inspected root.** The message must open with the root path, so an
@@ -309,9 +317,43 @@ fn an_uninspectable_scratch_root_is_refused_before_the_reset() -> Result<(), Str
 
     let outcome = ScratchNotes::fresh_tree("uninspectable-parent/uninspectable");
 
-    // Obligation 1: the failure names the inspected root. The prefix is the
-    // discriminating assertion, because it is the one thing a reverted
-    // implementation cannot produce.
+    // Both obligations are inspected before this control returns, and the fault
+    // is cleared before it does however it does. Leaving the shared scratch base
+    // as it was found is not a step conditional on success: the fault is a
+    // *parent* component, so a failing run that skipped the cleanup would block
+    // `create_dir_all` for every other scratch tree in this test binary, not
+    // merely this one, and would do so precisely when something else has already
+    // gone wrong.
+    let failure = check_refusal_obligations(&outcome, &blocked, &root, &notes_dir).err();
+    let cleanup = fs::remove_file(&blocked)
+        .map_err(|error| format!("{blocked}: the control cannot clear its fault: {error}"));
+    // The arm bindings are named apart from the values they destructure, because
+    // `shadow_reuse` is denied repository-wide and rebinding these two would be
+    // the very shadowing it denies.
+    match (failure, cleanup) {
+        (None, Ok(())) => Ok(()),
+        (Some(obligation), Ok(())) => Err(obligation),
+        (None, Err(tidying)) => Err(tidying),
+        // Two things went wrong, and neither excuses the other: the obligation
+        // was broken and the tidying failed. Both are reported.
+        (Some(obligation), Err(tidying)) => Err(format!("{obligation} {tidying}")),
+    }
+}
+
+/// The two obligations the uninspectable-root control asserts, extracted so the
+/// control can clear its fault before it returns however it returns.
+///
+/// Obligation 1 — the failure names the inspected root — is the discriminating
+/// one, because it is what a reverted implementation cannot produce. Obligation
+/// 2 — the reset does not proceed — is the invariant the reset owes. The
+/// caller's doc comment states what each is worth and why the second is the
+/// weaker discriminator.
+fn check_refusal_obligations(
+    outcome: &Result<ScratchNotes, String>,
+    blocked: &Utf8Path,
+    root: &Utf8Path,
+    notes_dir: &Utf8Path,
+) -> Result<(), String> {
     let Err(message) = outcome else {
         return Err(format!(
             "{blocked} is a file, yet the reset proceeded. Repair: inspect the root with \
@@ -328,7 +370,6 @@ fn an_uninspectable_scratch_root_is_refused_before_the_reset() -> Result<(), Str
              run left behind."
         ));
     }
-
     // Obligation 2: the reset did not proceed. The blocked component is still a
     // file, and no directory was created beneath it.
     if !blocked.is_file() {
@@ -350,12 +391,5 @@ fn an_uninspectable_scratch_root_is_refused_before_the_reset() -> Result<(), Str
              proceeded. Repair: return before `create_dir_all`."
         ));
     }
-
-    // Leave the shared scratch base as it was found, so a later scenario
-    // building beneath it is not refused by this control's fault. The fault is a
-    // *parent* component, so leaving it in place would block `create_dir_all`
-    // for every other scratch tree in this test binary, not merely this one.
-    fs::remove_file(&blocked)
-        .map_err(|error| format!("{blocked}: the control cannot clear its fault: {error}"))?;
     Ok(())
 }

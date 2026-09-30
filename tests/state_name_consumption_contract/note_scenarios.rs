@@ -102,7 +102,8 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
     Ok(())
 }
 
-/// Accepts the fixture note and rejects the twelve documented note defects.
+/// Accepts the fixture note and rejects each documented note defect, naming the
+/// exact repair the defect requires.
 ///
 /// Each case supplies the note's four rows directly. A control that instead
 /// edited the assembled note with `String::replace` would be silently skipped

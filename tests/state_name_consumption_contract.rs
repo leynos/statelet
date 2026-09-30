@@ -15,6 +15,8 @@
 //! This file holds the shared constants and helpers; the scenarios themselves
 //! live in `anchor_scenarios.rs` (template and roadmap bindings),
 //! `claims_scenarios.rs` (what an evidence cell says),
+//! `clause_scenarios.rs` (whether the quoted clauses resolve, and against
+//! which task's record a quotation is bound),
 //! `criterion_scenarios.rs` (which copy of a sentence is the success
 //! criterion), `note_scenarios.rs` (note cells and the verdict they yield),
 //! `register_scenarios.rs` (register parsing and consistency) and
