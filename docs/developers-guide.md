@@ -99,14 +99,17 @@ text, so their invariants are properties rather than cases, and `proptest` is
 the only dependency the contract adds. It is test-only and reaches no shipped
 binary.
 
-The scenarios sit in six modules, one per invariant class, so that the 400-line
-cap binds each part of the contract alike:
+The scenarios sit in seven modules, one per invariant class, so that the
+400-line cap binds each part of the contract alike:
 
 - `anchor_scenarios.rs` — the template and the roadmap as bindings: does the
   blank form instantiate the register, and does the roadmap still carry the
   nouns the register maps?
 - `claims_scenarios.rs` — what an evidence cell may say: accepted citation
   shapes, and the words a cell may and may not use for a consumer or a property.
+- `clause_scenarios.rs` — whether the clauses ADR 004 quotes still resolve, and
+  against which task's record a roadmap quotation is bound; the subject is the
+  quotation, where `anchor_scenarios.rs` resolves a gate fragment.
 - `criterion_scenarios.rs` — which copy of a sentence is the success criterion
   when the same clause is quoted in more than one document.
 - `note_scenarios.rs` — a note's cells and the verdict they resolve to,

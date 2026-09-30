@@ -87,12 +87,13 @@ compact and omits build output such as `target/`.
   grammar with the two checks that bind it, the notes-directory scan, the row
   fixtures, and the scenario modules — `anchor_scenarios.rs` for the template
   and roadmap bindings, `claims_scenarios.rs` for what an evidence cell says,
-  `criterion_scenarios.rs` for which copy of a sentence is the success
-  criterion, `note_scenarios.rs` for note cells and the verdict they yield,
-  `register_scenarios.rs` for the registers, and `scan_scenarios.rs` for the
-  directory scan. `claim_properties.rs` is not a scenario module: it holds the
-  property suite over the evidence predicates — generated properties, not named
-  scenarios.
+  `clause_scenarios.rs` for whether the quoted clauses resolve, and against
+  which task's record a roadmap quotation is bound, `criterion_scenarios.rs`
+  for which copy of a sentence is the success criterion, `note_scenarios.rs`
+  for note cells and the verdict they yield, `register_scenarios.rs` for the
+  registers, and `scan_scenarios.rs` for the directory scan.
+  `claim_properties.rs` is not a scenario module: it holds the property suite
+  over the evidence predicates — generated properties, not named scenarios.
 - `docs/validation-notes/`: Holds the filled validation notes, one per task,
   named `<task>-<subject>.md`. Shared by several Phase 2 and Phase 3 decisions;
   a note declares which contract reads it with a marker comment.
