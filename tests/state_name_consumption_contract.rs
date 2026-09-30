@@ -26,6 +26,24 @@
 //! non-scenario modules divide the same way: `claims.rs` reads what a cell
 //! says, `policy.rs` decides what that obliges, and `registers.rs`,
 //! `clauses.rs` and `roadmap.rs` own one bound document each.
+//!
+//! The property modules divide the same way as the scenario modules and are
+//! children for the same reason: `claim_properties.rs` holds the invariants
+//! over what a cell claims — citations, consumers, properties — and
+//! `enumeration_properties.rs` the invariant over the ordered shape that
+//! decides whether the cell lists its state's strings. They are separate
+//! modules because a table of named cases and a property over generated ones
+//! answer different questions: the tables above commemorate the defects found,
+//! and each rejected case there was accepted by the code as it stood when the
+//! case was written, while a property states the rule the eleventh phrasing
+//! must satisfy. Neither subsumes the other, and `enumeration_properties.rs`
+//! records that division at its own head.
+//!
+//! `enumeration_witnesses.rs` is a third child rather than a section of
+//! `enumeration_properties.rs`, for the reason the 400-line cap exists: the
+//! premises a generator rests on are claims in their own right, and they read
+//! as evidence only when a reader can see them beside the properties that
+//! depend on them rather than buried at the end of them.
 
 #[path = "state_name_consumption_contract/anchor_scenarios.rs"]
 mod anchor_scenarios;
@@ -41,6 +59,10 @@ mod clause_scenarios;
 mod clauses;
 #[path = "state_name_consumption_contract/criterion_scenarios.rs"]
 mod criterion_scenarios;
+#[path = "state_name_consumption_contract/enumeration_properties.rs"]
+mod enumeration_properties;
+#[path = "state_name_consumption_contract/enumeration_witnesses.rs"]
+mod enumeration_witnesses;
 #[path = "state_name_consumption_contract/fixtures.rs"]
 mod fixtures;
 #[path = "state_name_consumption_contract/note_scenarios.rs"]

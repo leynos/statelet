@@ -76,16 +76,27 @@ fn path_tokens() -> Vec<&'static str> {
 /// `[a-z]{1,7}` is *not* disjoint — `stable`, `tracing` and `metrics` all fit it
 /// — and a case whose supposedly neutral filler happened to spell one of them
 /// would fail for a reason its property is not about.
-const INERT_WORD: &str = "[bcdfghjklmnpqrstvwxyz]{1,7}";
+///
+/// The same argument covers the third scanned vocabulary, the return verbs: a
+/// consonant-only word cannot be `returns`, `returned`, `yields` or `yielded`
+/// either, and cannot contain one. `enumeration_properties.rs` relies on that
+/// rather than re-deriving it, which is why this is visible to it.
+pub(crate) const INERT_WORD: &str = "[bcdfghjklmnpqrstvwxyz]{1,7}";
 
 /// Arbitrary prose that makes no claim of its own.
 ///
 /// Built from `INERT_WORD`, so a verdict computed over it is the *baseline* a
 /// property compares against. Prose naming a consumer or a property would make
 /// every case agree for a reason that has nothing to do with the rule under
-/// test. `the_generated_prose_is_inert` holds the generator to that claim
-/// rather than leaving it to the comment.
-fn neutral_prose() -> impl Strategy<Value = String> {
+/// test. `the_inert_vocabulary_names_no_claim` holds the generator to that
+/// claim rather than leaving it to the comment.
+///
+/// Shared with `enumeration_properties.rs` rather than restated there. The
+/// inertness argument is a claim about the *filler*, and a second copy would
+/// have to be re-argued against a second scanned vocabulary — the return verbs
+/// — so the two copies could drift apart without either failing. This one list
+/// is consonant-only, and every token either suite scans for carries a vowel.
+pub(crate) fn neutral_prose() -> impl Strategy<Value = String> {
     prop::collection::vec(INERT_WORD, 0..6).prop_map(|words| words.join(" "))
 }
 
@@ -111,6 +122,20 @@ fn commit_revision() -> impl Strategy<Value = String> { "[0-9a-f]{4,40}" }
 
 /// A repository name, as a citation's first component.
 fn repository_name() -> impl Strategy<Value = String> { "[a-z][a-z0-9-]{0,8}" }
+
+/// A whole citation, in backticks and with no space in it.
+///
+/// Shared with `enumeration_properties.rs`, which needs a citation *word*
+/// rather than its three parts. Restating the composition there would mean a
+/// second copy of the repository, revision and path generators, and a path that
+/// stopped being space-free in one copy would be removed by the predicate in
+/// neither — the two would disagree about what a citation is while both
+/// compiled. Sharing the composition keeps the word the enumeration suite
+/// inserts and the word this suite's own properties insert the same word.
+pub(crate) fn citation() -> impl Strategy<Value = String> {
+    (repository_name(), commit_revision(), loaded_path())
+        .prop_map(|(repo, revision, path)| format!("`{repo}@{revision}:{path}`"))
+}
 
 proptest! {
     /// A citation's content never reaches the keyword scans.

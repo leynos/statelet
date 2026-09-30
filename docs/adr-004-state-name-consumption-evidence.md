@@ -447,6 +447,119 @@ data are an upstream defect, and neither is a statement about the return type.
 Placing both on the verdict axis spent half the domain on "cannot answer",
 which is why this record gates them instead.
 
+## Addendum
+
+The decision above was accepted on 2026-09-19 and is not rewritten. Changes
+made to the record after that date are recorded here rather than folded back
+into it, so that a reader can see what was decided and what has since been
+corrected without having to reconstruct the difference. Each entry names the
+date, the affected decision, the reason for the change, and the commit that
+carries it. Entries are in chronological order.
+
+### 2026-09-19: the register placeholders were populated
+
+Commit `1b3ed05`. The accepted text recorded the four register delimiters — the
+status register, the aggregation register, the gate table and the evidence
+clause list — with no rows between them. They were filled the same day with the
+nine status rows, the three aggregation rows, the four gate rows and the three
+quoted source clauses. The registers are the semantic source of truth the
+decision rests on, so a register carrying only its delimiters is not yet the
+instrument the decision describes.
+
+### 2026-09-20: admissibility refined, and the aggregation rule's base named
+
+Commit `de3b897`. Two rules changed meaning:
+
+- *Admissibility.* A property named only to deny it is not a claim. A cell
+  reading "no stability requirement was observed" belongs with the status that
+  records none, because it is a more informative way of saying so than silence,
+  and the rule must not demand a euphemism in place of agreement.
+- *Aggregation register.* The first column counts **contributing** notes
+  rather than every committed one. A note rejected as contradictory contributes
+  nothing, exactly as a blocked note does, so neither is counted.
+
+### 2026-09-20: the cast argument corrected
+
+Commit `5552f19`. The record previously implied that an `as` cast on a
+fieldless enum yields a durable numeric value. It does not: a cast reports the
+variant's position, so inserting or reordering a variant silently changes the
+value. The corrected text records the measurement — one variant cast to `u8`
+gave `2`, then `3` after a fourth variant was inserted before it, then `0`
+after the enum was reordered — and states that a value is durable only when
+every variant's discriminant is explicitly assigned.
+
+### 2026-09-21: the aggregation column renamed
+
+Commit `c979281`. The first column was labelled `Admissible notes` while
+counting notes that *contribute*. It was renamed `Contributing notes` so that
+the label matches the rule the register states. The same change recorded that
+the contract's fixtures pin the status register row for row, so a status added
+to the register is added to the fixture in the same change: the edit is a
+documentation edit, not an unaccompanied one.
+
+### 2026-09-26: the illustration, and two verdict arguments, corrected
+
+Commits `37f3843`, `439eca7` and `c06c09c`. Three corrections, all made on the
+same day and none of them changing the decision this record takes:
+
+- `37f3843` — the note register's illustration now names the state it
+  enumerates, and states that the unnamed `bool in_table` local is explicitly
+  out of scope because it is not a named type and cannot carry a `StateName`
+  implementation. A note is read through one subject, and the earlier text left
+  that subject implicit.
+- `439eca7` — corrected *why* an implicit discriminant is unstable. It is
+  derived from the variant's position; the earlier text gave the reason
+  slightly wrong.
+- `c06c09c` — corrected the metric-cardinality argument. The earlier text
+  claimed a numeric identifier "cannot reduce" cardinality. The corrected
+  argument: substituting an identifier for a label relabels the same domain and
+  fixes nothing about the size of the observed set. An identifier that
+  distinguishes states is injective over the domain, so its image has *at
+  least* as many distinct values as the label set; an image that is *smaller*
+  can only have got there by ceasing to distinguish states, which forfeits the
+  identity the identifier was introduced to provide.
+
+### 2026-09-27: a blocking status added, and the illustration's heading restored
+
+Commits `e0e9e0a` and `231035f`. Two changes:
+
+- `e0e9e0a` — added the `Synthesized from data` row to the status register,
+  marked inadmissible and contributing nothing. A label built from data rather
+  than drawn from a fixed set is not a *name* of the state, so a finite bound
+  does not make the `Enumerated` status true of it.
+- `231035f` — restored the `## Note register` heading above the illustration's
+  table, so that the illustration carries the same shape as the blank form in
+  `docs/phase-2-validation-note-template.md`, and stated that an inadmissible
+  note contributes nothing to the verdict: a verdict drawn as though the field
+  it names had been observed would rest on no observation at all.
+
+### 2026-09-28: a fourth cell obligation landed, and the third restated
+
+Commits `a7e09b6` and `820413c`. Two changes:
+
+- `a7e09b6` — the checked obligations on evidence cells grew from three to
+  four. The new second obligation requires that a cell whose status is
+  `Enumerated` lists the actual strings the state returns, in backticks,
+  alongside the type that returns them. The status is not self-certifying: it
+  is the list below it that makes the `metrics-cardinality` bound derivable
+  from the note rather than asserted by its author. The note register's subject
+  moved to `BufferMode`, the enum ADR 002's annotated example derives for
+  `ProcessBuffer`, and its `metrics-cardinality` bound was reduced to two names
+  to match.
+- `820413c` — the third obligation restated: the cell must write the state,
+  then the verb that says the strings are returned, then each returned string.
+  Quoted spans alone do not settle it, because a cell can quote the state
+  beside the *reader* of its name. Such a cell names where the name comes from
+  and not one label, and the verb is what tells the two apart.
+
+### 2026-09-30: the status line given its date and summary
+
+Commit `680ea40`. The Status section read `Accepted.` alone. The documentation
+style guide requires an accepted ADR to carry the date and a brief summary of
+what was decided, so it now reads `Accepted, 2026-09-19.` followed by that
+summary. This is the only change recorded here that amends the Status section
+itself; every other entry amends the rule, an argument, or an illustration.
+
 [^1]: `std::mem::discriminant` documentation, accessed 2026-09-20:
     `https://doc.rust-lang.org/std/mem/fn.discriminant.html`
 [^2]: The Rust Reference, "Enumerations", accessed 2026-09-20:
