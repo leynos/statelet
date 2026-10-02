@@ -573,3 +573,91 @@ the approved `install-whitaker@6dea5677a84fec60ca51b07202570e3af12ffdb4` action
 with `cranelift: true`. Statelet PR #94's hosted installation and lint pass is
 historical evidence. This candidate has no hosted CI run yet, so the rolling
 suite revision and installer-managed toolchain are still unmeasured.
+
+## Python lint and typecheck batch
+
+The Python gateways were added to the same draft PR in commit
+`090bb9f1569b95022759ac4e83069debb15d8444` (tree
+`800206946e9bdcc4615f2191456fe1a59c77c862`). The commit was replayed onto the
+published PR head `c1145490af83f4ae28ad7431a6bf31209526af96`; its tree matched
+the measured pre-rebase tree exactly. The range-diff reports the patch
+unchanged. GitHub read-back confirms PR #101 remains open and draft.
+
+The Makefile uses managed CPython 3.14 for workflow-contract tests, Pylint
+4.0.9 with all default diagnostics active, and `df12-python-lints` v0.3.0 at
+`4cf41736cce2f7ba2778882a5c629c044568a0e5`. It enables all 13 df12 messages. The
+`ty` typechecker is pinned to 0.0.74. Both gateways share one recursive
+inventory under `.github`, `tests`, `scripts`, `benches`, and `benchmarks`, so
+workflow and action Python modules are included. Generated and ignored trees
+are pruned. No Pylint, df12, or `ty` suppressions were added; findings were
+fixed in source.
+
+Candidate CI run `37009632090` passed formatting, spelling, Makefile checks,
+Whitaker installation, Rust/Python lint, typechecking, and all 223 workflow
+contract tests, then failed in coverage detection with
+`Mixed projects only support cobertura format`. Adding the configuration-only
+`pyproject.toml` made the shared coverage action's default detection classify
+this Rust crate as mixed-language. The pinned action at
+`013346ccfd37bd1e02eb430525233f1a4cd942b8` documents `language: rust` for Rust
+projects with a configuration-only `pyproject.toml`; both coverage calls now
+set that input, and the CV-005 contract requires it with mutations for missing
+or incorrect values. Candidate CI must be rerun on the corrected head.
+
+The Scrutineer ran these checks sequentially on the measured tree. For commit
+`090bb9f`, CI run `37009632090` was in progress and Act Validation run
+`37009632165` had passed. These statuses are for the Python batch commit; a new
+execution-record commit will trigger fresh candidate checks.
+
+- `make check-fmt`: passed; 29 Markdown files unchanged. Log:
+  `/tmp/check-fmt-rust-baseline-completion-20261001-rust-baseline-completion-20261001-7.out`.
+- `make lint-python`: passed; Pylint score 10.00/10. Log:
+  `/tmp/lint-python-rust-baseline-completion-20261001-rust-baseline-completion-20261001-7.out`.
+- `make typecheck-python`: passed. Log:
+  `/tmp/typecheck-python-rust-baseline-completion-20261001-rust-baseline-completion-20261001-5.out`.
+- `make test-workflow-contracts`: passed; 223 tests. Log:
+  `/tmp/test-workflow-contracts-rust-baseline-completion-20261001-rust-baseline-completion-20261001-5.out`.
+- `make markdownlint`: passed; spelling passed and Markdown reported zero
+  issues. Log:
+  `/tmp/markdownlint-rust-baseline-completion-20261001-rust-baseline-completion-20261001-4.out`.
+- `mbake validate Makefile`: passed. Log:
+  `/tmp/mbake-validate-rust-baseline-completion-20261001-rust-baseline-completion-20261001-3.out`.
+- `git diff --check`: passed. Log:
+  `/tmp/diff-check-rust-baseline-completion-20261001-rust-baseline-completion-20261001-3.out`.
+
+After adding this execution-record section, `make fmt` passed and left 29
+Markdown files with zero issues. The docs-only Scrutineer pass then found that
+the standalone `make spelling` command failed to fetch the pinned builder
+because of a transient Git resolver error. Its immediately following
+`make markdownlint` run passed the same spelling gate and reported zero issues
+across 29 files. `make check-fmt`, `mbake validate Makefile`, and
+`git diff --check` also passed. The separate spelling attempt is recorded at
+`/tmp/spelling-rust-baseline-completion-20261001-rust-baseline-completion-20261001-1.out`;
+the passing spelling gate is in
+`/tmp/markdownlint-rust-baseline-completion-20261001-rust-baseline-completion-20261001-5.out`.
+A further standalone `make spelling` run passed with builder v0.1.3 and
+`--scope all`; its log is
+`/tmp/spelling-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`.
+
+The coverage-scope correction was checked sequentially with the Python gateways
+on working-tree fingerprint
+`9c0be3bd9e14ead553baf32426af93d49717355587fc94be616f115d0ba449c6`. All checks
+passed; the Scrutineer confirmed the five changed paths were unchanged by the
+gates.
+
+- `make check-fmt`: passed; 29 files unchanged. Log:
+  `/tmp/check-fmt-rust-baseline-completion-20261001-rust-baseline-completion-20261001-10.out`.
+- `make spelling`: passed with builder v0.1.3 and `--scope all`. Log:
+  `/tmp/spelling-rust-baseline-completion-20261001-rust-baseline-completion-20261001-3.out`.
+- `make lint-python`: passed; Pylint score 10.00/10. Log:
+  `/tmp/lint-python-rust-baseline-completion-20261001-rust-baseline-completion-20261001-8.out`.
+- `make typecheck-python`: passed. Log:
+  `/tmp/typecheck-python-rust-baseline-completion-20261001-rust-baseline-completion-20261001-6.out`.
+- `make test-workflow-contracts`: passed; 225 tests. Log:
+  `/tmp/test-workflow-contracts-rust-baseline-completion-20261001-rust-baseline-completion-20261001-6.out`.
+- `make markdownlint`: passed with markdownlint-cli2 v0.23.2; 29 files, zero
+  issues. Log:
+  `/tmp/markdownlint-rust-baseline-completion-20261001-rust-baseline-completion-20261001-7.out`.
+- `mbake validate Makefile`: passed. Log:
+  `/tmp/mbake-validate-rust-baseline-completion-20261001-rust-baseline-completion-20261001-6.out`.
+- `git diff --check`: passed. Log:
+  `/tmp/diff-check-rust-baseline-completion-20261001-rust-baseline-completion-20261001-6.out`.

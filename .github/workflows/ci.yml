@@ -99,6 +99,7 @@ jobs:
           CFLAGS: -fuse-ld=lld
           LDFLAGS: -fuse-ld=lld
         with:
+          language: rust
           output-path: lcov.info
           format: lcov
           # The pull request measures coverage for its own ratchet check and
