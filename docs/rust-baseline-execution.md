@@ -542,5 +542,34 @@ the CodeScene publisher contract still expected the uploader SHA used before
 Statelet PR #98, although the workflow correctly retained current main's
 `ff1dd759` pin. The expected upload SHA was updated to the PR #98 revision
 without changing the distinct `install-whitaker` action at `6dea5677`. This
-newly exposed contract blind spot stopped the sequence; no later gate has run
-on the corrected tree.
+newly exposed contract blind spot stopped that gate sequence; the corrected
+tree's results are recorded below.
+
+## Validated current candidate
+
+Commit `4b7dd350de1e2cd9b528169f13935a46d1db1aad` has source tree
+`692dce1dd34d80f05ad66e0d3748cb4edd54a9e1`. The Scrutineer ran the following
+gates sequentially against that exact tree after the CodeScene contract
+correction. The earlier one-failure workflow-contract run remains the evidence
+for the rebase blind spot; its replacement passed all 212 tests.
+
+| Command                                   | Result                                          | Toolchain or version              | Log                                                                                                 |
+| ----------------------------------------- | ----------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `make check-fmt`                          | Passed; 29 Markdown files unchanged             | rustfmt; mdtablefix 0.6.0         | `/tmp/check-fmt-rust-baseline-completion-20261001-rust-baseline-completion-20261001-3.out`          |
+| `make spelling`                           | Passed; generated config current, `--scope all` | typos-config-builder v0.1.3       | `/tmp/spelling-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`           |
+| `make lint-clippy`                        | Passed; Rustdoc and Clippy with warnings denied | nightly-2026-09-13; `mold` 2.41.0 | `/tmp/lint-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`               |
+| `make typecheck`                          | Passed; all targets and features                | nightly-2026-09-13; `mold` 2.41.0 | `/tmp/typecheck-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`          |
+| `make test`                               | Passed; 143 tests and one doctest               | nightly-2026-09-13; `mold` 2.41.0 | `/tmp/test-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`               |
+| `make test-workflow-contracts`            | Passed; 212 tests                               | pytest via `uv`                   | `/tmp/workflow-contracts-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out` |
+| `make markdownlint`                       | Passed; 0 issues across 29 files                | markdownlint-cli2 0.23.2          | `/tmp/markdownlint-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`         |
+| `make nixie`                              | Passed; all diagrams validated                  | version not recorded              | `/tmp/nixie-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`                |
+| `GIT_CONFIG_COUNT=0 make audit`           | Passed; 1,280 advisories loaded                 | cargo-audit 0.22.1                | `/tmp/audit-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`                |
+| `mbake validate Makefile`                 | Passed                                          | version not recorded              | `/tmp/mbake-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`                |
+| `git diff --check` and rebase diff checks | Passed; no whitespace or conflict markers       | version not recorded              | `/tmp/diff-check-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`           |
+
+The local Whitaker suite was not run: only the ambient 0.2.7 installer and
+`cargo-dylint` 6.0.1 are available, and no source fallback was used. CI uses
+the approved `install-whitaker@6dea5677a84fec60ca51b07202570e3af12ffdb4` action
+with `cranelift: true`. Statelet PR #94's hosted installation and lint pass is
+historical evidence. This candidate has no hosted CI run yet, so the rolling
+suite revision and installer-managed toolchain are still unmeasured.
