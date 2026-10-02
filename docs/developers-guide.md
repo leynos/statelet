@@ -50,10 +50,12 @@ The generated `Makefile` exposes these public targets:
 - Workflow contract readers stay under `tests/workflow_contracts`. The
   `suite_provisioning.py` module owns command and runner classification, while
   `suite_discovery.py` owns graph traversal and route inventory for those
-  contracts. `markdown_ci_contract.py` and `whitaker_contracts.py` own the
-  corresponding workflow-policy readers used by their tests. These support
-  modules remain test-only; runtime code and unrelated document contracts must
-  not depend on them.
+  contracts. `markdown_ci_contract.py`, `whitaker_contracts.py`, and the
+  `codescene_*` readers own their respective workflow policies. Private helpers
+  split parsing, shape validation, and individual policy findings within their
+  owning module; only the shared readers are reused across policy modules.
+  These support modules remain test-only; runtime code and unrelated document
+  contracts must not depend on them.
 - `make markdownlint` checks Markdown files.
 - `make spelling` runs the pinned `typos-config-builder gate`, which
   regenerates `typos.toml` from the shared en-GB-oxendict dictionary, checks

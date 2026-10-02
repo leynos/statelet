@@ -183,25 +183,38 @@ def _publisher_setup_findings(
     positions = _publisher_positions(steps)
     setup, linker, install, runner, measure = positions
     findings = []
-    if len(setup) != 1 or reading.uses(steps[setup[0]]) != (
-        f"{SETUP_ACTION}@{SETUP_ACTION_SHA}"
-    ):
+    if not _valid_setup_action(steps, setup):
         findings.append("publisher setup-rust action has an unapproved SHA")
-    if len(linker) != 1 or steps[linker[0]] != {
-        "name": "Install coverage linker tools",
-        "run": LINKER_INSTALL_COMMAND,
-    }:
+    if not _valid_named_command(
+        steps, linker, "Install coverage linker tools", LINKER_INSTALL_COMMAND
+    ):
         findings.append("publisher clang/lld installation is absent or may fail softly")
-    if len(install) != 1 or steps[install[0]] != {
-        "name": "Install build tools",
-        "run": INSTALL_COMMAND,
-    }:
+    if not _valid_named_command(steps, install, "Install build tools", INSTALL_COMMAND):
         findings.append("publisher build-tool install is absent or may fail softly")
-    if len(runner) != 1 or steps[runner[0]].get("run") != TEST_RUNNER_COMMAND:
+    if not _valid_test_runner(steps, runner):
         findings.append("publisher test-runner installation is absent")
     if not _publisher_tools_precede_coverage(positions):
         findings.append("publisher build-tool preflight must precede coverage")
     return findings, measure
+
+
+def _valid_setup_action(steps: list[reading.Step], indices: list[int]) -> bool:
+    """Accept exactly one approved Rust setup action."""
+    return len(indices) == 1 and reading.uses(steps[indices[0]]) == (
+        f"{SETUP_ACTION}@{SETUP_ACTION_SHA}"
+    )
+
+
+def _valid_named_command(
+    steps: list[reading.Step], indices: list[int], name: str, command: str
+) -> bool:
+    """Require the complete, unconditional shape of an installation step."""
+    return len(indices) == 1 and steps[indices[0]] == {"name": name, "run": command}
+
+
+def _valid_test_runner(steps: list[reading.Step], indices: list[int]) -> bool:
+    """Require one binary-only Nextest installation command."""
+    return len(indices) == 1 and steps[indices[0]].get("run") == TEST_RUNNER_COMMAND
 
 
 def _publisher_positions(
@@ -257,19 +270,29 @@ def _publisher_token_findings(steps: list[reading.Step], measure: list[int]) -> 
     checks = [i for i, step in enumerate(steps) if step.get("id") == "codescene-token"]
     upload_positions = [i for i, step in enumerate(steps) if is_upload_action(step)]
     findings = []
-    if (
-        len(checks) != 1
-        or sum(step.get("run") == CHECK_COMMAND for step in steps) != 1
-        or steps[checks[0]]
-        != {"name": "Check CodeScene token", "id": "codescene-token", "run": CHECK_COMMAND}
-    ):
+    if not _valid_token_check(steps, checks):
         findings.append("publisher token check command is absent or altered")
-    if not (
-        len(checks) == len(upload_positions) == len(measure) == 1
-        and measure[0] < checks[0] < upload_positions[0]
-    ):
+    if not _token_ordered(checks, upload_positions, measure):
         findings.append("publisher token check must follow coverage before upload")
     return findings
+
+
+def _valid_token_check(steps: list[reading.Step], checks: list[int]) -> bool:
+    """Bind the token probe to one exact command and step shape."""
+    return (
+        len(checks) == 1
+        and sum(step.get("run") == CHECK_COMMAND for step in steps) == 1
+        and steps[checks[0]]
+        == {"name": "Check CodeScene token", "id": "codescene-token", "run": CHECK_COMMAND}
+    )
+
+
+def _token_ordered(checks: list[int], uploads: list[int], measured: list[int]) -> bool:
+    """Require measure, token probe and upload in that order, once each."""
+    return (
+        len(checks) == len(uploads) == len(measured) == 1
+        and measured[0] < checks[0] < uploads[0]
+    )
 
 
 def _has_prior_build_tools(steps: list[reading.Step], measured: reading.Step) -> bool:

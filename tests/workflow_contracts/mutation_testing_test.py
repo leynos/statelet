@@ -15,7 +15,6 @@ Run via ``make test-workflow-contracts``.
 """
 
 import re
-from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -187,128 +186,111 @@ def test_workflow_reader_rejects_duplicate_and_ambiguous_trigger_keys() -> None:
         )
 
 
-def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
-    """Representative route, ordering, and softness changes fail closed."""
-    baseline = load_workflows()
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        ("remove_act_installer", "act-validation.yml:act-validation"),
+        ("echo_act_installer", "act-validation.yml:act-validation"),
+        ("conditional_act_command", "act-validation.yml:act-validation"),
+        ("late_ci_installer", "ci.yml:build-test"),
+        ("conditional_act_installer", "act-validation.yml:act-validation"),
+        ("soft_fail_act_installer", "act-validation.yml:act-validation"),
+        ("remove_publisher_coverage", "coverage-main.yml"),
+        ("add_linux_nextest_job", "act-validation.yml:new-suite"),
+        ("add_unresolved_reusable_suite", "unresolved reusable call"),
+    ],
+    ids=[
+        "installer-required",
+        "installer-is-executed",
+        "installer-command-is-unconditional",
+        "installer-before-coverage",
+        "installer-step-is-unconditional",
+        "installer-failure-is-binding",
+        "publisher-measures-coverage",
+        "new-linux-suite-is-covered",
+        "reusable-suite-is-resolved",
+    ],
+)
+def test_suite_provisioning_contract_rejects_workflow_mutations(
+    mutation: str, expected: str
+) -> None:
+    """Each provisioning bypass is detected against freshly parsed workflows."""
+    workflows = load_workflows()
+    _mutate_suite_workflow(workflows, mutation)
+    findings = suite_findings(workflows)
+    assert any(expected in finding for finding in findings), (mutation, findings)
 
-    def problems_after(change) -> list[str]:
-        workflows = deepcopy(baseline)
-        change(workflows)
-        return suite_findings(workflows)
 
-    def remove_act_installer(workflows) -> None:
-        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
-        steps[:] = [step for step in steps if step.get("run") != INSTALL_COMMAND]
+def _act_validation_steps(
+    workflows: dict[str, reading.Workflow],
+) -> list[reading.Step]:
+    return workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
 
-    assert any(
-        "act-validation.yml:act-validation" in finding
-        for finding in problems_after(remove_act_installer)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
 
-    def replace_act_installer_with_echo(workflows) -> None:
-        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
-        next(step for step in steps if step.get("run") == INSTALL_COMMAND)["run"] = (
-            f"echo {INSTALL_COMMAND}"
-        )
+def _publisher_coverage_steps(
+    workflows: dict[str, reading.Workflow],
+) -> list[reading.Step]:
+    return workflows["coverage-main.yml"]["jobs"]["coverage-upload"]["steps"]
 
-    assert any(
-        "act-validation.yml:act-validation" in finding
-        for finding in problems_after(replace_act_installer_with_echo)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
 
-    def replace_act_installer_with_conditional_noop(workflows) -> None:
-        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
-        next(step for step in steps if step.get("run") == INSTALL_COMMAND)["run"] = (
-            f"if false; then {INSTALL_COMMAND}; fi"
-        )
+def _mutate_act_installer(steps: list[reading.Step], mutation: str) -> None:
+    installer = next(step for step in steps if step.get("run") == INSTALL_COMMAND)
+    match mutation:
+        case "remove_act_installer":
+            steps.remove(installer)
+        case "echo_act_installer":
+            installer["run"] = f"echo {INSTALL_COMMAND}"
+        case "conditional_act_command":
+            installer["run"] = f"if false; then {INSTALL_COMMAND}; fi"
+        case "conditional_act_installer":
+            installer["if"] = "always()"
+        case "soft_fail_act_installer":
+            installer["continue-on-error"] = True
 
-    assert any(
-        "act-validation.yml:act-validation" in finding
-        for finding in problems_after(replace_act_installer_with_conditional_noop)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
 
-    def move_ci_installer_after_coverage(workflows) -> None:
-        steps = workflows["ci.yml"]["jobs"]["build-test"]["steps"]
-        installer = next(step for step in steps if step.get("run") == INSTALL_COMMAND)
-        steps.remove(installer)
-        steps.append(installer)
+def _mutate_suite_workflow(
+    workflows: dict[str, reading.Workflow], mutation: str
+) -> None:
+    match mutation:
+        case (
+            "remove_act_installer"
+            | "echo_act_installer"
+            | "conditional_act_command"
+            | "conditional_act_installer"
+            | "soft_fail_act_installer"
+        ):
+            _mutate_act_installer(_act_validation_steps(workflows), mutation)
+        case "late_ci_installer":
+            steps = workflows["ci.yml"]["jobs"]["build-test"]["steps"]
+            installer = next(step for step in steps if step.get("run") == INSTALL_COMMAND)
+            steps.remove(installer)
+            steps.append(installer)
+        case "remove_publisher_coverage":
+            steps = _publisher_coverage_steps(workflows)
+            steps[:] = [
+                step for step in steps
+                if "generate-coverage" not in step.get("uses", "")
+            ]
+        case "add_linux_nextest_job":
+            jobs = workflows["act-validation.yml"]["jobs"]
+            jobs["new-suite"] = {
+                "runs-on": "ubuntu-latest",
+                "steps": [{"run": "cargo nextest run --workspace"}],
+            }
+        case "add_unresolved_reusable_suite":
+            jobs = workflows["act-validation.yml"]["jobs"]
+            jobs["external-suite"] = {
+                "uses": "example/other/.github/workflows/rust-suite.yml@" + "a" * 40,
+                "with": {"setup-commands": INSTALL_COMMAND},
+            }
+        case _:
+            raise AssertionError(f"unrecognized provisioning mutation {mutation!r}")
 
-    assert any(
-        "ci.yml:build-test" in finding
-        for finding in problems_after(move_ci_installer_after_coverage)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
 
-    def make_act_installer_conditional(workflows) -> None:
-        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
-        next(step for step in steps if step.get("run") == INSTALL_COMMAND)["if"] = "always()"
-
-    assert any(
-        "act-validation.yml:act-validation" in finding
-        for finding in problems_after(make_act_installer_conditional)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
-
-    def make_act_installer_soft_fail(workflows) -> None:
-        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
-        next(step for step in steps if step.get("run") == INSTALL_COMMAND)[
-            "continue-on-error"
-        ] = True
-
-    assert any(
-        "act-validation.yml:act-validation" in finding
-        for finding in problems_after(make_act_installer_soft_fail)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
-
-    def delete_publisher_coverage_action(workflows) -> None:
-        steps = workflows["coverage-main.yml"]["jobs"]["coverage-upload"]["steps"]
-        steps[:] = [step for step in steps if "generate-coverage" not in step.get("uses", "")]
-
-    assert any(
-        "coverage-main.yml" in finding
-        for finding in problems_after(delete_publisher_coverage_action)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
-
-    def add_linux_nextest_job(workflows) -> None:
-        jobs = workflows["act-validation.yml"]["jobs"]
-        jobs["new-suite"] = {
-            "runs-on": "ubuntu-latest",
-            "steps": [{"run": "cargo nextest run --workspace"}],
-        }
-
-    assert any(
-        "act-validation.yml:new-suite" in finding
-        for finding in problems_after(add_linux_nextest_job)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
-
-    def add_unresolved_reusable_suite(workflows) -> None:
-        workflows["act-validation.yml"]["jobs"]["external-suite"] = {
-            "uses": "example/other/.github/workflows/rust-suite.yml@" + "a" * 40,
-            "with": {"setup-commands": INSTALL_COMMAND},
-        }
-
-    assert any(
-        "unresolved reusable call" in finding
-        for finding in problems_after(add_unresolved_reusable_suite)
-    ), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
-    )
+def test_suite_provisioning_contract_rejects_empty_workflow_sets() -> None:
+    """The suite contract refuses to report success when no workflows are read."""
     assert any("no workflows" in finding for finding in suite_findings({})), (
-        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
+        "suite contract accepted an empty workflow set"
     )
 
 

@@ -59,14 +59,20 @@ def test_integrity_mutations_are_rejected(
     every: dict[str, reading.Workflow], change: str, reason: str
 ) -> None:
     """A single wrong pin, scope, preflight or job shape breaks the contract."""
+    _apply_integrity_mutation(every, change)
+    findings = integrity.coverage_contract_findings(every)
+    assert any(reason in finding for finding in findings), (change, findings)
+
+
+def _apply_integrity_mutation(
+    every: dict[str, reading.Workflow], change: str
+) -> None:
     if change in COVERAGE_MUTATIONS:
         _mutate_coverage(every, change)
     elif change in PREFLIGHT_MUTATIONS:
         _mutate_preflight(every, change)
     else:
         _mutate_workflow_shape(every, change)
-    findings = integrity.coverage_contract_findings(every)
-    assert any(reason in finding for finding in findings), (change, findings)
 
 
 COVERAGE_MUTATIONS = {
@@ -142,53 +148,75 @@ def _mutate_coverage(every: dict[str, reading.Workflow], change: str) -> None:
             pr_coverage["continue-on-error"] = True
 
 
+def _named_step(steps: list[reading.Step], name: str) -> reading.Step:
+    return next(step for step in steps if step.get("name") == name)
+
+
+def _move_named_step(steps: list[reading.Step], name: str, *, move_to_end: bool) -> None:
+    step = _named_step(steps, name)
+    steps.remove(step)
+    if move_to_end:
+        steps.append(step)
+
+
 def _mutate_preflight(every: dict[str, reading.Workflow], change: str) -> None:
+    match change:
+        case "ci_no_install" | "ci_late_install" | "ci_install_soft_failure":
+            _mutate_ci_preflight(every, change)
+        case (
+            "no_install"
+            | "late_install"
+            | "wrong_install_command"
+            | "install_soft_failure"
+            | "no_linker"
+            | "late_linker"
+            | "linker_soft_failure"
+        ):
+            _mutate_publisher_preflight(every, change)
+        case _:
+            raise AssertionError(f"unrecognized preflight mutation {change!r}")
+
+
+def _mutate_publisher_preflight(
+    every: dict[str, reading.Workflow], change: str
+) -> None:
     steps = _publisher_steps(every)
     match change:
         case "no_install" | "late_install":
-            install = next(
-                step for step in steps if step.get("name") == "Install build tools"
+            _move_named_step(
+                steps, "Install build tools", move_to_end=change == "late_install"
             )
-            steps.remove(install)
-            if change == "late_install":
-                steps.append(install)
         case "wrong_install_command":
-            next(step for step in steps if step.get("name") == "Install build tools")[
-                "run"
-            ] = "true"
+            _named_step(steps, "Install build tools")["run"] = "true"
         case "install_soft_failure":
-            next(step for step in steps if step.get("name") == "Install build tools")[
+            _named_step(steps, "Install build tools")["continue-on-error"] = True
+        case "no_linker" | "late_linker":
+            _move_named_step(
+                steps,
+                "Install coverage linker tools",
+                move_to_end=change == "late_linker",
+            )
+        case "linker_soft_failure":
+            _named_step(steps, "Install coverage linker tools")[
                 "continue-on-error"
             ] = True
-        case "no_linker" | "late_linker" | "linker_soft_failure":
-            linker = next(
-                step
-                for step in steps
-                if step.get("name") == "Install coverage linker tools"
+        case _:
+            raise AssertionError(
+                f"unrecognized publisher preflight mutation {change!r}"
             )
-            if change == "linker_soft_failure":
-                linker["continue-on-error"] = True
-            else:
-                steps.remove(linker)
-                if change == "late_linker":
-                    steps.append(linker)
-        case "ci_no_install" | "ci_late_install" | "ci_install_soft_failure":
-            _mutate_ci_preflight(every, change)
 
 
 def _mutate_ci_preflight(every: dict[str, reading.Workflow], change: str) -> None:
     ci_steps = every["ci.yml"]["jobs"]["build-test"]["steps"]
-    install = next(
-        step for step in ci_steps if step.get("name") == "Install build tools"
-    )
     match change:
         case "ci_install_soft_failure":
-            install["continue-on-error"] = True
-        case "ci_no_install":
-            ci_steps.remove(install)
-        case "ci_late_install":
-            ci_steps.remove(install)
-            ci_steps.append(install)
+            _named_step(ci_steps, "Install build tools")["continue-on-error"] = True
+        case "ci_no_install" | "ci_late_install":
+            _move_named_step(
+                ci_steps, "Install build tools", move_to_end=change == "ci_late_install"
+            )
+        case _:
+            raise AssertionError(f"unrecognized CI preflight mutation {change!r}")
 
 
 def _mutate_workflow_shape(every: dict[str, reading.Workflow], change: str) -> None:

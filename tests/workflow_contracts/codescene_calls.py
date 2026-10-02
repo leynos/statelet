@@ -27,22 +27,35 @@ def unprovable_callees(
     findings = reading.missing_callees(every, names)
     for name in sorted(names):
         for job_id, job in reading.jobs(every[name]):
-            if "uses" not in job:
-                continue
-            reference = job["uses"]
-            if not isinstance(reference, str):
-                findings.append(f"{name}:{job_id} has an indeterminate call")
-                continue
-            kind, _ = reading.classify_call(reference)
-            if kind == reading.REFUSED:
-                findings.append(f"{name}:{job_id} has an unprovable call {reference!r}")
-            is_reviewed = (
-                name == "dependabot-automerge.yml"
-                and job_id == "automerge"
-                and reference == REVIEWED_AUTOMERGE_CALL
-                and job.get("with") == REVIEWED_AUTOMERGE_INPUTS
-                and "secrets" not in job
-            )
-            if kind == reading.REMOTE and not is_reviewed:
-                findings.append(f"{name}:{job_id} has an unprovable call {reference!r}")
+            finding = _call_finding(name, job_id, job)
+            if finding is not None:
+                findings.append(finding)
     return findings
+
+
+def _call_finding(name: str, job_id: str, job: reading.Step) -> str | None:
+    """Classify one job call without losing malformed or remote references."""
+    if "uses" not in job:
+        return None
+    reference = job["uses"]
+    if not isinstance(reference, str):
+        return f"{name}:{job_id} has an indeterminate call"
+    kind, _ = reading.classify_call(reference)
+    if kind == reading.REFUSED:
+        return f"{name}:{job_id} has an unprovable call {reference!r}"
+    if kind == reading.REMOTE and not _reviewed_automerge(name, job_id, reference, job):
+        return f"{name}:{job_id} has an unprovable call {reference!r}"
+    return None
+
+
+def _reviewed_automerge(
+    name: str, job_id: str, reference: str, job: reading.Step
+) -> bool:
+    """Recognize only the audited automerge call with no forwarded secrets."""
+    return (
+        name == "dependabot-automerge.yml"
+        and job_id == "automerge"
+        and reference == REVIEWED_AUTOMERGE_CALL
+        and job.get("with") == REVIEWED_AUTOMERGE_INPUTS
+        and "secrets" not in job
+    )

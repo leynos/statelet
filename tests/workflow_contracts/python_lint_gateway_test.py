@@ -237,32 +237,48 @@ def test_composite_gates_retain_sequential_python_leaves() -> None:
     )
 
 
-def test_ci_uses_cpython_314_and_requires_both_python_gateways() -> None:
-    """The protected CI job runs binding lint and typecheck under the baseline."""
-    steps = _workflow_steps("ci.yml")
-    uv_setup = next(
-        step for step in steps if step.get("name") == "Setup uv"
-    )
-    assert uv_setup.get("with", {}).get("python-version") == "3.14", (
-        "test_ci_uses_cpython_314_and_requires_both_python_gateways contract failed"
-    )
-    runs = [
+def _named_step(steps: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    return next(step for step in steps if step.get("name") == name)
+
+
+def _ci_python_gateway_steps(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
         step
         for step in steps
         if isinstance(step.get("run"), str)
         and step["run"].strip() in {"make lint", "make typecheck"}
     ]
-    assert {step["run"].strip() for step in runs} == {"make lint", "make typecheck"}, (
+
+
+def _assert_python_gates_are_required(
+    steps: list[dict[str, Any]],
+    setup: dict[str, Any],
+    gateways: list[dict[str, Any]],
+) -> None:
+    assert {step["run"].strip() for step in gateways} == {
+        "make lint", "make typecheck"
+    }, (
         "test_ci_uses_cpython_314_and_requires_both_python_gateways contract failed"
     )
-    assert all("if" not in step and "continue-on-error" not in step for step in runs), (
-        "test_ci_uses_cpython_314_and_requires_both_python_gateways contract failed"
-    )
-    assert next(i for i, step in enumerate(steps) if step is uv_setup) < min(
-        steps.index(step) for step in runs
+    assert all(
+        "if" not in step and "continue-on-error" not in step for step in gateways
     ), (
         "test_ci_uses_cpython_314_and_requires_both_python_gateways contract failed"
     )
+    setup_index = next(i for i, step in enumerate(steps) if step is setup)
+    assert setup_index < min(steps.index(step) for step in gateways), (
+        "test_ci_uses_cpython_314_and_requires_both_python_gateways contract failed"
+    )
+
+
+def test_ci_uses_cpython_314_and_requires_both_python_gateways() -> None:
+    """The protected CI job runs binding lint and typecheck under the baseline."""
+    steps = _workflow_steps("ci.yml")
+    uv_setup = _named_step(steps, "Setup uv")
+    assert uv_setup.get("with", {}).get("python-version") == "3.14", (
+        "test_ci_uses_cpython_314_and_requires_both_python_gateways contract failed"
+    )
+    _assert_python_gates_are_required(steps, uv_setup, _ci_python_gateway_steps(steps))
 
 
 def test_audit_workflow_uses_the_python_baseline() -> None:

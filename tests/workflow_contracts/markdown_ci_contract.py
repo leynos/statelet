@@ -26,26 +26,43 @@ def _ci_route(document: Workflow) -> tuple[Job | None, list[str]]:
 
     candidates: list[tuple[str, Job]] = []
     for name, job in jobs.items():
-        if not isinstance(job, dict):
-            return None, [f"CI job {name!r} is not a mapping"]
-        steps = job.get("steps")
-        if not isinstance(steps, list) or any(not isinstance(step, dict) for step in steps):
-            return None, [f"CI job {name!r} has an unreadable steps list"]
-        if any(
-            isinstance(step.get("run"), str)
-            and step["run"].strip() == "make check-fmt"
-            for step in steps
-        ):
+        problem = _ci_job_shape_problem(name, job)
+        if problem is not None:
+            return None, [problem]
+        if _has_format_check(job["steps"]):
             candidates.append((str(name), job))
 
     if len(candidates) != 1:
         return None, [f"expected one CI job running make check-fmt, found {len(candidates)}"]
 
     job_name, job = candidates[0]
-    problems: list[str] = []
+    return job, _ci_job_binding_findings(job_name, job)
+
+
+def _ci_job_shape_problem(name: object, job: object) -> str | None:
+    """Reject jobs whose step structure cannot be searched safely."""
+    if not isinstance(job, dict):
+        return f"CI job {name!r} is not a mapping"
+    steps = job.get("steps")
+    if not isinstance(steps, list) or any(not isinstance(step, dict) for step in steps):
+        return f"CI job {name!r} has an unreadable steps list"
+    return None
+
+
+def _has_format_check(steps: list[Job]) -> bool:
+    """Detect the direct formatter-check recipe within readable job steps."""
+    return any(
+        isinstance(step.get("run"), str)
+        and step["run"].strip() == "make check-fmt"
+        for step in steps
+    )
+
+
+def _ci_job_binding_findings(job_name: str, job: Job) -> list[str]:
+    """Require the job containing Markdown gates to run without softening."""
     if "if" in job or "continue-on-error" in job:
-        problems.append(f"CI job {job_name!r} can skip or soften its Markdown gates")
-    return job, problems
+        return [f"CI job {job_name!r} can skip or soften its Markdown gates"]
+    return []
 
 
 def _markdown_ci_problems(document: Workflow) -> list[str]:
@@ -73,26 +90,40 @@ def _markdown_step_indices(
     steps: list[dict[typ.Any, typ.Any]],
 ) -> tuple[tuple[int, int, int], list[str]]:
     """Find the one installer, formatter, and lint action in a CI job."""
+    install_indices = _action_indices(steps, INSTALL_ACTION)
+    format_indices = _matching_indices(steps, _is_formatter_check)
+    action_indices = _action_indices(steps, MARKDOWNLINT_ACTION)
+    return _required_markdown_step_indices(install_indices, format_indices, action_indices)
+
+
+def _action_indices(steps: list[Job], action: str) -> list[int]:
+    """Return workflow positions using one named action at any revision."""
+    prefix = f"{action}@"
+    return _matching_indices(steps, lambda step: _uses_action(step, prefix))
+
+
+def _uses_action(step: Job, prefix: str) -> bool:
+    """Check an action reference using a fixed repository/name prefix."""
+    uses = step.get("uses")
+    return isinstance(uses, str) and uses.startswith(prefix)
+
+
+def _matching_indices(steps: list[Job], predicate: typ.Callable[[Job], bool]) -> list[int]:
+    """Return positions of workflow steps satisfying one route predicate."""
+    return [index for index, step in enumerate(steps) if predicate(step)]
+
+
+def _is_formatter_check(step: Job) -> bool:
+    """Recognize the direct Make formatting check used by this workflow."""
+    run = step.get("run")
+    return isinstance(run, str) and run.strip() == "make check-fmt"
+
+
+def _required_markdown_step_indices(
+    install_indices: list[int], format_indices: list[int], action_indices: list[int]
+) -> tuple[tuple[int, int, int], list[str]]:
+    """Require exactly one installer, formatter check, and lint action."""
     problems = []
-    installer_prefix = f"{INSTALL_ACTION}@"
-    install_indices = [
-        index
-        for index, step in enumerate(steps)
-        if isinstance(step.get("uses"), str)
-        and step["uses"].startswith(installer_prefix)
-    ]
-    format_indices = [
-        index
-        for index, step in enumerate(steps)
-        if isinstance(step.get("run"), str)
-        and step["run"].strip() == "make check-fmt"
-    ]
-    action_indices = [
-        index
-        for index, step in enumerate(steps)
-        if isinstance(step.get("uses"), str)
-        and step["uses"].startswith(f"{MARKDOWNLINT_ACTION}@")
-    ]
 
     if len(install_indices) != 1:
         problems.append(f"expected one {INSTALL_ACTION} step, found {len(install_indices)}")
@@ -120,15 +151,45 @@ def _markdown_tool_findings(
         return ["Markdown installer inputs are not a mapping"]
     install_index, format_index, action_index = indices
 
+    problems = _markdown_installer_findings(installer, installer_inputs)
+    problems.extend(
+        _markdown_install_order_findings(install_index, format_index, action_index)
+    )
+    problems.extend(
+        _markdown_step_binding_findings(installer, formatter, markdownlint)
+    )
+    return problems
+
+
+def _markdown_installer_findings(
+    installer: Job, installer_inputs: dict[typ.Any, typ.Any]
+) -> list[str]:
+    """Check approved installer provenance and pinned mdtablefix version."""
+    problems = []
     if installer["uses"] != f"{INSTALL_ACTION}@{INSTALL_PIN}":
         problems.append("mdtablefix installer is not pinned to the approved shared action")
     if installer_inputs.get("version") != "0.6.0":
         problems.append("mdtablefix installer version is not 0.6.0")
-    if not install_index < format_index:
-        problems.append("mdtablefix installation does not precede make check-fmt")
-    if not install_index < action_index:
-        problems.append("mdtablefix installation does not precede Markdown CI lint")
+    return problems
 
+
+def _markdown_install_order_findings(
+    install_index: int, format_index: int, action_index: int
+) -> list[str]:
+    """Require formatter and Markdown CI checks to follow provisioning."""
+    problems = []
+    if install_index >= format_index:
+        problems.append("mdtablefix installation does not precede make check-fmt")
+    if install_index >= action_index:
+        problems.append("mdtablefix installation does not precede Markdown CI lint")
+    return problems
+
+
+def _markdown_step_binding_findings(
+    installer: Job, formatter: Job, markdownlint: Job
+) -> list[str]:
+    """Reject conditional or soft-failing Markdown consumer steps."""
+    problems = []
     for label, step in (
         ("installer", installer),
         ("format check", formatter),
@@ -136,7 +197,6 @@ def _markdown_tool_findings(
     ):
         if "if" in step or "continue-on-error" in step:
             problems.append(f"Markdown {label} can be skipped or allowed to fail")
-
     return problems
 
 

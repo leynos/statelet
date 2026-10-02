@@ -61,41 +61,79 @@ def runner_platforms(job: dict[str, Any]) -> set[str]:
         raise ContractError("has no determinate runs-on value")
     value = job["runs-on"]
     if isinstance(value, str) and "${{" in value:
-        match = re.fullmatch(r"\$\{\{\s*matrix\.([A-Za-z_][\w]*)\s*}}", value)
-        if not match:
-            raise ContractError(f"has unsupported runner expression {value!r}")
-        strategy = job.get("strategy")
-        matrix = strategy.get("matrix") if isinstance(strategy, dict) else None
-        if not isinstance(matrix, dict) or any(
-            matrix.get(key) for key in ("include", "exclude")
-        ):
-            raise ContractError("has an unsupported matrix runner shape")
-        values = matrix.get(match.group(1))
-        match values:
-            case list() if values:
-                return {_runner_platform(item) for item in values}
-            case str() | dict():
-                return {_runner_platform(values)}
-            case _:
-                raise ContractError("has an unresolved matrix runner axis")
+        return _matrix_runner_platforms(job, value)
     return {_runner_platform(value)}
 
 
-def _runner_platform(value: object) -> str:
-    if isinstance(value, dict):
-        if set(value) - {"group", "labels"} or not isinstance(value.get("group"), str):
-            raise ContractError(f"has unsupported runner mapping {value!r}")
-        labels = value.get("labels")
-        if not isinstance(labels, (str, list)):
-            raise ContractError(f"has indeterminate runner labels {labels!r}")
-        value = labels
-    labels = [value] if isinstance(value, str) else value
-    if not isinstance(labels, list) or not labels or not all(
-        isinstance(label, str) for label in labels
+def _matrix_runner_platforms(job: dict[str, Any], expression: str) -> set[str]:
+    """Resolve one supported matrix expression to its runner platforms."""
+    match = re.fullmatch(r"\$\{\{\s*matrix\.([A-Za-z_][\w]*)\s*}}", expression)
+    if not match:
+        raise ContractError(f"has unsupported runner expression {expression!r}")
+    strategy = job.get("strategy")
+    matrix = strategy.get("matrix") if isinstance(strategy, dict) else None
+    if not isinstance(matrix, dict) or any(
+        matrix.get(key) for key in ("include", "exclude")
     ):
-        raise ContractError(f"has indeterminate runner labels {value!r}")
+        raise ContractError("has an unsupported matrix runner shape")
+    return _matrix_axis_platforms(matrix.get(match.group(1)))
+
+
+def _matrix_axis_platforms(values: object) -> set[str]:
+    """Classify scalar, mapping, or list values from a simple matrix axis."""
+    match values:
+        case list() if values:
+            return {_runner_platform(item) for item in values}
+        case str() | dict():
+            return {_runner_platform(values)}
+        case _:
+            raise ContractError("has an unresolved matrix runner axis")
+
+
+def _runner_platform(value: object) -> str:
+    """Classify supported runner labels, rejecting unknown and mixed hosts."""
+    labels = _runner_labels(value)
     text = " ".join(labels).lower()
-    platforms = {
+    platforms = _matching_platforms(text)
+    if len(platforms) != 1:
+        raise ContractError(f"has unknown or mixed runner labels {value!r}")
+    return next(iter(platforms))
+
+
+def _runner_labels(value: object) -> list[str]:
+    """Normalize GitHub's string, list, and group/labels runner forms."""
+    if isinstance(value, dict):
+        value = _runner_mapping_labels(value)
+    return _validated_runner_labels(value)
+
+
+def _runner_mapping_labels(value: dict[Any, Any]) -> object:
+    """Extract valid labels from GitHub's group/labels runner mapping."""
+    if set(value) - {"group", "labels"}:
+        raise ContractError(f"has unsupported runner mapping {value!r}")
+    if not isinstance(value.get("group"), str):
+        raise ContractError(f"has unsupported runner mapping {value!r}")
+    labels = value.get("labels")
+    if not isinstance(labels, (str, list)):
+        raise ContractError(f"has indeterminate runner labels {labels!r}")
+    return labels
+
+
+def _validated_runner_labels(value: object) -> list[str]:
+    """Require a non-empty runner label string or string list."""
+    labels = [value] if isinstance(value, str) else value
+    if not isinstance(labels, list):
+        raise ContractError(f"has indeterminate runner labels {value!r}")
+    if not labels:
+        raise ContractError(f"has indeterminate runner labels {value!r}")
+    if not all(isinstance(label, str) for label in labels):
+        raise ContractError(f"has indeterminate runner labels {value!r}")
+    return labels
+
+
+def _matching_platforms(text: str) -> set[str]:
+    """Return platform names identified by recognized runner-label patterns."""
+    return {
         platform
         for platform, pattern in (
             ("linux", r"linux|ubuntu"),
@@ -104,9 +142,6 @@ def _runner_platform(value: object) -> str:
         )
         if re.search(pattern, text)
     }
-    if len(platforms) != 1:
-        raise ContractError(f"has unknown or mixed runner labels {value!r}")
-    return next(iter(platforms))
 
 
 
@@ -246,10 +281,26 @@ def _mutation_setup_findings(
     findings = []
     if "if" in job or job.get("continue-on-error") is True:
         findings.append(f"{workflow_name}:{job_id} may skip or soften its suite call")
-    with_block = job.get("with")
-    setup = with_block.get("setup-commands") if isinstance(with_block, dict) else None
+    setup = _mutation_setup_commands(job)
     if not isinstance(setup, str):
         return findings + [f"{workflow_name}:{job_id} has no determinate caller setup"]
+    findings.extend(_mutation_setup_order_findings(workflow_name, job_id, setup))
+    if 'echo "$HOME/.local/bin" >> "$GITHUB_PATH"' not in setup:
+        findings.append(f"{workflow_name}:{job_id} does not expose installed tools to the suite")
+    return findings
+
+
+def _mutation_setup_commands(job: dict[str, Any]) -> object:
+    """Read the setup-commands input only from a mapping-shaped caller."""
+    with_block = job.get("with")
+    return with_block.get("setup-commands") if isinstance(with_block, dict) else None
+
+
+def _mutation_setup_order_findings(
+    workflow_name: str, job_id: str, setup: str
+) -> list[str]:
+    """Require compiler provisioning before exactly one build-tool install."""
+    findings = []
     install = setup.find(INSTALL_COMMAND)
     if setup.count(INSTALL_COMMAND) != 1 or install < 0:
         findings.append(f"{workflow_name}:{job_id} must pass one {INSTALL_COMMAND}")
@@ -258,6 +309,4 @@ def _mutation_setup_findings(
         findings.append(
             f"{workflow_name}:{job_id} must install Linux compiler tools before build tools"
         )
-    if 'echo "$HOME/.local/bin" >> "$GITHUB_PATH"' not in setup:
-        findings.append(f"{workflow_name}:{job_id} does not expose installed tools to the suite")
     return findings
