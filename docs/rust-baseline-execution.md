@@ -287,13 +287,13 @@ CI action.
 
 ## Five onboarding dispositions
 
-| Onboarding                | Implemented contract                                                | Remaining evidence                                        |
-| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
-| Development build default | Cranelift, -Zthreads=8, Linux linker, pinned tool preflight         | Main CI passed; candidate-head CI pending                 |
-| CV-005                    | PR ratchet and protected main publisher contracts                   | Candidate CI and live secret placement remain unverified  |
-| Markdown                  | Direct pinned tools, CI provisioning, formatting selection contract | Candidate local gates and audit passed; hosted CI pending |
-| install-whitaker          | Approved shared action pin and ordered Make composite gate          | Main CI action and lint passed; candidate CI pending      |
-| Typos builder             | v0.1.3 full-scope gate and narrow local overlay                     | Spelling gate and Concordat audit passed                  |
+| Onboarding                | Implemented contract                                                | Remaining evidence                                      |
+| ------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------- |
+| Development build default | Cranelift, -Zthreads=8, Linux linker, pinned tool preflight         | Protected-main publisher verification after merge       |
+| CV-005                    | PR ratchet and protected main publisher contracts                   | First eligible protected-main publisher run after merge |
+| Markdown                  | Direct pinned tools, CI provisioning, formatting selection contract | None for the candidate; hosted gates passed             |
+| install-whitaker          | Approved shared action pin and ordered Make composite gate          | None for the candidate; hosted lint passed              |
+| Typos builder             | v0.1.3 full-scope gate and narrow local overlay                     | None for the candidate; hosted spelling passed          |
 
 *Table 4: Consumer implementation and outstanding evidence.*
 
@@ -317,13 +317,12 @@ The rolling suite is not pinned. The shared action logs its installer-managed
 toolchain but not the exact installed suite SHA, so that field must remain
 unclaimed if the run does not expose it.
 
-GitHub's codescene environment was observed with a deployment policy that
-allows main only. The GitHub integration returned HTTP 403 when asked for
-repository or environment secret metadata. The move of CS_ACCESS_TOKEN into
-that environment and removal of repository-level exposure therefore remain
-unverified. A protected main-only publisher run after merge is also pending;
-report generation, baseline persistence, upload, and intentional token-absent
-skip are distinct outcomes.
+The `codescene` environment was previously observed with a deployment policy
+that allows `main` only. An authenticated `leynos` read-back on 2026-10-02
+showed `CS_ACCESS_TOKEN` in that environment and no repository-level secrets.
+The first eligible protected main-only publisher run after merge is still
+pending; report generation, baseline persistence, upload, and intentional
+token-absent skip are distinct outcomes.
 
 ## Historical local verification before rebase
 
@@ -766,6 +765,56 @@ env GIT_CONFIG_COUNT=0 GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null m
 It loaded 1,280 RustSec advisories and scanned 76 locked crate dependencies;
 log:
 `/tmp/audit-clean-git-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`.
-Fresh hosted checks and CodeScene review on a pushed remediation head remain
-pending. The protected CodeScene secret placement remains an independent
-administrative verification gap.
+That checkpoint ended before the remediation head was pushed. At that point,
+fresh hosted checks and CodeScene review were pending, and secret placement was
+unverified. See the current candidate section below for the later read-back and
+check results.
+
+## Current PR candidate
+
+PR [#101](https://github.com/leynos/statelet/pull/101) is open as a draft on
+`rust-baseline-completion-20261001`, based on `main` at
+`d83f693f61385a5ec3cd3ffb8eaddc59e33f6571`. Its remote head is
+`1a6e1f7bf1191656157ce5208d79e9e88ed85473`.
+
+The current-head hosted `build-test` run
+[37032543684](https://github.com/leynos/statelet/actions/runs/37032543684)
+passed. Its successful steps include formatting, Markdown lint, spelling,
+dependency audit, Whitaker installation, lint, typecheck, workflow contracts,
+tests, and coverage. Act Validation
+[37032543617](https://github.com/leynos/statelet/actions/runs/37032543617),
+Gecko Security Review, and CodeScene analysis
+[7789400](https://codescene.io/projects/81801/delta/results/7789400) also
+passed on this head. The latest CodeScene review,
+[5394106051](https://github.com/leynos/statelet/pull/101#pullrequestreview-5394106051),
+is `APPROVED` on the exact head. All 27 earlier CodeScene inline threads now
+have individual replies and are resolved.
+
+Run `37032543684` used
+`install-whitaker@6dea5677a84fec60ca51b07202570e3af12ffdb4`. The action
+reported installer 0.2.9, the rolling `default-branch-tip` suite, and
+`suite-source=prebuilt`; it downloaded
+`whitaker-lints-318d8d7-nightly-2026-05-28-x86_64-unknown-linux-gnu.tar.zst`
+and reported installer-managed toolchain `nightly-2026-05-28`. The exact suite
+source revision previously resolved for this same asset is
+`318d8d76b35b2a8c14a7d8ab6ef526f391889963`. No suite version is pinned and no
+source fallback was used. The repository build toolchain was
+`nightly-2026-09-13`.
+
+The Python gateways were validated on the same candidate. They use managed
+CPython 3.14, Pylint 4.0.9, all 13 pinned `df12-python-lints` messages, and
+`ty` 0.0.74. The shared recursive source inventory covers `.github`, `tests`,
+`scripts`, `benches`, and `benchmarks`, and prunes generated, cached, and
+vendored directories. The CI workflow requires both `make lint` and
+`make typecheck`; the Python contract suite checks selection and failure
+propagation. No Python lint suppressions were introduced.
+
+The repository secret list is empty, and the `codescene` environment secret
+list contains `CS_ACCESS_TOKEN`. Verification of the protected publisher's
+report generation, baseline persistence, upload, or intentional token-absent
+skip must wait for its first eligible post-merge run.
+
+The managed CodeRabbit full-review request is queued as `b88f3b8d` with an
+estimated wait of about 32 hours when submitted. The PR remains a draft; that
+queued review is not a completed review or approval. The automatic CodeRabbit
+status context is not evidence that the managed review has run.
