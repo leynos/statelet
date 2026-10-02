@@ -1,10 +1,9 @@
 """Hold the CodeScene token's environment to the uploading job (CV-005).
 
-The token lives in the ``codescene`` environment, whose deployment policy
-admits ``main`` alone. So every job that invokes the uploader declares that
-environment, no other job does, and no workflow a pull request can reach
-declares it in any job: a declaration there would let branch code ask for the
-token.
+The ``codescene`` environment's deployment policy admits ``main`` alone.
+Secret placement needs administrator verification. Every job that invokes the
+uploader declares that environment, no other job does, and no workflow a pull
+request can reach declares it: that would let branch code request its secrets.
 """
 
 from __future__ import annotations

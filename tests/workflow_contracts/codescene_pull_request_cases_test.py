@@ -302,7 +302,11 @@ def test_the_closure_is_exactly_what_a_pull_request_can_reach(size: int) -> None
 
 def test_the_reader_reads_a_directory_it_is_given(tmp_path) -> None:
     """The reader takes its directory as an argument and binds none itself."""
-    (tmp_path / "ci.YML").write_text("on: push\njobs: {}\n", encoding="utf-8")
+    (tmp_path / "ci.YML").write_text(
+        "on: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n"
+        "    steps:\n      - run: 'true'\n",
+        encoding="utf-8",
+    )
     (tmp_path / "notes.txt").write_text("not a workflow", encoding="utf-8")
     every = reading.workflows(tmp_path)
     assert list(every) == ["ci.YML"], every
@@ -315,6 +319,9 @@ def test_the_reader_reads_a_directory_it_is_given(tmp_path) -> None:
         ("unreadable", "cannot read"),
         ("invalid", "not valid YAML"),
         ("empty", "no workflows found"),
+        ("empty_jobs", "no determinate jobs"),
+        ("indeterminate_job", "indeterminate job"),
+        ("ambiguous_event", "ambiguous boolean"),
     ],
 )
 def test_a_directory_the_reader_cannot_judge_is_refused(
@@ -332,5 +339,27 @@ def test_a_directory_the_reader_cannot_judge_is_refused(
         (directory / "ci.yml").mkdir()
     if layout == "invalid":
         (directory / "ci.yml").write_text("on: [push\n", encoding="utf-8")
+    if layout == "empty_jobs":
+        (directory / "ci.yml").write_text("on: push\njobs: {}\n", encoding="utf-8")
+    if layout == "indeterminate_job":
+        (directory / "ci.yml").write_text(
+            "on: push\njobs:\n  build: null\n", encoding="utf-8"
+        )
+    if layout == "ambiguous_event":
+        (directory / "ci.yml").write_text(
+            "on: [push, yes]\njobs:\n  build: {}\n", encoding="utf-8"
+        )
     with pytest.raises(reading.ContractError, match=reason):
         reading.workflows(directory)
+
+
+@pytest.mark.parametrize("spelling", ["yes", "no", "on", "off"])
+def test_boolean_aliases_cannot_change_coverage_inputs(spelling: str) -> None:
+    """YAML 1.1 aliases must not silently change a literal action input."""
+    source = (
+        "on: pull_request\njobs:\n  build:\n    steps:\n"
+        "      - uses: x/y@sha\n        with:\n"
+        f"          with-ratchet: {spelling}\n"
+    )
+    with pytest.raises(reading.ContractError, match="ambiguous boolean"):
+        reading.parse("fixture", source)

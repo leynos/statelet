@@ -6,10 +6,8 @@ fails for the wrong reason cannot pass as one that works.
 
 The publisher uploads behind two conjuncts: a ref guard confining it to
 ``main``, and the output of a check step reporting whether the token is set.
-The token travels only as the upload action's ``access-token`` input and
-inside the check step's one exact command. It sits in no ``env`` at any
-scope, because the upload action is composite and hands its step's ``env``
-to the nested artefact and cache steps it runs.
+The token travels only as the upload action's ``access-token`` input and the
+check step's exact command, never in ``env``.
 """
 
 from __future__ import annotations
@@ -218,7 +216,7 @@ def _token_check_id(step: reading.Step) -> str | None:
     step_id = step.get("id")
     if not isinstance(run, str) or not set(step) <= CHECK_KEYS:
         return None
-    is_exact = run.strip() == CHECK_COMMAND
+    is_exact = run == CHECK_COMMAND
     return step_id if is_exact and isinstance(step_id, str) else None
 
 
@@ -243,9 +241,7 @@ def _guard_findings(upload: reading.Step, earlier: list[reading.Step]) -> list[s
 def _rendered_outside_allowance(workflow: reading.Workflow) -> str:
     """Render the whole workflow without the two places it may name the token.
 
-    A copy of the whole document is scanned, not only its steps: a job's
-    ``container.env`` or ``services.<id>.env`` hands the token to every step
-    in the job without being any step's ``env``.
+    Job containers and services can bind the token outside step ``env``.
     """
     remainder = copy.deepcopy(workflow)
     for step in reading.steps(remainder):
@@ -372,6 +368,8 @@ def wiring_findings(workflow: reading.Workflow) -> list[str]:
     ]
     findings = []
     for upload in filter(is_upload_action, every_step):
+        if step_input(upload, "mode") != "upload":
+            findings.append("the CodeScene upload mode is not exactly upload")
         read = (_normalized_input(upload, "path"), _normalized_input(upload, "format"))
         if read not in written:
             findings.append(
@@ -384,19 +382,3 @@ def wiring_findings(workflow: reading.Workflow) -> list[str]:
                 f"the upload's access-token is {token!r}, not {TOKEN_INPUT!r}"
             )
     return findings
-
-
-def baseline_writers(every: dict[str, reading.Workflow]) -> list[str]:
-    """Return the workflow of every ratcheted coverage step a push can reach.
-
-    ``generate-coverage`` saves the baseline on a push to ``main``, so each
-    entry is a baseline writer, one per step. Reached through the push
-    closure, a called workflow that ratchets is a writer as surely as its
-    caller.
-    """
-    return [
-        name
-        for name in sorted(reading.push_closure(every))
-        for step in reading.steps(every[name])
-        if is_ratcheted_coverage(step)
-    ]

@@ -70,6 +70,9 @@ def parse(name: str, text: str) -> Workflow:
     other.
     """
     try:
+        syntax = yaml.compose(text, Loader=StrictLoader)
+        if syntax is not None:
+            _reject_ambiguous_booleans(name, syntax, is_root=True)
         parsed = yaml.load(text, Loader=StrictLoader)  # noqa: S506 - StrictLoader is a SafeLoader
     except yaml.YAMLError as error:
         raise ContractError(f"{name} is not valid YAML: {error}") from error
@@ -78,6 +81,29 @@ def parse(name: str, text: str) -> Workflow:
     if "on" in parsed and True in parsed:
         raise ContractError(f"{name} declares its triggers under both 'on' and true")
     return parsed
+
+
+def _reject_ambiguous_booleans(
+    name: str, node: yaml.Node, *, is_root: bool = False
+) -> None:
+    """Reject YAML 1.1 yes/no/on/off aliases except the root trigger key."""
+    if isinstance(node, yaml.MappingNode):
+        for key, value in node.value:
+            is_root_on = (
+                is_root and isinstance(key, yaml.ScalarNode) and key.value == "on"
+            )
+            _reject_ambiguous_booleans(name, key, is_root=is_root_on)
+            _reject_ambiguous_booleans(name, value)
+    elif isinstance(node, yaml.SequenceNode):
+        for child in node.value:
+            _reject_ambiguous_booleans(name, child)
+    elif (
+        isinstance(node, yaml.ScalarNode)
+        and node.tag == "tag:yaml.org,2002:bool"
+        and node.value.lower() not in {"true", "false"}
+        and not is_root
+    ):
+        raise ContractError(f"{name} uses ambiguous boolean {node.value!r}")
 
 
 def is_workflow(name: str) -> bool:
@@ -108,6 +134,25 @@ def workflows(directory: Path) -> dict[str, Workflow]:
     }
     if not found:
         raise ContractError(f"no workflows found under {directory}")
+    for name, workflow in found.items():
+        block = _trigger_block(workflow)
+        if isinstance(block, (list, dict)) and any(
+            not isinstance(event, str) for event in block
+        ):
+            raise ContractError(f"{name} has an ambiguous event spelling")
+        if not trigger_names(workflow):
+            raise ContractError(f"{name} has no determinate trigger")
+        if not isinstance(workflow.get("jobs"), dict) or not workflow["jobs"]:
+            raise ContractError(f"{name} has no determinate jobs")
+        for job_id, job in workflow["jobs"].items():
+            if not isinstance(job, dict) or not (
+                isinstance(job.get("steps"), list) or isinstance(job.get("uses"), str)
+            ):
+                raise ContractError(f"{name}:{job_id} has an indeterminate job")
+            if isinstance(job.get("steps"), list) and not all(
+                isinstance(step, dict) for step in job["steps"]
+            ):
+                raise ContractError(f"{name}:{job_id} has an indeterminate step")
     return found
 
 

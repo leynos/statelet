@@ -29,6 +29,9 @@ Run via ``make test-workflow-contracts``.
 
 from __future__ import annotations
 
+import codescene_baseline as baseline
+import codescene_calls as calls
+import codescene_integrity as integrity
 import codescene_reading as reading
 import codescene_rules as rules
 
@@ -56,7 +59,7 @@ def test_no_workflow_a_pull_request_reaches_touches_codescene() -> None:
         for name in sorted(closure)
         for finding in rules.pull_request_findings(every[name])
     ]
-    breaches.extend(reading.missing_callees(every, closure))
+    breaches.extend(calls.unprovable_callees(every, closure))
     assert not breaches, f"CV-005 breaches: {breaches}"
 
 
@@ -74,13 +77,19 @@ def test_exactly_one_main_publisher_uploads_ratcheted_coverage() -> None:
         f"{PUBLISHER} publishes from main but a pull request can reach it"
     )
     workflow = every[PUBLISHER]
-    findings = rules.publisher_findings(workflow) + rules.wiring_findings(workflow)
+    findings = (
+        rules.publisher_findings(workflow)
+        + rules.wiring_findings(workflow)
+        + integrity.coverage_contract_findings(every)
+    )
     assert not findings, f"{PUBLISHER}: {findings}"
 
 
 def test_only_the_publisher_writes_the_baseline() -> None:
     """The only ratcheted coverage step a push can reach is the publisher's."""
-    writers = rules.baseline_writers(reading.workflows(reading.WORKFLOW_DIR))
+    every = reading.workflows(reading.WORKFLOW_DIR)
+    assert not calls.unprovable_callees(every, reading.push_closure(every))
+    writers = baseline.baseline_writers(every)
     assert writers == [PUBLISHER], f"expected the publisher alone, saw {writers}"
 
 

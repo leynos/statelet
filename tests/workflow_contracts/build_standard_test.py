@@ -1,23 +1,8 @@
-"""Contract tests for the Rust build standard.
+"""Contracts for dev flags, held-out Cargo routes, and CI tool provisioning.
 
-The standard makes the parallel ``rustc`` frontend the default for every
-development build and `mold` the default linker on Linux. Cargo reads both from
-``.cargo/config.toml``, but it applies a single ``rustflags`` source rather
-than merging them, and an assigned ``RUSTFLAGS`` replaces every source. So the
-flags must be repeated in each configuration source, restated wherever the
-Makefile assigns ``RUSTFLAGS`` for a development target, and kept out of the
-coverage and release recipes, which measure or ship and so stay on the default
-flags.
-
-The Makefile clauses run ``make -n`` and read the commands it would run,
-rather than the Makefile's text, so a flag lost through a variable or a recipe
-edit fails here. Each assigned value is expanded by the shell, with and without
-an inherited ``RUSTFLAGS``, exactly as the recipe would expand it. The clauses
-run as a Linux host and as a macOS host, because `mold` is added on Linux
-alone. The workflow clause checks that every Linux CI job running a gate target
-installs `mold` first.
-
-Run via ``make test-workflow-contracts``.
+Evaluated Make recipes must preserve Cargo configuration defaults when they
+assign ``RUSTFLAGS``. Coverage, release, and Whitaker remain isolated. The
+workflow check requires pinned tools before Linux Rust gates.
 """
 
 from __future__ import annotations
@@ -30,35 +15,25 @@ import tomllib
 from pathlib import Path
 
 import pytest
-import yaml
+
+from suite_provisioning import (
+    load_workflows,
+    suite_findings,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 THREADS_FLAG = "-Zthreads=8"
 LINKER_FLAG = "-Clink-arg=-fuse-ld=mold"
 LINUX_TABLES = {"x86_64-unknown-linux-gnu", 'cfg(target_os = "linux")'}
-#: Whether the pinned toolchain is a nightly. `-Zthreads` is a nightly flag, so
-#: on a stable pin the standard is `mold` alone and the frontend flag must
-#: appear nowhere.
 NIGHTLY = True
 RUSTFLAGS_RE = re.compile(r'RUSTFLAGS="([^"]*)"')
-#: A caller's own flags, distinct from anything a recipe adds, to prove a
-#: recipe composes an exported ``RUSTFLAGS`` with the standard flags rather than
-#: replacing either.
 INHERITED = "--cfg inherited_from_caller"
-#: Words that mark a command whose RUSTFLAGS the contract reads.
-COMMAND_WORDS = ("cargo", "whitaker")
-#: Makefile targets that build for development. A command in one either
-#: assigns RUSTFLAGS with the standard flags or assigns none and so takes the
-#: configuration's.
+COMPILE_COMMANDS = {
+    "build", "check", "clippy", "doc", "test", "llvm-cov", "nextest-run",
+}
 DEVELOPMENT_TARGETS = ["test", "typecheck", "lint", "build"]
-#: Development targets that must assign RUSTFLAGS in at least one command, so
-#: the restatement checks cannot pass by finding nothing to check.
 ASSIGNING_TARGETS = ["test", "typecheck", "lint", "build"]
-#: Makefile targets that measure or ship, and so must take neither flag.
 HELD_OUT_TARGETS = ["coverage", "release"]
-#: Make targets whose CI invocation builds Rust, so the job needs `mold`.
-GATE_TARGETS = {"test", "lint", "typecheck", "build", "all"}
-MAKE_TARGET_RE = re.compile(r"\bmake\s+(?:-\S+\s+)*([\w-]+)")
 
 
 def _normalized(flags: list[str]) -> list[str]:
@@ -100,35 +75,94 @@ def _expanded(value: str, inherited: str | None) -> list[str]:
     return _normalized(shlex.split(result.stdout))
 
 
-def _make_rustflags(
+def _recipe_lines(stdout: str) -> list[str]:
+    """Join Make's continued recipe lines without losing command order."""
+    return [
+        line.strip()
+        for line in stdout.replace("\\\n", " ").splitlines()
+        if line.strip()
+    ]
+
+
+def _cargo_commands(lines: list[str]) -> list[tuple[str, str]]:
+    """Classify Cargo calls, distinguishing Nextest's version probe."""
+    commands = []
+    for line in lines:
+        try:
+            words = shlex.split(line)
+        except ValueError:
+            continue
+        for index, word in enumerate(words[:-1]):
+            if Path(word).name not in {"cargo", "probe-cargo"}:
+                continue
+            subcommand = words[index + 1]
+            if subcommand == "nextest":
+                following = words[index + 2] if index + 2 < len(words) else ""
+                if following == "--version":
+                    kind = "nextest-version"
+                elif following == "run":
+                    kind = "nextest-run"
+                else:
+                    kind = "nextest-other"
+            else:
+                kind = (
+                    subcommand
+                    if subcommand in COMPILE_COMMANDS
+                    else f"cargo-{subcommand}"
+                )
+            commands.append((kind, line))
+            break
+    return commands
+
+
+def _make_output(
     target: str,
     host: str = "Linux",
     inherited: str | None = None,
     overrides: tuple[str, ...] = (),
-) -> list[list[str] | None]:
-    """Return, per cargo or whitaker command ``make -n TARGET`` would run on
-    the named host, the ``RUSTFLAGS`` it assigns, or ``None`` when it assigns
-    none."""
+) -> str:
+    """Return evaluated Make recipes with an injectable Cargo executable."""
     env = {key: val for key, val in os.environ.items() if key != "RUSTFLAGS"}
     if inherited is not None:
         env["RUSTFLAGS"] = inherited
     result = subprocess.run(
-        ["make", "-n", "-B", f"BUILD_HOST_OS={host}", *overrides, target],
+        [
+            "make", "-n", "-B", "--no-print-directory", "CARGO=probe-cargo",
+            f"BUILD_HOST_OS={host}", *overrides, target,
+        ],
         cwd=ROOT,
         env=env,
         capture_output=True,
         text=True,
         check=True,
     )
-    # A recipe continued with a trailing backslash is one command.
-    commands = [
-        line
-        for line in result.stdout.replace("\\\n", " ").splitlines()
-        # An `echo` of a tool's path names it without running it.
-        if any(word in line for word in COMMAND_WORDS)
-        and line.split(maxsplit=1)[:1] not in (["echo"], ["printf"])
+    return result.stdout
+
+
+def _make_rustflags(
+    target: str,
+    host: str = "Linux",
+    inherited: str | None = None,
+    overrides: tuple[str, ...] = (),
+) -> list[list[str] | None]:
+    """Return RUSTFLAGS for each Cargo compile/test route, excluding tools."""
+    lines = _recipe_lines(_make_output(target, host, inherited, overrides))
+    observed = _cargo_commands(lines)
+    unknown = [
+        (kind, line)
+        for kind, line in observed
+        if kind not in COMPILE_COMMANDS | {"nextest-version"}
     ]
+    assert unknown == [], f"unclassified Cargo calls in `make {target}`: {unknown}"
+    assert all("probe-cargo" in shlex.split(line) for _, line in observed), observed
+    commands = [line for kind, line in observed if kind in COMPILE_COMMANDS]
     assert commands, f"`make -n {target}` runs no cargo command"
+    if target in DEVELOPMENT_TARGETS:
+        checks = [i for i, line in enumerate(lines) if "scripts/check-build-tools.sh" in line]
+        first_compile = min(lines.index(line) for line in commands)
+        assert checks and min(checks) < first_compile, (
+            f"`make {target}` compiles before check-build-tools"
+        )
     assigned: list[list[str] | None] = []
     for line in commands:
         match = RUSTFLAGS_RE.search(line)
@@ -205,10 +239,6 @@ def _development_problems(
 
 
 def test_every_rustflags_source_carries_the_parallel_frontend() -> None:
-    """Cargo applies one source, so each must name the flag itself.
-
-    On a stable pin the flag would stop every build, so it must be absent.
-    """
     sources = _sources()
     if not NIGHTLY:
         carrying = [key for key, flags in sources.items() if THREADS_FLAG in flags]
@@ -220,7 +250,6 @@ def test_every_rustflags_source_carries_the_parallel_frontend() -> None:
 
 
 def test_linker_is_confined_to_linux() -> None:
-    """`mold` ships for Linux only; a wider source would break other hosts."""
     sources = _sources()
     linux = [key for key in sources if key in LINUX_TABLES]
     assert linux, "no Linux target table carries rustflags"
@@ -234,15 +263,22 @@ def test_linker_is_confined_to_linux() -> None:
 
 
 def test_sources_differ_only_by_the_linker() -> None:
-    """A flag named in one source and not another vanishes on some host."""
     stripped = {
         tuple(f for f in flags if f != LINKER_FLAG) for flags in _sources().values()
     }
     assert len(stripped) == 1, f"rustflags sources disagree: {stripped}"
 
 
+def test_rust_formatter_uses_the_repository_toolchain() -> None:
+    """Keep rustfmt aligned with the toolchain used by check-fmt and CI."""
+    commands = [
+        line for line in _recipe_lines(_make_output("fmt"))
+        if line.startswith("probe-cargo ")
+    ]
+    assert commands == ["probe-cargo fmt --all"], commands
+
+
 def test_development_targets_restate_both_flags_on_linux() -> None:
-    """An assigned RUSTFLAGS replaces the configuration's sources."""
     problems = _development_problems("Linux", expects_linker=True)
     assert problems == [], problems
     for target in ASSIGNING_TARGETS:
@@ -252,28 +288,16 @@ def test_development_targets_restate_both_flags_on_linux() -> None:
 
 
 def test_development_targets_keep_the_standard_under_inherited_rustflags() -> None:
-    """A caller's exported RUSTFLAGS is composed with the standard flags.
-
-    setup-rust exports ``RUSTFLAGS`` in CI, so a recipe that assigned instead
-    of composing would drop the caller's flags, and one that inherited without
-    restating would drop the standard ones.
-    """
     problems = _development_problems("Linux", expects_linker=True, inherited=INHERITED)
     assert problems == [], problems
 
 
 def test_development_targets_keep_the_frontend_but_not_the_linker_elsewhere() -> None:
-    """`mold` is a Linux linker; other hosts keep only the frontend flag."""
     problems = _development_problems("Darwin", expects_linker=False)
     assert problems == [], problems
 
 
 def test_development_targets_leave_the_linker_off_a_non_linux_target() -> None:
-    """Cargo matches ``[target.*]`` sources against the compilation target.
-
-    A Linux host building for another platform through ``CARGO_BUILD_TARGET``
-    must not be handed `mold`, while a Linux target keeps it.
-    """
     problems = _development_problems(
         "Linux",
         expects_linker=False,
@@ -291,13 +315,35 @@ def test_development_targets_leave_the_linker_off_a_non_linux_target() -> None:
     assert problems == [], problems
 
 
+def test_make_test_checks_nextest_then_runs_each_test_route() -> None:
+    """Separate Nextest's version probe from both compiled test commands."""
+    commands = _cargo_commands(_recipe_lines(_make_output("test")))
+    assert [kind for kind, _ in commands] == [
+        "nextest-version", "nextest-run", "test",
+    ], commands
+    assert all("probe-cargo" in shlex.split(line) for _, line in commands)
+    assert len(_make_rustflags("test")) == 2
+    assert "--doc" in shlex.split(commands[-1][1])
+    lines = _recipe_lines(_make_output("test"))
+    assert lines.index("scripts/check-build-tools.sh") < lines.index(commands[0][1])
+
+
+def test_make_lint_keeps_whitaker_outside_development_rustflags() -> None:
+    """Only repository-toolchain Cargo gates receive development flags."""
+    lines = _recipe_lines(_make_output("lint"))
+    commands = _cargo_commands(lines)
+    assert [kind for kind, _ in commands] == ["doc", "clippy"], commands
+    whitaker = [line for line in lines if line.startswith("RUSTFLAGS= whitaker ")]
+    assert len(whitaker) == 1, whitaker
+    assert whitaker[0] == (
+        "RUSTFLAGS= whitaker --all --workspace -- --all-targets --all-features"
+    )
+    assert lines.index(commands[-1][1]) < lines.index(whitaker[0])
+    assert all("probe-cargo" in shlex.split(line) for _, line in commands)
+
+
 @pytest.mark.parametrize("target", HELD_OUT_TARGETS)
 def test_coverage_and_release_take_neither_flag(target: str) -> None:
-    """Coverage measures and release ships, so both stay on default flags.
-
-    Every command must assign RUSTFLAGS, since only an assignment displaces
-    the configuration's sources.
-    """
     for flags in _make_rustflags(target):
         assert flags is not None, (
             f"`make {target}` runs a command that takes the configuration's flags"
@@ -306,69 +352,7 @@ def test_coverage_and_release_take_neither_flag(target: str) -> None:
         assert LINKER_FLAG not in flags, f"`make {target}` takes {LINKER_FLAG}"
 
 
-def _linux_jobs() -> list[tuple[str, dict]]:
-    """Return every CI job not placed on Windows or macOS, named by file."""
-    jobs = []
-    for path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
-        workflow = yaml.safe_load(path.read_text("utf-8")) or {}
-        jobs.extend(
-            (f"{path.name}:{name}", job)
-            for name, job in (workflow.get("jobs") or {}).items()
-            if not re.search(r"windows|macos", str(job.get("runs-on", "")), re.I)
-        )
-    return jobs
-
-
-def _first_positions(step: dict) -> tuple[int | None, int | None]:
-    """Return where a step first installs `mold` and first runs a gate target.
-
-    Positions are offsets into the step's ``run`` text; a setup-rust step that
-    installs `mold` through its input counts as installing at offset 0.
-    """
-    run = str(step.get("run", ""))
-    inputs = step.get("with") or {}
-    installs = [
-        match.start()
-        for match in re.finditer(r"apt(-get)?\s+install[^\n]*\bmold\b", run)
-    ]
-    if "setup-rust" in str(step.get("uses", "")) and (
-        str(inputs.get("install-mold", "")).lower() == "true"
-    ):
-        installs.append(0)
-    gates = [
-        match.start()
-        for match in MAKE_TARGET_RE.finditer(run)
-        if match.group(1) in GATE_TARGETS
-    ]
-    return min(installs, default=None), min(gates, default=None)
-
-
-def _gate_precedes_install(install_at: int | None, gate_at: int | None) -> bool:
-    """Report whether a step's first gate target comes before its `mold` install."""
-    if gate_at is None:
-        return False
-    return install_at is None or gate_at < install_at
-
-
-def _runs_a_gate_target_first(job: dict) -> bool:
-    """Report whether a job runs a gate target before any step installs `mold`,
-    comparing positions within a step that does both."""
-    for step in job.get("steps") or []:
-        install_at, gate_at = _first_positions(step)
-        if _gate_precedes_install(install_at, gate_at):
-            return True
-        if install_at is not None:
-            return False
-    return False
-
-
-def _jobs_missing_the_linker() -> list[str]:
-    """Return the Linux CI jobs that run a gate target without installing
-    `mold` first."""
-    return [name for name, job in _linux_jobs() if _runs_a_gate_target_first(job)]
-
-
-def test_ci_installs_the_linker_before_gate_targets() -> None:
-    """The gate targets restate `mold`, so a Linux job must install it first."""
-    missing = _jobs_missing_the_linker()
-    assert missing == [], f"jobs run a gate target before installing `mold`: {missing}"
+def test_ci_installs_build_tools_before_every_suite_route() -> None:
+    """Every discovered Linux suite path has an unconditional local preflight."""
+    problems = suite_findings(load_workflows())
+    assert problems == [], problems

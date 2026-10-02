@@ -292,6 +292,9 @@ project:
 ## Markdown guidance
 
 - Validate Markdown files using `make markdownlint`.
+- Install pinned local tools with `make install-mdtablefix` and
+  `make install-markdownlint` when they are not available; the Markdown linter
+  uses the version bundled by the pinned CI action.
 - Run `make fmt` after any documentation changes to format all Markdown
   files and fix table markup.
 - Validate Mermaid diagrams in Markdown files by running `make nixie`.
@@ -373,20 +376,16 @@ The following tooling is available in this environment:
 These practices help maintain a high-quality codebase and facilitate
 collaboration.
 
-## Fast development builds
+## Development build standard
 
-Cranelift with the mold linker is the standard backend for development, test,
-lint, and proof builds, and `.cargo/config.toml` configures it for the dev
-profile so Cargo applies it to every such build. Release builds use LLVM,
-because `--release` selects a profile that file does not configure. Coverage
-runs must use LLVM too, because `-Cinstrument-coverage` is LLVM-specific, so
-they override the backend for their own invocation.
+Bare Cargo development builds and Make's Rust build, test, rustdoc, Clippy, and
+type-check recipes use `.cargo/config.toml`: Cranelift, the parallel `rustc`
+frontend (`-Zthreads=8`), and clang with the pinned `mold` linker on Linux.
+Make recipes that assign `RUSTFLAGS` restate the development flags so they
+remain in effect. `make install-build-tools` installs the pinned build tools,
+and standard Make targets check their availability before compiling.
 
-An earlier version of this section said the opposite: that the Cranelift
-configuration must never be copied into `.cargo/config.toml`. That rule was in
-error and is withdrawn (#60).
-
-`make dev-build` and `make dev-test` pass `tools/dev-fast/config.toml`
-explicitly with `--config`. That fragment now sets the same backend and the same
-`cfg(target_os = "linux")` linker selection as `.cargo/config.toml`. Both
-require a nightly toolchain and, on Linux, a `mold` binary on the `PATH`.
+Release and coverage use explicit LLVM routes; coverage also uses `lld` for
+instrumentation. Whitaker uses its installer-managed toolchain without the
+development flags. See the [developer guide](docs/developers-guide.md) for the
+build routes and tool requirements.

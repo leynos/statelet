@@ -20,19 +20,18 @@ documented starter code. The current repository is a library project and renders
 ## Local Workflow
 
 Use `make all` as the public entrypoint for formatting, linting, and tests.
-`make lint` runs rustdoc, Clippy, and Whitaker. `make test` prefers
-`cargo nextest run` and falls back to `cargo test` when cargo-nextest is not
-available. `make audit` derives the Rust workspace root with `cargo metadata`,
-logs workspace member manifests, and runs `cargo audit` once from the workspace
-root. `make coverage` uses `cargo llvm-cov` with `lld`.
+`make lint` runs rustdoc, Clippy, and Whitaker. `make test` requires the
+binary-installed cargo-nextest runner. `make audit` derives the Rust workspace
+root with `cargo metadata`, logs workspace member manifests, and runs
+`cargo audit` once from the workspace root. `make coverage` uses
+`cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
 - `make all` runs formatting checks, linting, and tests.
 - `make check-fmt` verifies Rust formatting and Markdown formatting.
 - `make lint` runs rustdoc, Clippy, and Whitaker with warnings denied.
-- `make test` runs `cargo nextest run` when cargo-nextest is installed and
-  falls back to `cargo test` otherwise. All projects also run doctests.
+- `make test` requires cargo-nextest and runs doctests through Cargo.
 - `make build` builds the debug target.
 - `make release` builds the release target.
 - `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
@@ -41,14 +40,22 @@ The generated `Makefile` exposes these public targets:
 - `make markdownlint` checks Markdown files.
 - `make spelling` runs the pinned `typos-config-builder gate`, which
   regenerates `typos.toml` from the shared en-GB-oxendict dictionary, checks
-  tracked Markdown prose, and applies the shared phrase corrections. It never
-  drift checks `typos.toml`.
+  all tracked files, and applies the shared phrase corrections. It never drift
+  checks `typos.toml`.
 - `make nixie` validates Mermaid diagrams.
 
 GitHub Actions Act validation lives in `.github/workflows/act-validation.yml`.
 The main `.github/workflows/ci.yml` workflow deliberately does not run
 `make test WITH_ACT=1`; the separate Act workflow runs those slower
 container-backed checks in parallel.
+
+Install the published test runner with cargo-binstall's binary-only strategy
+before running `make test` locally. The preflight reports this command when the
+runner is absent:
+
+```sh
+cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
+```
 
 ## V0.1 exit-register contract
 
@@ -179,120 +186,63 @@ status, and contributes nothing to the verdict. Such a note is never deleted to
 make the suite pass: a blocked note that names its blocker is a finding, and
 the finding is the point.
 
-## Tooling
+## Development build standard
 
-Development builds use Cranelift for debug code generation, which is the estate
-standard for development, test, lint, and proof builds. On Linux,
-`.cargo/config.toml` configures clang to link with `mold` so debug builds link
-quickly. That table is keyed on `cfg(target_os = "linux")`, so it covers every
-Linux architecture rather than a single triple.
+Cargo uses Cranelift for development builds, with the parallel frontend
+(`-Zthreads=8`) and Linux clang/linker setup configured in
+`.cargo/config.toml`. Cargo takes `RUSTFLAGS` from one source; a Make
+environment assignment replaces the config's build and target flags. Make
+therefore restates the frontend and Linux linker flags alongside
+warnings-denying and caller-supplied flags. The pinned linker binary is
+installed and checked by `make install-build-tools` and
+`make check-build-tools` before Linux suite jobs compile.
 
-Every `rustflags` source in `.cargo/config.toml`, the `[build]` table and the
-Linux table alike, enables the parallel `rustc` frontend with `-Zthreads=8`.
-Cargo applies one `rustflags` source and an assigned `RUSTFLAGS` replaces them
-all, so the Makefile restates both flags as `STANDARD_RUSTFLAGS` for the
-targets that assign `RUSTFLAGS`, adding them to any `RUSTFLAGS` the recipe
-inherits (setup-rust exports one in CI) rather than replacing it. Release
-builds assign the inherited `RUSTFLAGS`, which is empty when the caller exports
-none, and coverage assigns its own, so neither takes the standard flags. CI
-installs `mold` before any job runs a gate target.
-`tests/workflow_contracts/build_standard_test.py` holds the configuration
-sources and those recipes to this.
+The Linux linker selector assumes native compilation, where clang targets the
+host. A cross-compilation to another Linux target would also match the selector
+and needs an explicit target compiler and sysroot; Statelet does not configure
+cross-compilation today.
 
-That selector suits native builds, where clang defaults to the host triple. It
-would also match a cross-compilation to a non-host Linux target, and clang
-would then need a `--target` flag and a sysroot that the configuration does not
-supply. Nothing here cross-compiles today, so adding those settings belongs
-with the first cross target rather than now.
-
-Coverage generation uses `lld` because LLVM coverage tooling expects
-LLVM-compatible linker behaviour, and it overrides the codegen backend, for the
-reason set out under
-[the codegen-backend standard](#the-codegen-backend-standard).
-`-Cinstrument-coverage` is an LLVM feature that Cranelift does not implement,
-so with the dev profile's Cranelift backend in force `cargo llvm-cov` stops at
-the first crate:
+Release builds use Cargo's LLVM release profile. Coverage uses LLVM code
+generation and `lld` because coverage instrumentation is LLVM-specific; the
+local target and shared CI action provide that override. Without it, Cranelift
+rejects coverage instrumentation:
 
 ```text
 error: `-Cinstrument-coverage` is LLVM specific and not supported by Cranelift
 ```
 
-The `coverage` recipe therefore sets `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm`
-for that one invocation. It overrides the dev profile only, so other
-dev-profile builds such as `make build` and `make test` keep Cranelift.
-`make release` is unaffected either way: `--release` selects the release
-profile, which `.cargo/config.toml` does not touch, so release builds already
-use LLVM. Setting the dev profile is enough for coverage because the test
-profile inherits its codegen backend from dev.
+Whitaker uses its installer-managed toolchain and does not receive the
+repository's development `RUSTFLAGS`. The toolchain and CI routes are checked
+by the build and workflow contracts.
 
-`tests/coverage_contract.rs` asserts the override is present and precedes the
-cargo invocation, because removing it leaves the Makefile looking correct and
-surfaces as a build failure minutes later.
+## Lint baseline
 
-CI needs no such line in the workflow. The shared `generate-coverage` action
-detects Cranelift for itself, by scanning `.cargo/config.toml` upward from the
-manifest and the manifest's own `[profile.*]` sections, and exports the same
-`CARGO_PROFILE_*_CODEGEN_BACKEND=llvm` overrides before it builds. The Makefile
-override is the local counterpart of that: before it existed, coverage failed
-at the first crate locally while the CI job ran the tests.
+The authoritative Rust lint tables live in the root `Cargo.toml`, with Clippy
+complexity thresholds and disallowed-method details in `clippy.toml`. The
+selected Concordat package versions and the approved environment-access
+extension are recorded in the
+[baseline execution record](rust-baseline-execution.md). Statelet is currently
+a single crate and uses `[lints.*]` tables. If it becomes a workspace, move the
+shared tables to `[workspace.lints.*]` and make every member inherit them with
+`[lints] workspace = true`; do not create a workspace just to match an example.
 
-Install `clang`, `lld`, `mold`, `python3`, and `cargo-audit` before running the
-full generated workflow locally on Linux.
+Fix findings at source. A suppression needs a narrow, valid scope and a reason
+tied to evidence; fixtures and helpers do not become exempt merely because a
+test consumes them. Keep direct environment reads and mutations behind injected
+configuration or process-state dependencies. Recognized test bodies may use
+`expect` with a reason, while shared fixtures and setup helpers remain
+fallible. The complexity ceilings are 9 for cognitive complexity, 4 arguments,
+70 lines, and 4 levels of nesting. `rust-toolchain.toml` pins the nightly
+components for Clippy, rustfmt, LLVM tools, Cranelift, and rust-analyzer.
 
-## Fast development builds
+## Markdown tooling
 
-`make dev-build` and `make dev-test` offer an opt-in iteration loop for local
-debug work. `dev-build` compiles debug binaries and `dev-test` runs the test
-suite; both pass `tools/dev-fast/config.toml` to Cargo explicitly.
-
-That fragment sets the same dev-profile Cranelift backend, and now the same
-`cfg(target_os = "linux")` linker selector, that `.cargo/config.toml` already
-applies to every build. The two agree deliberately: `.cargo/config.toml` was
-keyed on the `x86_64-unknown-linux-gnu` triple until #61 widened it, which had
-left other Linux architectures on the default linker.
-
-The `DEV_FAST_CONFIG` variable names that fragment, defaulting to
-`tools/dev-fast/config.toml`, and both targets pass it to Cargo explicitly with
-`--config "$(DEV_FAST_CONFIG)"`. Cargo never auto-discovers this fragment; it
-takes effect only when a target invokes it directly, so other `make` targets
-are unaffected.
-
-Using the fragment requires a nightly toolchain, because the Cranelift codegen
-backend is unstable. On Linux it also requires the mold linker on `PATH`; the
-fragment gates the linker flag behind a `target_os = "linux"` `cfg` table, so
-other platforms fall back to their default linker.
-
-### The codegen-backend standard
-
-Cranelift belongs in `.cargo/config.toml`, and this repository puts it there.
-Dev-profile Cranelift with `mold` as the linker is the estate standard for
-development, test, lint, and proof builds across every Rust repository, so
-Cargo auto-discovering the file is the intent rather than a hazard. `mold`
-supports every Linux architecture, so the linker table is keyed on
-`cfg(target_os = "linux")`; a target-triple table is for a flag that is
-genuinely architecture-specific. The test profile inherits its codegen backend
-from dev, which is why `make test` gets Cranelift without naming it.
-
-Two kinds of build must not use Cranelift:
-
-- **Release builds.** `--release` selects the release profile, which
-  `.cargo/config.toml` does not configure, so release builds already use LLVM.
-  Nothing has to be done for this.
-- **Coverage runs.** `-Cinstrument-coverage` is an LLVM feature Cranelift does
-  not implement, so a coverage build must override the backend for that
-  invocation. In CI this is already handled: the shared `generate-coverage`
-  action detects Cranelift by scanning `.cargo/config.toml` and the manifest's
-  `[profile.*]` sections, then exports `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm`
-  and the `TEST` equivalent before building. Locally the `coverage` recipe sets
-  `CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm` itself, added in #59 and asserted by
-  `tests/coverage_contract.rs`.
-
-An earlier version of this guide, and the header of
-`tools/dev-fast/config.toml`, stated the opposite rule: that Cranelift must
-never be copied into `.cargo/config.toml` because Cargo would apply it to
-release, coverage and verification builds. That rule was in error and is
-withdrawn (#60). Release builds were never affected, and coverage has an
-explicit override rather than a silent degradation.
+`make fmt` and `make check-fmt` use `mdtablefix` 0.6.0. Install that exact
+Cargo package with `make install-mdtablefix`. CI installs the same version
+through the pinned shared action. Install `markdownlint-cli2` 0.23.2 locally
+with `make install-markdownlint`; it installs the exact package version bundled
+by the pinned CI action. The Makefile records both versions, so update them
+only alongside their CI action pin and bundled package version.
 
 ## Spelling policy
 
@@ -302,7 +252,7 @@ hand. Add only narrow repository terminology to the overlay.
 
 `make spelling` runs `typos-config-builder gate`, pinned by
 `TYPOS_CONFIG_BUILDER_VERSION` in the `Makefile`. The gate regenerates
-`typos.toml`, runs its pinned Typos release over the tracked Markdown, and
+`typos.toml`, runs its pinned Typos release over all tracked files, and
 enforces the shared phrase corrections, which Typos cannot express because it
 splits hyphenated phrases into separate words. Commit the regenerated file; a
 tracked `typos.toml` is never checked for drift, because the shared dictionary

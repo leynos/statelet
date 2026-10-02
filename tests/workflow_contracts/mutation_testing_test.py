@@ -2,9 +2,9 @@
 
 The executable logic lives in the ``leynos/shared-actions`` reusable
 workflow, which carries its own unit and integration tests; statelet's
-caller is declarative configuration. These tests parse the caller with
-PyYAML and pin the contract it must uphold, so drift (repointing the pin
-at a branch, widening permissions, or losing the linker setup and
+caller is declarative configuration. These tests parse the caller strictly
+and pin the contract it must uphold, so drift (repointing the pin at a
+branch, widening permissions, or losing its pre-suite tool setup and
 feature configuration) fails CI on the pull request rather than
 surfacing in a scheduled or manual run. The caller must reference the
 correct reusable workflow at a commit SHA; Dependabot owns the SHA
@@ -17,10 +17,18 @@ Run via ``make test-workflow-contracts``.
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
-import yaml
+
+import codescene_reading as reading
+from suite_provisioning import (
+    INSTALL_COMMAND,
+    load_workflows,
+    runner_platforms,
+    suite_findings,
+)
 
 WORKFLOW_PATH = (
     Path(__file__).resolve().parents[2] / ".github" / "workflows" / "mutation-testing.yml"
@@ -40,13 +48,15 @@ EXPECTED_SETUP_COMMANDS = (
     "set -euo pipefail\n"
     "export DEBIAN_FRONTEND=noninteractive\n"
     "sudo apt-get update\n"
-    "sudo apt-get install --yes --no-install-recommends clang lld mold\n"
+    "sudo apt-get install --yes --no-install-recommends clang lld\n"
+    "make install-build-tools\n"
+    'echo "$HOME/.local/bin" >> "$GITHUB_PATH"\n'
 )
 
 #: The exact caller configuration: --all-features mirrors the CI test
 #: baseline (CARGO_FLAGS = --all-targets --all-features), and the setup
-#: commands install the clang/mold toolchain that .cargo/config.toml
-#: makes mandatory for every cargo build.
+#: setup commands provision Linux linkers and pinned build tools before the
+#: shared reusable workflow starts cargo-mutants.
 EXPECTED_WITH_BLOCK = {
     "extra-args": "--all-features",
     "setup-commands": EXPECTED_SETUP_COMMANDS,
@@ -54,8 +64,10 @@ EXPECTED_WITH_BLOCK = {
 
 
 def _load() -> dict[str, object]:
-    """Parse the workflow file."""
-    return yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
+    """Parse the workflow strictly, refusing duplicate or ambiguous keys."""
+    return reading.parse(
+        WORKFLOW_PATH.name, WORKFLOW_PATH.read_text(encoding="utf-8")
+    )
 
 
 def _triggers(workflow: dict[str, object]) -> dict[str, object]:
@@ -141,10 +153,155 @@ def test_triggers_keep_schedule_and_plain_dispatch() -> None:
 
 
 def test_with_block_carries_the_caller_configuration() -> None:
-    """The caller passes exactly the feature args and linker setup."""
+    """The caller passes test features and pre-suite tool provisioning."""
     with_block = _mutation_job(_load()).get("with")
     assert with_block == EXPECTED_WITH_BLOCK, (
         "jobs.mutation.with must configure exactly --all-features (the CI "
-        "test baseline) and the clang/mold setup commands that "
-        f".cargo/config.toml requires, got {with_block!r}"
+        "test baseline) and clang/lld plus pinned build-tool setup, "
+        f"got {with_block!r}"
     )
+
+
+def test_workflow_reader_rejects_duplicate_and_ambiguous_trigger_keys() -> None:
+    """A lossy YAML parse cannot hide a second route from contracts."""
+    duplicate = "jobs:\n  run:\n    runs-on: ubuntu-latest\n    runs-on: macos-latest\n"
+    with pytest.raises(reading.ContractError, match="duplicate key"):
+        reading.parse("duplicate.yml", duplicate)
+    both_trigger_keys = (
+        "'on': push\ntrue: workflow_dispatch\n"
+        "jobs: {run: {runs-on: ubuntu-latest, steps: []}}\n"
+    )
+    with pytest.raises(reading.ContractError, match="both 'on' and true"):
+        reading.parse("ambiguous.yml", both_trigger_keys)
+
+    for trigger, expected in (
+        ("on: push", ["push"]),
+        ("on: [push, pull_request]", ["push", "pull_request"]),
+        ("on:\n  push:\n  pull_request:\n", ["push", "pull_request"]),
+    ):
+        workflow = reading.parse(
+            "trigger-shape.yml", f"{trigger}\njobs: {{run: {{runs-on: ubuntu-latest, steps: []}}}}\n"
+        )
+        assert reading.trigger_names(workflow) == expected
+
+
+def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
+    """Representative route, ordering, and softness changes fail closed."""
+    baseline = load_workflows()
+
+    def problems_after(change) -> list[str]:
+        workflows = deepcopy(baseline)
+        change(workflows)
+        return suite_findings(workflows)
+
+    def remove_act_installer(workflows) -> None:
+        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
+        steps[:] = [step for step in steps if step.get("run") != INSTALL_COMMAND]
+
+    assert any(
+        "act-validation.yml:act-validation" in finding
+        for finding in problems_after(remove_act_installer)
+    )
+
+    def replace_act_installer_with_echo(workflows) -> None:
+        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
+        next(step for step in steps if step.get("run") == INSTALL_COMMAND)["run"] = (
+            f"echo {INSTALL_COMMAND}"
+        )
+
+    assert any(
+        "act-validation.yml:act-validation" in finding
+        for finding in problems_after(replace_act_installer_with_echo)
+    )
+
+    def replace_act_installer_with_conditional_noop(workflows) -> None:
+        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
+        next(step for step in steps if step.get("run") == INSTALL_COMMAND)["run"] = (
+            f"if false; then {INSTALL_COMMAND}; fi"
+        )
+
+    assert any(
+        "act-validation.yml:act-validation" in finding
+        for finding in problems_after(replace_act_installer_with_conditional_noop)
+    )
+
+    def move_ci_installer_after_coverage(workflows) -> None:
+        steps = workflows["ci.yml"]["jobs"]["build-test"]["steps"]
+        installer = next(step for step in steps if step.get("run") == INSTALL_COMMAND)
+        steps.remove(installer)
+        steps.append(installer)
+
+    assert any(
+        "ci.yml:build-test" in finding
+        for finding in problems_after(move_ci_installer_after_coverage)
+    )
+
+    def make_act_installer_conditional(workflows) -> None:
+        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
+        next(step for step in steps if step.get("run") == INSTALL_COMMAND)["if"] = "always()"
+
+    assert any(
+        "act-validation.yml:act-validation" in finding
+        for finding in problems_after(make_act_installer_conditional)
+    )
+
+    def make_act_installer_soft_fail(workflows) -> None:
+        steps = workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
+        next(step for step in steps if step.get("run") == INSTALL_COMMAND)[
+            "continue-on-error"
+        ] = True
+
+    assert any(
+        "act-validation.yml:act-validation" in finding
+        for finding in problems_after(make_act_installer_soft_fail)
+    )
+
+    def delete_publisher_coverage_action(workflows) -> None:
+        steps = workflows["coverage-main.yml"]["jobs"]["coverage-upload"]["steps"]
+        steps[:] = [step for step in steps if "generate-coverage" not in step.get("uses", "")]
+
+    assert any(
+        "coverage-main.yml" in finding
+        for finding in problems_after(delete_publisher_coverage_action)
+    )
+
+    def add_linux_nextest_job(workflows) -> None:
+        jobs = workflows["act-validation.yml"]["jobs"]
+        jobs["new-suite"] = {
+            "runs-on": "ubuntu-latest",
+            "steps": [{"run": "cargo nextest run --workspace"}],
+        }
+
+    assert any(
+        "act-validation.yml:new-suite" in finding
+        for finding in problems_after(add_linux_nextest_job)
+    )
+
+    def add_unresolved_reusable_suite(workflows) -> None:
+        workflows["act-validation.yml"]["jobs"]["external-suite"] = {
+            "uses": "example/other/.github/workflows/rust-suite.yml@" + "a" * 40,
+            "with": {"setup-commands": INSTALL_COMMAND},
+        }
+
+    assert any(
+        "unresolved reusable call" in finding
+        for finding in problems_after(add_unresolved_reusable_suite)
+    )
+    assert any("no workflows" in finding for finding in suite_findings({}))
+
+
+def test_suite_runner_reader_handles_supported_runner_forms() -> None:
+    """Linux labels remain visible across scalar, list, group, and matrix forms."""
+    assert runner_platforms({"runs-on": "ubuntu-latest"}) == {"linux"}
+    assert runner_platforms({"runs-on": ["self-hosted", "linux", "x64"]}) == {"linux"}
+    assert runner_platforms(
+        {"runs-on": {"group": "shared", "labels": "ubuntu-24.04"}}
+    ) == {"linux"}
+    assert runner_platforms(
+        {
+            "runs-on": "${{ matrix.os }}",
+            "strategy": {"matrix": {"os": ["ubuntu-latest", "windows-latest"]}},
+        }
+    ) == {"linux", "windows"}
+    with pytest.raises(ValueError, match="runner labels"):
+        runner_platforms({"runs-on": "self-hosted-special"})
