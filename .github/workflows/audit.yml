@@ -31,5 +31,9 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: '3.14'
+      - name: Setup uv
+        uses: astral-sh/setup-uv@a96208bed1fb5efb8da349c9bcc6cc58af9e7d74
+        with:
+          python-version: '3.14'
       - name: Audit dependencies
         run: make audit

@@ -7,7 +7,7 @@
 SHELL := bash
 
 # Compiler and Python gateways remain ordered even when callers use `make -j`.
-.NOTPARALLEL: all lint typecheck
+.NOTPARALLEL: all lint typecheck test
 
 BUILD_TOOLS_PREFIX ?= $(HOME)/.local
 export BUILD_TOOLS_PREFIX
@@ -92,7 +92,7 @@ PYTHON_SOURCES = $(strip $(shell find $(PYTHON_EXISTING_SOURCE_ROOTS) \
 # source roots so ty resolves the same import layout as pytest.
 PYTHON_IMPORT_ROOTS = $(addprefix --extra-search-path ,$(PYTHON_EXISTING_SOURCE_ROOTS))
 TYPOS_CONFIG_BUILDER_VERSION ?= v0.1.3
-TYPOS_CONFIG_BUILDER = $(UV_ENV) $(UV) tool run --python 3.14 --from \
+TYPOS_CONFIG_BUILDER = $(UV_ENV) $(UV) tool run --managed-python --python $(PYTHON_BASELINE) --from \
 	"git+https://github.com/leynos/typos-config-builder.git@$(TYPOS_CONFIG_BUILDER_VERSION)" \
 	typos-config-builder
 
@@ -133,6 +133,7 @@ clean: ## Remove build artefacts
 test: check-nextest ## Run tests with warnings treated as errors
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) nextest run $(TEST_FLAGS) $(BUILD_JOBS)
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) test --workspace --doc --all-features $(BUILD_JOBS)
+	+$(MAKE) test-workflow-contracts
 
 test-workflow-contracts: ## Validate the workflow contracts (mutation testing, CodeScene coverage)
 	$(UV_ENV) $(UV) run --no-project --managed-python --python $(PYTHON_BASELINE) \
@@ -209,7 +210,7 @@ rust-audit: ## Audit the Rust workspace for known vulnerabilities
 	manifest_list=$$(mktemp); \
 	trap 'rm -f "$$manifest_list"' EXIT; \
 	printf "Audit metadata phase: deriving workspace manifests\n"; \
-	$(CARGO) metadata --no-deps --format-version 1 | python3 -c 'import json, sys; metadata = json.load(sys.stdin); members = set(metadata["workspace_members"]); print(metadata["workspace_root"]); [print(package["manifest_path"]) for package in metadata["packages"] if package["id"] in members]' > "$$manifest_list"; \
+	$(CARGO) metadata --no-deps --format-version 1 | $(UV_ENV) $(UV) run --no-project --managed-python --python $(PYTHON_BASELINE) python -c 'import json, sys; metadata = json.load(sys.stdin); members = set(metadata["workspace_members"]); print(metadata["workspace_root"]); [print(package["manifest_path"]) for package in metadata["packages"] if package["id"] in members]' > "$$manifest_list"; \
 	workspace_root=$$(sed -n '1p' "$$manifest_list"); \
 	audit_flags=(); \
 	for advisory in $$CARGO_AUDIT_IGNORES; do \

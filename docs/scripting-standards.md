@@ -28,13 +28,18 @@ as a default.
 
 ## Language and runtime
 
-- Target Python 3.13 for all new scripts. Older versions may only be used when
-  integration constraints require them, and any exception must be documented
-  inline.
+- Use managed CPython 3.14 throughout the repository, including scripts,
+  tests, benchmarks, and Python modules used by GitHub Actions workflows and
+  actions. The root `.python-version`, Make's `PYTHON_BASELINE`, and Pylint's
+  `py-version` must agree. Do not rely on an ambient `python` or `python3`.
 - Each script starts with an `uv` script block, so runtime and dependency
-  expectations travel with the file. Prefer the shebang
-  `#!/usr/bin/env -S uv run python` followed by the metadata block shown in the
-  example below.
+  expectations travel with the file. Use the shebang
+  `#!/usr/bin/env -S uv run --managed-python --python 3.14` followed by the
+  metadata block shown in the example below.
+- Run repository checks through `make lint-python`, `make typecheck-python`,
+  and `make test-workflow-contracts`. `make test` includes the Python workflow
+  contracts alongside Rust tests and doctests. Fix Pylint, the pinned df12
+  house lints, and `ty` findings at source; do not suppress them.
 - External processes are invoked via [`plumbum`](https://plumbum.readthedocs.io)
   to provide structured command execution rather than ad‑hoc shell strings.
 - File‑system interactions use `pathlib.Path`. Higher‑level operations (for
@@ -44,9 +49,9 @@ as a default.
 ### Minimal script (no CLI)
 
 ```python
-#!/usr/bin/env -S uv run python
+#!/usr/bin/env -S uv run --managed-python --python 3.14
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.14"
 # dependencies = ["plumbum", "cmd-mox"]
 # ///
 
@@ -74,9 +79,9 @@ Employ Cyclopts when a script requires parameters, particularly under CI with
 `INPUT_*` variables.
 
 ```python
-#!/usr/bin/env -S uv run python
+#!/usr/bin/env -S uv run --managed-python --python 3.14
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.14"
 # dependencies = ["cyclopts>=2.9", "plumbum", "cmd-mox"]
 # ///
 
@@ -285,9 +290,9 @@ except FileNotFoundError:
 ## Cyclopts + Plumbum + Pathlib together (reference script)
 
 ```python
-#!/usr/bin/env -S uv run python
+#!/usr/bin/env -S uv run --managed-python --python 3.14
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.14"
 # dependencies = ["cyclopts>=2.9", "plumbum", "cmd-mox"]
 # ///
 
@@ -463,8 +468,8 @@ def test_spy_and_record(cmd_mox, monkeypatch, tmp_path):
    `env_var_split=","` where a non‑whitespace delimiter is required.
 5. Compatibility: retain legacy flag names using `aliases=["--old-name"]`.
 6. Bash glue: delete argument arrays and conditional appends in GitHub
-   Actions. Export `INPUT_*` environment variables and call `uv run` on the
-   script.
+   Actions. Export `INPUT_*` environment variables and call the script through
+   managed `uv run`.
 
 ## CI wiring: GitHub Actions (Cyclopts‑first)
 
@@ -479,7 +484,7 @@ def test_spy_and_record(cmd_mox, monkeypatch, tmp_path):
     INPUT_OUTDIR: ${{ inputs.outdir }}
   run: |
     set -euo pipefail
-    uv run "${GITHUB_ACTION_PATH}/scripts/package.py"
+    uv run --managed-python --python 3.14 "${GITHUB_ACTION_PATH}/scripts/package.py"
 ```
 
 ## Notes and gotchas

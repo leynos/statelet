@@ -20,11 +20,12 @@ documented starter code. The current repository is a library project and renders
 ## Local Workflow
 
 Use `make all` as the public entrypoint for formatting, linting, and tests.
-`make lint` runs rustdoc, Clippy, and Whitaker. `make test` requires the
-binary-installed cargo-nextest runner. `make audit` derives the Rust workspace
-root with `cargo metadata`, logs workspace member manifests, and runs
-`cargo audit` once from the workspace root. `make coverage` uses
-`cargo llvm-cov` with `lld`.
+`make lint` runs rustdoc, Clippy, Whitaker, and the Python lint gateways.
+`make test` requires the binary-installed cargo-nextest runner and runs the
+Python workflow contracts under managed CPython 3.14. `make audit` derives the
+Rust workspace root with `cargo metadata`, extracts its manifests under the
+same managed interpreter, and runs `cargo audit` once from the workspace root.
+`make coverage` uses `cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
@@ -34,19 +35,23 @@ The generated `Makefile` exposes these public targets:
   Python lints. Rust warnings are denied.
 - `make typecheck` runs `ty` over every repository Python source and Cargo
   check over the Rust targets.
-- `make test` requires cargo-nextest and runs doctests through Cargo. Workflow
-  contract tests use the pinned, managed CPython 3.14 interpreter.
+- `make test` runs cargo-nextest, Cargo doctests, then Python workflow
+  contracts in sequence, even when invoked with `make -j`. The workflow
+  contracts use pinned dependencies and managed CPython 3.14.
 - `make build` builds the debug target.
 - `make release` builds the release target.
 - `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
-- `make audit` derives the Rust workspace root with `cargo metadata` and runs
-  `cargo audit` once from that root.
+- `make audit` derives the Rust workspace root with `cargo metadata`, parses
+  it with managed CPython 3.14, and runs `cargo audit` once from that root.
 - `make lint-python` runs Pylint and every message in the pinned
   `df12-python-lints` release over Python files under `.github`, `tests`,
   `scripts`, `benches`, and `benchmarks`.
 - `make typecheck-python` runs the pinned `ty` typechecker over the same
   discovered files. Both gateways use managed CPython 3.14; their versions and
-  the complete source inventory are defined in the Makefile.
+  the complete source inventory are defined in the Makefile. The root
+  `.python-version` selects 3.14 for direct `uv` script launches; the
+  [scripting standards](scripting-standards.md) describe the managed shebang,
+  lint, typecheck, and test policy without suppressions.
 - Workflow contract readers stay under `tests/workflow_contracts`. The
   `suite_provisioning.py` module owns command and runner classification, while
   `suite_discovery.py` owns graph traversal and route inventory for those
