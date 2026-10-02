@@ -7,7 +7,7 @@ number, head, hosted checks, and any remaining external prerequisites are
 updated after publication.
 
 The follow-up branch is `rust-baseline-completion-20261001`, rebased onto
-`main` at `84235c6d8d3d5dc2880a97543385bda51d44faa2` (#94). Its changes
+`main` at `d83f693f61385a5ec3cd3ffb8eaddc59e33f6571` (#98). Its changes
 preserve the merged spelling gate from #80, Dependabot policy from #81,
 step-level `GITHUB_TOKEN` additions from #82, StateName work from #71, and the
 current setup-rust pin from #88.
@@ -287,13 +287,13 @@ CI action.
 
 ## Five onboarding dispositions
 
-| Onboarding                | Implemented contract                                                | Remaining evidence                                       |
-| ------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
-| Development build default | Cranelift, -Zthreads=8, Linux linker, pinned tool preflight         | Main CI passed; candidate-head CI pending                |
-| CV-005                    | PR ratchet and protected main publisher contracts                   | Candidate CI and live secret placement remain unverified |
-| Markdown                  | Direct pinned tools, CI provisioning, formatting selection contract | Prior tree passed; candidate gates pending               |
-| install-whitaker          | Approved shared action pin and ordered Make composite gate          | Main CI action and lint passed; candidate CI pending     |
-| Typos builder             | v0.1.3 full-scope gate and narrow local overlay                     | Spelling gate and Concordat audit passed                 |
+| Onboarding                | Implemented contract                                                | Remaining evidence                                        |
+| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
+| Development build default | Cranelift, -Zthreads=8, Linux linker, pinned tool preflight         | Main CI passed; candidate-head CI pending                 |
+| CV-005                    | PR ratchet and protected main publisher contracts                   | Candidate CI and live secret placement remain unverified  |
+| Markdown                  | Direct pinned tools, CI provisioning, formatting selection contract | Candidate local gates and audit passed; hosted CI pending |
+| install-whitaker          | Approved shared action pin and ordered Make composite gate          | Main CI action and lint passed; candidate CI pending      |
+| Typos builder             | v0.1.3 full-scope gate and narrow local overlay                     | Spelling gate and Concordat audit passed                  |
 
 *Table 4: Consumer implementation and outstanding evidence.*
 
@@ -370,9 +370,10 @@ Codescene environment is main-only, but GitHub returned HTTP 403 for secret
 metadata, so placement of `CS_ACCESS_TOKEN` in that environment and removal of
 repository-level exposure remain unverified. The protected-main publisher's
 post-merge outcomes also remain pending. A draft description is prepared, but
-no PR exists because the remote branch has not been published. The current
-GitHub OAuth token lacks the `workflow` scope required to push the changed
-workflow file. No alternate write route has been used.
+no PR exists because the remote branch has not been published. The command-line
+GitHub OAuth token lacks the `workflow` scope required to push changed workflow
+files. Publication is assigned to the authenticated `leynos` GitHub connector
+after current-head checks.
 
 ## Rebase and current candidate state
 
@@ -455,7 +456,8 @@ and
 `/tmp/statelet-final10-audit-markdown-formatting-baseline-rust-baseline-completion-20261001.out`.
 
 The seven selected Concordat packages returned `compliant` with no findings on
-this candidate: `rust-build-defaults` 0.1.1, `rust-makefile-baseline` 0.3.2,
+the post-rebase candidate before the later Markdown selection correction:
+`rust-build-defaults` 0.1.1, `rust-makefile-baseline` 0.3.2,
 `markdown-formatting-baseline` 0.2.0, `main-owned-codescene-coverage` 0.3.0,
 `spelling-config-baseline` 0.1.0, `whitaker-provisioning` 0.1.0, and
 `dependabot-update-shape` 0.1.0. Concordat reported version 0.1.0 from source
@@ -498,3 +500,39 @@ No manual Whitaker installation was performed. The approved action at full SHA
 lint in PR #94; available run metadata does not expose the installed suite
 revision or installer-managed toolchain. Candidate-head CI remains required to
 exercise this branch's sequential composite with the action-provisioned suite.
+
+## Integration onto current main
+
+On 2026-10-02, the three-commit series based on
+`84235c6d8d3d5dc2880a97543385bda51d44faa2` was replayed onto fetched `main` at
+`d83f693f61385a5ec3cd3ffb8eaddc59e33f6571`. The pre-rebase head
+`ecfae45adbe4a0e8a90953fb483aa48afd4db9ca` is retained at
+`refs/recovery/rust-baseline-completion-20261001/pre-rebase`. The three
+replayed commits ended at `3638811eb42db8eed4df64e6d68436fd006641c5` before
+this record update. The parent of the first replayed commit is the fetched
+target.
+
+The first replay had two conflicts, each limited to one shared-action `uses`
+pin. `coverage-main.yml` keeps current main's
+`upload-codescene-coverage@ff1dd759dfffc0db3459e30e833f52437ee62b57` from #98.
+`mutation-testing.yml` keeps current main's
+`mutation-cargo.yml@ff1dd759dfffc0db3459e30e833f52437ee62b57` from #95. The
+branch's build-tool installation, binary-only Nextest route, coverage
+publication control, and mutation setup commands are preserved around those
+pins. Current main's #97 `setup-uv` bump in `ci.yml` also remains present. The
+range-diff shows the second commit patch-identical. The first differs only by
+omitting its superseded pin changes; the third updates this execution record
+for the new target. `git diff --check` passed, and no merge markers or rebase
+state remain.
+
+The gate results above predate this integration onto `d83f693`. They are
+historical evidence, not acceptance results for the new head. The Scrutineer
+will run the required gates sequentially against the finalized commit before
+publication. Hosted candidate CI, the exact rolling Whitaker suite revision,
+and CodeScene secret placement remain unverified.
+
+The first current-head `make check-fmt` stopped at this record's paragraph
+wrapping; Rust formatting passed and no later gate ran. `make fmt` then passed,
+changing only paragraph wrapping in this section, and Markdownlint reported
+zero issues across 29 files. The Scrutineer will restart the gate sequence on
+the amended head.
