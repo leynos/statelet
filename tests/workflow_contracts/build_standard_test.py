@@ -82,35 +82,41 @@ def _recipe_lines(stdout: str) -> list[str]:
     ]
 
 
+def _cargo_kind(words: list[str], subcommand_index: int) -> str:
+    """Classify one Cargo subcommand, including Nextest's version probe."""
+    subcommand = words[subcommand_index]
+    if subcommand == "nextest":
+        following = (
+            words[subcommand_index + 1]
+            if subcommand_index + 1 < len(words)
+            else ""
+        )
+        return {
+            "--version": "nextest-version",
+            "run": "nextest-run",
+        }.get(following, "nextest-other")
+    return subcommand if subcommand in COMPILE_COMMANDS else f"cargo-{subcommand}"
+
+
+def _cargo_command_in_line(line: str) -> tuple[str, str] | None:
+    """Classify the first Cargo executable in one evaluated recipe line."""
+    try:
+        words = shlex.split(line)
+    except ValueError:
+        return None
+    for index, word in enumerate(words[:-1]):
+        if Path(word).name in {"cargo", "probe-cargo"}:
+            return _cargo_kind(words, index + 1), line
+    return None
+
+
 def _cargo_commands(lines: list[str]) -> list[tuple[str, str]]:
     """Classify Cargo calls, distinguishing Nextest's version probe."""
     commands = []
     for line in lines:
-        try:
-            words = shlex.split(line)
-        except ValueError:
-            continue
-        for index, word in enumerate(words[:-1]):
-            if Path(word).name not in {"cargo", "probe-cargo"}:
-                continue
-            subcommand = words[index + 1]
-            if subcommand == "nextest":
-                following = words[index + 2] if index + 2 < len(words) else ""
-                match following:
-                    case "--version":
-                        kind = "nextest-version"
-                    case "run":
-                        kind = "nextest-run"
-                    case _:
-                        kind = "nextest-other"
-            else:
-                kind = (
-                    subcommand
-                    if subcommand in COMPILE_COMMANDS
-                    else f"cargo-{subcommand}"
-                )
-            commands.append((kind, line))
-            break
+        command = _cargo_command_in_line(line)
+        if command is not None:
+            commands.append(command)
     return commands
 
 
@@ -138,14 +144,8 @@ def _make_output(
     return result.stdout
 
 
-def _make_rustflags(
-    target: str,
-    host: str = "Linux",
-    inherited: str | None = None,
-    overrides: tuple[str, ...] = (),
-) -> list[list[str] | None]:
-    """Return RUSTFLAGS for each Cargo compile/test route, excluding tools."""
-    lines = _recipe_lines(_make_output(target, host, inherited, overrides))
+def _compile_commands(lines: list[str], target: str) -> list[str]:
+    """Validate evaluated Cargo calls and return compile/test recipe lines."""
     observed = _cargo_commands(lines)
     unknown = [
         (kind, line)
@@ -162,6 +162,12 @@ def _make_rustflags(
         assert checks and min(checks) < first_compile, (
             f"`make {target}` compiles before check-build-tools"
         )
+    return commands
+
+
+def _assigned_rustflags(
+    commands: list[str], inherited: str | None
+) -> list[list[str] | None]:
     assigned: list[list[str] | None] = []
     for line in commands:
         match = RUSTFLAGS_RE.search(line)
@@ -172,6 +178,18 @@ def _make_rustflags(
         )
         assigned.append(_expanded(match.group(1), inherited) if match else None)
     return assigned
+
+
+def _make_rustflags(
+    target: str,
+    host: str = "Linux",
+    inherited: str | None = None,
+    overrides: tuple[str, ...] = (),
+) -> list[list[str] | None]:
+    """Return RUSTFLAGS for each Cargo compile/test route, excluding tools."""
+    lines = _recipe_lines(_make_output(target, host, inherited, overrides))
+    commands = _compile_commands(lines, target)
+    return _assigned_rustflags(commands, inherited)
 
 
 def _contains(flags: list[str], wanted: list[str]) -> bool:

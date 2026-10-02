@@ -29,24 +29,28 @@ class EnvironmentOptions:
     components: tuple[str, ...] | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class EnvironmentRequest:
+    """One isolated directory and the build-tool behaviour to simulate."""
+
+    temporary_directory: Path
+    options: EnvironmentOptions = EnvironmentOptions()
+
+
 def _write_executable(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
     path.chmod(0o755)
 
 
-def _check_environment(
-    tmp_path: Path, options: EnvironmentOptions = EnvironmentOptions()
-) -> dict[str, str]:
-    """Create a closed PATH with deterministic Linux prerequisite commands."""
-    binary_dir = tmp_path / "bin"
-    binary_dir.mkdir()
+def _link_host_utilities(binary_dir: Path) -> None:
     for utility in ("bash", "awk", "dirname"):
         resolved = subprocess.run(
             ["which", utility], capture_output=True, check=True, text=True
         ).stdout.strip()
         (binary_dir / utility).symlink_to(resolved)
 
-    _write_executable(binary_dir / "uname", "#!/bin/sh\nprintf 'Linux\\n'\n")
+
+def _write_fake_rustup(binary_dir: Path) -> None:
     _write_executable(
         binary_dir / "rustup",
         "#!/bin/sh\n"
@@ -56,34 +60,54 @@ def _check_environment(
         "  *) exit 2 ;;\n"
         "esac\n",
     )
-    if options.mold_version is not None:
-        _write_executable(
-            binary_dir / "mold",
-            "#!/bin/sh\n"
-            "[ \"${1:-}\" = --version ] || exit 2\n"
-            "printf 'mold %s (test binary)\\n' \"$MOLD_TEST_VERSION\"\n",
-        )
+
+
+def _write_fake_linker(binary_dir: Path, options: EnvironmentOptions) -> None:
+    if options.mold_version is None:
+        return
+    _write_executable(
+        binary_dir / "mold",
+        "#!/bin/sh\n"
+        "[ \"${1:-}\" = --version ] || exit 2\n"
+        "printf 'mold %s (test binary)\\n' \"$MOLD_TEST_VERSION\"\n",
+    )
+
+
+def _write_fake_clang(binary_dir: Path, options: EnvironmentOptions) -> None:
     if options.clang_works:
         _write_executable(
             binary_dir / "clang",
             "#!/bin/sh\n[ \"${1:-}\" = --version ] && exit 0\nexit 2\n",
         )
 
-    installed_components = options.components
-    if installed_components is None:
-        manifest_components = tomllib.loads(
-            (ROOT / "rust-toolchain.toml").read_text("utf-8")
-        )["toolchain"].get("components", [])
-        installed_components = tuple(
-            f"{component.removesuffix('-preview')}-x86_64-unknown-linux-gnu"
-            for component in manifest_components
-        )
+
+def _installed_components(options: EnvironmentOptions) -> tuple[str, ...]:
+    if options.components is not None:
+        return options.components
+    manifest_components = tomllib.loads(
+        (ROOT / "rust-toolchain.toml").read_text("utf-8")
+    )["toolchain"].get("components", [])
+    return tuple(
+        f"{component.removesuffix('-preview')}-x86_64-unknown-linux-gnu"
+        for component in manifest_components
+    )
+
+
+def _check_environment(request: EnvironmentRequest) -> dict[str, str]:
+    """Create a closed PATH with deterministic Linux prerequisite commands."""
+    binary_dir = request.temporary_directory / "bin"
+    binary_dir.mkdir()
+    _link_host_utilities(binary_dir)
+    _write_executable(binary_dir / "uname", "#!/bin/sh\nprintf 'Linux\\n'\n")
+    _write_fake_rustup(binary_dir)
+    _write_fake_linker(binary_dir, request.options)
+    _write_fake_clang(binary_dir, request.options)
     return {
         **os.environ,
         "PATH": str(binary_dir),
-        "MOLD_TEST_VERSION": options.mold_version or "",
-        "RUSTUP_TEST_TOOLCHAIN": options.toolchain,
-        "RUSTUP_TEST_COMPONENTS": "\n".join(installed_components),
+        "MOLD_TEST_VERSION": request.options.mold_version or "",
+        "RUSTUP_TEST_TOOLCHAIN": request.options.toolchain,
+        "RUSTUP_TEST_COMPONENTS": "\n".join(_installed_components(request.options)),
     }
 
 
@@ -94,7 +118,7 @@ def _run_check(
         [str(CHECK_SCRIPT)],
         capture_output=True,
         check=False,
-        env=_check_environment(tmp_path, options),
+        env=_check_environment(EnvironmentRequest(tmp_path, options)),
         text=True,
     )
 
@@ -158,8 +182,10 @@ class BuildToolsScriptTests(unittest.TestCase):
             encoding="utf-8",
         )
         env = _check_environment(
-            self.tmp_path,
-            EnvironmentOptions(components=("clippy-x86_64-unknown-linux-gnu",)),
+            EnvironmentRequest(
+                self.tmp_path,
+                EnvironmentOptions(components=("clippy-x86_64-unknown-linux-gnu",)),
+            )
         )
         env["RUST_TOOLCHAIN_FILE"] = str(manifest)
         result = subprocess.run(

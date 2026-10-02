@@ -70,10 +70,20 @@ def _lint_job_findings(
         problems.append(f"expected one direct make lint step, found {len(lints)}")
     if len(installs) == 1:
         problems.extend(_installer_findings(steps, installs[0], lints))
-    if len(lints) == 1 and _step_can_skip(steps[lints[0]]):
-        problems.append("direct make lint can be skipped or allowed to fail")
+    problems.extend(_lint_step_skip_findings(steps, lints))
     problems.extend(_provisioning_step_findings(steps))
     return problems
+
+
+def _lint_step_skip_findings(
+    steps: list[dict[object, object]], lints: list[int]
+) -> list[str]:
+    """Reject a single direct lint step that can be skipped or softened."""
+    if len(lints) != 1:
+        return []
+    if not _step_can_skip(steps[lints[0]]):
+        return []
+    return ["direct make lint can be skipped or allowed to fail"]
 
 
 def _installer_indices(steps: list[dict[object, object]]) -> list[int]:
@@ -110,16 +120,17 @@ def _installer_input_findings(installer: dict[object, object]) -> list[str]:
     if not isinstance(inputs, dict):
         return ["Whitaker installer inputs are not a mapping"]
     names = {_key(name) for name in inputs}
-    findings = []
-    if inputs.get("cranelift") not in (True, "true"):
-        findings.append("Whitaker installer must receive cranelift: 'true'")
-    if names != {"cranelift"}:
-        findings.append("Whitaker installer has an unsupported input or version override")
-    if names & {"suite-version", "allow-suite-pin"}:
-        findings.append("rolling Whitaker suite pinning is forbidden")
-    if any("installer" in name and "version" in name for name in names):
-        findings.append("Whitaker installer version override is forbidden")
-    return findings
+    missing_cranelift = inputs.get("cranelift") not in (True, "true")
+    unsupported_inputs = names != {"cranelift"}
+    rolling_pin = bool(names & {"suite-version", "allow-suite-pin"})
+    installer_override = any("installer" in name and "version" in name for name in names)
+    checks = (
+        (missing_cranelift, "Whitaker installer must receive cranelift: 'true'"),
+        (unsupported_inputs, "Whitaker installer has an unsupported input or version override"),
+        (rolling_pin, "rolling Whitaker suite pinning is forbidden"),
+        (installer_override, "Whitaker installer version override is forbidden"),
+    )
+    return [message for failed, message in checks if failed]
 
 
 def _installer_environment_findings(installer: dict[object, object]) -> list[str]:
@@ -150,13 +161,27 @@ def _step_provisioning_findings(step: dict[object, object]) -> list[str]:
     uses = str(step.get("uses", "")).lower()
     run = step.get("run")
     findings = []
-    if ("whitaker" in uses or "dylint" in uses) and uses.split("@", 1)[0] != INSTALL_ACTION:
+    if _uses_competing_provisioner(uses):
         findings.append("Whitaker provisioning uses a second action or shim")
-    if isinstance(run, str) and re.search(r"whitaker|dylint", run, re.IGNORECASE):
-        if run.strip() != "make lint":
-            findings.append("Whitaker has an ad hoc installer, cache, or PATH shim")
+    if _runs_manual_provisioner(run):
+        findings.append("Whitaker has an ad hoc installer, cache, or PATH shim")
     findings.extend(_duplicate_cache_findings(step, uses))
     return findings
+
+
+def _uses_competing_provisioner(uses: str) -> bool:
+    """Detect a Whitaker-related action that is not the approved installer."""
+    is_whitaker_action = "whitaker" in uses or "dylint" in uses
+    return is_whitaker_action and uses.split("@", 1)[0] != INSTALL_ACTION
+
+
+def _runs_manual_provisioner(run: object) -> bool:
+    """Detect a Whitaker command outside the direct lint target."""
+    if not isinstance(run, str):
+        return False
+    if re.search(r"whitaker|dylint", run, re.IGNORECASE) is None:
+        return False
+    return run.strip() != "make lint"
 
 
 def _duplicate_cache_findings(step: dict[object, object], uses: str) -> list[str]:
@@ -166,38 +191,68 @@ def _duplicate_cache_findings(step: dict[object, object], uses: str) -> list[str
         return []
     cache = " ".join(str(inputs.get(key, "")) for key in ("key", "path", "restore-keys"))
     name = str(step.get("name", "")).lower()
-    if ("cache" in uses or "cache" in name) and re.search(r"whitaker|dylint", cache, re.I):
+    if _is_duplicate_whitaker_cache(uses, name, cache):
         return ["consumer duplicates the Whitaker action's cache"]
     return []
+
+
+def _is_duplicate_whitaker_cache(uses: str, name: str, cache: str) -> bool:
+    """Recognize cache actions whose key or path duplicates Whitaker storage."""
+    is_cache_step = "cache" in uses or "cache" in name
+    has_whitaker_cache_path = re.search(r"whitaker|dylint", cache, re.I)
+    return bool(is_cache_step and has_whitaker_cache_path)
 
 
 def _rules(text: str) -> dict[str, tuple[list[str], list[str]]]:
     """Collect target prerequisites and simple continued Make recipes."""
     lines, result, index = text.splitlines(), {}, 0
     while index < len(lines):
-        line = lines[index]
-        if line.startswith(("\t", " ")) or ":" not in line or line.startswith("."):
+        parsed = _rule_header(lines[index])
+        if parsed is None:
             index += 1
             continue
-        header, dependencies = line.split(":", 1)
-        names = header.split()
-        if not names or any("=" in name for name in names):
-            index += 1
-            continue
-        prerequisites = dependencies.split("#", 1)[0].split("|", 1)[0].split()
-        recipes = []
-        index += 1
-        while index < len(lines) and lines[index].startswith("\t"):
-            command = lines[index].strip()
-            while command.endswith("\\") and index + 1 < len(lines):
-                index += 1
-                command = f"{command[:-1]} {lines[index].strip()}"
-            recipes.append(command)
-            index += 1
+        names, prerequisites = parsed
+        recipes, index = _recipe_lines(lines, index + 1)
         for name in names:
             old = result.get(name, ([], []))
             result[name] = (old[0] + prerequisites, old[1] + recipes)
     return result
+
+
+def _rule_header(line: str) -> tuple[list[str], list[str]] | None:
+    """Return target names and prerequisites for a simple Make rule line."""
+    if line.startswith(("\t", " ")):
+        return None
+    if ":" not in line:
+        return None
+    if line.startswith("."):
+        return None
+    header, dependencies = line.split(":", 1)
+    names = header.split()
+    if not names:
+        return None
+    if any("=" in name for name in names):
+        return None
+    prerequisites = dependencies.split("#", 1)[0].split("|", 1)[0].split()
+    return names, prerequisites
+
+
+def _recipe_lines(lines: list[str], index: int) -> tuple[list[str], int]:
+    """Collect tab-indented recipes, preserving the parser's continuation rule."""
+    recipes = []
+    while index < len(lines) and lines[index].startswith("\t"):
+        command, index = _continued_recipe(lines, index)
+        recipes.append(command)
+    return recipes, index
+
+
+def _continued_recipe(lines: list[str], index: int) -> tuple[str, int]:
+    """Join continuation lines consumed by one Make recipe."""
+    command = lines[index].strip()
+    while command.endswith("\\") and index + 1 < len(lines):
+        index += 1
+        command = f"{command[:-1]} {lines[index].strip()}"
+    return command, index + 1
 
 
 def _make_problems(text: str) -> list[str]:
@@ -243,62 +298,100 @@ def _lint_order_findings(
         prerequisites, recipes = targets["lint"]
         if {"lint-clippy", "lint-whitaker"} & set(prerequisites):
             problems.append("lint gates are unordered prerequisites under make -j")
-        clippy = [
-            i for i, line in enumerate(recipes)
-            if re.fullmatch(r"\+\$\(MAKE\)(?:\s+--\S+)*\s+lint-clippy", line)
-        ]
-        whitaker = [
-            i for i, line in enumerate(recipes)
-            if re.fullmatch(r"\+\$\(MAKE\)(?:\s+--\S+)*\s+lint-whitaker", line)
-        ]
-        if len(clippy) != 1 or len(whitaker) != 1:
-            problems.append("lint must invoke Clippy then Whitaker as sequential Make recipes")
-        elif clippy[0] >= whitaker[0]:
-            problems.append("composite lint does not run Clippy before Whitaker")
+        problems.extend(_sequential_lint_recipe_findings(recipes))
 
     return problems
+
+
+def _sequential_lint_recipe_findings(recipes: list[str]) -> list[str]:
+    """Require one direct recursive Make call for each ordered lint leaf."""
+    clippy = _lint_recipe_indices(recipes, "lint-clippy")
+    whitaker = _lint_recipe_indices(recipes, "lint-whitaker")
+    if len(clippy) != 1 or len(whitaker) != 1:
+        return ["lint must invoke Clippy then Whitaker as sequential Make recipes"]
+    if clippy[0] >= whitaker[0]:
+        return ["composite lint does not run Clippy before Whitaker"]
+    return []
+
+
+def _lint_recipe_indices(recipes: list[str], target: str) -> list[int]:
+    """Locate direct recursive Make recipes for one known lint leaf."""
+    pattern = rf"\+\$\(MAKE\)(?:\s+--\S+)*\s+{re.escape(target)}"
+    return [index for index, line in enumerate(recipes) if re.fullmatch(pattern, line)]
 
 
 def _whitaker_leaf_findings(
     targets: dict[str, tuple[list[str], list[str]]],
 ) -> list[str]:
     """Validate the direct leaf command and ensure its failure reaches Make."""
-    problems = []
     leaf = targets.get("lint-whitaker")
     if leaf is None:
-        problems.append("Make has no lint-whitaker leaf target")
-    else:
-        _, recipes = leaf
-        calls = []
-        for recipe in recipes:
-            if "$(WHITAKER)" not in recipe:
-                continue
-            command = recipe.lstrip()
-            ignored = False
-            while command and command[0] in "@+-":
-                ignored |= command[0] == "-"
-                command = command[1:].lstrip()
-            calls.append((ignored, command))
-        if len(calls) != 1:
-            problems.append("lint-whitaker must run exactly one direct Whitaker command")
-        else:
-            ignored, command = calls[0]
-            clears_rustflags = command.startswith("RUSTFLAGS= $(WHITAKER) ")
-            if "RUSTFLAGS" in command and not clears_rustflags:
-                problems.append("lint-whitaker injects repository RUSTFLAGS")
-            if not clears_rustflags:
-                problems.append("lint-whitaker does not clear inherited RUSTFLAGS")
-            words = command.removeprefix("RUSTFLAGS= ").split()
-            if ignored or re.search(r"\|\||\||;|&&", command):
-                problems.append("lint-whitaker can mask or ignore a Whitaker failure")
-            if (
-                not words or words[0] != "$(WHITAKER)"
-                or "$(WHITAKER_PACKAGES)" not in words or "--" not in words
-            ):
-                problems.append("lint-whitaker does not pass the workspace package scope")
-            if "$(CARGO_FLAGS)" not in words:
-                problems.append("lint-whitaker does not preserve the configured Cargo flags")
+        return ["Make has no lint-whitaker leaf target"]
+    return _whitaker_recipe_findings(leaf[1])
+
+
+def _whitaker_recipe_findings(recipes: list[str]) -> list[str]:
+    """Require one direct Whitaker command with binding failure semantics."""
+    calls = _whitaker_calls(recipes)
+    if len(calls) != 1:
+        return ["lint-whitaker must run exactly one direct Whitaker command"]
+    return _whitaker_command_findings(*calls[0])
+
+
+def _whitaker_calls(recipes: list[str]) -> list[tuple[bool, str]]:
+    """Return Whitaker recipes with Make's ignored-error prefix recorded."""
+    calls = []
+    for recipe in recipes:
+        if "$(WHITAKER)" not in recipe:
+            continue
+        command = recipe.lstrip()
+        ignored = False
+        while command and command[0] in "@+-":
+            ignored |= command[0] == "-"
+            command = command[1:].lstrip()
+        calls.append((ignored, command))
+    return calls
+
+
+def _whitaker_command_findings(ignored: bool, command: str) -> list[str]:
+    """Check environment, shell failure handling, and workspace scope."""
+    clears_rustflags = command.startswith("RUSTFLAGS= $(WHITAKER) ")
+    problems = _whitaker_rustflags_findings(command, clears_rustflags)
+    if ignored or re.search(r"\|\||\||;|&&", command):
+        problems.append("lint-whitaker can mask or ignore a Whitaker failure")
+    words = command.removeprefix("RUSTFLAGS= ").split()
+    problems.extend(_whitaker_scope_findings(words))
     return problems
+
+
+def _whitaker_rustflags_findings(command: str, clears_rustflags: bool) -> list[str]:
+    """Require the tool to receive empty inherited RUSTFLAGS."""
+    problems = []
+    if "RUSTFLAGS" in command and not clears_rustflags:
+        problems.append("lint-whitaker injects repository RUSTFLAGS")
+    if not clears_rustflags:
+        problems.append("lint-whitaker does not clear inherited RUSTFLAGS")
+    return problems
+
+
+def _whitaker_scope_findings(words: list[str]) -> list[str]:
+    """Require package, argument-boundary, and Cargo-flag forwarding."""
+    problems = []
+    if not _passes_workspace_scope(words):
+        problems.append("lint-whitaker does not pass the workspace package scope")
+    if "$(CARGO_FLAGS)" not in words:
+        problems.append("lint-whitaker does not preserve the configured Cargo flags")
+    return problems
+
+
+def _passes_workspace_scope(words: list[str]) -> bool:
+    """Check the executable, workspace packages, and CLI boundary as a unit."""
+    return bool(
+        words
+        and words[0] == "$(WHITAKER)"
+        and "$(WHITAKER_PACKAGES)" in words
+        and "--" in words
+    )
 
 
 def _makefile() -> str:

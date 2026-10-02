@@ -691,3 +691,81 @@ CodeScene Code Health Review on `0b4b671` failed. The protected `codescene`
 environment is main-only, but secret placement remains unverified because the
 GitHub integration cannot read its secret metadata. This is still an open
 administrative gate; the successful CI run does not complete that requirement.
+
+## CodeScene review remediation
+
+CodeScene analysis
+[7787006](https://codescene.io/projects/81801/delta/results/7787006) on PR #101
+at `bff426a928732d8619c9b1a548842ba9c09822f8` reports three declining hotspots
+and eight new Python contract files below the selected 10.00 health threshold.
+The `build_standard_test.py`, `codescene_reading.py`, and
+`mutation_testing_test.py` hotspots are test and workflow-contract code, not
+Rust source findings. The review is accepted as in-scope; its complexity,
+nested logic, and long-method findings are being repaired at source without
+changing rule thresholds or suppressing diagnostics. CI run
+[37012396525](https://github.com/leynos/statelet/actions/runs/37012396525) and
+Act Validation run
+[37012396541](https://github.com/leynos/statelet/actions/runs/37012396541)
+passed on that same head. CodeScene health is a separate failed review result.
+
+The requested Terra High Journeyman role is not exposed in this session, so the
+available Journeyman is the execution lead for this accepted batch. Two bounded
+Artisans owned the Whitaker/Markdown/provisioning readers and long test methods
+respectively; the lead owns the CodeScene workflow, coverage, and remote-call
+readers. One test-dispatch regression found during integration was returned to
+its owner and corrected before measurement. The private helpers remain
+test-only and are scoped in the developer guide.
+
+The local `cs` CLI is 1.0.33 (`85b8510ee92608031e843acb8e374c3995e1d731`, built
+2026-06-22). Sequential `cs review <file> --output-format json` runs on all 12
+changed Python files now report score 10.00 and an empty findings array for
+each. `cs delta --output-format json` exited zero with no reported new issues.
+The three original hotspot files score 10.00. The maximum code-file size is 400
+lines (`codescene_reading.py`); `whitaker_contracts.py` is 398 lines and
+`build_standard_test.py` is 397.
+
+The integrated working diff `e6ed2cb21fc12160bfb5bc34aab48e1643b6b819` passed
+the sequential local gates. `make fmt`, `make check-fmt`, and `make spelling`
+passed, with the full-scope spelling builder at v0.1.3; logs are
+`/tmp/fmt-rust-baseline-completion-20261001-rust-baseline-completion-20261001-4.out`,
+`/tmp/check-fmt-rust-baseline-completion-20261001-rust-baseline-completion-20261001-15.out`,
+and
+`/tmp/spelling-rust-baseline-completion-20261001-rust-baseline-completion-20261001-8.out`.
+`make lint` passed rustdoc, Clippy, and Whitaker, followed by Pylint 4.0.9 with
+`df12-python-lints` at `4cf41736cce2f7ba2778882a5c629c044568a0e5` under
+managed CPython 3.14; Pylint rated the Python tree 10.00/10. Its log is
+`/tmp/lint-rust-baseline-completion-20261001-rust-baseline-completion-20261001-10.out`.
+`make typecheck` passed Rust check and `ty` 0.0.74 for Python 3.14; log:
+`/tmp/typecheck-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`.
+
+`make test-workflow-contracts` passed 234 tests; `make test` passed 143 Nextest
+cases and one doctest. Their logs are
+`/tmp/test-workflow-contracts-rust-baseline-completion-20261001-rust-baseline-completion-20261001-7.out`
+and
+`/tmp/test-rust-baseline-completion-20261001-rust-baseline-completion-20261001-2.out`.
+`make markdownlint` passed all 29 selected Markdown files with zero issues;
+`make nixie` validated all diagrams. Logs are
+`/tmp/markdownlint-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`
+and
+`/tmp/nixie-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`.
+`mbake validate Makefile` and `git diff --check` passed; logs are
+`/tmp/mbake-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`
+and
+`/tmp/diff-check-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`.
+
+The ordinary `make audit` invocation failed before scanning advisories because
+the host injected a Git rewrite of RustSec's HTTPS URL to the unavailable
+`lody-github` host; its log is
+`/tmp/audit-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`.
+The same Make target then passed with this command:
+
+```sh
+env GIT_CONFIG_COUNT=0 GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null make audit
+```
+
+It loaded 1,280 RustSec advisories and scanned 76 locked crate dependencies;
+log:
+`/tmp/audit-clean-git-rust-baseline-completion-20261001-rust-baseline-completion-20261001.out`.
+Fresh hosted checks and CodeScene review on a pushed remediation head remain
+pending. The protected CodeScene secret placement remains an independent
+administrative verification gap.
