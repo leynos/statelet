@@ -661,3 +661,33 @@ gates.
   `/tmp/mbake-validate-rust-baseline-completion-20261001-rust-baseline-completion-20261001-6.out`.
 - `git diff --check`: passed. Log:
   `/tmp/diff-check-rust-baseline-completion-20261001-rust-baseline-completion-20261001-6.out`.
+
+## Corrected-head hosted validation
+
+GitHub run
+[37011322792](https://github.com/leynos/statelet/actions/runs/37011322792)
+passed on commit `0b4b671c25cc57e80921dbfc6c4c94b654f096a5`. Its Linux
+`build-test` job passed formatting, Markdown lint, spelling, audit, Rust lint,
+Python lint, typechecking, all 225 workflow-contract tests, and coverage. The
+coverage action now treats the repository as Rust despite the lint-only
+`pyproject.toml`. Act Validation run
+[37011322676](https://github.com/leynos/statelet/actions/runs/37011322676) also
+passed.
+
+The run used the approved
+`install-whitaker@6dea5677a84fec60ca51b07202570e3af12ffdb4` action with
+installer 0.2.9. Its log records `suite=default-branch-tip`,
+`suite-source=prebuilt`, and asset
+`whitaker-lints-318d8d7-nightly-2026-05-28-x86_64-unknown-linux-gnu.tar.zst`.
+The rolling Whitaker source revision was
+[`318d8d76b35b2a8c14a7d8ab6ef526f391889963`](https://github.com/leynos/whitaker/commit/318d8d76b35b2a8c14a7d8ab6ef526f391889963);
+the installer-managed toolchain was `nightly-2026-05-28`. The repository's
+build toolchain was `nightly-2026-09-13`. The suite gate passed, and the log
+reports prebuilt artefacts rather than source fallback.
+
+The successful CI and Act Validation results apply to `0b4b671`; a subsequent
+execution-record-only commit requires its own current-head hosted checks. The
+CodeScene Code Health Review on `0b4b671` failed. The protected `codescene`
+environment is main-only, but secret placement remains unverified because the
+GitHub integration cannot read its secret metadata. This is still an open
+administrative gate; the successful CI run does not complete that requirement.
