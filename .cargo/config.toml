@@ -8,14 +8,13 @@ codegen-backend = "cranelift"
 [build]
 rustflags = ["-Zthreads=8"]
 
-# mold is the estate's default linker and supports every Linux architecture,
+# The pinned linker is the estate's default and supports every Linux architecture,
 # so the table is keyed on the operating system rather than on one triple:
 # `x86_64-unknown-linux-gnu` alone left aarch64 Linux on the default linker.
-# Cargo honours both `linker` and `rustflags` in a `cfg` table, and this
-# matches the selector `tools/dev-fast/config.toml` already uses. Keep a
+# Cargo honours both `linker` and `rustflags` in a `cfg` table. Keep a
 # target-triple table only for a flag that is genuinely architecture-specific.
 #
-# This selects clang and mold for any Linux target, which is correct for a
+# This selects clang and the pinned linker for any Linux target, which is correct for a
 # native build because clang defaults to the host triple. Cross-compiling to a
 # non-host Linux target would also match, and clang would then need `--target`
 # and a sysroot that nothing here supplies. Nothing in this repository
@@ -27,8 +26,9 @@ rustflags = ["-Zthreads=8"]
 # Cargo selects a single `rustflags` source rather than merging them: this
 # Linux table replaces `[build] rustflags` outright on Linux. Every flag is
 # therefore repeated in each source, and the Makefile restates them where it
-# assigns `RUSTFLAGS` for the gate targets. Coverage and release builds assign
-# `RUSTFLAGS` themselves and so take neither the parallel frontend nor mold.
+# assigns `RUSTFLAGS` for development gates. Coverage and release builds
+# assign their own `RUSTFLAGS`, so they take neither the parallel frontend nor
+# the linker.
 [target.'cfg(target_os = "linux")']
 linker = "clang"
 rustflags = ["-Zthreads=8", "-C", "link-arg=-fuse-ld=mold"]

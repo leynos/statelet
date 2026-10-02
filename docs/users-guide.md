@@ -27,11 +27,24 @@ observations record and how they are read.
 
 ## Quick start
 
-Run the public validation entrypoint from a fresh checkout:
+Install the source-build tools before running the public validation entrypoint.
+The repository pins its Rust nightly and components in `rust-toolchain.toml`.
+On Linux, a native build needs `clang` and `lld`, and the tool installer uses
+`curl`, `sha256sum` and `tar`. Markdown lint installation needs Node.js and
+`npm`. After those prerequisites are available, run `make install-build-tools`
+to install the pinned `mold` linker and Rust toolchain. `rustup` installs the
+components declared in `rust-toolchain.toml`. The standard test gate also
+requires `cargo-nextest`. Install it with the binary-only command in the
+[developer guide](developers-guide.md#local-workflow) before running `make all`.
+
+Then run the public validation entrypoint from a fresh checkout:
 
 ```bash
 git clone https://github.com/leynos/statelet.git
 cd statelet
+make install-build-tools
+make install-mdtablefix
+make install-markdownlint
 make all
 ```
 

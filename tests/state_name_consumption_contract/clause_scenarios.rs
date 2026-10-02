@@ -22,7 +22,7 @@ use super::{
 };
 
 /// Resolves the three quoted clauses, and rejects a rewritten clause, a
-/// relocated clause, a fabricated one, a mis-attributed one, and an emptied
+/// relocated clause, a fabricated one, one attributed to the wrong source, and an emptied
 /// evidence section.
 #[test]
 fn quoted_passages_still_resolve() -> Result<(), String> {

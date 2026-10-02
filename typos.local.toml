@@ -11,19 +11,42 @@ accepted = []
 [words.corrections]
 
 [patterns]
-# Preserve complete formal names while allowing Markdown line wrapping.
+# Preserve exact external spellings in executable syntax and recorded evidence.
+# Ordinary prose still follows the en-GB spelling rules.
 ignore = [
-  # Inline code spans, which this repository's spelling check has always
-  # masked; preserved through the migration to the shared gate.
-  '`[^`\n]+`',
-  # "mold" names the linker (https://github.com/rui314/mold) in these
-  # contexts only; the mould correction stays active elsewhere.
+  # The linker selector, product path, archive and executable are fixed upstream.
   "-fuse-ld=mold",
-  "mold linker",
-  "Cranelift \\+ mold",
-  "Cranelift and mold",
+  "tools/mold/",
+  "└── mold/",
+  "github\\.com/rui314/mold/releases/download",
+  "mold-(?:2\\.41\\.0-(?:x86_64|aarch64)-linux|fixture)\\.tar\\.gz",
+  "name=\\\"mold-\\$version-\\$arch-linux\\.tar\\.gz\\\"",
+  "command -v mold",
+  "mold --version",
+  "binary_dir / \\\"mold\\\"",
+  "tool_bin / \\\"mold\\\"",
+  '"tools" / "mold" / "VERSION"',
   "`mold`",
-  "GitHub\\s+Flavored\\s+Markdown",
+  # Script, Make, and contract identifiers name the external tool.
+  "\\bMOLD_(?:RELEASE_BASE_URL|SHA256SUMS_FILE|TEST_VERSION|VERSION|VERSION_FILE)\\b",
+  "\\bSTANDARD_MOLD_FLAG\\b",
+  "\\b(?:mold_arch|mold_version|mold_pin|installed_mold_version|check_mold|install_mold|verify_mold_archive)\\b",
+  # Exact diagnostics and fixture output checked by script contracts.
+  "mold is Linux-only",
+  "mold not found on PATH",
+  "mold at \\$resolved",
+  "mold \\$installed at \\$resolved",
+  "mold \\{MOLD_VERSION\\}",
+  "mold \\{linker_version\\}",
+  "mold %s",
+  "installed mold \\$version into",
+  # Public CI keys and event names must keep their API spelling.
+  "\\bCARGO_TERM_COLOR\\b",
+  "opened, reopened, synchronize, labeled, ready_for_review",
+  # The historical plan records rejected tokens and exact commit IDs; its
+  # bytes are evidence and must not be reformatted or edited.
+  "`(?:recognise|recognised|recognises|mis-spelling|mis-addressed|mis)`",
+  "\\b(?:8ba3e4a|d4fb5ba)\\b",
 ]
 
 [files]

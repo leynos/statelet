@@ -27,6 +27,8 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
+      - name: Install build tools
+        run: make install-build-tools
       - name: Install mdtablefix
         # `make check-fmt` runs `mdtablefix --check --git`; 0.6.0 is the
         # first release with `--check` and `--git`.
@@ -49,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUSTFLAGS: ""
-        run: cargo binstall --no-confirm cargo-nextest
+        run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
       # Dependency audits report advisories against the whole lockfile, so a
       # newly published advisory would fail every Dependabot PR regardless of
       # content and deadlock auto-merge. The scheduled audit workflow covers
@@ -59,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUSTFLAGS: ""
-        run: cargo binstall --no-confirm cargo-audit
+        run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-audit
       - name: Setup Python for audit manifest extraction
         if: github.actor != 'dependabot[bot]'
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
@@ -67,8 +69,10 @@ jobs:
           python-version: '3.x'
       - name: Install Whitaker
         uses: leynos/shared-actions/.github/actions/install-whitaker@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        env:
+          RUSTFLAGS: ""
         with:
-          cranelift: true
+          cranelift: 'true'
       - name: Audit dependencies
         if: github.actor != 'dependabot[bot]'
         run: make audit
