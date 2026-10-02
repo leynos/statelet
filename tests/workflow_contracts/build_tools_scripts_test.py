@@ -1,13 +1,13 @@
 """Focused contracts for the pinned build-tool provisioning scripts."""
 
-from __future__ import annotations
-
 import hashlib
 import os
+import shutil
 import subprocess
 import tempfile
 import tomllib
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,18 +19,23 @@ TOOLCHAIN = tomllib.loads((ROOT / "rust-toolchain.toml").read_text("utf-8"))[
 ]["channel"]
 
 
+@dataclass(frozen=True, slots=True)
+class EnvironmentOptions:
+    """Overrides for one fake build-tool environment."""
+
+    mold_version: str | None = MOLD_VERSION
+    clang_works: bool = True
+    toolchain: str = f"{TOOLCHAIN}-x86_64-unknown-linux-gnu"
+    components: tuple[str, ...] | None = None
+
+
 def _write_executable(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
     path.chmod(0o755)
 
 
 def _check_environment(
-    tmp_path: Path,
-    *,
-    mold_version: str | None = MOLD_VERSION,
-    clang_works: bool = True,
-    toolchain: str = f"{TOOLCHAIN}-x86_64-unknown-linux-gnu",
-    components: tuple[str, ...] | None = None,
+    tmp_path: Path, options: EnvironmentOptions = EnvironmentOptions()
 ) -> dict[str, str]:
     """Create a closed PATH with deterministic Linux prerequisite commands."""
     binary_dir = tmp_path / "bin"
@@ -51,20 +56,20 @@ def _check_environment(
         "  *) exit 2 ;;\n"
         "esac\n",
     )
-    if mold_version is not None:
+    if options.mold_version is not None:
         _write_executable(
             binary_dir / "mold",
             "#!/bin/sh\n"
             "[ \"${1:-}\" = --version ] || exit 2\n"
             "printf 'mold %s (test binary)\\n' \"$MOLD_TEST_VERSION\"\n",
         )
-    if clang_works:
+    if options.clang_works:
         _write_executable(
             binary_dir / "clang",
             "#!/bin/sh\n[ \"${1:-}\" = --version ] && exit 0\nexit 2\n",
         )
 
-    installed_components = components
+    installed_components = options.components
     if installed_components is None:
         manifest_components = tomllib.loads(
             (ROOT / "rust-toolchain.toml").read_text("utf-8")
@@ -76,18 +81,20 @@ def _check_environment(
     return {
         **os.environ,
         "PATH": str(binary_dir),
-        "MOLD_TEST_VERSION": mold_version or "",
-        "RUSTUP_TEST_TOOLCHAIN": toolchain,
+        "MOLD_TEST_VERSION": options.mold_version or "",
+        "RUSTUP_TEST_TOOLCHAIN": options.toolchain,
         "RUSTUP_TEST_COMPONENTS": "\n".join(installed_components),
     }
 
 
-def _run_check(tmp_path: Path, **options: object) -> subprocess.CompletedProcess[str]:
+def _run_check(
+    tmp_path: Path, options: EnvironmentOptions = EnvironmentOptions()
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [str(CHECK_SCRIPT)],
         capture_output=True,
         check=False,
-        env=_check_environment(tmp_path, **options),
+        env=_check_environment(tmp_path, options),
         text=True,
     )
 
@@ -96,11 +103,11 @@ class BuildToolsScriptTests(unittest.TestCase):
     """Exercise script checks with fake tools and no Cargo invocation."""
 
     def setUp(self) -> None:
-        temporary_directory = tempfile.TemporaryDirectory()
-        self.addCleanup(temporary_directory.cleanup)
-        self.tmp_path = Path(temporary_directory.name)
+        self.tmp_path = Path(tempfile.mkdtemp(prefix="statelet-build-tools-"))
+        self.addCleanup(shutil.rmtree, self.tmp_path, ignore_errors=True)
 
     def test_check_accepts_the_pinned_linker_toolchain_and_components(self) -> None:
+        """Accept the complete set of pinned local build tools."""
         result = _run_check(self.tmp_path)
 
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -109,28 +116,33 @@ class BuildToolsScriptTests(unittest.TestCase):
         self.assertIn("all rust-toolchain.toml components are installed", result.stderr)
 
     def test_check_rejects_missing_linker_with_install_instructions(self) -> None:
-        result = _run_check(self.tmp_path, mold_version=None)
+        """Report the missing linker and the supported installation target."""
+        result = _run_check(self.tmp_path, EnvironmentOptions(mold_version=None))
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("mold not found on PATH", result.stderr)
         self.assertIn("make install-build-tools", result.stderr)
 
     def test_check_rejects_a_linker_version_that_differs_from_the_pin(self) -> None:
-        result = _run_check(self.tmp_path, mold_version="2.40.0")
+        """Reject a linker whose version differs from the repository pin."""
+        result = _run_check(self.tmp_path, EnvironmentOptions(mold_version="2.40.0"))
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(f"does not match the pin {MOLD_VERSION}", result.stderr)
 
     def test_check_rejects_missing_clang_and_names_the_external_prerequisite(self) -> None:
-        result = _run_check(self.tmp_path, clang_works=False)
+        """Name the missing Linux Clang prerequisite."""
+        result = _run_check(self.tmp_path, EnvironmentOptions(clang_works=False))
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("clang not found on PATH", result.stderr)
         self.assertIn("Linux clang runner prerequisite", result.stderr)
 
     def test_check_rejects_a_missing_pinned_toolchain(self) -> None:
+        """Reject a Rust toolchain different from the pinned nightly."""
         result = _run_check(
-            self.tmp_path, toolchain="stable-x86_64-unknown-linux-gnu"
+            self.tmp_path,
+            EnvironmentOptions(toolchain="stable-x86_64-unknown-linux-gnu"),
         )
 
         self.assertNotEqual(result.returncode, 0)
@@ -138,6 +150,7 @@ class BuildToolsScriptTests(unittest.TestCase):
         self.assertIn("make install-build-tools", result.stderr)
 
     def test_check_reads_component_names_from_the_toolchain_manifest(self) -> None:
+        """Require every component declared by the selected toolchain."""
         manifest = self.tmp_path / "rust-toolchain.toml"
         manifest.write_text(
             f'[toolchain]\nchannel = "{TOOLCHAIN}"\n'
@@ -146,7 +159,7 @@ class BuildToolsScriptTests(unittest.TestCase):
         )
         env = _check_environment(
             self.tmp_path,
-            components=("clippy-x86_64-unknown-linux-gnu",),
+            EnvironmentOptions(components=("clippy-x86_64-unknown-linux-gnu",)),
         )
         env["RUST_TOOLCHAIN_FILE"] = str(manifest)
         result = subprocess.run(
@@ -157,6 +170,7 @@ class BuildToolsScriptTests(unittest.TestCase):
         self.assertIn("toolchain component rust-analyzer is not installed", result.stderr)
 
     def _run_checksum_check(self, rows: str) -> subprocess.CompletedProcess[str]:
+        """Run the installer's archive verifier against a controlled checksum file."""
         archive = self.tmp_path / "mold-fixture.tar.gz"
         archive.write_bytes(b"trusted fixture bytes")
         sums_file = self.tmp_path / "SHA256SUMS"
@@ -178,6 +192,7 @@ class BuildToolsScriptTests(unittest.TestCase):
         )
 
     def test_installer_checksum_verification_accepts_the_matching_archive(self) -> None:
+        """Accept the archive when its digest matches the published checksum."""
         archive = self.tmp_path / "mold-fixture.tar.gz"
         archive.write_bytes(b"trusted fixture bytes")
         digest = hashlib.sha256(archive.read_bytes()).hexdigest()
@@ -188,6 +203,7 @@ class BuildToolsScriptTests(unittest.TestCase):
         self.assertIn("verified mold-fixture.tar.gz", result.stderr)
 
     def test_installer_checksum_verification_rejects_mismatch_and_ambiguity(self) -> None:
+        """Reject incorrect digests and ambiguous duplicate checksum records."""
         wrong_digest = "0" * 64
         wrong = self._run_checksum_check(
             f"{wrong_digest}  mold-fixture.tar.gz\n"
@@ -203,6 +219,7 @@ class BuildToolsScriptTests(unittest.TestCase):
         self.assertIn("checksums recorded", duplicate.stderr)
 
     def test_installer_adds_every_manifest_component_to_the_pinned_toolchain(self) -> None:
+        """Install all manifest components after installing the pinned toolchain."""
         manifest = self.tmp_path / "rust-toolchain.toml"
         manifest.write_text(
             f'[toolchain]\nchannel = "{TOOLCHAIN}"\n'

@@ -8,8 +8,6 @@ written as a scalar, a sequence or a mapping, and a reusable-workflow call
 however its local path is prefixed.
 """
 
-from __future__ import annotations
-
 import typing as typ
 from pathlib import Path
 
@@ -34,32 +32,12 @@ PULL_REQUEST_EVENTS = frozenset(
     }
 )
 
-Workflow = dict[typ.Any, typ.Any]
-Step = dict[typ.Any, typ.Any]
+type Workflow = dict[typ.Any, typ.Any]
+type Step = dict[typ.Any, typ.Any]
 
 
 class ContractError(ValueError):
     """A workflow the contract refuses to read."""
-
-
-class StrictLoader(yaml.SafeLoader):
-    """A SafeLoader that refuses a mapping declaring a key twice.
-
-    PyYAML keeps the last duplicate and says nothing, so a lane could carry
-    one ``runs-on`` or ``if:`` in the file and another in the parse.
-    """
-
-    def construct_mapping(
-        self, node: yaml.MappingNode, deep: bool = False
-    ) -> dict[typ.Any, typ.Any]:
-        """Construct a mapping, raising on a repeated key."""
-        seen: set[typ.Any] = set()
-        for key_node, _ in node.value:
-            key = self.construct_object(key_node, deep=deep)
-            if key in seen:
-                raise ContractError(f"duplicate key {key!r} {key_node.start_mark}")
-            seen.add(key)
-        return super().construct_mapping(node, deep=deep)
 
 
 def parse(name: str, text: str) -> Workflow:
@@ -69,13 +47,17 @@ def parse(name: str, text: str) -> Workflow:
     GitHub merges the two blocks, and a reader that picks one is blind to the
     other.
     """
+    loader = yaml.SafeLoader(text)
     try:
-        syntax = yaml.compose(text, Loader=StrictLoader)
+        syntax = loader.get_single_node()
         if syntax is not None:
+            _reject_duplicate_keys(name, syntax, loader)
             _reject_ambiguous_booleans(name, syntax, is_root=True)
-        parsed = yaml.load(text, Loader=StrictLoader)  # noqa: S506 - StrictLoader is a SafeLoader
+        parsed = loader.construct_document(syntax) if syntax is not None else None
     except yaml.YAMLError as error:
         raise ContractError(f"{name} is not valid YAML: {error}") from error
+    finally:
+        loader.dispose()
     if not isinstance(parsed, dict):
         raise ContractError(f"{name} is not a mapping")
     if "on" in parsed and True in parsed:
@@ -83,27 +65,45 @@ def parse(name: str, text: str) -> Workflow:
     return parsed
 
 
+def _reject_duplicate_keys(
+    name: str, node: yaml.Node, loader: yaml.SafeLoader
+) -> None:
+    """Reject repeated mapping keys before SafeLoader keeps the last value."""
+    match node:
+        case yaml.MappingNode(value=entries):
+            seen: set[typ.Any] = set()
+            for key_node, value_node in entries:
+                key = loader.construct_object(key_node, deep=True)
+                if key in seen:
+                    raise ContractError(
+                        f"duplicate key {key!r} {key_node.start_mark} in {name}"
+                    )
+                seen.add(key)
+                _reject_duplicate_keys(name, value_node, loader)
+        case yaml.SequenceNode(value=children):
+            for child in children:
+                _reject_duplicate_keys(name, child, loader)
+
+
 def _reject_ambiguous_booleans(
     name: str, node: yaml.Node, *, is_root: bool = False
 ) -> None:
     """Reject YAML 1.1 yes/no/on/off aliases except the root trigger key."""
-    if isinstance(node, yaml.MappingNode):
-        for key, value in node.value:
-            is_root_on = (
-                is_root and isinstance(key, yaml.ScalarNode) and key.value == "on"
-            )
-            _reject_ambiguous_booleans(name, key, is_root=is_root_on)
-            _reject_ambiguous_booleans(name, value)
-    elif isinstance(node, yaml.SequenceNode):
-        for child in node.value:
-            _reject_ambiguous_booleans(name, child)
-    elif (
-        isinstance(node, yaml.ScalarNode)
-        and node.tag == "tag:yaml.org,2002:bool"
-        and node.value.lower() not in {"true", "false"}
-        and not is_root
-    ):
-        raise ContractError(f"{name} uses ambiguous boolean {node.value!r}")
+    match node:
+        case yaml.MappingNode(value=entries):
+            for key, value in entries:
+                is_root_on = (
+                    is_root and isinstance(key, yaml.ScalarNode) and key.value == "on"
+                )
+                _reject_ambiguous_booleans(name, key, is_root=is_root_on)
+                _reject_ambiguous_booleans(name, value)
+        case yaml.SequenceNode(value=children):
+            for child in children:
+                _reject_ambiguous_booleans(name, child)
+        case yaml.ScalarNode(tag="tag:yaml.org,2002:bool", value=value) if (
+            value.lower() not in {"true", "false"} and not is_root
+        ):
+            raise ContractError(f"{name} uses ambiguous boolean {value!r}")
 
 
 def is_workflow(name: str) -> bool:
@@ -145,14 +145,16 @@ def workflows(directory: Path) -> dict[str, Workflow]:
         if not isinstance(workflow.get("jobs"), dict) or not workflow["jobs"]:
             raise ContractError(f"{name} has no determinate jobs")
         for job_id, job in workflow["jobs"].items():
-            if not isinstance(job, dict) or not (
-                isinstance(job.get("steps"), list) or isinstance(job.get("uses"), str)
-            ):
+            if not isinstance(job, dict):
                 raise ContractError(f"{name}:{job_id} has an indeterminate job")
-            if isinstance(job.get("steps"), list) and not all(
-                isinstance(step, dict) for step in job["steps"]
-            ):
-                raise ContractError(f"{name}:{job_id} has an indeterminate step")
+            match job.get("steps"):
+                case list() as step_list:
+                    if not all(isinstance(step, dict) for step in step_list):
+                        raise ContractError(f"{name}:{job_id} has an indeterminate step")
+                case _ if isinstance(job.get("uses"), str):
+                    continue
+                case _:
+                    raise ContractError(f"{name}:{job_id} has an indeterminate job")
     return found
 
 
@@ -176,13 +178,15 @@ def trigger_names(workflow: Workflow) -> list[str]:
     key named after the whole list, and the workflow escapes every clause.
     """
     block = _trigger_block(workflow)
-    if isinstance(block, str):
-        return [block]
-    if isinstance(block, list):
-        return [name for name in block if isinstance(name, str)]
-    if isinstance(block, dict):
-        return [name for name in block if isinstance(name, str)]
-    return []
+    match block:
+        case str():
+            return [block]
+        case list():
+            return [name for name in block if isinstance(name, str)]
+        case dict():
+            return [name for name in block if isinstance(name, str)]
+        case _:
+            return []
 
 
 def trigger(workflow: Workflow, event: str) -> object:
@@ -322,18 +326,20 @@ def rendered(value: object) -> str:
     read in full. Keys carry their ``:`` so the computed-secret clause can
     tell a ``secrets:`` key from an expression.
     """
-    if value is None:
-        return ""
-    if isinstance(value, dict):
-        return "".join(
-            f"{rendered(key).rstrip()}:\n{rendered(item)}"
-            for key, item in value.items()
-        )
-    if isinstance(value, list):
-        return "".join(rendered(item) for item in value)
-    if isinstance(value, bool):
-        return f"{str(value).lower()}\n"
-    return f"{value}\n"
+    match value:
+        case None:
+            return ""
+        case dict() as mapping:
+            return "".join(
+                f"{rendered(key).rstrip()}:\n{rendered(item)}"
+                for key, item in mapping.items()
+            )
+        case list() as items:
+            return "".join(rendered(item) for item in items)
+        case bool() as boolean:
+            return f"{str(boolean).lower()}\n"
+        case _:
+            return f"{value}\n"
 
 
 def computes_a_secret(text: str) -> bool:

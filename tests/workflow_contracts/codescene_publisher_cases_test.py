@@ -5,8 +5,6 @@ the rule names that clause and nothing else, so a rule that fails for the
 wrong reason cannot pass as one that works.
 """
 
-from __future__ import annotations
-
 import codescene_reading as reading
 import codescene_rules as rules
 import pytest
@@ -339,6 +337,8 @@ def test_only_literal_upload_mode_sends_the_report(mode: str) -> None:
     assert any(
         "mode is not exactly upload" in finding
         for finding in rules.wiring_findings(workflow)
+    ), (
+        "test_only_literal_upload_mode_sends_the_report contract failed"
     )
 
 

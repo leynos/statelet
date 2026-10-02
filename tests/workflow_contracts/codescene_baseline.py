@@ -1,7 +1,5 @@
 """Find every push-reachable writer of the CodeScene ratchet baseline."""
 
-from __future__ import annotations
-
 import codescene_reading as reading
 from codescene_rules import is_ratcheted_coverage
 

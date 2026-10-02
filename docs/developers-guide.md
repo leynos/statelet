@@ -28,15 +28,32 @@ root with `cargo metadata`, logs workspace member manifests, and runs
 
 The generated `Makefile` exposes these public targets:
 
-- `make all` runs formatting checks, linting, and tests.
+- `make all` runs formatting checks, linting, typechecking, tests, and spelling.
 - `make check-fmt` verifies Rust formatting and Markdown formatting.
-- `make lint` runs rustdoc, Clippy, and Whitaker with warnings denied.
-- `make test` requires cargo-nextest and runs doctests through Cargo.
+- `make lint` runs rustdoc, Clippy, Whitaker, Pylint, and the pinned df12
+  Python lints. Rust warnings are denied.
+- `make typecheck` runs `ty` over every repository Python source and Cargo
+  check over the Rust targets.
+- `make test` requires cargo-nextest and runs doctests through Cargo. Workflow
+  contract tests use the pinned, managed CPython 3.14 interpreter.
 - `make build` builds the debug target.
 - `make release` builds the release target.
 - `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
 - `make audit` derives the Rust workspace root with `cargo metadata` and runs
   `cargo audit` once from that root.
+- `make lint-python` runs Pylint and every message in the pinned
+  `df12-python-lints` release over Python files under `.github`, `tests`,
+  `scripts`, `benches`, and `benchmarks`.
+- `make typecheck-python` runs the pinned `ty` typechecker over the same
+  discovered files. Both gateways use managed CPython 3.14; their versions and
+  the complete source inventory are defined in the Makefile.
+- Workflow contract readers stay under `tests/workflow_contracts`. The
+  `suite_provisioning.py` module owns command and runner classification, while
+  `suite_discovery.py` owns graph traversal and route inventory for those
+  contracts. `markdown_ci_contract.py` and `whitaker_contracts.py` own the
+  corresponding workflow-policy readers used by their tests. These support
+  modules remain test-only; runtime code and unrelated document contracts must
+  not depend on them.
 - `make markdownlint` checks Markdown files.
 - `make spelling` runs the pinned `typos-config-builder gate`, which
   regenerates `typos.toml` from the shared en-GB-oxendict dictionary, checks

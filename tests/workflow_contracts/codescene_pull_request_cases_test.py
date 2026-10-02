@@ -5,8 +5,6 @@ whether or not it detects anything. Each case builds the breach it names and
 asserts the rule reports it; the compliant fixtures assert it stays quiet.
 """
 
-from __future__ import annotations
-
 import itertools
 
 import codescene_reading as reading

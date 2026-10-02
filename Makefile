@@ -2,12 +2,12 @@
 	markdownlint nixie audit rust-audit test-workflow-contracts spelling \
 	install-build-tools check-build-tools check-nextest install-mdtablefix \
 	install-markdownlint \
-	lint-clippy lint-whitaker
+	lint-clippy lint-whitaker lint-python typecheck typecheck-python typecheck-rust
 
 SHELL := bash
 
-# The two lint leaves must remain ordered even when callers use `make -j`.
-.NOTPARALLEL: lint
+# Compiler and Python gateways remain ordered even when callers use `make -j`.
+.NOTPARALLEL: all lint typecheck
 
 BUILD_TOOLS_PREFIX ?= $(HOME)/.local
 export BUILD_TOOLS_PREFIX
@@ -60,6 +60,37 @@ WHITAKER ?= whitaker
 WHITAKER_PACKAGES ?= --workspace
 UV ?= uv
 UV_ENV = UV_CACHE_DIR=.uv-cache UV_TOOL_DIR=.uv-tools
+PYTHON_BASELINE ?= 3.14
+PYLINT_VERSION ?= 4.0.9
+PYTEST_VERSION ?= 9.0.2
+TY_VERSION ?= 0.0.74
+PYTHON_DEPENDENCIES = --with pytest==$(PYTEST_VERSION) --with 'pyyaml>=6'
+DF12_PYTHON_LINTS_REF ?= 4cf41736cce2f7ba2778882a5c629c044568a0e5
+DF12_PYTHON_LINTS = git+https://github.com/leynos/df12-python-lints.git@$(DF12_PYTHON_LINTS_REF)
+DF12_PYLINT_MESSAGES = R9101,C9102,R9103,R9104,C9105,C9106,C9107,R9108,R9109,R9110,R9111,R9112,C9112
+PYLINT = $(UV_ENV) $(UV) tool run --managed-python --python $(PYTHON_BASELINE) \
+	--from 'pylint==$(PYLINT_VERSION)' --with '$(DF12_PYTHON_LINTS)' \
+	$(PYTHON_DEPENDENCIES) pylint --load-plugins=df12_python_lints \
+	--enable=$(DF12_PYLINT_MESSAGES)
+TY = $(UV_ENV) $(UV) tool run --managed-python --python $(PYTHON_BASELINE) \
+	--from ty==$(TY_VERSION) $(PYTHON_DEPENDENCIES) ty
+
+# Share one recursive inventory across lint and typecheck. `.github` contains
+# workflow and action modules; the other roots cover tests, scripts, and both
+# common benchmark directory names. Generated and vendored trees are pruned.
+PYTHON_SOURCE_ROOTS ?= .github tests scripts benches benchmarks
+PYTHON_EXISTING_SOURCE_ROOTS = $(wildcard $(PYTHON_SOURCE_ROOTS))
+PYTHON_PRUNED_DIRECTORIES = \
+	-name .git -prune -o -name .venv -prune -o -name venv -prune -o \
+	-name .uv-cache -prune -o -name .uv-tools -prune -o \
+	-name target -prune -o -name vendor -prune -o -name node_modules -prune -o \
+	-name __pycache__ -prune -o -name .pytest_cache -prune -o \
+	-name .mypy_cache -prune -o -name .ruff_cache -prune -o
+PYTHON_SOURCES = $(strip $(shell find $(PYTHON_EXISTING_SOURCE_ROOTS) \
+	$(PYTHON_PRUNED_DIRECTORIES) -type f -name '*.py' -print | sort))
+# Workflow contracts import sibling modules as top-level modules; pass all
+# source roots so ty resolves the same import layout as pytest.
+PYTHON_IMPORT_ROOTS = $(addprefix --extra-search-path ,$(PYTHON_EXISTING_SOURCE_ROOTS))
 TYPOS_CONFIG_BUILDER_VERSION ?= v0.1.3
 TYPOS_CONFIG_BUILDER = $(UV_ENV) $(UV) tool run --python 3.14 --from \
 	"git+https://github.com/leynos/typos-config-builder.git@$(TYPOS_CONFIG_BUILDER_VERSION)" \
@@ -71,6 +102,7 @@ release: target/release/$(TARGET) ## Build release binary
 all: ## Perform a comprehensive check of code
 	+$(MAKE) check-fmt
 	+$(MAKE) lint
+	+$(MAKE) typecheck
 	+$(MAKE) test
 	+$(MAKE) spelling
 
@@ -103,7 +135,8 @@ test: check-nextest ## Run tests with warnings treated as errors
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) test --workspace --doc --all-features $(BUILD_JOBS)
 
 test-workflow-contracts: ## Validate the workflow contracts (mutation testing, CodeScene coverage)
-	uv run --with 'pytest>=8' --with 'pyyaml>=6' pytest tests/workflow_contracts -q
+	$(UV_ENV) $(UV) run --no-project --managed-python --python $(PYTHON_BASELINE) \
+		$(PYTHON_DEPENDENCIES) pytest tests/workflow_contracts -q
 
 target/%/$(TARGET): ## Build binary in debug or release mode
 	$(if $(findstring release,$(@)),$(RELEASE_RUSTFLAGS),$(DEBUG_RUSTFLAGS)) $(CARGO) build $(BUILD_JOBS) $(if $(findstring release,$(@)),--release)
@@ -120,9 +153,10 @@ coverage: ## Generate lcov coverage with lld for llvm-tools compatibility
 		CFLAGS="$(COVERAGE_LINKER_FLAGS)" LDFLAGS="$(COVERAGE_LINKER_FLAGS)" \
 		$(CARGO) llvm-cov --lcov --output-path lcov.info $(TEST_FLAGS)
 
-lint: ## Run sequential Clippy and Whitaker checks with warnings denied
+lint: ## Run Rust and Python lint gateways with warnings denied
 	+$(MAKE) lint-clippy
 	+$(MAKE) lint-whitaker
+	+$(MAKE) lint-python
 
 lint-clippy: check-build-tools ## Run rustdoc and Clippy with warnings denied
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" RUSTDOCFLAGS="$(RUSTDOC_FLAGS)" $(CARGO) doc --workspace --no-deps
@@ -131,8 +165,20 @@ lint-clippy: check-build-tools ## Run rustdoc and Clippy with warnings denied
 lint-whitaker: check-build-tools ## Run the rolling Whitaker Dylint suite without repository RUSTFLAGS
 	RUSTFLAGS= $(WHITAKER) --all $(WHITAKER_PACKAGES) -- $(CARGO_FLAGS)
 
-typecheck: check-build-tools ## Type-check without building
+typecheck: check-build-tools ## Type-check Python and Rust sources without building
+	+$(MAKE) typecheck-python
+	+$(MAKE) typecheck-rust
+
+typecheck-python: ## Type-check all repository Python sources with ty
+	@test -n "$(PYTHON_SOURCES)" || { echo 'typecheck-python: no Python sources found under $(PYTHON_SOURCE_ROOTS)' >&2; exit 2; }
+	$(TY) check --python-version $(PYTHON_BASELINE) $(PYTHON_IMPORT_ROOTS) $(PYTHON_SOURCES)
+
+typecheck-rust: check-build-tools ## Type-check Rust sources without building
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) check $(CARGO_FLAGS)
+
+lint-python: ## Run Pylint and the pinned df12 house lints on every Python source
+	@test -n "$(PYTHON_SOURCES)" || { echo 'lint-python: no Python sources found under $(PYTHON_SOURCE_ROOTS)' >&2; exit 2; }
+	$(PYLINT) $(PYTHON_SOURCES)
 
 fmt: ## Format Rust and Markdown sources
 	$(CARGO) fmt --all

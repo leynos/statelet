@@ -6,8 +6,6 @@ uploader declares that environment, no other job does, and no workflow a pull
 request can reach declares it: that would let branch code request its secrets.
 """
 
-from __future__ import annotations
-
 import typing as typ
 
 import codescene_reading as reading

@@ -27,8 +27,6 @@ only over correct workflows passes whether or not it detects anything.
 Run via ``make test-workflow-contracts``.
 """
 
-from __future__ import annotations
-
 import codescene_baseline as baseline
 import codescene_calls as calls
 import codescene_integrity as integrity
@@ -88,7 +86,9 @@ def test_exactly_one_main_publisher_uploads_ratcheted_coverage() -> None:
 def test_only_the_publisher_writes_the_baseline() -> None:
     """The only ratcheted coverage step a push can reach is the publisher's."""
     every = reading.workflows(reading.WORKFLOW_DIR)
-    assert not calls.unprovable_callees(every, reading.push_closure(every))
+    assert not calls.unprovable_callees(every, reading.push_closure(every)), (
+        "test_only_the_publisher_writes_the_baseline contract failed"
+    )
     writers = baseline.baseline_writers(every)
     assert writers == [PUBLISHER], f"expected the publisher alone, saw {writers}"
 
@@ -111,12 +111,12 @@ def test_every_pull_request_lane_reads_the_publisher_baseline() -> None:
     written = _baselines(every[PUBLISHER])
     assert len(written) == 1, f"expected one publisher coverage step, saw {written}"
     read = [
-        (name, baseline)
+        (name, lane_baseline)
         for name in sorted(reading.pull_request_closure(every))
-        for baseline in _baselines(every[name])
+        for lane_baseline in _baselines(every[name])
     ]
     assert read, "no pull-request lane measures coverage"
-    for name, baseline in read:
-        assert baseline == written[0], (
-            f"{name} reads {baseline}, the publisher writes {written[0]}"
+    for name, lane_baseline in read:
+        assert lane_baseline == written[0], (
+            f"{name} reads {lane_baseline}, the publisher writes {written[0]}"
         )

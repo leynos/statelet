@@ -10,8 +10,6 @@ The token travels only as the upload action's ``access-token`` input and the
 check step's exact command, never in ``env``.
 """
 
-from __future__ import annotations
-
 import copy
 import itertools
 import re

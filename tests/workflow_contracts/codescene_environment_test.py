@@ -7,8 +7,6 @@ guard and ``access-token:`` stay held by the CV-005 coverage contract.
 Run via ``make test-workflow-contracts``.
 """
 
-from __future__ import annotations
-
 import copy
 import typing as typ
 
@@ -20,8 +18,8 @@ PUBLISHER = "coverage-main.yml"
 LANE = "ci.yml"
 
 
-@pytest.fixture
-def every() -> dict[str, reading.Workflow]:
+@pytest.fixture(name="every")
+def _workflow_fixture() -> dict[str, reading.Workflow]:
     """Return a private copy of the repository's workflows to mutate."""
     return copy.deepcopy(reading.workflows(reading.WORKFLOW_DIR))
 
