@@ -6,11 +6,11 @@ measurements from historical results on PR #80 and scratch trees. The final PR
 number, head, hosted checks, and any remaining external prerequisites are
 updated after publication.
 
-The follow-up branch is `rust-baseline-completion-20261001`, based on `main` at
-`69203753e61cc5500d94a80cb700f021c32933ab` (#88). Its changes preserve the
-merged spelling gate from #80, Dependabot policy from #81, step-level
-`GITHUB_TOKEN` additions from #82, StateName work from #71, and the current
-setup-rust pin from #88.
+The follow-up branch is `rust-baseline-completion-20261001`, rebased onto
+`main` at `84235c6d8d3d5dc2880a97543385bda51d44faa2` (#94). Its changes
+preserve the merged spelling gate from #80, Dependabot policy from #81,
+step-level `GITHUB_TOKEN` additions from #82, StateName work from #71, and the
+current setup-rust pin from #88.
 
 ## Earlier PR #80 delivery history
 
@@ -108,12 +108,12 @@ extra or missing labels. The readback is
 The v0.1.3 builder resolved to source commit
 `c8a4f95d7cf7f6a1b7517f2775d122d47d5721eb`. Its live shared base had SHA-256
 `d67b4110813615a4eda3e8962e898466191e4af25b2e28baedcbab348696aeac`; the local
-overlay had SHA-256
-`28749d8f7e60fb35d33d8a76e981f1aa77a7b122688281735e821e5cda3633ae`, and the
-generated `typos.toml` had SHA-256
-`da1ec11757e5305ef6d5c5d6cfe2548c64e1eaaae06bc9f0f9a175419d4b1703`. These are
-the recorded generation inputs and output. The shared-base cache files are
-ignored by Git; the live shared dictionary remains a mutable input, not an
+overlay now has SHA-256
+`3065100e60b1def2d74905c92ce6f738ad14de157896d0d1d2ecd1d6b782deaf`, and the
+generated `typos.toml` has SHA-256
+`748f461abca1bdb97d9b66387cb2f4ae1ad22e25972e24888422e66d8e9890a0`. These are
+the current recorded generation inputs and output. The shared-base cache files
+are ignored by Git; the live shared dictionary remains a mutable input, not an
 immutable release dependency. The generation command was:
 
 ```sh
@@ -211,8 +211,9 @@ revision `f405b89e4a903718`, SHA-256
 `6ac22335da4d1757d5248a89871ba0d2718babce34779989a28eb5e74f504abb`. The
 Markdown pass followed two measured repairs: replacing an unsupported
 `npm exec` route with the direct pinned `markdownlint-cli2` executable and
-rewriting the Whitaker recipe as a directly auditable command. These results
-must be repeated after the final formatter pass.
+rewriting the Whitaker recipe as a directly auditable command. Those results
+were on the pre-rebase tree; the selected packages were rerun below after the
+final formatter.
 
 The first integrated gate run was against tree
 `d027503818fb33300c34a41443def9f4db4e94d4` on 2026-10-01. `make fmt`,
@@ -232,7 +233,8 @@ byte-identical (SHA-256
 `c9a0e2c157e401f88aabd70d68c4e5f53f49d92183b8e79551aa8aec52b35af5`). The
 spelling overlay has no file exclusions or blanket inline-code exemption, and
 negative controls retain both quoted and unquoted ordinary prose. The builder
-v0.1.3 regenerated `typos.toml`; its final check remains pending.
+v0.1.3 regenerated `typos.toml`; the full-scope spelling gate passed again on
+the rebased candidate after its final formatter.
 
 `make test-workflow-contracts` reported 207 passed and four failures, all in
 test expectations: the Whitaker leaf-command selector, the distinct
@@ -256,14 +258,20 @@ cargo binstall --no-confirm --force --strategies crate-meta-data,quick-install \
 
 On 2026-10-01 it exited 94 because the published Linux archive did not contain
 the required `whitaker-installer` executable; the installer reported that its
-Cargo fallback was disabled. No source build ran. The ambient installer is
-0.2.7 and does not satisfy the selected action's 0.2.9 floor. The approved
-binary-only route is therefore externally blocked, and neither a suite revision
-nor an installer-managed toolchain can be claimed for this branch. The Whitaker
-suite and composite `make lint` remain unrun. The first integrated
-`make lint-clippy` run passed separately; the next final run must repeat it.
-`mdtablefix` 0.6.0 and `markdownlint-cli2` 0.23.2 are installed for their local
-routes.
+Cargo fallback was disabled. No source build ran. This was a local probe of the
+binary package, not a failure of the shared action. Statelet PR #94
+subsequently merged the approved `install-whitaker` action route at
+`6dea5677a84fec60ca51b07202570e3af12ffdb4`, with `cranelift: true` and no
+manual installer script. Hosted run
+[36858219212](https://github.com/leynos/statelet/actions/runs/36858219212)
+passed its Install Whitaker, Lint, and workflow-contract steps on main commit
+`84235c6d8d3d5dc2880a97543385bda51d44faa2`. The action's default installer is
+0.2.9 and the suite remains rolling. The retrieved run metadata does not expose
+the exact installer-managed toolchain string or installed suite revision; those
+values remain unclaimed. This branch's rebased sequential Make lint gate still
+requires candidate-head CI evidence. The ambient installer is 0.2.7 and was not
+used. `mdtablefix` 0.6.0 and `markdownlint-cli2` 0.23.2 are installed for their
+local routes.
 
 The direct Markdown tools and CI consumer contracts are present. The local
 formatter contract exercises a non-ignored untracked Markdown defect, checks
@@ -279,13 +287,13 @@ CI action.
 
 ## Five onboarding dispositions
 
-| Onboarding                | Implemented contract                                                | Remaining evidence                                    |
-| ------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------- |
-| Development build default | Cranelift, -Zthreads=8, Linux linker, pinned tool preflight         | Local gates passed; hosted CI pending                 |
-| CV-005                    | PR ratchet and protected main publisher contracts                   | Hosted CI and live secret placement remain unverified |
-| Markdown                  | Direct pinned tools, CI provisioning, formatting selection contract | Local gates and Concordat audit passed                |
-| install-whitaker          | Approved shared action pin and ordered Make composite gate          | 0.2.9 archive lacks its binary; suite unrun           |
-| Typos builder             | v0.1.3 full-scope gate and narrow local overlay                     | Spelling gate and Concordat audit passed              |
+| Onboarding                | Implemented contract                                                | Remaining evidence                                       |
+| ------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
+| Development build default | Cranelift, -Zthreads=8, Linux linker, pinned tool preflight         | Main CI passed; candidate-head CI pending                |
+| CV-005                    | PR ratchet and protected main publisher contracts                   | Candidate CI and live secret placement remain unverified |
+| Markdown                  | Direct pinned tools, CI provisioning, formatting selection contract | Prior tree passed; candidate gates pending               |
+| install-whitaker          | Approved shared action pin and ordered Make composite gate          | Main CI action and lint passed; candidate CI pending     |
+| Typos builder             | v0.1.3 full-scope gate and narrow local overlay                     | Spelling gate and Concordat audit passed                 |
 
 *Table 4: Consumer implementation and outstanding evidence.*
 
@@ -317,9 +325,9 @@ unverified. A protected main-only publisher run after merge is also pending;
 report generation, baseline persistence, upload, and intentional token-absent
 skip are distinct outcomes.
 
-## Final local verification before publication
+## Historical local verification before rebase
 
-The final code and workflow tree measured before this record refresh was
+The code and workflow tree measured before the 2026-10-02 rebase was
 `1a5ad6a3b0fee79dbd6a10d59326ddac5316fc5b`, based on main at
 `69203753e61cc5500d94a80cb700f021c32933ab`. The formatter and every local
 non-mutating gate below passed on that unchanged code tree:
@@ -338,12 +346,13 @@ non-mutating gate below passed on that unchanged code tree:
 | `GIT_CONFIG_COUNT=0 make audit` | Passed; 1,277 advisories loaded                          | `/tmp/final4-audit-rust-baseline-completion-20261001.out`                   |
 | `mbake validate Makefile`       | Passed                                                   | `/tmp/final4-mbake-validate-rust-baseline-completion-20261001.out`          |
 
-The seven selected Concordat audits also passed: `rust-build-defaults` 0.1.1,
-`rust-makefile-baseline` 0.3.2, `markdown-formatting-baseline` 0.2.0,
-`main-owned-codescene-coverage` 0.3.0, `spelling-config-baseline` 0.1.0,
-`whitaker-provisioning` 0.1.0, and `dependabot-update-shape` 0.1.0. They used
-Concordat 0.1.0 at `8a4a1faba1290687c0b6b221e1fc96439ba3ba43` and makeutil
-0.1.0 at `f405b89e4a903718`; individual logs are under
+The seven selected Concordat audits also passed on that earlier tree:
+`rust-build-defaults` 0.1.1, `rust-makefile-baseline` 0.3.2,
+`markdown-formatting-baseline` 0.2.0, `main-owned-codescene-coverage` 0.3.0,
+`spelling-config-baseline` 0.1.0, `whitaker-provisioning` 0.1.0, and
+`dependabot-update-shape` 0.1.0. They used Concordat 0.1.0 at
+`8a4a1faba1290687c0b6b221e1fc96439ba3ba43` and makeutil 0.1.0 at
+`f405b89e4a903718`; individual logs are under
 `/tmp/final4-audit-*-rust-baseline-completion-20261001.out`.
 
 The build checks observed `nightly-2026-09-13`. A controlled Clippy probe
@@ -352,13 +361,140 @@ accepted, while fixture and ordinary helper calls are denied by `expect_used`.
 `rstest-bdd` is not a dependency or test macro in this consumer, so its
 recognition behaviour was not measured. The scratch probe was removed.
 
-The approved binary-only Whitaker install attempt still exits 94 because the
-published Linux 0.2.9 archive lacks `whitaker-installer`; source fallback was
-disabled. The installer-managed toolchain and rolling-suite revision therefore
-remain unobserved, and neither the Whitaker suite nor composite `make lint` has
-run. Hosted CI has not run yet. The Codescene environment is main-only, but
-GitHub returned HTTP 403 for secret metadata, so placement of `CS_ACCESS_TOKEN`
-in that environment and removal of repository-level exposure remain unverified.
-The protected-main publisher's post-merge outcomes also remain pending. The
-branch is prepared for publication as a draft PR. The PR number and hosted
-results will be recorded after publication.
+The exact shared `install-whitaker` action is now active on main, and its
+hosted Install Whitaker and Lint steps passed in run 36858219212. That run's
+available metadata does not disclose the installed suite SHA or
+installer-managed toolchain string. The candidate branch's sequential composite
+Make lint and full validation still require fresh CI after publication. The
+Codescene environment is main-only, but GitHub returned HTTP 403 for secret
+metadata, so placement of `CS_ACCESS_TOKEN` in that environment and removal of
+repository-level exposure remain unverified. The protected-main publisher's
+post-merge outcomes also remain pending. A draft description is prepared, but
+no PR exists because the remote branch has not been published. The current
+GitHub OAuth token lacks the `workflow` scope required to push the changed
+workflow file. No alternate write route has been used.
+
+## Rebase and current candidate state
+
+The delivery branch was rebased from base
+`69203753e61cc5500d94a80cb700f021c32933ab` onto the live main commit
+`84235c6d8d3d5dc2880a97543385bda51d44faa2` on 2026-10-02. Recovery refs
+preserve the old head, old base, and target under
+`refs/recovery/statelet-rust-baseline-20261002/`. The replay had conflicts only
+in `ci.yml` and `coverage-main.yml`. The resolution retains the merged #94
+Whitaker action and `cranelift: true`, plus #91's current coverage-generation
+pin. `git diff --check` passed after replay.
+
+The first workflow-contract run against the rebased tree exposed stale
+expectations for the #91 coverage action SHA and the #94 YAML boolean/input
+shape. Those contracts were corrected to validate the live action pins and to
+allow omitted `RUSTFLAGS` while rejecting non-empty injection. The corrected
+`make test-workflow-contracts` passed 212 tests in 8.48 seconds on the rebased
+candidate; its log is `/tmp/statelet-post-rebase-contracts-fixed-20261002.out`.
+The full post-rebase validation sequence, including another formatter pass, is
+recorded below. Historical results above remain tied to their earlier trees.
+
+The local `make install-markdownlint` target completed successfully from the
+Makefile's pinned `markdownlint-cli2@0.23.2` package. The selected executable
+reports version 0.23.2; its install log is
+`/tmp/statelet-install-markdownlint-rust-baseline-completion-20261001.out`. The
+ambient `whitaker-installer` reports 0.2.7 and `whitaker --version` reports
+`cargo-dylint 6.0.1`; neither is accepted as the suite's installer or rolling
+revision evidence and neither was used for the suite gate. Main's merged PR #94
+run 36858219212 used the approved action and passed Install Whitaker, Lint, and
+Workflow contract tests at PR head `8028ee38e276d2f99c3593e3468b334d42e65c29`.
+
+The canonical spelling block was checked after formatting against the pinned
+builder v0.1.3 source file at commit
+`c8a4f95d7cf7f6a1b7517f2775d122d47d5721eb`. The start and end markers each
+occur once on separate lines in `AGENTS.md`, and the content between them
+matches the source after whitespace normalization.
+
+## Post-rebase final validation
+
+These results apply to the formatted candidate after removing the redundant
+Cargo `homepage` and explicit `readme` keys that caused two manifest warnings.
+The checks ran sequentially after the shared Cargo cache lock cleared.
+
+| Command                                | Result                                                       | Evidence                                                                         |
+| -------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `make fmt`                             | Passed; Rust and Markdown formatting applied                 | `/tmp/statelet-final11-fmt-rust-baseline-completion-20261001.out`                |
+| `make check-fmt`                       | Passed; 29 Markdown files unchanged                          | `/tmp/statelet-final11-check-fmt-rust-baseline-completion-20261001.out`          |
+| `GIT_CONFIG_COUNT=0 make spelling`     | Passed; builder v0.1.3, `--scope all`, config current        | `/tmp/statelet-final11-spelling-rust-baseline-completion-20261001.out`           |
+| `make lint-clippy`                     | Passed; Rustdoc and Clippy, no findings or manifest warnings | `/tmp/statelet-final5-lint-clippy-rust-baseline-completion-20261001.out`         |
+| `make typecheck`                       | Passed for all targets and features                          | `/tmp/statelet-final5-typecheck-rust-baseline-completion-20261001.out`           |
+| `make test`                            | Passed; 143 tests and one doctest                            | `/tmp/statelet-final5-test-rust-baseline-completion-20261001.out`                |
+| `make test-workflow-contracts`         | Passed; 212 tests                                            | `/tmp/statelet-final11-workflow-contracts-rust-baseline-completion-20261001.out` |
+| `GIT_CONFIG_COUNT=0 make markdownlint` | Passed; pinned markdownlint-cli2 0.23.2                      | `/tmp/statelet-final11-markdownlint-rust-baseline-completion-20261001.out`       |
+| `make nixie`                           | Passed; all Mermaid diagrams validated                       | `/tmp/statelet-final5-nixie-rust-baseline-completion-20261001.out`               |
+| `GIT_CONFIG_COUNT=0 make audit`        | Passed; 1,279 RustSec advisories loaded                      | `/tmp/statelet-final6-audit-rust-baseline-completion-20261001.out`               |
+| `mbake validate Makefile`              | Passed                                                       | `/tmp/statelet-final11-mbake-rust-baseline-completion-20261001.out`              |
+
+The workflow-contract tests exercise a deliberate formatting defect in a
+temporary, non-ignored untracked Markdown file: `check-fmt` rejects it, `fmt`
+repairs it, and `check-fmt` then passes. They also confirm ignored generated
+Markdown under both `target/` and `.pytest_cache/` is excluded, formatter and
+linter failures propagate through Make, the CI Markdown action's installer
+order and file globs are binding, and the Whitaker failure propagates through
+`make -j lint` after Rustdoc and Clippy. The controlled Whitaker executable
+exits 23 in that test. The real rolling suite passed in Statelet PR #94's
+hosted run, but that run predates this branch's sequential Make composite.
+
+The local `markdownlint` target now obtains tracked and non-ignored untracked
+Markdown from Git, matching the formatter's selection policy. This excludes
+ignored generated files such as `.pytest_cache/README.md`; the CI action keeps
+its required `**/*.md` glob and the markdownlint configuration excludes the
+pytest cache directory.
+
+After this selection correction, Concordat 0.1.0 at source commit
+`8a4a1faba1290687c0b6b221e1fc96439ba3ba43` reran the affected
+`rust-makefile-baseline` and `markdown-formatting-baseline` packages. Both
+returned `compliant` with no findings; their logs are
+`/tmp/statelet-final10-audit-rust-makefile-baseline-rust-baseline-completion-20261001.out`
+and
+`/tmp/statelet-final10-audit-markdown-formatting-baseline-rust-baseline-completion-20261001.out`.
+
+The seven selected Concordat packages returned `compliant` with no findings on
+this candidate: `rust-build-defaults` 0.1.1, `rust-makefile-baseline` 0.3.2,
+`markdown-formatting-baseline` 0.2.0, `main-owned-codescene-coverage` 0.3.0,
+`spelling-config-baseline` 0.1.0, `whitaker-provisioning` 0.1.0, and
+`dependabot-update-shape` 0.1.0. Concordat reported version 0.1.0 from source
+commit `8a4a1faba1290687c0b6b221e1fc96439ba3ba43`. The Makefile and Markdown
+audits used this command shape:
+
+```sh
+GIT_CONFIG_COUNT=0 PATH="$tool_bin:$PATH" \
+  UV_CACHE_DIR=.uv-cache UV_TOOL_DIR=.uv-tools uv tool run --python 3.14 \
+  --from 'git+https://github.com/leynos/concordat.git@8a4a1faba1290687c0b6b221e1fc96439ba3ba43' \
+  concordat artefact rule run "$rule" --repo "$PWD" --format json
+```
+
+Those two audits used `makeutil` 0.1.0 from source commit
+`f405b89e4a903718b188d812044acbe4749bdbab`; its installed binary SHA-256 was
+`71a187a4842012326c3e8eb49ae579d9bd703f5ba21602c27744f5e46152c262`. The ambient
+binary came from `29fc5a16` and failed the Makefile audit before it returned a
+policy verdict because its parser lacked a required variable-assignment
+accessor. The pinned parser was installed to the ignored
+`.uv-tools/makeutil-f405b89` prefix with:
+
+```sh
+GIT_CONFIG_COUNT=0 cargo install --root "$tool_prefix" \
+  --git https://github.com/leynos/makeutil.git \
+  --rev f405b89e4a903718b188d812044acbe4749bdbab --locked makeutil
+```
+
+The corrected Makefile and Markdown audits returned compliant with no findings.
+Initial attempts using the ambient parser are preserved in the
+`/tmp/statelet-final2-audit-*-rust-baseline-completion-20261001.out` logs;
+corrected per-rule outputs are recorded under
+`/tmp/statelet-final6-audit-*-rust-baseline-completion-20261001.out`.
+`mbake validate Makefile` is recorded at
+`/tmp/statelet-final6-mbake-rust-baseline-completion-20261001.out`.
+
+Local composite `make lint` was not run because the ambient Whitaker installer
+is 0.2.7 and cannot establish the pinned installer or rolling-suite provenance.
+No manual Whitaker installation was performed. The approved action at full SHA
+`6dea5677a84fec60ca51b07202570e3af12ffdb4` passed its real hosted suite and
+lint in PR #94; available run metadata does not expose the installed suite
+revision or installer-managed toolchain. Candidate-head CI remains required to
+exercise this branch's sequential composite with the action-provisioned suite.

@@ -69,10 +69,8 @@ jobs:
           python-version: '3.x'
       - name: Install Whitaker
         uses: leynos/shared-actions/.github/actions/install-whitaker@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
-        env:
-          RUSTFLAGS: ""
         with:
-          cranelift: 'true'
+          cranelift: true
       - name: Audit dependencies
         if: github.actor != 'dependabot[bot]'
         run: make audit

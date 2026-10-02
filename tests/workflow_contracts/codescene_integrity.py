@@ -18,10 +18,11 @@ from codescene_rules import (
     step_input,
 )
 
-# Reviewed in the shared-actions Git graph: this immutable commit descends
-# from CV-005 floor a5765019912a8ab6882b12db049c7cde635f3a85. Its
-# generate-coverage action forces LLVM for Cranelift-based development builds.
-APPROVED_ACTION_SHA = "6dea5677a84fec60ca51b07202570e3af12ffdb4"
+# The current generate-coverage pin was merged in Statelet PR #91 and preserves
+# the CV-005 ratchet and LLVM coverage route. The upload action remains pinned
+# to the reviewed shared-actions revision that descends from the CV-005 floor.
+APPROVED_COVERAGE_ACTION_SHA = "013346ccfd37bd1e02eb430525233f1a4cd942b8"
+APPROVED_UPLOAD_ACTION_SHA = "6dea5677a84fec60ca51b07202570e3af12ffdb4"
 SETUP_ACTION = "leynos/shared-actions/.github/actions/setup-rust"
 SETUP_ACTION_SHA = "c4ed5ffaf0640b1907d5359a87fd1677034eec27"
 CHECKOUT_ACTION = "actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"
@@ -70,7 +71,7 @@ def coverage_contract_findings(every: dict[str, reading.Workflow]) -> list[str]:
             findings.append(f"{name} must have exactly one coverage step")
             continue
         step = measured[0]
-        if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_ACTION_SHA}":
+        if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_COVERAGE_ACTION_SHA}":
             findings.append(f"{name} uses an unapproved coverage action SHA")
         if step.get("with") != EXPECTED_COVERAGE_INPUTS:
             findings.append(f"{name} has mismatched coverage inputs")
@@ -90,7 +91,7 @@ def coverage_contract_findings(every: dict[str, reading.Workflow]) -> list[str]:
         for step in reading.steps(every[name]):
             if not is_coverage(step):
                 continue
-            if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_ACTION_SHA}":
+            if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_COVERAGE_ACTION_SHA}":
                 findings.append(f"{name} uses an unapproved coverage action SHA")
             if step.get("with") != EXPECTED_COVERAGE_INPUTS:
                 findings.append(f"{name} has mismatched coverage inputs")
@@ -159,7 +160,7 @@ def coverage_contract_findings(every: dict[str, reading.Workflow]) -> list[str]:
         findings.append("publisher build-tool preflight must precede coverage")
     uploads = [step for step in steps if is_upload_action(step)]
     if len(uploads) != 1 or reading.uses(uploads[0]) != (
-        f"{UPLOAD_ACTION}@{APPROVED_ACTION_SHA}"
+        f"{UPLOAD_ACTION}@{APPROVED_UPLOAD_ACTION_SHA}"
     ):
         findings.append("publisher uploader has an unapproved action SHA")
     if len(uploads) == 1 and uploads[0].get("with") != {

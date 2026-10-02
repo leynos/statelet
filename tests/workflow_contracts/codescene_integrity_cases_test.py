@@ -64,9 +64,13 @@ def test_integrity_mutations_are_rejected(
     pr_coverage = _coverage(every, "ci.yml")
     main_coverage = _coverage(every, "coverage-main.yml")
     if change == "pr_action_sha":
-        pr_coverage["uses"] = pr_coverage["uses"].replace("@6dea5677", "@4fb8eb7")
+        pr_coverage["uses"] = pr_coverage["uses"].replace(
+            f"@{integrity.APPROVED_COVERAGE_ACTION_SHA}", "@4fb8eb7"
+        )
     elif change == "publisher_action_sha":
-        main_coverage["uses"] = main_coverage["uses"].replace("@6dea5677", "@4fb8eb7")
+        main_coverage["uses"] = main_coverage["uses"].replace(
+            f"@{integrity.APPROVED_COVERAGE_ACTION_SHA}", "@4fb8eb7"
+        )
     elif change == "setup_sha":
         next(step for step in steps if "setup-rust" in reading.uses(step))["uses"] += (
             "x"
