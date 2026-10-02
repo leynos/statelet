@@ -19,10 +19,10 @@ from codescene_rules import (
 )
 
 # The current generate-coverage pin was merged in Statelet PR #91 and preserves
-# the CV-005 ratchet and LLVM coverage route. The upload action remains pinned
-# to the reviewed shared-actions revision that descends from the CV-005 floor.
+# the CV-005 ratchet and LLVM coverage route. Statelet PR #98 advanced the
+# main publisher's upload action to the current shared-actions revision.
 APPROVED_COVERAGE_ACTION_SHA = "013346ccfd37bd1e02eb430525233f1a4cd942b8"
-APPROVED_UPLOAD_ACTION_SHA = "6dea5677a84fec60ca51b07202570e3af12ffdb4"
+APPROVED_UPLOAD_ACTION_SHA = "ff1dd759dfffc0db3459e30e833f52437ee62b57"
 SETUP_ACTION = "leynos/shared-actions/.github/actions/setup-rust"
 SETUP_ACTION_SHA = "c4ed5ffaf0640b1907d5359a87fd1677034eec27"
 CHECKOUT_ACTION = "actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"

@@ -536,3 +536,11 @@ wrapping; Rust formatting passed and no later gate ran. `make fmt` then passed,
 changing only paragraph wrapping in this section, and Markdownlint reported
 zero issues across 29 files. The Scrutineer will restart the gate sequence on
 the amended head.
+
+The next `make test-workflow-contracts` run reached 211 passes and one failure:
+the CodeScene publisher contract still expected the uploader SHA used before
+Statelet PR #98, although the workflow correctly retained current main's
+`ff1dd759` pin. The expected upload SHA was updated to the PR #98 revision
+without changing the distinct `install-whitaker` action at `6dea5677`. This
+newly exposed contract blind spot stopped the sequence; no later gate has run
+on the corrected tree.
