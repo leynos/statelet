@@ -22,7 +22,6 @@ use support::{
     Verdict,
     check_dominance,
     check_gate_bindings,
-    check_quoted_clauses,
     check_totality,
     parse_register,
 };
@@ -98,70 +97,6 @@ fn dominance_rejects_a_reachable_dead_row() -> Result<(), String> {
         )
     );
     Ok(())
-}
-
-/// Resolves ADR evidence and rejects rewritten, relocated, and fabricated clauses.
-#[test]
-fn quoted_passages_still_resolve() {
-    check_quoted_clauses(ADR, DESIGN, TERMS, CONTEXT).expect("ADR 003 citations must resolve");
-    let rewritten = DESIGN.replace(
-        "the macro crate does not ship in v0.1",
-        "the macro crate ships",
-    );
-    assert_eq!(
-        check_quoted_clauses(ADR, &rewritten, TERMS, CONTEXT),
-        Err(
-            "docs/design.md no longer contains \"the macro crate does not ship in v0.1\". Repair: \
-             update ADR 003 and its contract together."
-                .to_owned()
-        )
-    );
-    let b1_row_deleted = format!(
-        "{}\nB1 still says both improve without framework adoption outside the table.",
-        DESIGN.replace(
-            "| B1  | A real segment prefers handwritten state machines and wants shared \
-             convention | Low-medium | `mdtablefix` plus one second non-toy example both improve \
-             without framework adoption          |\n",
-            "",
-        )
-    );
-    assert_eq!(
-        check_quoted_clauses(ADR, &b1_row_deleted, TERMS, CONTEXT),
-        Err(
-            "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
-             or revise ADR 003."
-                .to_owned()
-        )
-    );
-    let split_case_rewritten = DESIGN
-        .replace(
-            "in either validation\nexample",
-            "in both validation\nexamples",
-        )
-        .replace(
-            "## 14. Deferred decisions",
-            "## 14. Deferred decisions\n\nin either validation example",
-        );
-    assert_eq!(
-        check_quoted_clauses(ADR, &split_case_rewritten, TERMS, CONTEXT),
-        Err(
-            "docs/design.md §13.7 does not record the R1 split-case rule. Repair: amend section \
-             13.7 to say either validation example."
-                .to_owned()
-        )
-    );
-    let invented_citation = ADR.replace(
-        "both improve without framework adoption",
-        "a made-up validation clause",
-    );
-    assert_eq!(
-        check_quoted_clauses(&invented_citation, DESIGN, TERMS, CONTEXT),
-        Err(
-            "docs/design.md no longer contains \"a made-up validation clause\". Repair: update \
-             ADR 003 and its contract together."
-                .to_owned()
-        )
-    );
 }
 
 /// Resolves every ADR gate to its live, unticked roadmap task.
@@ -264,26 +199,6 @@ fn gate_bindings_reject_wrong_known_row_gate() {
         Err(
             "docs/adr-003-v0-1-exit-register.md: Held/Held with E3 must use gate G3, not G1. \
              Repair: bind this exit row to G3."
-                .to_owned()
-        )
-    );
-}
-
-/// Rejects a B1 row copied outside section 11.1 of the design document.
-#[test]
-fn quoted_passages_reject_a_bet_outside_its_table() {
-    let b1_row = "| B1  | A real segment prefers handwritten state machines and wants shared \
-                  convention | Low-medium | `mdtablefix` plus one second non-toy example both \
-                  improve without framework adoption          |\n";
-    let b1_outside_its_table = DESIGN.replace(b1_row, "").replace(
-        "### 11.2 Baseline comparison",
-        &format!("### 11.2 Baseline comparison\n\n{b1_row}"),
-    );
-    assert_eq!(
-        check_quoted_clauses(ADR, &b1_outside_its_table, TERMS, CONTEXT),
-        Err(
-            "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
-             or revise ADR 003."
                 .to_owned()
         )
     );

@@ -102,6 +102,29 @@ fn blocked_notes_resolve_to_not_resolved() -> Result<(), String> {
     Ok(())
 }
 
+/// A later inadmissible duplicate blocks even when an admissible row comes first.
+#[test]
+fn duplicate_inadmissible_status_still_blocks() -> Result<(), String> {
+    let note = note_rows(&state_name_note()).map_err(|error| error.to_string())?;
+    let cell = note.first().ok_or("the fixture note has no first cell")?;
+    let mut rows = live_status()?;
+    let original = rows
+        .iter()
+        .find(|row| row.field == cell.field && row.status == cell.status)
+        .ok_or("the fixture note's first status is absent from the register")?;
+    let mut duplicate = original.clone();
+    duplicate.admissible = false;
+    rows.push(duplicate);
+    assert_eq!(
+        resolve_note(&rows, &note),
+        Ok(Resolution::NotResolved {
+            field: cell.field.clone(),
+            status: cell.status.clone(),
+        })
+    );
+    Ok(())
+}
+
 /// Accepts the fixture note and rejects each documented note defect, naming the
 /// exact repair the defect requires.
 ///

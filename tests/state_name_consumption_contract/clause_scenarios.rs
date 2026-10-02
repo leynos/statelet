@@ -17,8 +17,16 @@ use super::{
     ROADMAP,
     STRONGER,
     clauses,
+    clauses::ClauseSources,
     mutated,
     types::Register,
+};
+
+/// The unchanged documents against which ADR 004's quotations resolve.
+const LIVE_SOURCES: ClauseSources<'static> = ClauseSources {
+    design: DESIGN,
+    roadmap: ROADMAP,
+    adr_002: ADR_002,
 };
 
 /// Resolves the three quoted clauses, and rejects a rewritten clause, a
@@ -26,7 +34,7 @@ use super::{
 /// evidence section.
 #[test]
 fn quoted_passages_still_resolve() -> Result<(), String> {
-    clauses::check_quoted_clauses(ADR, DESIGN, ROADMAP, ADR_002)?;
+    clauses::check_quoted_clauses(ADR, LIVE_SOURCES)?;
     // The check reports the file a reader must open, not the attribution word
     // the ADR uses for it.
     let drifted = |path: &str, quoted: &str| {
@@ -39,7 +47,13 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
     // text is the ADR's quotation, because that is what failed to resolve.
     let rewritten = mutated(DESIGN, "stronger", "a stronger type");
     assert_eq!(
-        clauses::check_quoted_clauses(ADR, &rewritten, ROADMAP, ADR_002),
+        clauses::check_quoted_clauses(
+            ADR,
+            ClauseSources {
+                design: &rewritten,
+                ..LIVE_SOURCES
+            }
+        ),
         drifted("docs/design.md", STRONGER)
     );
     // The clause is still in `docs/design.md`, word for word, but a heading now
@@ -51,7 +65,13 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
         "### 6.1.1 Superseded\n\nThe `mdtablefix` baseline",
     );
     assert_eq!(
-        clauses::check_quoted_clauses(ADR, &relocated, ROADMAP, ADR_002),
+        clauses::check_quoted_clauses(
+            ADR,
+            ClauseSources {
+                design: &relocated,
+                ..LIVE_SOURCES
+            }
+        ),
         drifted("docs/design.md", STRONGER)
     );
     // The ADR quotes a clause its source never carried. The needle is a single
@@ -59,7 +79,7 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
     // and "stronger", so any longer needle would be split by the formatter.
     let fabricated = mutated(ADR, "stronger", "weaker");
     assert_eq!(
-        clauses::check_quoted_clauses(&fabricated, DESIGN, ROADMAP, ADR_002),
+        clauses::check_quoted_clauses(&fabricated, LIVE_SOURCES),
         drifted(
             "docs/design.md",
             "The default remains `&'static str` until a real example consumes something weaker"
@@ -69,7 +89,7 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
     // this contract does not read.
     let misattributed = mutated(ADR, "— design", "— context");
     assert_eq!(
-        clauses::check_quoted_clauses(&misattributed, DESIGN, ROADMAP, ADR_002),
+        clauses::check_quoted_clauses(&misattributed, LIVE_SOURCES),
         Err(
             "docs/adr-004-state-name-consumption-evidence.md attributes a clause to \"context\", \
              which this contract does not read. Repair: use design, roadmap or adr-002."
@@ -79,7 +99,7 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
     // The evidence section still holds its delimiters but no clause at all.
     let emptied = empty_evidence_block(ADR);
     assert_eq!(
-        clauses::check_quoted_clauses(&emptied, DESIGN, ROADMAP, ADR_002),
+        clauses::check_quoted_clauses(&emptied, LIVE_SOURCES),
         Err(EMPTY_CLAUSE_LIST.to_owned())
     );
     Ok(())
@@ -109,7 +129,13 @@ fn a_clause_moved_to_another_task_is_rejected() -> Result<(), String> {
         );
     }
     assert_eq!(
-        clauses::check_quoted_clauses(ADR, DESIGN, &moved, ADR_002),
+        clauses::check_quoted_clauses(
+            ADR,
+            ClauseSources {
+                roadmap: &moved,
+                ..LIVE_SOURCES
+            }
+        ),
         Err(
             "docs/roadmap.md no longer contains the quoted clause \"backed by observed example \
              consumption, not anticipation\" under \"3.2.1. Finalize the StateName return \

@@ -61,12 +61,27 @@ The generated `Makefile` exposes these public targets:
   owning module; only the shared readers are reused across policy modules.
   These support modules remain test-only; runtime code and unrelated document
   contracts must not depend on them.
+
 - `make markdownlint` checks Markdown files.
 - `make spelling` runs the pinned `typos-config-builder gate`, which
   regenerates `typos.toml` from the shared en-GB-oxendict dictionary, checks
   all tracked files, and applies the shared phrase corrections. It never drift
   checks `typos.toml`.
 - `make nixie` validates Mermaid diagrams.
+
+The ADR 003 and ADR 004 integration contracts keep their parsing helpers
+private to their respective test roots. A borrowed source-document bundle may
+group the specific documents a quoted-clause check reads together; its callers
+remain the owning contract and its negative controls. ADR 004's fixed-width
+table mapper belongs to its register parser and is reused only by that parser's
+typed register-row constructors. Neither helper is a general Markdown parser:
+malformed text remains a deliberate test input, and each contract continues to
+report its own exact repair message. ADR 004's note policy shares one
+status-row lookup across contribution and cell validation so those checks
+cannot silently disagree about which register row a cell selects. Blocking
+still scans every matching row: an inadmissible duplicate must block a note.
+The register's existing multiset-state type owns its column values and expected
+outcome prefix; totality checks and note aggregation reuse that mapping.
 
 GitHub Actions Act validation lives in `.github/workflows/act-validation.yml`.
 The main `.github/workflows/ci.yml` workflow deliberately does not run
