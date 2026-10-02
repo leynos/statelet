@@ -229,12 +229,14 @@ the finding is the point.
 
 Cargo uses Cranelift for development builds, with the parallel frontend
 (`-Zthreads=8`) and Linux clang/linker setup configured in
-`.cargo/config.toml`. Cargo takes `RUSTFLAGS` from one source; a Make
-environment assignment replaces the config's build and target flags. Make
-therefore restates the frontend and Linux linker flags alongside
-warnings-denying and caller-supplied flags. The pinned linker binary is
-installed and checked by `make install-build-tools` and
-`make check-build-tools` before Linux suite jobs compile.
+`.cargo/config.toml`. Cargo takes `RUSTFLAGS` from one source; assigning it
+replaces the config's build and target Rust flags, while the configured linker
+selection remains active. Make's development recipes compose inherited flags
+with `STANDARD_RUSTFLAGS` to retain the parallel frontend and Linux linker
+argument. The lint, typecheck, test, and coverage targets also add
+`-D warnings`; `make build` does not. The pinned linker binary is installed and
+checked by `make install-build-tools` and `make check-build-tools` before Linux
+suite jobs compile.
 
 The Linux linker selector assumes native compilation, where clang targets the
 host. A cross-compilation to another Linux target would also match the selector
@@ -249,6 +251,48 @@ rejects coverage instrumentation:
 ```text
 error: `-Cinstrument-coverage` is LLVM specific and not supported by Cranelift
 ```
+
+The diagram covers direct Cargo development commands and the Make development,
+coverage, release, and Whitaker routes. Direct Cargo commands use Cargo's
+configured Rust flags when `RUSTFLAGS` is unset. A direct Cargo release command
+follows that same configuration path for Rust flags; the release branch below
+describes `make release`.
+
+```mermaid
+flowchart TD
+    accTitle: Rust flags and linker paths
+    accDescr: Direct Cargo defaults, Make development, coverage, release, and Whitaker flag and linker routes.
+    Start[Direct Cargo development command or Make target] --> Assigned{RUSTFLAGS assigned?}
+    Assigned -->|No| Config[Cargo configuration Rust flags]
+    Assigned -->|Direct Cargo with caller flags| Caller["Cranelift dev profile; caller RUSTFLAGS replace config flags"]
+    Assigned -->|Development Make target| Compose[Inherited flags plus STANDARD_RUSTFLAGS]
+    Assigned -->|Coverage Make target| Coverage[Coverage flags and LLVM backend]
+    Assigned -->|Release Make target| Release["Inherited RUSTFLAGS or empty; no added standard flags"]
+    Assigned -->|Whitaker Make target| Whitaker[RUSTFLAGS empty]
+    Config --> Fast["Parallel frontend; Cranelift dev profile"]
+    Compose --> Fast
+    Fast --> Linux{Native Linux target?}
+    Linux -->|Yes| Mold["Configured clang linker; mold argument in selected flags"]
+    Linux -->|No| Platform[Cargo default platform linker]
+    Caller --> CallerLinux{Linux target?}
+    CallerLinux -->|Yes| CallerClang["Configured clang linker; caller flags apply"]
+    CallerLinux -->|No| Platform
+    Coverage --> CoverageLinker[clang with lld]
+    Release --> ReleaseProfile[Cargo LLVM release profile]
+    ReleaseProfile --> ReleaseLinker["Cargo linker selection; inherited flags may include mold"]
+    Whitaker --> WhitakerTool["Installer-managed toolchain; no development flags"]
+```
+
+*Figure 1: Direct Cargo commands use configured Rust flags only when
+`RUSTFLAGS` is unset; caller assignments replace those flags. Development Make
+targets append `STANDARD_RUSTFLAGS`, with `-D warnings` added by lint,
+typecheck, test, and coverage but not `make build`. Coverage uses LLVM with
+`lld`. `make release` adds no standard flags, but retains inherited caller
+flags and Cargo's LLVM release profile. Whitaker clears `RUSTFLAGS` and uses
+its installer-managed toolchain. Caller `RUSTFLAGS` do not replace the Cargo
+development profile's Cranelift backend. The configured Linux clang linker
+remains active independently of `RUSTFLAGS`; other targets use Cargo's default
+platform linker.*
 
 Whitaker uses its installer-managed toolchain and does not receive the
 repository's development `RUSTFLAGS`. The toolchain and CI routes are checked
