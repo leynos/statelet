@@ -32,7 +32,9 @@ def _coverage(every: dict[str, reading.Workflow], name: str) -> reading.Step:
         ("setup_sha", "setup-rust action has an unapproved SHA"),
         ("upload_sha", "uploader has an unapproved action SHA"),
         ("pr_features", "mismatched coverage inputs"),
+        ("pr_language", "mismatched coverage inputs"),
         ("publisher_targets", "mismatched coverage inputs"),
+        ("publisher_language", "mismatched coverage inputs"),
         ("publisher_report", "mismatched coverage inputs"),
         ("pr_linker", "mismatched coverage toolchain/linker"),
         ("publisher_profile", "mismatched build profile"),
@@ -73,7 +75,9 @@ COVERAGE_MUTATIONS = {
     "setup_sha",
     "upload_sha",
     "pr_features",
+    "pr_language",
     "publisher_targets",
+    "publisher_language",
     "publisher_report",
     "pr_linker",
     "publisher_profile",
@@ -122,8 +126,12 @@ def _mutate_coverage(every: dict[str, reading.Workflow], change: str) -> None:
             uploader["uses"] += "x"
         case "pr_features":
             pr_coverage["with"]["all-features"] = "true"
+        case "pr_language":
+            pr_coverage["with"]["language"] = "mixed"
         case "publisher_targets":
             main_coverage["with"]["all-targets"] = "true"
+        case "publisher_language":
+            main_coverage["with"].pop("language")
         case "publisher_report":
             main_coverage["with"]["output-path"] = "other.info"
         case "pr_linker":

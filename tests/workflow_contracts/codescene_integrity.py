@@ -41,6 +41,7 @@ EXPECTED_COVERAGE_ENV = {
     "LDFLAGS": "-fuse-ld=lld",
 }
 EXPECTED_COVERAGE_INPUTS = {
+    "language": "rust",
     "output-path": "lcov.info",
     "format": "lcov",
     "with-ratchet": "true",
