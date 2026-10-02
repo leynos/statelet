@@ -5,8 +5,6 @@ assign ``RUSTFLAGS``. Coverage, release, and Whitaker remain isolated. The
 workflow check requires pinned tools before Linux Rust gates.
 """
 
-from __future__ import annotations
-
 import os
 import re
 import shlex
@@ -18,8 +16,8 @@ import pytest
 
 from suite_provisioning import (
     load_workflows,
-    suite_findings,
 )
+from suite_discovery import suite_findings
 
 ROOT = Path(__file__).resolve().parents[2]
 THREADS_FLAG = "-Zthreads=8"
@@ -98,12 +96,13 @@ def _cargo_commands(lines: list[str]) -> list[tuple[str, str]]:
             subcommand = words[index + 1]
             if subcommand == "nextest":
                 following = words[index + 2] if index + 2 < len(words) else ""
-                if following == "--version":
-                    kind = "nextest-version"
-                elif following == "run":
-                    kind = "nextest-run"
-                else:
-                    kind = "nextest-other"
+                match following:
+                    case "--version":
+                        kind = "nextest-version"
+                    case "run":
+                        kind = "nextest-run"
+                    case _:
+                        kind = "nextest-other"
             else:
                 kind = (
                     subcommand
@@ -239,6 +238,7 @@ def _development_problems(
 
 
 def test_every_rustflags_source_carries_the_parallel_frontend() -> None:
+    """Every Cargo rustflags source includes the nightly frontend setting."""
     sources = _sources()
     if not NIGHTLY:
         carrying = [key for key, flags in sources.items() if THREADS_FLAG in flags]
@@ -250,6 +250,7 @@ def test_every_rustflags_source_carries_the_parallel_frontend() -> None:
 
 
 def test_linker_is_confined_to_linux() -> None:
+    """The `mold` linker flag appears on Linux targets and nowhere else."""
     sources = _sources()
     linux = [key for key in sources if key in LINUX_TABLES]
     assert linux, "no Linux target table carries rustflags"
@@ -263,6 +264,7 @@ def test_linker_is_confined_to_linux() -> None:
 
 
 def test_sources_differ_only_by_the_linker() -> None:
+    """Every configured target has the same frontend flags."""
     stripped = {
         tuple(f for f in flags if f != LINKER_FLAG) for flags in _sources().values()
     }
@@ -279,8 +281,9 @@ def test_rust_formatter_uses_the_repository_toolchain() -> None:
 
 
 def test_development_targets_restate_both_flags_on_linux() -> None:
+    """Linux development Make targets preserve the frontend and linker flags."""
     problems = _development_problems("Linux", expects_linker=True)
-    assert problems == [], problems
+    assert not problems, problems
     for target in ASSIGNING_TARGETS:
         assert any(flags is not None for flags in _make_rustflags(target)), (
             f"`make {target}` assigns no RUSTFLAGS"
@@ -288,16 +291,19 @@ def test_development_targets_restate_both_flags_on_linux() -> None:
 
 
 def test_development_targets_keep_the_standard_under_inherited_rustflags() -> None:
+    """Caller-supplied RUSTFLAGS remain alongside development defaults."""
     problems = _development_problems("Linux", expects_linker=True, inherited=INHERITED)
-    assert problems == [], problems
+    assert not problems, problems
 
 
 def test_development_targets_keep_the_frontend_but_not_the_linker_elsewhere() -> None:
+    """Non-Linux development targets keep threads and omit the Linux linker."""
     problems = _development_problems("Darwin", expects_linker=False)
-    assert problems == [], problems
+    assert not problems, problems
 
 
 def test_development_targets_leave_the_linker_off_a_non_linux_target() -> None:
+    """Cross-target selection adds `mold` only for Linux target triples."""
     problems = _development_problems(
         "Linux",
         expects_linker=False,
@@ -312,7 +318,7 @@ def test_development_targets_leave_the_linker_off_a_non_linux_target() -> None:
     problems += _development_problems(
         "Linux", expects_linker=True, overrides=("CARGO_BUILD_TARGET=host-tuple",)
     )
-    assert problems == [], problems
+    assert not problems, problems
 
 
 def test_make_test_checks_nextest_then_runs_each_test_route() -> None:
@@ -321,11 +327,19 @@ def test_make_test_checks_nextest_then_runs_each_test_route() -> None:
     assert [kind for kind, _ in commands] == [
         "nextest-version", "nextest-run", "test",
     ], commands
-    assert all("probe-cargo" in shlex.split(line) for _, line in commands)
-    assert len(_make_rustflags("test")) == 2
-    assert "--doc" in shlex.split(commands[-1][1])
+    assert all("probe-cargo" in shlex.split(line) for _, line in commands), (
+        "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
+    )
+    assert len(_make_rustflags("test")) == 2, (
+        "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
+    )
+    assert "--doc" in shlex.split(commands[-1][1]), (
+        "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
+    )
     lines = _recipe_lines(_make_output("test"))
-    assert lines.index("scripts/check-build-tools.sh") < lines.index(commands[0][1])
+    assert lines.index("scripts/check-build-tools.sh") < lines.index(commands[0][1]), (
+        "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
+    )
 
 
 def test_make_lint_keeps_whitaker_outside_development_rustflags() -> None:
@@ -337,13 +351,20 @@ def test_make_lint_keeps_whitaker_outside_development_rustflags() -> None:
     assert len(whitaker) == 1, whitaker
     assert whitaker[0] == (
         "RUSTFLAGS= whitaker --all --workspace -- --all-targets --all-features"
+    ), (
+        "test_make_lint_keeps_whitaker_outside_development_rustflags contract failed"
     )
-    assert lines.index(commands[-1][1]) < lines.index(whitaker[0])
-    assert all("probe-cargo" in shlex.split(line) for _, line in commands)
+    assert lines.index(commands[-1][1]) < lines.index(whitaker[0]), (
+        "test_make_lint_keeps_whitaker_outside_development_rustflags contract failed"
+    )
+    assert all("probe-cargo" in shlex.split(line) for _, line in commands), (
+        "test_make_lint_keeps_whitaker_outside_development_rustflags contract failed"
+    )
 
 
 @pytest.mark.parametrize("target", HELD_OUT_TARGETS)
 def test_coverage_and_release_take_neither_flag(target: str) -> None:
+    """Coverage and release commands leave the development flags unused."""
     for flags in _make_rustflags(target):
         assert flags is not None, (
             f"`make {target}` runs a command that takes the configuration's flags"
@@ -355,4 +376,4 @@ def test_coverage_and_release_take_neither_flag(target: str) -> None:
 def test_ci_installs_build_tools_before_every_suite_route() -> None:
     """Every discovered Linux suite path has an unconditional local preflight."""
     problems = suite_findings(load_workflows())
-    assert problems == [], problems
+    assert not problems, problems

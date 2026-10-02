@@ -4,8 +4,6 @@ This module owns the exact coverage configuration and publisher shape. The
 broader CodeScene flow and token rules remain in ``codescene_rules``.
 """
 
-from __future__ import annotations
-
 import codescene_reading as reading
 from codescene_rules import (
     CHECK_COMMAND,
@@ -59,84 +57,131 @@ def coverage_contract_findings(every: dict[str, reading.Workflow]) -> list[str]:
     binds that reviewed action implementation to both lanes.
     """
     publisher = every.get("coverage-main.yml", {})
-    lane = every.get("ci.yml", {})
-    findings: list[str] = []
-    if set(reading.trigger_names(publisher)) != {"push", "workflow_dispatch"} or not (
+    findings = _coverage_lane_findings(every, publisher)
+    findings.extend(_publisher_findings(publisher))
+    return findings
+
+
+def _coverage_lane_findings(
+    every: dict[str, reading.Workflow], publisher: reading.Workflow
+) -> list[str]:
+    findings = _required_coverage_findings(publisher)
+    for name, workflow in (
+        ("ci.yml", every.get("ci.yml", {})),
+        ("coverage-main.yml", publisher),
+    ):
+        findings.extend(_named_lane_findings(name, workflow))
+    for name in reading.pull_request_closure(every) - {"ci.yml"}:
+        findings.extend(_pull_request_lane_findings(name, every[name]))
+    return findings
+
+
+def _required_coverage_findings(publisher: reading.Workflow) -> list[str]:
+    if set(reading.trigger_names(publisher)) == {"push", "workflow_dispatch"} and (
         publishes_from_main(publisher)
     ):
-        findings.append("publisher triggers must be main push and dispatch only")
-    for name, workflow in (("ci.yml", lane), ("coverage-main.yml", publisher)):
-        measured = [step for step in reading.steps(workflow) if is_coverage(step)]
-        if len(measured) != 1:
-            findings.append(f"{name} must have exactly one coverage step")
-            continue
-        step = measured[0]
-        if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_COVERAGE_ACTION_SHA}":
-            findings.append(f"{name} uses an unapproved coverage action SHA")
-        if step.get("with") != EXPECTED_COVERAGE_INPUTS:
-            findings.append(f"{name} has mismatched coverage inputs")
-        if step.get("env") != EXPECTED_COVERAGE_ENV:
-            findings.append(f"{name} has mismatched coverage toolchain/linker settings")
-        if "if" in step or "continue-on-error" in step:
-            findings.append(f"{name} coverage step may skip or fail softly")
-        if name == "ci.yml":
-            carrying = [
-                reading.job_steps(job)
-                for _, job in reading.jobs(workflow)
-                if any(candidate is step for candidate in reading.job_steps(job))
-            ]
-            if len(carrying) != 1 or not _has_prior_build_tools(carrying[0], step):
-                findings.append("ci.yml build-tool preflight must precede coverage")
-    for name in reading.pull_request_closure(every) - {"ci.yml"}:
-        for step in reading.steps(every[name]):
-            if not is_coverage(step):
-                continue
-            if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_COVERAGE_ACTION_SHA}":
-                findings.append(f"{name} uses an unapproved coverage action SHA")
-            if step.get("with") != EXPECTED_COVERAGE_INPUTS:
-                findings.append(f"{name} has mismatched coverage inputs")
-            if step.get("env") != EXPECTED_COVERAGE_ENV:
-                findings.append(
-                    f"{name} has mismatched coverage toolchain/linker settings"
-                )
+        return []
+    return ["publisher triggers must be main push and dispatch only"]
 
+
+def _named_lane_findings(name: str, workflow: reading.Workflow) -> list[str]:
+    measured = [step for step in reading.steps(workflow) if is_coverage(step)]
+    if len(measured) != 1:
+        return [f"{name} must have exactly one coverage step"]
+    findings = _coverage_step_findings(name, measured[0])
+    if name == "ci.yml" and not _ci_has_prior_build_tools(workflow, measured[0]):
+        findings.append("ci.yml build-tool preflight must precede coverage")
+    return findings
+
+
+def _coverage_step_findings(name: str, step: reading.Step) -> list[str]:
+    findings = []
+    if reading.uses(step) != f"{COVERAGE_ACTION}@{APPROVED_COVERAGE_ACTION_SHA}":
+        findings.append(f"{name} uses an unapproved coverage action SHA")
+    if step.get("with") != EXPECTED_COVERAGE_INPUTS:
+        findings.append(f"{name} has mismatched coverage inputs")
+    if step.get("env") != EXPECTED_COVERAGE_ENV:
+        findings.append(f"{name} has mismatched coverage toolchain/linker settings")
+    if "if" in step or "continue-on-error" in step:
+        findings.append(f"{name} coverage step may skip or fail softly")
+    return findings
+
+
+def _ci_has_prior_build_tools(
+    workflow: reading.Workflow, measured: reading.Step
+) -> bool:
+    carrying = [
+        reading.job_steps(job)
+        for _, job in reading.jobs(workflow)
+        if any(candidate is measured for candidate in reading.job_steps(job))
+    ]
+    return len(carrying) == 1 and _has_prior_build_tools(carrying[0], measured)
+
+
+def _pull_request_lane_findings(name: str, workflow: reading.Workflow) -> list[str]:
+    findings = []
+    for step in reading.steps(workflow):
+        if is_coverage(step):
+            findings.extend(_coverage_step_findings(name, step))
+    return findings
+
+
+def _publisher_findings(publisher: reading.Workflow) -> list[str]:
+    findings, steps = _publisher_job(publisher)
+    if steps is None:
+        return findings
+    setup_positions = _publisher_setup_findings(steps)
+    findings.extend(setup_positions[0])
+    measure = setup_positions[1]
+    findings.extend(_publisher_upload_findings(steps))
+    findings.extend(_publisher_token_findings(steps, measure))
+    return findings
+
+
+def _publisher_job(
+    publisher: reading.Workflow,
+) -> tuple[list[str], list[reading.Step] | None]:
+    findings = []
     jobs = reading.jobs(publisher)
     if len(jobs) != 1 or jobs[0][0] != "coverage-upload":
-        findings.append("publisher must have exactly one coverage-upload job")
-        return findings
+        return ["publisher must have exactly one coverage-upload job"], None
     job = jobs[0][1]
     if "if" in job or "continue-on-error" in job:
         findings.append("publisher job may skip or fail softly")
-    if publisher.get("permissions") != {"contents": "read"} or job.get(
-        "permissions"
-    ) != {"contents": "read"}:
+    _publisher_environment_findings(publisher, job, findings)
+    steps = reading.job_steps(job)
+    if not _valid_publisher_checkout(steps):
+        findings.append("publisher checkout must disable persisted credentials")
+    return findings, steps
+
+
+def _publisher_environment_findings(
+    publisher: reading.Workflow, job: reading.Step, findings: list[str]
+) -> None:
+    read_permissions = {"contents": "read"}
+    if (
+        publisher.get("permissions") != read_permissions
+        or job.get("permissions") != read_permissions
+    ):
         findings.append("publisher permissions exceed contents: read")
     if job.get("environment") != "codescene":
         findings.append("publisher has no codescene environment")
     if job.get("env") != {"CARGO_TERM_COLOR": "always", "BUILD_PROFILE": "debug"}:
         findings.append("publisher has mismatched build profile")
-    steps = reading.job_steps(job)
-    if (
-        not steps
-        or reading.uses(steps[0]) != CHECKOUT_ACTION
-        or step_input(steps[0], "persist-credentials") is not False
-    ):
-        findings.append("publisher checkout must disable persisted credentials")
-    setup = [
-        i for i, step in enumerate(steps) if reading.uses(step).startswith(SETUP_ACTION)
-    ]
-    linker = [
-        i
-        for i, step in enumerate(steps)
-        if step.get("name") == "Install coverage linker tools"
-    ]
-    install = [
-        i for i, step in enumerate(steps) if step.get("name") == "Install build tools"
-    ]
-    runner = [
-        i for i, step in enumerate(steps) if step.get("name") == "Install test runner"
-    ]
-    measure = [i for i, step in enumerate(steps) if is_coverage(step)]
+
+
+def _valid_publisher_checkout(steps: list[reading.Step]) -> bool:
+    return bool(steps) and reading.uses(steps[0]) == CHECKOUT_ACTION and (
+        step_input(steps[0], "persist-credentials") is False
+    )
+
+
+def _publisher_setup_findings(
+    steps: list[reading.Step],
+) -> tuple[list[str], list[int]]:
+    positions = _publisher_positions(steps)
+    setup, linker, install, runner, measure = positions
+    findings = []
     if len(setup) != 1 or reading.uses(steps[setup[0]]) != (
         f"{SETUP_ACTION}@{SETUP_ACTION_SHA}"
     ):
@@ -153,34 +198,69 @@ def coverage_contract_findings(every: dict[str, reading.Workflow]) -> list[str]:
         findings.append("publisher build-tool install is absent or may fail softly")
     if len(runner) != 1 or steps[runner[0]].get("run") != TEST_RUNNER_COMMAND:
         findings.append("publisher test-runner installation is absent")
-    if not (
-        len(setup) == len(linker) == len(install) == len(runner) == len(measure) == 1
-        and setup[0] < linker[0] < install[0] < runner[0] < measure[0]
-    ):
+    if not _publisher_tools_precede_coverage(positions):
         findings.append("publisher build-tool preflight must precede coverage")
+    return findings, measure
+
+
+def _publisher_positions(
+    steps: list[reading.Step],
+) -> tuple[list[int], list[int], list[int], list[int], list[int]]:
+    setup = [
+        i for i, step in enumerate(steps) if reading.uses(step).startswith(SETUP_ACTION)
+    ]
+    linker = [
+        i
+        for i, step in enumerate(steps)
+        if step.get("name") == "Install coverage linker tools"
+    ]
+    install = [
+        i for i, step in enumerate(steps) if step.get("name") == "Install build tools"
+    ]
+    runner = [
+        i for i, step in enumerate(steps) if step.get("name") == "Install test runner"
+    ]
+    measure = [i for i, step in enumerate(steps) if is_coverage(step)]
+    return setup, linker, install, runner, measure
+
+
+def _publisher_tools_precede_coverage(
+    positions: tuple[list[int], list[int], list[int], list[int], list[int]],
+) -> bool:
+    setup, linker, install, runner, measure = positions
+    all_present_once = (
+        len(setup) == len(linker) == len(install) == len(runner) == len(measure) == 1
+    )
+    return all_present_once and setup[0] < linker[0] < install[0] < runner[0] < measure[0]
+
+
+def _publisher_upload_findings(steps: list[reading.Step]) -> list[str]:
     uploads = [step for step in steps if is_upload_action(step)]
+    findings = []
     if len(uploads) != 1 or reading.uses(uploads[0]) != (
         f"{UPLOAD_ACTION}@{APPROVED_UPLOAD_ACTION_SHA}"
     ):
         findings.append("publisher uploader has an unapproved action SHA")
-    if len(uploads) == 1 and uploads[0].get("with") != {
+    expected_inputs = {
         "path": "lcov.info",
         "format": "lcov",
         "mode": "upload",
         "access-token": TOKEN_INPUT,
-    }:
+    }
+    if len(uploads) == 1 and uploads[0].get("with") != expected_inputs:
         findings.append("publisher has mismatched upload inputs")
+    return findings
+
+
+def _publisher_token_findings(steps: list[reading.Step], measure: list[int]) -> list[str]:
     checks = [i for i, step in enumerate(steps) if step.get("id") == "codescene-token"]
     upload_positions = [i for i, step in enumerate(steps) if is_upload_action(step)]
+    findings = []
     if (
         len(checks) != 1
         or sum(step.get("run") == CHECK_COMMAND for step in steps) != 1
         or steps[checks[0]]
-        != {
-            "name": "Check CodeScene token",
-            "id": "codescene-token",
-            "run": CHECK_COMMAND,
-        }
+        != {"name": "Check CodeScene token", "id": "codescene-token", "run": CHECK_COMMAND}
     ):
         findings.append("publisher token check command is absent or altered")
     if not (

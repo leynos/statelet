@@ -14,8 +14,6 @@ value.
 Run via ``make test-workflow-contracts``.
 """
 
-from __future__ import annotations
-
 import re
 from copy import deepcopy
 from pathlib import Path
@@ -27,8 +25,8 @@ from suite_provisioning import (
     INSTALL_COMMAND,
     load_workflows,
     runner_platforms,
-    suite_findings,
 )
+from suite_discovery import suite_findings
 
 WORKFLOW_PATH = (
     Path(__file__).resolve().parents[2] / ".github" / "workflows" / "mutation-testing.yml"
@@ -89,7 +87,7 @@ def test_uses_reference_is_pinned_to_a_commit_sha() -> None:
     which SHA is currently pinned.
     """
     uses = _mutation_job(_load()).get("uses")
-    assert uses is not None, "jobs.mutation.uses is missing"
+    assert isinstance(uses, str), "jobs.mutation.uses must be a string"
     assert USES_RE.match(uses), (
         "jobs.mutation.uses must reference mutation-cargo.yml pinned to a "
         f"full 40-character lowercase hex commit SHA, got {uses!r}"
@@ -136,8 +134,16 @@ def test_triggers_keep_schedule_and_plain_dispatch() -> None:
         f"on.schedule must be the daily 11:20 UTC cron, got {schedule!r}"
     )
     assert "workflow_dispatch" in triggers, "on.workflow_dispatch is missing"
-    dispatch = triggers.get("workflow_dispatch") or {}
-    inputs = dispatch.get("inputs") or {}
+    dispatch = triggers.get("workflow_dispatch")
+    inputs: dict[str, object] = {}
+    if dispatch is not None:
+        assert isinstance(dispatch, dict), "workflow_dispatch must be a mapping"
+        declared_inputs = dispatch.get("inputs")
+        if declared_inputs is not None:
+            assert isinstance(declared_inputs, dict), (
+                "workflow_dispatch.inputs must be a mapping"
+            )
+            inputs = declared_inputs
     assert "branch" not in inputs, (
         "on.workflow_dispatch must not declare a branch input; the Actions "
         "run-workflow control selects the ref"
@@ -172,9 +178,13 @@ def test_workflow_reader_rejects_duplicate_and_ambiguous_trigger_keys() -> None:
         ("on:\n  push:\n  pull_request:\n", ["push", "pull_request"]),
     ):
         workflow = reading.parse(
-            "trigger-shape.yml", f"{trigger}\njobs: {{run: {{runs-on: ubuntu-latest, steps: []}}}}\n"
+            "trigger-shape.yml",
+            f"{trigger}\njobs: {{run: {{runs-on: ubuntu-latest, "
+            "steps: []}}\n",
         )
-        assert reading.trigger_names(workflow) == expected
+        assert reading.trigger_names(workflow) == expected, (
+            "test_workflow_reader_rejects_duplicate_and_ambiguous_trigger_keys contract failed"
+        )
 
 
 def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
@@ -193,6 +203,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "act-validation.yml:act-validation" in finding
         for finding in problems_after(remove_act_installer)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def replace_act_installer_with_echo(workflows) -> None:
@@ -204,6 +216,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "act-validation.yml:act-validation" in finding
         for finding in problems_after(replace_act_installer_with_echo)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def replace_act_installer_with_conditional_noop(workflows) -> None:
@@ -215,6 +229,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "act-validation.yml:act-validation" in finding
         for finding in problems_after(replace_act_installer_with_conditional_noop)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def move_ci_installer_after_coverage(workflows) -> None:
@@ -226,6 +242,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "ci.yml:build-test" in finding
         for finding in problems_after(move_ci_installer_after_coverage)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def make_act_installer_conditional(workflows) -> None:
@@ -235,6 +253,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "act-validation.yml:act-validation" in finding
         for finding in problems_after(make_act_installer_conditional)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def make_act_installer_soft_fail(workflows) -> None:
@@ -246,6 +266,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "act-validation.yml:act-validation" in finding
         for finding in problems_after(make_act_installer_soft_fail)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def delete_publisher_coverage_action(workflows) -> None:
@@ -255,6 +277,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "coverage-main.yml" in finding
         for finding in problems_after(delete_publisher_coverage_action)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def add_linux_nextest_job(workflows) -> None:
@@ -267,6 +291,8 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "act-validation.yml:new-suite" in finding
         for finding in problems_after(add_linux_nextest_job)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
 
     def add_unresolved_reusable_suite(workflows) -> None:
@@ -278,22 +304,34 @@ def test_suite_provisioning_contract_rejects_workflow_mutations() -> None:
     assert any(
         "unresolved reusable call" in finding
         for finding in problems_after(add_unresolved_reusable_suite)
+    ), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
     )
-    assert any("no workflows" in finding for finding in suite_findings({}))
+    assert any("no workflows" in finding for finding in suite_findings({})), (
+        "test_suite_provisioning_contract_rejects_workflow_mutations contract failed"
+    )
 
 
 def test_suite_runner_reader_handles_supported_runner_forms() -> None:
     """Linux labels remain visible across scalar, list, group, and matrix forms."""
-    assert runner_platforms({"runs-on": "ubuntu-latest"}) == {"linux"}
-    assert runner_platforms({"runs-on": ["self-hosted", "linux", "x64"]}) == {"linux"}
+    assert runner_platforms({"runs-on": "ubuntu-latest"}) == {"linux"}, (
+        "test_suite_runner_reader_handles_supported_runner_forms contract failed"
+    )
+    assert runner_platforms({"runs-on": ["self-hosted", "linux", "x64"]}) == {"linux"}, (
+        "test_suite_runner_reader_handles_supported_runner_forms contract failed"
+    )
     assert runner_platforms(
         {"runs-on": {"group": "shared", "labels": "ubuntu-24.04"}}
-    ) == {"linux"}
+    ) == {"linux"}, (
+        "test_suite_runner_reader_handles_supported_runner_forms contract failed"
+    )
     assert runner_platforms(
         {
             "runs-on": "${{ matrix.os }}",
             "strategy": {"matrix": {"os": ["ubuntu-latest", "windows-latest"]}},
         }
-    ) == {"linux", "windows"}
+    ) == {"linux", "windows"}, (
+        "test_suite_runner_reader_handles_supported_runner_forms contract failed"
+    )
     with pytest.raises(ValueError, match="runner labels"):
         runner_platforms({"runs-on": "self-hosted-special"})

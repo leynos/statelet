@@ -138,6 +138,10 @@ project:
   and denies warnings, and `make test` runs the full test suite. Use `make fmt`
   to apply formatting fixes reported by the formatter check. The Makefile is
   the canonical source for the exact commands each target runs.
+- Python linting and typechecking run through `make lint` and `make typecheck`
+  on managed CPython 3.14. The shared source inventory covers workflow and
+  action modules, tests, scripts, and benchmarks; fix findings at source and do
+  not disable Pylint or df12 rules to obtain a pass.
 - Clippy warnings MUST be disallowed.
 - Fix any warnings emitted during tests in the code itself rather than
   silencing them.

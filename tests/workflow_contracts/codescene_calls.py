@@ -1,7 +1,5 @@
 """Prove CV-005 closure across local and reviewed remote workflow calls."""
 
-from __future__ import annotations
-
 import codescene_reading as reading
 
 

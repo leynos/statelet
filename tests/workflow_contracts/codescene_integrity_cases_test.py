@@ -1,7 +1,5 @@
 """Mutation probes for CV-005's two coverage lanes and publisher preflight."""
 
-from __future__ import annotations
-
 import codescene_baseline as baseline
 import codescene_calls as calls
 import codescene_integrity as integrity
@@ -10,8 +8,8 @@ import codescene_rules as rules
 import pytest
 
 
-@pytest.fixture
-def every() -> dict[str, reading.Workflow]:
+@pytest.fixture(name="every")
+def _workflow_fixture() -> dict[str, reading.Workflow]:
     """Read isolated workflow values so each mutation has its own subject."""
     return reading.workflows(reading.WORKFLOW_DIR)
 
@@ -59,87 +57,147 @@ def test_integrity_mutations_are_rejected(
     every: dict[str, reading.Workflow], change: str, reason: str
 ) -> None:
     """A single wrong pin, scope, preflight or job shape breaks the contract."""
-    publisher = every["coverage-main.yml"]
-    steps = _publisher_steps(every)
-    pr_coverage = _coverage(every, "ci.yml")
-    main_coverage = _coverage(every, "coverage-main.yml")
-    if change == "pr_action_sha":
-        pr_coverage["uses"] = pr_coverage["uses"].replace(
-            f"@{integrity.APPROVED_COVERAGE_ACTION_SHA}", "@4fb8eb7"
-        )
-    elif change == "publisher_action_sha":
-        main_coverage["uses"] = main_coverage["uses"].replace(
-            f"@{integrity.APPROVED_COVERAGE_ACTION_SHA}", "@4fb8eb7"
-        )
-    elif change == "setup_sha":
-        next(step for step in steps if "setup-rust" in reading.uses(step))["uses"] += (
-            "x"
-        )
-    elif change == "upload_sha":
-        next(step for step in steps if rules.is_upload_action(step))["uses"] += "x"
-    elif change == "pr_features":
-        pr_coverage["with"]["all-features"] = "true"
-    elif change == "publisher_targets":
-        main_coverage["with"]["all-targets"] = "true"
-    elif change == "publisher_report":
-        main_coverage["with"]["output-path"] = "other.info"
-    elif change == "pr_linker":
-        pr_coverage["env"]["RUSTFLAGS"] = ""
-    elif change == "publisher_profile":
-        publisher["jobs"]["coverage-upload"]["env"]["BUILD_PROFILE"] = "release"
-    elif change == "pr_soft_failure":
-        pr_coverage["continue-on-error"] = True
-    elif change in {"no_install", "late_install"}:
-        install = next(
-            step for step in steps if step.get("name") == "Install build tools"
-        )
-        steps.remove(install)
-        if change == "late_install":
-            steps.append(install)
-    elif change == "wrong_install_command":
-        next(step for step in steps if step.get("name") == "Install build tools")[
-            "run"
-        ] = "true"
-    elif change == "install_soft_failure":
-        next(step for step in steps if step.get("name") == "Install build tools")[
-            "continue-on-error"
-        ] = True
-    elif change in {"no_linker", "late_linker", "linker_soft_failure"}:
-        linker = next(
-            step
-            for step in steps
-            if step.get("name") == "Install coverage linker tools"
-        )
-        if change == "linker_soft_failure":
-            linker["continue-on-error"] = True
-        else:
-            steps.remove(linker)
-            if change == "late_linker":
-                steps.append(linker)
-    elif change in {"ci_no_install", "ci_late_install", "ci_install_soft_failure"}:
-        ci_steps = every["ci.yml"]["jobs"]["build-test"]["steps"]
-        install = next(
-            step for step in ci_steps if step.get("name") == "Install build tools"
-        )
-        if change == "ci_install_soft_failure":
-            install["continue-on-error"] = True
-        else:
-            ci_steps.remove(install)
-            if change == "ci_late_install":
-                ci_steps.append(install)
-    elif change == "extra_linux_suite":
-        publisher["jobs"]["other-linux-suite"] = {
-            "runs-on": "ubuntu-latest",
-            "steps": [{"run": "make test"}],
-        }
-    elif change == "extra_trigger":
-        publisher["on"]["schedule"] = [{"cron": "0 0 * * *"}]
-    elif change == "checkout_credentials":
-        steps[0]["with"]["persist-credentials"] = True
-    elif change == "duplicate_check":
-        steps.insert(-1, {"id": "other-check", "run": rules.CHECK_COMMAND})
+    if change in COVERAGE_MUTATIONS:
+        _mutate_coverage(every, change)
+    elif change in PREFLIGHT_MUTATIONS:
+        _mutate_preflight(every, change)
+    else:
+        _mutate_workflow_shape(every, change)
     findings = integrity.coverage_contract_findings(every)
     assert any(reason in finding for finding in findings), (change, findings)
+
+
+COVERAGE_MUTATIONS = {
+    "pr_action_sha",
+    "publisher_action_sha",
+    "setup_sha",
+    "upload_sha",
+    "pr_features",
+    "publisher_targets",
+    "publisher_report",
+    "pr_linker",
+    "publisher_profile",
+    "pr_soft_failure",
+}
+PREFLIGHT_MUTATIONS = {
+    "no_install",
+    "wrong_install_command",
+    "install_soft_failure",
+    "late_install",
+    "no_linker",
+    "late_linker",
+    "linker_soft_failure",
+    "ci_no_install",
+    "ci_late_install",
+    "ci_install_soft_failure",
+}
+
+
+def _mutate_coverage(every: dict[str, reading.Workflow], change: str) -> None:
+    publisher = every["coverage-main.yml"]
+    pr_coverage = _coverage(every, "ci.yml")
+    main_coverage = _coverage(every, "coverage-main.yml")
+    match change:
+        case "pr_action_sha":
+            pr_coverage["uses"] = pr_coverage["uses"].replace(
+                f"@{integrity.APPROVED_COVERAGE_ACTION_SHA}", "@4fb8eb7"
+            )
+        case "publisher_action_sha":
+            main_coverage["uses"] = main_coverage["uses"].replace(
+                f"@{integrity.APPROVED_COVERAGE_ACTION_SHA}", "@4fb8eb7"
+            )
+        case "setup_sha":
+            setup = next(
+                step
+                for step in _publisher_steps(every)
+                if "setup-rust" in reading.uses(step)
+            )
+            setup["uses"] += "x"
+        case "upload_sha":
+            uploader = next(
+                step
+                for step in _publisher_steps(every)
+                if rules.is_upload_action(step)
+            )
+            uploader["uses"] += "x"
+        case "pr_features":
+            pr_coverage["with"]["all-features"] = "true"
+        case "publisher_targets":
+            main_coverage["with"]["all-targets"] = "true"
+        case "publisher_report":
+            main_coverage["with"]["output-path"] = "other.info"
+        case "pr_linker":
+            pr_coverage["env"]["RUSTFLAGS"] = ""
+        case "publisher_profile":
+            publisher["jobs"]["coverage-upload"]["env"]["BUILD_PROFILE"] = "release"
+        case "pr_soft_failure":
+            pr_coverage["continue-on-error"] = True
+
+
+def _mutate_preflight(every: dict[str, reading.Workflow], change: str) -> None:
+    steps = _publisher_steps(every)
+    match change:
+        case "no_install" | "late_install":
+            install = next(
+                step for step in steps if step.get("name") == "Install build tools"
+            )
+            steps.remove(install)
+            if change == "late_install":
+                steps.append(install)
+        case "wrong_install_command":
+            next(step for step in steps if step.get("name") == "Install build tools")[
+                "run"
+            ] = "true"
+        case "install_soft_failure":
+            next(step for step in steps if step.get("name") == "Install build tools")[
+                "continue-on-error"
+            ] = True
+        case "no_linker" | "late_linker" | "linker_soft_failure":
+            linker = next(
+                step
+                for step in steps
+                if step.get("name") == "Install coverage linker tools"
+            )
+            if change == "linker_soft_failure":
+                linker["continue-on-error"] = True
+            else:
+                steps.remove(linker)
+                if change == "late_linker":
+                    steps.append(linker)
+        case "ci_no_install" | "ci_late_install" | "ci_install_soft_failure":
+            _mutate_ci_preflight(every, change)
+
+
+def _mutate_ci_preflight(every: dict[str, reading.Workflow], change: str) -> None:
+    ci_steps = every["ci.yml"]["jobs"]["build-test"]["steps"]
+    install = next(
+        step for step in ci_steps if step.get("name") == "Install build tools"
+    )
+    match change:
+        case "ci_install_soft_failure":
+            install["continue-on-error"] = True
+        case "ci_no_install":
+            ci_steps.remove(install)
+        case "ci_late_install":
+            ci_steps.remove(install)
+            ci_steps.append(install)
+
+
+def _mutate_workflow_shape(every: dict[str, reading.Workflow], change: str) -> None:
+    publisher = every["coverage-main.yml"]
+    steps = _publisher_steps(every)
+    match change:
+        case "extra_linux_suite":
+            publisher["jobs"]["other-linux-suite"] = {
+                "runs-on": "ubuntu-latest",
+                "steps": [{"run": "make test"}],
+            }
+        case "extra_trigger":
+            publisher["on"]["schedule"] = [{"cron": "0 0 * * *"}]
+        case "checkout_credentials":
+            steps[0]["with"]["persist-credentials"] = True
+        case "duplicate_check":
+            steps.insert(-1, {"id": "other-check", "run": rules.CHECK_COMMAND})
 
 
 @pytest.mark.parametrize(
@@ -169,12 +227,19 @@ def test_reviewed_remote_call_is_tied_to_its_immutable_pin() -> None:
         "on: pull_request_target\njobs:\n  automerge:\n    uses: "
         + calls.REVIEWED_AUTOMERGE_CALL
         + "\n    with:\n"
-        "      pull-request-number: ${{ inputs.pull-request-number || github.event.pull_request.number }}\n",
+        + (
+            "      pull-request-number: ${{ inputs.pull-request-number || "
+            "github.event.pull_request.number }}\n"
+        ),
     )
     every = {"dependabot-automerge.yml": caller}
-    assert calls.unprovable_callees(every, reading.pull_request_closure(every)) == []
+    assert calls.unprovable_callees(every, reading.pull_request_closure(every)) == [], (
+        "test_reviewed_remote_call_is_tied_to_its_immutable_pin contract failed"
+    )
     caller["jobs"]["automerge"]["secrets"] = "inherit"
-    assert any("inherit" in finding for finding in rules.pull_request_findings(caller))
+    assert any("inherit" in finding for finding in rules.pull_request_findings(caller)), (
+        "test_reviewed_remote_call_is_tied_to_its_immutable_pin contract failed"
+    )
 
 
 @pytest.mark.parametrize(
@@ -200,4 +265,6 @@ def test_a_called_baseline_writer_is_counted(prefix: str) -> None:
         "caller.yml": caller,
         "called.yml": called,
     }
-    assert baseline.baseline_writers(every) == ["called.yml", "coverage-main.yml"]
+    assert baseline.baseline_writers(every) == ["called.yml", "coverage-main.yml"], (
+        "test_a_called_baseline_writer_is_counted contract failed"
+    )
