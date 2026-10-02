@@ -29,6 +29,14 @@ jobs:
             && sudo apt-get install --yes --no-install-recommends clang
       - name: Install build tools
         run: make install-build-tools
+      - name: Install mdtablefix
+        uses: leynos/shared-actions/.github/actions/install-mdtablefix@6dea5677a84fec60ca51b07202570e3af12ffdb4
+        with:
+          version: "0.6.0"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@a96208bed1fb5efb8da349c9bcc6cc58af9e7d74
+        with:
+          python-version: '3.14'
       - name: Install test runner
         env:
           GITHUB_TOKEN: ${{ github.token }}
