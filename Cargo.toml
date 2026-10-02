@@ -5,8 +5,6 @@ edition = "2024"
 description = "Transition-boundary macros for ordinary Rust state machines"
 license = "ISC"
 repository = "https://github.com/leynos/statelet"
-homepage = "https://github.com/leynos/statelet"
-readme = "README.md"
 keywords = ["macros", "state-machines", "fsm", "o11y"]
 categories = ["development-tools"]
 

@@ -144,8 +144,7 @@ check-fmt: ## Verify formatting
 	$(MDTABLEFIX) --check $(MDTABLEFIX_SELECT) $(MDTABLEFIX_RULES)
 
 markdownlint: spelling ## Lint Markdown files and enforce spelling
-	find . -type f -name '*.md' -not -path './target/*' \
-		-not -path './.uv-cache/*' -not -path './.uv-tools/*' -print0 | \
+	git ls-files --cached --others --exclude-standard -z -- ':(glob)**/*.md' | \
 		xargs -0 $(MDLINT)
 
 spelling: ## Enforce en-GB-oxendict spelling and shared phrase corrections

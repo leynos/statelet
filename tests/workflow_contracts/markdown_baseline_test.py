@@ -177,7 +177,8 @@ def test_local_markdown_tools_match_the_pinned_ci_versions() -> None:
         (ROOT / ".markdownlint-cli2.jsonc").read_text("utf-8")
     )
     assert "**/target/**" in markdown_config["ignores"]
-    assert "-not -path './target/*'" in makefile
+    assert "**/.pytest_cache/**" in markdown_config["ignores"]
+    assert "git ls-files --cached --others --exclude-standard -z" in makefile
 
 
 @pytest.mark.parametrize(
@@ -301,7 +302,9 @@ def test_make_targets_select_untracked_and_skip_ignored_markdown(tmp_path: Path)
     checkout = tmp_path / "checkout"
     checkout.mkdir()
     shutil.copy2(ROOT / ".markdownlint-cli2.jsonc", checkout / ".markdownlint-cli2.jsonc")
-    (checkout / ".gitignore").write_text("/target/\n", encoding="utf-8")
+    (checkout / ".gitignore").write_text(
+        "/target/\n/.pytest_cache/\n", encoding="utf-8"
+    )
     subprocess.run(["git", "init", "--quiet", str(checkout)], check=True)
     subprocess.run(
         ["git", "-C", str(checkout), "config", "user.name", "Markdown contract"],
@@ -326,11 +329,17 @@ def test_make_targets_select_untracked_and_skip_ignored_markdown(tmp_path: Path)
     generated = checkout / "target" / "generated.md"
     generated.parent.mkdir()
     generated.write_text(defect, encoding="utf-8")
-    ignored_check = subprocess.run(
-        ["git", "-C", str(checkout), "check-ignore", "--quiet", "target/generated.md"],
-        check=False,
-    )
-    assert ignored_check.returncode == 0, "generated Markdown fixture must be Git-ignored"
+    pytest_cache = checkout / ".pytest_cache" / "README.md"
+    pytest_cache.parent.mkdir()
+    pytest_cache.write_text(defect, encoding="utf-8")
+    for relative_path in ("target/generated.md", ".pytest_cache/README.md"):
+        ignored_check = subprocess.run(
+            ["git", "-C", str(checkout), "check-ignore", "--quiet", relative_path],
+            check=False,
+        )
+        assert ignored_check.returncode == 0, (
+            f"generated Markdown fixture must be Git-ignored: {relative_path}"
+        )
 
     before = _run_make("check-fmt", checkout, mdtablefix, markdownlint_stub)
     assert before.returncode != 0, (
@@ -345,6 +354,9 @@ def test_make_targets_select_untracked_and_skip_ignored_markdown(tmp_path: Path)
     assert formatted.returncode == 0, formatted.stdout + formatted.stderr
     assert untracked.read_text(encoding="utf-8") != defect, "fmt did not repair the untracked file"
     assert generated.read_text(encoding="utf-8") == defect, "fmt rewrote ignored generated Markdown"
+    assert pytest_cache.read_text(encoding="utf-8") == defect, (
+        "fmt rewrote ignored pytest-cache Markdown"
+    )
 
     after = _run_make("check-fmt", checkout, mdtablefix, markdownlint_stub)
     assert after.returncode == 0, after.stdout + after.stderr
@@ -358,7 +370,7 @@ def test_make_targets_select_untracked_and_skip_ignored_markdown(tmp_path: Path)
     lint_arguments = (checkout.parent / "markdownlint.markdownlint.args").read_text(
         encoding="utf-8"
     )
-    assert "generated.md" not in lint_arguments, (
+    assert "generated.md" not in lint_arguments and "pytest_cache" not in lint_arguments, (
         "make markdownlint passed ignored generated Markdown to markdownlint-cli2"
     )
 
