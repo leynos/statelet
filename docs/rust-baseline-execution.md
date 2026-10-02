@@ -770,14 +770,14 @@ fresh hosted checks and CodeScene review were pending, and secret placement was
 unverified. See the current candidate section below for the later read-back and
 check results.
 
-## Current PR candidate
+## PR candidate checkpoint at `1a6e1f7`
 
 PR [#101](https://github.com/leynos/statelet/pull/101) is open as a draft on
 `rust-baseline-completion-20261001`, based on `main` at
 `d83f693f61385a5ec3cd3ffb8eaddc59e33f6571`. Its remote head is
 `1a6e1f7bf1191656157ce5208d79e9e88ed85473`.
 
-The current-head hosted `build-test` run
+The hosted `build-test` run for this checkpoint
 [37032543684](https://github.com/leynos/statelet/actions/runs/37032543684)
 passed. Its successful steps include formatting, Markdown lint, spelling,
 dependency audit, Whitaker installation, lint, typecheck, workflow contracts,
@@ -785,7 +785,7 @@ tests, and coverage. Act Validation
 [37032543617](https://github.com/leynos/statelet/actions/runs/37032543617),
 Gecko Security Review, and CodeScene analysis
 [7789400](https://codescene.io/projects/81801/delta/results/7789400) also
-passed on this head. The latest CodeScene review,
+passed on this head. The CodeScene review at that checkpoint,
 [5394106051](https://github.com/leynos/statelet/pull/101#pullrequestreview-5394106051),
 is `APPROVED` on the exact head. All 27 earlier CodeScene inline threads now
 have individual replies and are resolved.
@@ -814,7 +814,62 @@ list contains `CS_ACCESS_TOKEN`. Verification of the protected publisher's
 report generation, baseline persistence, upload, or intentional token-absent
 skip must wait for its first eligible post-merge run.
 
-The managed CodeRabbit full-review request is queued as `b88f3b8d` with an
-estimated wait of about 32 hours when submitted. The PR remains a draft; that
-queued review is not a completed review or approval. The automatic CodeRabbit
-status context is not evidence that the managed review has run.
+The managed CodeRabbit full-review request was queued as `b88f3b8d` with an
+estimated wait of about 32 hours when submitted. At that checkpoint the PR was
+a draft; the queued review was not a completed review or approval. The
+automatic CodeRabbit status context was not evidence that the managed review
+had run.
+
+## Rust contract CodeScene remediation
+
+A local `cs` 1.0.33 review of the Rust contracts at `9a6a0c5` found seven files
+below 10.00, across eight category records. Four records were string-heavy
+arguments in `claims.rs`, `clauses.rs`, `parse.rs`, and the ADR 003
+`support.rs`; two were duplicated parsing and register-scenario logic; two were
+overall complexity in note policy and aggregation registers. The raw baseline
+and first remediation reviews are in `/tmp/codescene-statelet-9a6a0c5-sweep/`
+and `/tmp/codescene-statelet-remediation-9a6a0c5/`.
+
+The test-only repair groups the three ADR 003 source documents that a
+quoted-clause check reads together, maps ADR 004 fixed-width register rows
+through one private constructor path, parameterizes the two independently named
+register counterexamples, and lets the existing multiset-state type own its
+register columns and expected outcome. Note policy now checks one cell at a
+time while retaining the order of its diagnostics. An added regression proves
+that an inadmissible duplicate status blocks a note even if an admissible copy
+appears first. The relocated ADR 003 negative controls are separate named
+tests; they retain their mutations and exact messages.
+
+The focused first pass cleared both duplication records and the aggregation
+complexity record, but retained note-policy complexity and exposed one newly
+long relocated test. The subsequent note-policy and test split both scored
+10.00 with empty findings in `/tmp/codescene-statelet-frozen-50edf033/`. Four
+advisories remain: `claims.rs`, `clauses.rs`, `parse.rs`, and `support.rs` each
+score 9.68 for string-heavy arguments. These functions deliberately accept
+arbitrary, possibly malformed document text as their test boundary; wrapping
+every source fragment in a distinct type would not add a domain invariant. The
+source-document bundle records the meaningful ADR 003 roles; ADR 004's
+`Register` and typed rows supply its register and row roles after parsing. No
+CodeScene threshold, exclusion, or lint suppression changed.
+
+The final local Rust-contract diff `88a9597c373a9b9029af6ec2b564e012a58fe5cb`
+passed sequential `make fmt`, `make check-fmt`, `make lint`, `make typecheck`,
+and `make test`. Lint covered rustdoc, Clippy, Whitaker with its observed
+`nightly-2026-05-28` toolchain, and Pylint 4.0.9 with the pinned DF12 package
+under managed CPython 3.14. Typecheck covered Rust and `ty` 0.0.74. The test
+gate passed 148 Nextest cases, one doctest, and 247 Python workflow contracts.
+Logs are under `/tmp/statelet-final-88a9597/`. The local Whitaker run did not
+print the rolling suite revision; the earlier hosted revision above is not
+claimed as its observed input.
+
+The first Python contract run found host `mdtablefix` 0.6.1 where the
+repository requires 0.6.0. The runner provisioned 0.6.0 in a task-owned prefix
+without changing the shared binary, then repeated formatting, its check, and
+the test gate; all passed. `make spelling`, `make markdownlint` (29 files, zero
+issues), `make nixie`, `mbake validate Makefile`, `git diff --check`, and
+ShellCheck also passed. The final local CodeScene sweep reviewed 52 supported
+Rust and Python files: 48 scored 10.00 with empty findings; the four parser
+advisories above remain at 9.68. Its JSON results are under
+`/tmp/codescene-statelet-final-88a9597/`. Three shell scripts were not
+supported by `cs` 1.0.33 and were checked with ShellCheck instead. Hosted
+checks and review remain pending on the eventual committed head.

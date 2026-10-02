@@ -190,32 +190,42 @@ fn aggregation_register_rejects_a_missing_state() -> Result<(), String> {
     Ok(())
 }
 
-/// Rejects a register where a status other than the recorded required property
-/// is made decisive.
-#[test]
-fn register_confines_insufficient_to_the_required_property() -> Result<(), String> {
-    let mutated = status_register().replace(
-        "| metrics-cardinality | Bounded | yes | nothing |",
-        "| metrics-cardinality | Bounded | yes | Insufficient |",
-    );
+/// Rejects insufficient statuses that lack a required-property decision.
+#[rstest]
+#[case::wrong_field(
+    "| metrics-cardinality | Bounded | yes | nothing |",
+    "| metrics-cardinality | Bounded | yes | Insufficient |",
+    concat!(
+        "docs/adr-004-state-name-consumption-evidence.md: field metrics-cardinality status ",
+        "Bounded selects Insufficient. Repair: only a recorded required property may overturn ",
+        "the &'static str default."
+    )
+)]
+#[case::wrong_status(
+    "| identifier-need | None | yes | Sufficient |",
+    "| identifier-need | None | yes | Insufficient |",
+    concat!(
+        "docs/adr-004-state-name-consumption-evidence.md: field identifier-need status None ",
+        "selects Insufficient. Repair: only the Property required status may overturn the ",
+        "&'static str default."
+    )
+)]
+fn register_confines_insufficient_to_the_required_property(
+    #[case] original_row: &str,
+    #[case] mutated_row: &str,
+    #[case] expected_error: &str,
+) -> Result<(), String> {
+    let mutated = status_register().replace(original_row, mutated_row);
     let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
-    assert_eq!(
-        check_exclusions(&rows),
-        Err(
-            "docs/adr-004-state-name-consumption-evidence.md: field metrics-cardinality status \
-             Bounded selects Insufficient. Repair: only a recorded required property may overturn \
-             the &'static str default."
-                .to_owned()
-        )
-    );
+    assert_eq!(check_exclusions(&rows), Err(expected_error.to_owned()));
     Ok(())
 }
 
 /// Rejects a register where the required-property field carries a decisive
 /// status that does not record a required property.
 ///
-/// The wrong-field half of `check_exclusions` is covered above; this is the
-/// wrong-status half, and the two are separate branches of the check.
+/// This separate `Overridden` mutation must not count as `Property required`.
+/// It keeps its exact diagnostic distinct from the two cases above.
 #[test]
 fn register_confines_insufficient_to_the_required_status() -> Result<(), String> {
     let mutated = status_register()
@@ -252,27 +262,6 @@ fn aggregation_vocabulary_rejects_a_register_without_a_neutral_status() -> Resul
             "docs/adr-004-state-name-consumption-evidence.md: no admissible status contributes \
              nothing, so every admissible note would overturn the default. Repair: the verdict \
              would no longer be a verdict."
-                .to_owned()
-        )
-    );
-    Ok(())
-}
-
-/// Rejects a register that would overturn the default on evidence other than a
-/// recorded required property.
-#[test]
-fn default_survives_without_a_required_property() -> Result<(), String> {
-    let mutated = status_register().replace(
-        "| identifier-need | None | yes | Sufficient |",
-        "| identifier-need | None | yes | Insufficient |",
-    );
-    let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
-    assert_eq!(
-        check_exclusions(&rows),
-        Err(
-            "docs/adr-004-state-name-consumption-evidence.md: field identifier-need status None \
-             selects Insufficient. Repair: only the Property required status may overturn the \
-             &'static str default."
                 .to_owned()
         )
     );

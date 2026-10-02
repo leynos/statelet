@@ -228,14 +228,26 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
     }
     Ok(())
 }
+/// The borrowed documents consumed together by the ADR 003 clause policy.
+#[derive(Clone, Copy)]
+pub(super) struct QuotedClauseDocuments<'a> {
+    pub(super) design: &'a str,
+    pub(super) terms: &'a str,
+    pub(super) context: &'a str,
+}
+/// The source texts checked together by the ADR 003 quoted-clause policy.
+pub(super) const QUOTED_CLAUSE_DOCUMENTS: QuotedClauseDocuments<'static> = QuotedClauseDocuments {
+    design: super::DESIGN,
+    terms: super::TERMS,
+    context: super::CONTEXT,
+};
+
 /// Validates source evidence; for example, fabricated ADR citations are rejected.
 pub(super) fn check_quoted_clauses(
     adr: &str,
-    design: &str,
-    terms: &str,
-    context: &str,
+    documents: QuotedClauseDocuments<'_>,
 ) -> Result<(), String> {
-    let folded_design = fold_whitespace(design);
+    let folded_design = fold_whitespace(documents.design);
     for clause in quoted_clauses(adr)? {
         if !folded_design.contains(&clause) {
             return Err(format!(
@@ -244,15 +256,15 @@ pub(super) fn check_quoted_clauses(
             ));
         }
     }
-    if !has_table_bet(design, "B1") || !has_table_bet(design, "B2") {
+    if !has_table_bet(documents.design, "B1") || !has_table_bet(documents.design, "B2") {
         return Err(
             "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
              or revise ADR 003."
                 .to_owned(),
         );
     }
-    split_case::check_split_case_amendments(design, terms)?;
-    if !context.contains("### v0.1 exit") {
+    split_case::check_split_case_amendments(documents.design, documents.terms)?;
+    if !documents.context.contains("### v0.1 exit") {
         return Err(
             "docs/context.md lacks the v0.1 exit glossary entry. Repair: define the term beside \
              the bet register."
