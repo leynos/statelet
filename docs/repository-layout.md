@@ -43,6 +43,7 @@ compact and omits build output such as `target/`.
 │       ├── SHA256SUMS
 │       └── VERSION
 ├── AGENTS.md
+├── .python-version
 ├── Cargo.toml
 ├── LICENSE
 ├── Makefile
@@ -57,6 +58,7 @@ compact and omits build output such as `target/`.
 
 - `.cargo/config.toml`: Configures Cargo defaults for local development,
   including Linux linker and code-generation settings.
+- `.python-version`: Selects managed CPython 3.14 for direct `uv` runs.
 - `.github/dependabot.yml`: Configures automated dependency update checks.
 - `.github/workflows/act-validation.yml`: Runs the generated workflow
   validation through `act` separately from main CI.

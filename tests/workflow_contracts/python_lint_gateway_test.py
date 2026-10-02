@@ -127,6 +127,9 @@ def test_python_baseline_matches_pylint_configuration() -> None:
     assert pylint_config["py-version"] == baseline, (
         "test_python_baseline_matches_pylint_configuration contract failed"
     )
+    assert (ROOT / ".python-version").read_text(encoding="utf-8").strip() == baseline, (
+        "root uv interpreter selection must match Make and Pylint"
+    )
 
 
 def test_every_python_file_is_inside_a_linted_source_root() -> None:
@@ -283,14 +286,44 @@ def test_ci_uses_cpython_314_and_requires_both_python_gateways() -> None:
 
 def test_audit_workflow_uses_the_python_baseline() -> None:
     """Workflow-owned Python commands use the same explicit interpreter."""
-    setup = next(
+    steps = _workflow_steps("audit.yml")
+    setup_python = next(
         step
-        for step in _workflow_steps("audit.yml")
+        for step in steps
         if isinstance(step.get("uses"), str)
         and step["uses"].startswith("actions/setup-python@")
     )
-    assert setup.get("with", {}).get("python-version") == "3.14", (
+    assert setup_python.get("with", {}).get("python-version") == "3.14", (
         "test_audit_workflow_uses_the_python_baseline contract failed"
+    )
+    setup_uv = _named_step(steps, "Setup uv")
+    assert setup_uv.get("uses") == (
+        "astral-sh/setup-uv@a96208bed1fb5efb8da349c9bcc6cc58af9e7d74"
+    ), "scheduled audit must use the approved pinned uv action"
+    assert setup_uv.get("with", {}).get("python-version") == "3.14", (
+        "scheduled audit uv setup must select CPython 3.14"
+    )
+    assert steps.index(setup_python) < steps.index(setup_uv) < steps.index(
+        _named_step(steps, "Audit dependencies")
+    ), "scheduled audit must provision Python and uv before invoking Make"
+
+
+def test_audit_metadata_uses_managed_python_and_pipefail() -> None:
+    """Cargo metadata parsing cannot fall back to an ambient interpreter."""
+    recipe = _recipe("rust-audit")
+    assert "set -eo pipefail" in recipe, "audit must propagate pipeline failures"
+    assert "$(CARGO) metadata --no-deps --format-version 1 |" in recipe, (
+        "audit must derive the actual Cargo workspace"
+    )
+    managed_invocation = (
+        "$(UV) run --no-project --managed-python "
+        "--python $(PYTHON_BASELINE) python -c"
+    )
+    assert managed_invocation in recipe, (
+        "audit metadata must use managed CPython 3.14"
+    )
+    assert not re.search(r"\bpython3\b", recipe), (
+        "audit must not use an ambient Python interpreter"
     )
 
 
@@ -305,6 +338,42 @@ def test_workflow_contract_tests_use_pinned_managed_python() -> None:
     assert "pytest==$(PYTEST_VERSION)" in dependencies, (
         "workflow contract tests must pin their pytest dependency"
     )
+
+
+def test_make_test_propagates_python_failure_under_parallel_make(tmp_path: Path) -> None:
+    """A failing workflow leaf reaches Make after both Rust leaves run."""
+    notparallel = next(
+        line for line in _makefile_lines() if line.startswith(".NOTPARALLEL:")
+    )
+    assert "test" in notparallel.split(), "make -j must serialize the test target"
+    log = tmp_path / "gates.log"
+    cargo = tmp_path / "fake-cargo"
+    uv = tmp_path / "fake-uv"
+    cargo.write_text(
+        '#!/bin/sh\nprintf "cargo %s\\n" "$*" >> "$GATE_LOG"\n',
+        encoding="utf-8",
+    )
+    uv.write_text(
+        '#!/bin/sh\nprintf "uv %s\\n" "$*" >> "$GATE_LOG"\nexit 23\n',
+        encoding="utf-8",
+    )
+    cargo.chmod(0o755)
+    uv.chmod(0o755)
+    result = subprocess.run(
+        ["make", "-j2", "-o", "check-nextest", "test", f"CARGO={cargo}", f"UV={uv}"],
+        cwd=ROOT,
+        env={**os.environ, "GATE_LOG": str(log)},
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    calls = log.read_text(encoding="utf-8").splitlines()
+    assert result.returncode != 0, "make test swallowed the workflow failure"
+    assert [call.split(" ", 2)[:2] for call in calls] == [
+        ["cargo", "nextest"],
+        ["cargo", "test"],
+        ["uv", "run"],
+    ], f"make test did not run the suites in order: {calls}"
 
 
 @pytest.mark.parametrize(
