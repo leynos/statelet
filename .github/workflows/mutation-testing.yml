@@ -23,10 +23,12 @@ jobs:
       # CI runs tests with --all-features, so mutants must face the same
       # feature surface.
       extra-args: "--all-features"
-      # .cargo/config.toml pins the linker to clang with mold, so plain
-      # cargo builds fail without them; mirror the CI install step.
+      # The shared workflow runs these commands after checkout and before
+      # cargo-mutants. Plain Cargo uses the pinned development linker.
       setup-commands: |
         set -euo pipefail
         export DEBIAN_FRONTEND=noninteractive
         sudo apt-get update
-        sudo apt-get install --yes --no-install-recommends clang lld mold
+        sudo apt-get install --yes --no-install-recommends clang lld
+        make install-build-tools
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"

@@ -27,8 +27,9 @@ only over correct workflows passes whether or not it detects anything.
 Run via ``make test-workflow-contracts``.
 """
 
-from __future__ import annotations
-
+import codescene_baseline as baseline
+import codescene_calls as calls
+import codescene_integrity as integrity
 import codescene_reading as reading
 import codescene_rules as rules
 
@@ -56,7 +57,7 @@ def test_no_workflow_a_pull_request_reaches_touches_codescene() -> None:
         for name in sorted(closure)
         for finding in rules.pull_request_findings(every[name])
     ]
-    breaches.extend(reading.missing_callees(every, closure))
+    breaches.extend(calls.unprovable_callees(every, closure))
     assert not breaches, f"CV-005 breaches: {breaches}"
 
 
@@ -74,13 +75,21 @@ def test_exactly_one_main_publisher_uploads_ratcheted_coverage() -> None:
         f"{PUBLISHER} publishes from main but a pull request can reach it"
     )
     workflow = every[PUBLISHER]
-    findings = rules.publisher_findings(workflow) + rules.wiring_findings(workflow)
+    findings = (
+        rules.publisher_findings(workflow)
+        + rules.wiring_findings(workflow)
+        + integrity.coverage_contract_findings(every)
+    )
     assert not findings, f"{PUBLISHER}: {findings}"
 
 
 def test_only_the_publisher_writes_the_baseline() -> None:
     """The only ratcheted coverage step a push can reach is the publisher's."""
-    writers = rules.baseline_writers(reading.workflows(reading.WORKFLOW_DIR))
+    every = reading.workflows(reading.WORKFLOW_DIR)
+    assert not calls.unprovable_callees(every, reading.push_closure(every)), (
+        "test_only_the_publisher_writes_the_baseline contract failed"
+    )
+    writers = baseline.baseline_writers(every)
     assert writers == [PUBLISHER], f"expected the publisher alone, saw {writers}"
 
 
@@ -102,12 +111,12 @@ def test_every_pull_request_lane_reads_the_publisher_baseline() -> None:
     written = _baselines(every[PUBLISHER])
     assert len(written) == 1, f"expected one publisher coverage step, saw {written}"
     read = [
-        (name, baseline)
+        (name, lane_baseline)
         for name in sorted(reading.pull_request_closure(every))
-        for baseline in _baselines(every[name])
+        for lane_baseline in _baselines(every[name])
     ]
     assert read, "no pull-request lane measures coverage"
-    for name, baseline in read:
-        assert baseline == written[0], (
-            f"{name} reads {baseline}, the publisher writes {written[0]}"
+    for name, lane_baseline in read:
+        assert lane_baseline == written[0], (
+            f"{name} reads {lane_baseline}, the publisher writes {written[0]}"
         )

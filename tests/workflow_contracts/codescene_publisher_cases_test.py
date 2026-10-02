@@ -5,8 +5,6 @@ the rule names that clause and nothing else, so a rule that fails for the
 wrong reason cannot pass as one that works.
 """
 
-from __future__ import annotations
-
 import codescene_reading as reading
 import codescene_rules as rules
 import pytest
@@ -36,6 +34,7 @@ jobs:
         with:
           path: lcov.info
           format: lcov
+          mode: upload
           access-token: ${{ secrets.CS_ACCESS_TOKEN }}
 """
 
@@ -159,7 +158,7 @@ def test_the_upload_condition_is_judged(
             ("earlier token check", "referenced outside", "binds CS_ACCESS_TOKEN"),
         ),
     ],
-    ids=["deleted", "other_command", "neutralised", "conditional", "bound_in_env"],
+    ids=["deleted", "other_command", "inert_check", "conditional", "bound_in_env"],
 )
 def test_the_token_check_is_judged(
     old: str, new: str, expected: tuple[str, ...]
@@ -327,8 +326,20 @@ def test_an_expression_mode_is_still_an_upload() -> None:
 
 def test_check_mode_is_not_an_upload() -> None:
     """The upload action in ``check`` mode publishes nothing."""
-    workflow = _vary("          path: lcov.info\n", "          mode: check\n")
+    workflow = _vary("mode: upload", "mode: check")
     _names_exactly(rules.publisher_findings(workflow), ("uploads nothing",))
+
+
+@pytest.mark.parametrize("mode", ["install", "${{ 'upload' }}", "check"])
+def test_only_literal_upload_mode_sends_the_report(mode: str) -> None:
+    """Other modes and expressions cannot prove a main-branch upload."""
+    workflow = _vary("mode: upload", f"mode: {mode}")
+    assert any(
+        "mode is not exactly upload" in finding
+        for finding in rules.wiring_findings(workflow)
+    ), (
+        "test_only_literal_upload_mode_sends_the_report contract failed"
+    )
 
 
 @pytest.mark.parametrize(
@@ -354,8 +365,8 @@ def test_quoted_operators_are_not_operators(
         ("", "", ()),
         ("path: lcov.info", "path: other.info", ("which no coverage step writes",)),
         (
-            "          format: lcov\n          access",
-            "          format: cobertura\n          access",
+            "          format: lcov\n          mode: upload",
+            "          format: cobertura\n          mode: upload",
             ("which no coverage step writes",),
         ),
         ("          access-token: ${{ secrets.CS_ACCESS_TOKEN }}\n", "", ("is None",)),
@@ -372,28 +383,3 @@ def test_the_upload_sends_what_was_measured(
 ) -> None:
     """The upload reads what the coverage step wrote, with the token."""
     _names_exactly(rules.wiring_findings(_vary(old, new)), expected)
-
-
-CALLED_WRITER = (
-    "on: workflow_call\njobs:\n  measure:\n    steps:\n"
-    "      - uses: leynos/shared-actions/.github/actions/generate-coverage@abc\n"
-    "        with:\n          with-ratchet: 'true'\n"
-)
-
-
-@pytest.mark.parametrize(
-    "prefix", ["./", "$/"], ids=["dot_prefixed", "dollar_prefixed"]
-)
-def test_a_called_baseline_writer_is_counted(prefix: str) -> None:
-    """A push reaching a second ratcheted step through a call is two writers."""
-    caller = (
-        "on:\n  push:\n    branches: ['**']\njobs:\n  call:\n"
-        f"    uses: {prefix}.github/workflows/called.yml\n"
-    )
-    every = {
-        "publisher.yml": reading.parse("publisher", PUBLISHER),
-        "caller.yml": reading.parse("caller", caller),
-        "called.yml": reading.parse("called", CALLED_WRITER),
-    }
-    writers = rules.baseline_writers(every)
-    assert writers == ["called.yml", "publisher.yml"], writers

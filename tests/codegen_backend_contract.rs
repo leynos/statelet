@@ -1,6 +1,6 @@
 //! Contract test for the repository's codegen-backend and linker standard.
 //!
-//! Dev-profile Cranelift with the mold linker, configured in
+//! Dev-profile Cranelift with the pinned linker, configured in
 //! `.cargo/config.toml`, is the standard for development, test, lint, and
 //! proof builds. Release builds use LLVM because `--release` selects a profile
 //! that file does not configure, and coverage runs override the backend for
@@ -105,7 +105,7 @@ fn the_release_profile_does_not_select_cranelift() {
 }
 
 #[test]
-fn linux_links_with_mold_through_clang() {
+fn linux_links_with_linker_through_clang() {
     let config = config().expect("`.cargo/config.toml` must be valid TOML");
     let Some(target) = table(&config, &["target", LINUX_TARGET]) else {
         panic!("`.cargo/config.toml` declares no Linux target table:\n{CARGO_CONFIG}");
@@ -114,7 +114,7 @@ fn linux_links_with_mold_through_clang() {
     assert_eq!(
         target.get("linker").and_then(Value::as_str),
         Some("clang"),
-        "the Linux target must link through clang, which is what invokes mold:\n{target}"
+        "the Linux target must link through clang, which invokes the linker:\n{target}"
     );
     let flags = target
         .get("rustflags")
@@ -129,14 +129,14 @@ fn linux_links_with_mold_through_clang() {
         .unwrap_or_default();
     assert!(
         flags.contains("-fuse-ld=mold"),
-        "the Linux target must select the mold linker, got {flags:?}"
+        "the Linux target must select the pinned linker, got {flags:?}"
     );
 }
 
 #[test]
 fn the_linker_selector_covers_every_linux_architecture() {
     // A target-triple table would leave aarch64 Linux on the default linker,
-    // which is the state this configuration was in before #61. mold supports
+    // which is the state this configuration was in before #61. The linker supports
     // every Linux architecture, so the selector is keyed on the operating
     // system; asserting the key, not merely the settings inside it, is what
     // makes a narrowing visible.
