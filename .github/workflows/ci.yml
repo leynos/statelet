@@ -100,6 +100,6 @@ jobs:
           # The pull request measures coverage for its own ratchet check and
           # nothing else: it neither publishes the report nor contacts
           # CodeScene. Main owns both, in coverage-main.yml, and
-          # tests/workflow_contracts/codescene_coverage_test.py holds the split.
+          # `make test-workflow-contracts` holds the split.
           with-ratchet: 'true'
           publish-artefact: 'false'
