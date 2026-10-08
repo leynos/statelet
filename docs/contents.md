@@ -56,6 +56,9 @@ set.
 - [ADR 004: Define the StateName consumption evidence](adr-004-state-name-consumption-evidence.md)
   defines what a `StateName` consumption observation records and the rule that
   reads one note, or several, into an outcome at task 3.2.1.
+- [ADR 005: Adopt the shared CV-005 contract library](adr-005-adopt-the-shared-cv005-contract-library.md)
+  records the move from a local copy of the CV-005 contract to the pinned
+  shared check.
 
 ## Rust reference material
 
