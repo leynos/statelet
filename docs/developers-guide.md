@@ -369,6 +369,13 @@ request can reach through local `uses:` calls, the host and token clauses read
 every scalar in each document, the upload condition is split on `&&` with any
 `||` refused, and workflows are parsed with duplicate keys refused.
 
+[`cv005_wiring_test.py`](../tests/workflow_contracts/cv005_wiring_test.py)
+holds the local wiring: the pin is a full commit, the target runs the pinned
+checker with `check --repository .` under Python 3.13, `.github/cv005.toml`
+names this repository, `make all` includes the target, and CI runs it. The
+decision is recorded in
+[ADR 005](adr-005-adopt-the-shared-cv005-contract-library.md).
+
 ## Workflow pins and Dependabot
 
 Dependabot owns the upgrade of GitHub Actions and reusable workflows, including
