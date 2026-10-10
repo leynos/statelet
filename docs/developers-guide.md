@@ -440,10 +440,12 @@ The caller passes a small set of configuration inputs, each carrying intent:
   `--all-features`) so the mutation run matches the CI test baseline
   (`CARGO_FLAGS = --all-targets --all-features`); a mismatch would report
   feature-gated code as untested.
-- `setup-commands` — installs `clang`, `lld`, and `mold` before mutation runs,
-  mirroring the linker setup that `.cargo/config.toml` makes mandatory for
-  every cargo build; without it, mutated builds would fail before a single
-  mutant could be tested.
+- `install-mold` and `install-clang-lld` — both `'true'`, so `setup-rust`
+  installs `clang`, `lld`, and `mold` before mutation runs, mirroring the
+  linker setup that `.cargo/config.toml` makes mandatory for every cargo build;
+  without them, mutated builds would fail before a single mutant could be
+  tested. CI, coverage-main and act-validation pass the same two inputs to
+  their own `setup-rust` steps instead of an `apt-get` step.
 
 The `uses:` reference pins the shared workflow to a full 40-character commit
 SHA rather than a branch or tag, so a force-push upstream cannot silently
@@ -463,8 +465,8 @@ it locally with `make test-workflow-contracts`. The test validates:
 - the `uses:` reference targets `mutation-cargo.yml` pinned to a full commit
   SHA;
 - the job is named `mutation` and is the only job in the workflow;
-- the `with:` block carries exactly the expected `extra-args` and
-  `setup-commands`;
+- the `with:` block carries exactly the expected `extra-args`,
+  `install-mold`, and `install-clang-lld`;
 - job permissions are least-privilege (`contents: read`, `id-token: write`)
   and the workflow-level default token scope is empty;
 - `concurrency` serializes runs per ref without cancelling one in progress;

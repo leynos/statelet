@@ -36,20 +36,14 @@ USES_RE = re.compile(
     r"^leynos/shared-actions/\.github/workflows/mutation-cargo\.yml@[0-9a-f]{40}$"
 )
 
-EXPECTED_SETUP_COMMANDS = (
-    "set -euo pipefail\n"
-    "export DEBIAN_FRONTEND=noninteractive\n"
-    "sudo apt-get update\n"
-    "sudo apt-get install --yes --no-install-recommends clang lld mold\n"
-)
-
 #: The exact caller configuration: --all-features mirrors the CI test
-#: baseline (CARGO_FLAGS = --all-targets --all-features), and the setup
-#: commands install the clang/mold toolchain that .cargo/config.toml
+#: baseline (CARGO_FLAGS = --all-targets --all-features), and the install
+#: inputs provide the clang/lld/mold toolchain that .cargo/config.toml
 #: makes mandatory for every cargo build.
-EXPECTED_WITH_BLOCK = {
+EXPECTED_WITH_BLOCK: dict[str, str] = {
     "extra-args": "--all-features",
-    "setup-commands": EXPECTED_SETUP_COMMANDS,
+    "install-mold": "true",
+    "install-clang-lld": "true",
 }
 
 

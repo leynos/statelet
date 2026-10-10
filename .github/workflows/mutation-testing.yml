@@ -18,15 +18,12 @@ jobs:
     permissions:
       contents: read
       id-token: write # OIDC workflow-source resolution
-    uses: leynos/shared-actions/.github/workflows/mutation-cargo.yml@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+    uses: leynos/shared-actions/.github/workflows/mutation-cargo.yml@b804b69fa7f978cf9091b9d9bd5481d8ce58c2ea
     with:
       # CI runs tests with --all-features, so mutants must face the same
       # feature surface.
       extra-args: "--all-features"
       # .cargo/config.toml pins the linker to clang with mold, so plain
-      # cargo builds fail without them; mirror the CI install step.
-      setup-commands: |
-        set -euo pipefail
-        export DEBIAN_FRONTEND=noninteractive
-        sudo apt-get update
-        sudo apt-get install --yes --no-install-recommends clang lld mold
+      # cargo builds fail without them; mirror the CI setup-rust inputs.
+      install-mold: 'true'
+      install-clang-lld: 'true'
