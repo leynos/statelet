@@ -783,3 +783,36 @@ points to `stateless` or another graph-first crate.
   `https://github.com/leynos/rstest-bdd/`
 - `stateless` documentation:
   `https://docs.rs/stateless`
+
+## Appendix C. Proposed observation integration contracts
+
+The Trasic investigation motivates five Request for Comments (RFC) documents
+and a naming ADR. All remain proposed; listing them here does not change the
+field contract in section 9, the accepted ADR 004 evidence instrument, or the
+publication exits in ADR 003.
+
+- [RFC 0001](rfcs/0001-transition-capture-semantics.md) separates entry and
+  post-state capture, return classification, and domain outcomes.
+- [RFC 0002](rfcs/0002-explicit-observation-context.md) proposes exact
+  invocation targets, short capture borrows, and caller-owned context.
+- [RFC 0003](rfcs/0003-observational-non-interference.md) makes observational
+  non-interference testable and states callback and ownership limits.
+- [RFC 0004](rfcs/0004-structured-test-consumption.md) proposes structured
+  test consumption, late-field handling, and explicit evidence completeness.
+- [RFC 0005](rfcs/0005-incomplete-completion-and-cancellation.md) distinguishes
+  return, observed unwinding, and incomplete capture without owning cleanup.
+- [ADR 005](adr-005-stable-transition-and-outcome-names.md) proposes extending
+  naming-consumption evidence to transition and domain-outcome names.
+
+Roadmap Phase 6 records review, handwritten validation, adoption, and
+conditional macro/async work. It preserves `mdtablefix` and `wireframe` as the
+proving sequence; Trasic supplies supplementary evidence only. No public
+observer, handle wrapper, outcome enum, or additional crate follows
+automatically.
+Accepted changes must update the governing sections before their API ships.
+
+The opposing runtime/proc-macro edges currently permitted by sections 4 and 5
+are tracked separately in
+[issue 112](https://github.com/leynos/statelet/issues/112).
+The RFC documentation does not resolve that topology contradiction or claim a
+failure in the current single-crate production dependency graph.

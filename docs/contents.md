@@ -60,6 +60,25 @@ set.
   records the move from a local copy of the CV-005 contract to the pinned
   shared check.
 
+- [ADR 005: Stable transition and outcome names](adr-005-stable-transition-and-outcome-names.md)
+  proposes extending naming-consumption evidence without changing ADR 004's
+  accepted register or the pending `StateName` return-shape verdict.
+
+## Observation integration proposals
+
+These RFCs remain proposed; none describes an implemented runtime API.
+
+- [RFC 0001: Transition capture semantics](rfcs/0001-transition-capture-semantics.md)
+  separates entry/post-state capture, return classification, and domain outcome.
+- [RFC 0002: Explicit observation context](rfcs/0002-explicit-observation-context.md)
+  proposes exact invocation targets and caller-owned extension fields.
+- [RFC 0003: Observational non-interference](rfcs/0003-observational-non-interference.md)
+  defines semantic preservation, projection counts, and ownership controls.
+- [RFC 0004: Structured test consumption](rfcs/0004-structured-test-consumption.md)
+  proposes a local recorder and explicit completeness requirements for evidence.
+- [RFC 0005: Incomplete completion and cancellation](rfcs/0005-incomplete-completion-and-cancellation.md)
+  separates return, unwinding, and incomplete observation while deferring async.
+
 ## Rust reference material
 
 - [Reliable testing in Rust via dependency injection](reliable-testing-in-rust-via-dependency-injection.md)
