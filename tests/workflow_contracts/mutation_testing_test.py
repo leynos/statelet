@@ -40,7 +40,7 @@ USES_RE = re.compile(
 #: baseline (CARGO_FLAGS = --all-targets --all-features), and the install
 #: inputs provide the clang/lld/mold toolchain that .cargo/config.toml
 #: makes mandatory for every cargo build.
-EXPECTED_WITH_BLOCK = {
+EXPECTED_WITH_BLOCK: dict[str, str] = {
     "extra-args": "--all-features",
     "install-mold": "true",
     "install-clang-lld": "true",
