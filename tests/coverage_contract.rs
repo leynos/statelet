@@ -8,8 +8,8 @@
 //!
 //! Nothing else records that dependency. Removing the override leaves the
 //! Makefile looking correct and the failure appears three minutes into a
-//! build, so the override is a contract. Like the dev-fast contract beside
-//! it, this parses `make --dry-run` output rather than running a build, so it
+//! build, so the override is a contract. Like the other Make routing contracts,
+//! this parses `make --dry-run` output rather than running a build, so it
 //! stays fast and needs neither a nightly toolchain nor a linker.
 
 use std::{io, process::Command};

@@ -23,6 +23,7 @@ compact and omits build output such as `target/`.
 │   ├── contents.md
 │   ├── developers-guide.md
 │   ├── repository-layout.md
+│   ├── rust-baseline-execution.md
 │   ├── users-guide.md
 │   └── ...
 ├── src/
@@ -30,11 +31,19 @@ compact and omits build output such as `target/`.
 │   └── lib.rs
 
 ├── tests/
-│   ├── stub.rs
 │   ├── state_name_consumption_contract.rs
 │   ├── state_name_consumption_contract/
 │   └── v0_1_exit_register_contract.rs
+├── scripts/
+│   ├── build-tools-common.sh
+│   ├── check-build-tools.sh
+│   └── install-build-tools.sh
+├── tools/
+│   └── mold/
+│       ├── SHA256SUMS
+│       └── VERSION
 ├── AGENTS.md
+├── .python-version
 ├── Cargo.toml
 ├── LICENSE
 ├── Makefile
@@ -49,6 +58,7 @@ compact and omits build output such as `target/`.
 
 - `.cargo/config.toml`: Configures Cargo defaults for local development,
   including Linux linker and code-generation settings.
+- `.python-version`: Selects managed CPython 3.14 for direct `uv` runs.
 - `.github/dependabot.yml`: Configures automated dependency update checks.
 - `.github/workflows/act-validation.yml`: Runs the generated workflow
   validation through `act` separately from main CI.
@@ -59,6 +69,8 @@ compact and omits build output such as `target/`.
   design material.
 - `docs/contents.md`: Indexes the documentation set and should be updated when
   documentation files are added, renamed, or removed.
+- `docs/rust-baseline-execution.md`: Records selected lint and tooling
+  baselines, measured coverage, and delivery evidence for the hardening change.
 - `docs/users-guide.md`: Explains how to use the generated project and its
   public build and test commands.
 - `docs/developers-guide.md`: Explains the contributor workflow and local
@@ -71,8 +83,6 @@ compact and omits build output such as `target/`.
 
 - `tests/`: Holds integration and behavioural tests that exercise public
   behaviour.
-- `tests/stub.rs`: Keeps the generated test directory valid until real tests
-  replace it.
 - `tests/v0_1_exit_register_contract.rs`: Guards ADR 003 against drift in its
   exit register, cited evidence, and roadmap gates.
 - `tests/state_name_consumption_contract.rs`: Guards ADR 004 against drift in
@@ -105,6 +115,10 @@ compact and omits build output such as `target/`.
   from `no_std_fs_operations`, which denies `std::fs` in integration-test
   crates and cannot be suppressed by any attribute. The exemption is
   path-scoped so the rest of that contract stays under the lint.
+- `scripts/`: Installs and checks the pinned local build tools used by the
+  standard Make targets.
+- `tools/mold/`: Records the approved linker release and archive checksums used
+  by the build-tool installer.
 - `AGENTS.md`: Provides repository-specific working instructions for agents and
   contributors.
 - `Cargo.toml`: Defines package metadata, dependencies, lint policy, and Cargo
