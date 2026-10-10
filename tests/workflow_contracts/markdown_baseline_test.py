@@ -65,7 +65,7 @@ def test_local_markdown_tools_match_the_pinned_ci_versions() -> None:
     ), (
         "test_local_markdown_tools_match_the_pinned_ci_versions contract failed"
     )
-    assert re.search(r"(?m)^MDTABLEFIX_VERSION \?= 0\.6\.0$", makefile), (
+    assert re.search(r"(?m)^MDTABLEFIX_VERSION \?= 0\.6\.1$", makefile), (
         "test_local_markdown_tools_match_the_pinned_ci_versions contract failed"
     )
     assert re.search(
@@ -251,7 +251,7 @@ def _markdown_tools(tmp_path: Path) -> MarkdownTools:
     version = subprocess.run(
         [mdtablefix, "--version"], check=True, capture_output=True, text=True
     )
-    assert version.stdout.strip() == "mdtablefix 0.6.0", version.stdout
+    assert version.stdout.strip() == "mdtablefix 0.6.1", version.stdout
     markdownlint_stub = tmp_path / "markdownlint-cli2"
     markdownlint_stub.write_text(
         "#!/bin/sh\nprintf '%s\\n' \"$@\" >> \"$MDLINT_CAPTURE\"\n"

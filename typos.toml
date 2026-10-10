@@ -30,6 +30,8 @@ extend-exclude = [
 [default]
 locale = "en-gb"
 extend-ignore-re = [
+    "\"sudo apt-get install --yes \\\\\\\\\\\\n  clang lld mold\"",
+    "\"sudo apt-get install --yes clang lld mold\"",
     "\"tools\" / \"mold\" / \"VERSION\"",
     "(?s)```.*?```",
     "--[A-Za-z0-9_-]*color(?:ed|s|ing|ize[ds]?|izing)?(?:\\b|_)",
@@ -38,6 +40,7 @@ extend-ignore-re = [
     "GitHub\\s+Flavored\\s+Markdown\\b(?:\\s\\(GFM\\))?",
     "HashiCorp",
     "How to organise your Rust tests",
+    "\\(clang\\|lld\\|mold\\)",
     "\\b(?:8ba3e4a|d4fb5ba)\\b",
     "\\b(?:background|theme)_color\\b",
     "\\b(?:carousel|dropdown|footer|indicator|items|navbar|toast)-center\\b",
@@ -49,6 +52,7 @@ extend-ignore-re = [
     "\\bartifact-(?:name|server-path)\\b",
     "\\bcolor-(?:mix|contrast)\\b",
     "\\bflavor = ",
+    "\\binstall-mold\\b",
     "\\brust-analyzer\\b",
     "\\{COLOR\\}",
     "\\{color\\}",

@@ -1,6 +1,6 @@
 .PHONY: help all clean test build release coverage lint fmt check-fmt \
 	markdownlint nixie audit rust-audit test-workflow-contracts spelling \
-	install-build-tools check-build-tools check-nextest install-mdtablefix \
+	install-build-tools install-rust-toolchain check-build-tools check-nextest install-mdtablefix \
 	install-markdownlint \
 	lint-clippy lint-whitaker lint-python typecheck typecheck-python typecheck-rust
 
@@ -114,10 +114,12 @@ all: ## Perform a comprehensive check of code
 	+$(MAKE) typecheck
 	+$(MAKE) test
 	+$(MAKE) spelling
-	+$(MAKE) test-workflow-contracts
 
 install-build-tools: ## Install the pinned development build tools
 	scripts/install-build-tools.sh
+
+install-rust-toolchain: ## Install repository Rust components without reinstalling CI linkers
+	scripts/install-build-tools.sh --toolchain-only
 
 install-mdtablefix: check-build-tools ## Install the pinned Markdown table formatter
 	$(CARGO) install --locked --version $(MDTABLEFIX_VERSION) mdtablefix

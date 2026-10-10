@@ -61,8 +61,8 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
-      - name: Install build tools
-        run: make install-build-tools
+      - name: Install repository Rust components
+        run: make install-rust-toolchain
       - name: Install test runner
         env:
           GITHUB_TOKEN: ${{ github.token }}

@@ -27,15 +27,19 @@ observations record and how they are read.
 
 ## Quick start
 
-Install the source-build tools before running the public validation entrypoint.
-The repository pins its Rust nightly and components in `rust-toolchain.toml`.
-On Linux, a native build needs `clang` and `lld`, and the tool installer uses
-`curl`, `sha256sum` and `tar`. Markdown lint installation needs Node.js and
-`npm`. After those prerequisites are available, run `make install-build-tools`
-to install the pinned `mold` linker and Rust toolchain. `rustup` installs the
-components declared in `rust-toolchain.toml`. The standard test gate also
-requires `cargo-nextest`. Install it with the binary-only command in the
-[developer guide](developers-guide.md#local-workflow) before running `make all`.
+Install `rustup` and `uv` before running the validation entrypoint. The
+repository pins its Rust nightly and components in `rust-toolchain.toml`; `uv`
+provisions managed CPython 3.14 for repository scripts, tests, linting, and
+typechecking. On Linux, native development builds need `clang` and the pinned
+`mold` linker; `lld` is needed only for coverage. The linker installer uses
+`curl`, `sha256sum`, and `tar`. Markdown lint installation needs Node.js and
+`npm`.
+
+After those prerequisites are available, `make install-build-tools` installs
+the pinned linker and Rust toolchain components. The test gate also requires
+`cargo-nextest`, and the lint gate requires Whitaker. Follow the installation
+commands in the [developer guide](developers-guide.md#local-workflow) before
+running `make all`.
 
 Then run the public validation entrypoint from a fresh checkout:
 
@@ -50,8 +54,8 @@ make all
 
 The most useful public commands are:
 
-- `make all` builds confidence by running formatting checks, linting, and
-  tests.
+- `make all` runs formatting checks, linting, typechecking, Rust and Python
+  tests, shared workflow contracts, and spelling.
 - `make lint` runs the repository lint suite.
 - `make test` runs the repository test suite.
 

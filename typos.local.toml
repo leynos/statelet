@@ -40,7 +40,13 @@ ignore = [
   "mold \\{linker_version\\}",
   "mold %s",
   "installed mold \\$version into",
+  # The hand-install contract matches fixed package names and preserves its
+  # exact apt command fixtures, including the continued source literal.
+  '\(clang\|lld\|mold\)',
+  '"sudo apt-get install --yes clang lld mold"',
+  '"sudo apt-get install --yes \\\\\\n  clang lld mold"',
   # Public CI keys and event names must keep their API spelling.
+  "\\binstall-mold\\b",
   "\\bCARGO_TERM_COLOR\\b",
   "opened, reopened, synchronize, labeled, ready_for_review",
   # The historical plan records rejected tokens and exact commit IDs; its

@@ -215,9 +215,25 @@ fn register_confines_insufficient_to_the_required_property(
     #[case] mutated_row: &str,
     #[case] expected_error: &str,
 ) -> Result<(), String> {
-    let mutated = status_register().replace(original_row, mutated_row);
+    let original = status_register();
+    if !original.contains(original_row) {
+        return Err(format!(
+            "negative-control row must match the fixture: {original_row:?}"
+        ));
+    }
+    let mutated = original.replace(original_row, mutated_row);
+    if mutated == original {
+        return Err(format!(
+            "negative control must change the fixture: {original_row:?} to {mutated_row:?}"
+        ));
+    }
     let rows = status_rows(&mutated).map_err(|error| error.to_string())?;
-    assert_eq!(check_exclusions(&rows), Err(expected_error.to_owned()));
+    let actual = check_exclusions(&rows);
+    if actual != Err(expected_error.to_owned()) {
+        return Err(format!(
+            "negative control expected diagnostic {expected_error:?}, got {actual:?}"
+        ));
+    }
     Ok(())
 }
 
@@ -285,4 +301,28 @@ fn register_can_select_insufficient() -> Result<(), String> {
         )
     );
     Ok(())
+}
+
+/// Reports the register and one-based data-row number for a wrong-width row.
+#[rstest]
+#[case::first_data_row("| state-display-name | Enumerated | yes | nothing |", 1)]
+#[case::fourth_data_row("| identifier-need | None | yes | Sufficient |", 4)]
+fn typed_status_mapper_reports_malformed_row(
+    #[case] original_row: &str,
+    #[case] expected_row: usize,
+) {
+    let original = status_register();
+    assert!(
+        original.contains(original_row),
+        "malformed-row control must match the fixture"
+    );
+    let mutated = original.replace(original_row, "| too | few | cells |");
+    assert_eq!(
+        status_rows(&mutated),
+        Err(ParseError::MalformedRow {
+            register: Register::Status,
+            row: expected_row
+        }),
+        "wrong-width data row must identify its register and one-based row"
+    );
 }

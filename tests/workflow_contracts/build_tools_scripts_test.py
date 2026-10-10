@@ -2,13 +2,13 @@
 
 import hashlib
 import os
-import shutil
 import subprocess
-import tempfile
 import tomllib
 import unittest
 from dataclasses import dataclass
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECK_SCRIPT = ROOT / "scripts" / "check-build-tools.sh"
@@ -126,9 +126,12 @@ def _run_check(
 class BuildToolsScriptTests(unittest.TestCase):
     """Exercise script checks with fake tools and no Cargo invocation."""
 
-    def setUp(self) -> None:
-        self.tmp_path = Path(tempfile.mkdtemp(prefix="statelet-build-tools-"))
-        self.addCleanup(shutil.rmtree, self.tmp_path, ignore_errors=True)
+    tmp_path: Path
+
+    @pytest.fixture(autouse=True)
+    def _temporary_directory(self, tmp_path: Path) -> None:
+        """Let pytest own each test's directory and cleanup."""
+        self.tmp_path = tmp_path
 
     def test_check_accepts_the_pinned_linker_toolchain_and_components(self) -> None:
         """Accept the complete set of pinned local build tools."""

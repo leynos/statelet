@@ -7,7 +7,7 @@ from suite_provisioning import load_workflows
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL_ACTION = "leynos/shared-actions/.github/actions/install-whitaker"
-INSTALL_PIN = "6dea5677a84fec60ca51b07202570e3af12ffdb4"
+INSTALL_PIN = "5bc2b2611f5921ef2c56e4ee3fde2b879a319361"
 
 
 def _ci() -> dict[object, object]:

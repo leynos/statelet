@@ -27,8 +27,8 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
-      - name: Install build tools
-        run: make install-build-tools
+      - name: Install repository Rust components
+        run: make install-rust-toolchain
       - name: Install mdtablefix
         # `make check-fmt` runs `mdtablefix --check --git`; 0.6.0 is the
         # first release with `--check` and `--git`.

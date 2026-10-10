@@ -6,14 +6,14 @@ from typing import Any
 
 import pytest
 
-import codescene_reading as reading
+import workflow_reading as reading
 
 WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/act-validation.yml"
 MDTABLEFIX_ACTION = (
     "leynos/shared-actions/.github/actions/install-mdtablefix@"
-    "6dea5677a84fec60ca51b07202570e3af12ffdb4"
+    "5bc2b2611f5921ef2c56e4ee3fde2b879a319361"
 )
-UV_ACTION = "astral-sh/setup-uv@a96208bed1fb5efb8da349c9bcc6cc58af9e7d74"
+UV_ACTION = "astral-sh/setup-uv@b06acff4b6a41bdd9cdac56507ead0bd7734e757"
 
 
 def _steps() -> list[dict[str, Any]]:
@@ -41,7 +41,7 @@ def _pin_findings(
     findings = []
     if formatter.get("uses") != MDTABLEFIX_ACTION:
         findings.append("formatter action pin changed")
-    if formatter.get("with", {}).get("version") != "0.6.0":
+    if formatter.get("with", {}).get("version") != "0.6.1":
         findings.append("formatter version changed")
     if uv.get("uses") != UV_ACTION:
         findings.append("uv action pin changed")

@@ -26,14 +26,14 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
-      - name: Install build tools
-        run: make install-build-tools
+      - name: Install repository Rust components
+        run: make install-rust-toolchain
       - name: Install mdtablefix
-        uses: leynos/shared-actions/.github/actions/install-mdtablefix@6dea5677a84fec60ca51b07202570e3af12ffdb4
+        uses: leynos/shared-actions/.github/actions/install-mdtablefix@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
         with:
-          version: "0.6.0"
+          version: "0.6.1"
       - name: Setup uv
-        uses: astral-sh/setup-uv@a96208bed1fb5efb8da349c9bcc6cc58af9e7d74
+        uses: astral-sh/setup-uv@b06acff4b6a41bdd9cdac56507ead0bd7734e757
         with:
           python-version: '3.14'
       - name: Install test runner

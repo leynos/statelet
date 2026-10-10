@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-import codescene_reading as reading
+import workflow_reading as reading
 from suite_provisioning import (
     INSTALL_COMMAND,
     load_workflows,
@@ -49,6 +49,10 @@ EXPECTED_WITH_BLOCK: dict[str, str] = {
     "extra-args": "--all-features",
     "install-mold": "true",
     "install-clang-lld": "true",
+    "setup-commands": (
+        'make install-rust-toolchain\n'
+        'echo "$HOME/.local/bin" >> "$GITHUB_PATH"\n'
+    ),
 }
 
 

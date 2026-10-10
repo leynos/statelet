@@ -4,13 +4,13 @@ import re
 import typing as typ
 from pathlib import Path
 
-import codescene_reading as workflows
+import workflow_reading as workflows
 
 ROOT = Path(__file__).resolve().parents[2]
 MAKEFILE = ROOT / "Makefile"
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 INSTALL_ACTION = "leynos/shared-actions/.github/actions/install-mdtablefix"
-INSTALL_PIN = "6dea5677a84fec60ca51b07202570e3af12ffdb4"
+INSTALL_PIN = "5bc2b2611f5921ef2c56e4ee3fde2b879a319361"
 MARKDOWNLINT_ACTION = "DavidAnson/markdownlint-cli2-action"
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
@@ -168,8 +168,8 @@ def _markdown_installer_findings(
     problems = []
     if installer["uses"] != f"{INSTALL_ACTION}@{INSTALL_PIN}":
         problems.append("mdtablefix installer is not pinned to the approved shared action")
-    if installer_inputs.get("version") != "0.6.0":
-        problems.append("mdtablefix installer version is not 0.6.0")
+    if installer_inputs.get("version") != "0.6.1":
+        problems.append("mdtablefix installer version is not 0.6.1")
     return problems
 
 

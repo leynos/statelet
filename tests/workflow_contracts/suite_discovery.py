@@ -9,13 +9,12 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-import codescene_reading as reading
+import workflow_reading as reading
 from suite_provisioning import (
     COVERAGE_ACTION,
     EXPECTED_COVERAGE_WORKFLOWS,
     INSTALL_COMMAND,
     MUTATION_CALL_RE,
-    MUTATION_CALLER,
     ContractError,
     _has_prior_install,
     _mutation_setup_findings,
@@ -95,10 +94,14 @@ def _record_workflow_call(
 def _record_remote_call(
     analysis: SuiteAnalysis, workflow_name: str, job_id: str, reference: str
 ) -> None:
-    """Reject remote calls unless the known mutation caller is the target."""
-    workflow_reference = _workflow_reference(reference)
-    if workflow_reference == MUTATION_CALLER:
+    """Allow only the reviewed immutable automerge reusable reference."""
+    reviewed_reference = (
+        "leynos/shared-actions/.github/workflows/dependabot-automerge.yml@"
+        "5bc2b2611f5921ef2c56e4ee3fde2b879a319361"
+    )
+    if reference == reviewed_reference:
         return
+    workflow_reference = _workflow_reference(reference)
     if workflow_reference:
         analysis.findings.append(
             f"{workflow_name}:{job_id} has an unresolved reusable call {reference!r}"

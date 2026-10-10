@@ -11,8 +11,6 @@ and parsing the workflow, so removing or misspelling any of them fails a test.
 Run via ``make test-workflow-contracts``.
 """
 
-from __future__ import annotations
-
 import re
 import subprocess
 import tomllib
@@ -77,7 +75,7 @@ def test_the_repository_parameter_names_this_repository() -> None:
 
 def test_make_all_includes_the_target() -> None:
     """Run the checker from the comprehensive gate as well as on its own."""
-    assert "cv005-contracts check" in _make_n("all")
+    assert "cv005-contracts check" in _make_n("all"), "make all must run the shared CV-005 checker"
 
 
 def test_ci_runs_the_target_unconditionally() -> None:

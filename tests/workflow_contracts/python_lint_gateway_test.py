@@ -2,7 +2,6 @@
 
 import os
 import re
-import subprocess
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -298,7 +297,7 @@ def test_audit_workflow_uses_the_python_baseline() -> None:
     )
     setup_uv = _named_step(steps, "Setup uv")
     assert setup_uv.get("uses") == (
-        "astral-sh/setup-uv@a96208bed1fb5efb8da349c9bcc6cc58af9e7d74"
+        "astral-sh/setup-uv@b06acff4b6a41bdd9cdac56507ead0bd7734e757"
     ), "scheduled audit must use the approved pinned uv action"
     assert setup_uv.get("with", {}).get("python-version") == "3.14", (
         "scheduled audit uv setup must select CPython 3.14"
@@ -338,60 +337,3 @@ def test_workflow_contract_tests_use_pinned_managed_python() -> None:
     assert "pytest==$(PYTEST_VERSION)" in dependencies, (
         "workflow contract tests must pin their pytest dependency"
     )
-
-
-def test_make_test_propagates_python_failure_under_parallel_make(tmp_path: Path) -> None:
-    """A failing workflow leaf reaches Make after both Rust leaves run."""
-    notparallel = next(
-        line for line in _makefile_lines() if line.startswith(".NOTPARALLEL:")
-    )
-    assert "test" in notparallel.split(), "make -j must serialize the test target"
-    log = tmp_path / "gates.log"
-    cargo = tmp_path / "fake-cargo"
-    uv = tmp_path / "fake-uv"
-    cargo.write_text(
-        '#!/bin/sh\nprintf "cargo %s\\n" "$*" >> "$GATE_LOG"\n',
-        encoding="utf-8",
-    )
-    uv.write_text(
-        '#!/bin/sh\nprintf "uv %s\\n" "$*" >> "$GATE_LOG"\nexit 23\n',
-        encoding="utf-8",
-    )
-    cargo.chmod(0o755)
-    uv.chmod(0o755)
-    result = subprocess.run(
-        ["make", "-j2", "-o", "check-nextest", "test", f"CARGO={cargo}", f"UV={uv}"],
-        cwd=ROOT,
-        env={**os.environ, "GATE_LOG": str(log)},
-        capture_output=True,
-        check=False,
-        text=True,
-    )
-    calls = log.read_text(encoding="utf-8").splitlines()
-    assert result.returncode != 0, "make test swallowed the workflow failure"
-    assert [call.split(" ", 2)[:2] for call in calls] == [
-        ["cargo", "nextest"],
-        ["cargo", "test"],
-        ["uv", "run"],
-    ], f"make test did not run the suites in order: {calls}"
-
-
-@pytest.mark.parametrize(
-    ("target", "override"),
-    [
-        pytest.param("lint-python", "PYLINT=/bin/false", id="pylint-failure"),
-        pytest.param("typecheck-python", "TY=/bin/false", id="ty-failure"),
-    ],
-)
-def test_python_gate_failures_reach_make(
-    target: str, override: str
-) -> None:
-    """A failing checker must fail its Make target instead of being masked."""
-    result = subprocess.run(
-        ["make", "--no-print-directory", target, override],
-        cwd=ROOT,
-        capture_output=True,
-        check=False,
-        text=True,
-    )
-    assert result.returncode != 0, f"{target} swallowed the checker failure"

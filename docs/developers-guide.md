@@ -19,13 +19,33 @@ documented starter code. The current repository is a library project and renders
 
 ## Local Workflow
 
-Use `make all` as the public entrypoint for formatting, linting, and tests.
-`make lint` runs rustdoc, Clippy, Whitaker, and the Python lint gateways.
-`make test` requires the binary-installed cargo-nextest runner and runs the
-Python workflow contracts under managed CPython 3.14. `make audit` derives the
-Rust workspace root with `cargo metadata`, extracts its manifests under the
-same managed interpreter, and runs `cargo audit` once from the workspace root.
-`make coverage` uses `cargo llvm-cov` with `lld`.
+Install `rustup` and `uv` first. Local repository Python gateways use managed
+CPython 3.14. Native Linux development builds need `clang` and the pinned
+`mold` linker; coverage also needs `lld`. The local linker installer requires
+`curl`, `sha256sum`, and `tar`. Markdown lint installation needs Node.js and
+`npm`.
+
+Run `make install-build-tools` to provision the pinned Rust toolchain,
+components, and Linux linker, then `make check-build-tools` to verify them.
+Install the Markdown tools with `make install-mdtablefix` and
+`make install-markdownlint`. In CI, the shared `setup-rust` action owns the
+linkers and `make install-rust-toolchain` installs only additional repository
+components. Install the published Nextest binary without source fallback:
+
+```sh
+cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
+```
+
+Provision Whitaker through the approved shared `install-whitaker` action; its
+managed toolchain is separate from Statelet's development toolchain.
+
+Use `make all` for formatting, linting, typechecking, tests, workflow
+contracts, and spelling. `make lint` runs rustdoc, Clippy, Whitaker, and the
+Python lint gateways. `make test` requires the binary-installed cargo-nextest
+runner and runs the Python workflow contracts under managed CPython 3.14.
+`make audit` derives the Rust workspace root with `cargo metadata`, extracts
+its manifests under the same managed interpreter, and runs `cargo audit` once
+from the workspace root. `make coverage` uses `cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
@@ -55,18 +75,18 @@ The generated `Makefile` exposes these public targets:
 - Workflow contract readers stay under `tests/workflow_contracts`. The
   `suite_provisioning.py` module owns command and runner classification, while
   `suite_discovery.py` owns graph traversal and route inventory for those
-  contracts. `markdown_ci_contract.py`, `whitaker_contracts.py`, and the
-  `codescene_*` readers own their respective workflow policies. Private helpers
-  split parsing, shape validation, and individual policy findings within their
-  owning module; only the shared readers are reused across policy modules.
-  These support modules remain test-only; runtime code and unrelated document
-  contracts must not depend on them.
+  contracts. `markdown_ci_contract.py` and `whitaker_contracts.py` own their
+  invocation policies; `workflow_reading.py` provides generic YAML and job
+  parsing. Shared CV-005 coverage policy stays in the pinned upstream library.
+  Private helpers split shape validation and individual findings within their
+  owning module. These support modules remain test-only; runtime code and
+  unrelated document contracts must not depend on them.
 
 - `make markdownlint` checks Markdown files.
 - `make spelling` runs the pinned `typos-config-builder gate`, which
   regenerates `typos.toml` from the shared en-GB-oxendict dictionary, checks
-  all tracked files, and applies the shared phrase corrections. It never drift
-  checks `typos.toml`.
+  all tracked files, and applies the shared phrase corrections. It never checks
+  `typos.toml` for drift.
 - `make nixie` validates Mermaid diagrams.
 
 The ADR 003 and ADR 004 integration contracts keep their parsing helpers
@@ -235,8 +255,10 @@ selection remains active. Make's development recipes compose inherited flags
 with `STANDARD_RUSTFLAGS` to retain the parallel frontend and Linux linker
 argument. The lint, typecheck, test, and coverage targets also add
 `-D warnings`; `make build` does not. The pinned linker binary is installed and
-checked by `make install-build-tools` and `make check-build-tools` before Linux
-suite jobs compile.
+checked locally by `make install-build-tools` and `make check-build-tools`.
+CI's pinned `setup-rust` action owns the Linux linkers; the following
+`make install-rust-toolchain` installs Statelet's additional Rust components
+without downloading the linker again.
 
 The Linux linker selector assumes native compilation, where clang targets the
 host. A cross-compilation to another Linux target would also match the selector
@@ -320,7 +342,7 @@ components for Clippy, rustfmt, LLVM tools, Cranelift, and rust-analyzer.
 
 ## Markdown tooling
 
-`make fmt` and `make check-fmt` use `mdtablefix` 0.6.0. Install that exact
+`make fmt` and `make check-fmt` use `mdtablefix` 0.6.1. Install that exact
 Cargo package with `make install-mdtablefix`. CI installs the same version
 through the pinned shared action. Install `markdownlint-cli2` 0.23.2 locally
 with `make install-markdownlint`; it installs the exact package version bundled
@@ -499,10 +521,19 @@ it locally with `make test-workflow-contracts`. The test validates:
   SHA;
 - the job is named `mutation` and is the only job in the workflow;
 - the `with:` block carries exactly the expected `extra-args`,
-  `install-mold`, and `install-clang-lld`;
+  `install-mold`, `install-clang-lld`, and component-only `setup-commands`;
 - job permissions are least-privilege (`contents: read`, `id-token: write`)
   and the workflow-level default token scope is empty;
 - `concurrency` serializes runs per ref without cancelling one in progress;
   and
 - the triggers keep the daily schedule and a plain `workflow_dispatch` with no
   legacy branch input.
+
+## Consumer workflow parsing
+
+`tests/workflow_contracts/workflow_reading.py` is private support for the local
+build-tool, Markdown, mutation, and Act invocation contracts. It parses YAML
+without losing duplicate keys or ambiguous booleans, enumerates jobs and steps,
+and classifies local workflow references. Only those consumer contracts may use
+it. Coverage publication and token policy remain in the pinned shared CV-005
+library; local tests must not duplicate that policy.

@@ -86,10 +86,16 @@ install_toolchain() {
 
 main() {
   local mold_pin toolchain_pin
-  [ "$#" -eq 0 ] || fail 'usage: scripts/install-build-tools.sh'
-  mold_pin=$(mold_version) || return 1
+  case "$#" in
+    0) mold_pin=$(mold_version) || return 1 ;;
+    1) [ "$1" = --toolchain-only ] ||
+      fail 'usage: scripts/install-build-tools.sh [--toolchain-only]' ;;
+    *) fail 'usage: scripts/install-build-tools.sh [--toolchain-only]' ;;
+  esac
   toolchain_pin=$(pinned_toolchain) || return 1
-  install_mold "$mold_pin"
+  if [ "$#" -eq 0 ]; then
+    install_mold "$mold_pin"
+  fi
   install_toolchain "$toolchain_pin"
   note 'ready; verify with: make check-build-tools'
 }

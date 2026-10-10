@@ -1,8 +1,8 @@
 """Check local build-tool provisioning before CI routes enter a Rust suite.
 
 This helper owns only Statelet's workflow-to-build-tools contract. It uses
-the shared strict workflow reader so the provisioning check cannot see a
-different trigger or workflow graph from the CV-005 contracts.
+a generic strict workflow reader to preserve the complete job and step
+inventory without duplicating the shared CV-005 coverage or token policy.
 """
 
 import re
@@ -10,20 +10,19 @@ import shlex
 from pathlib import Path
 from typing import Any
 
-import codescene_reading as reading
+import workflow_reading as reading
 
 WORKFLOW_DIR = Path(__file__).resolve().parents[2] / ".github" / "workflows"
-INSTALL_COMMAND = "make install-build-tools"
-INSTALL_STEP_RE = re.compile(r"make[ \t]+install-build-tools")
+INSTALL_COMMAND = "make install-rust-toolchain"
+INSTALL_STEP_RE = re.compile(r"make[ \t]+install-rust-toolchain")
 COVERAGE_ACTION = "leynos/shared-actions/.github/actions/generate-coverage"
 MUTATION_WORKFLOW = "leynos/shared-actions/.github/workflows/mutation-cargo.yml"
 MUTATION_CALL_RE = re.compile(rf"^{re.escape(MUTATION_WORKFLOW)}@[0-9a-f]{{40}}$")
-MUTATION_CALLER = ".github/workflows/dependabot-automerge.yml"
 EXPECTED_COVERAGE_WORKFLOWS = {"ci.yml", "coverage-main.yml"}
 MAKE_SUITE_TARGETS = {"all", "build", "coverage", "lint", "test", "typecheck"}
 MAKE_NON_SUITE_TARGETS = {
     "audit", "check-build-tools", "check-fmt", "check-nextest", "fmt",
-    "install-build-tools", "install-mdtablefix", "markdownlint", "nixie",
+    "install-build-tools", "install-rust-toolchain", "install-mdtablefix", "markdownlint", "nixie",
     "rust-audit", "spelling",
     "test-workflow-contracts",
 }
@@ -264,15 +263,65 @@ def _is_unconditional(step: dict[str, Any]) -> bool:
 
 
 def _has_prior_install(job: dict[str, Any], route_step: int) -> bool:
-    for index, step in enumerate(reading.job_steps(job)):
-        run = step.get("run")
-        if not isinstance(run, str) or not _is_unconditional(step):
+    """Reject duplicate linker ownership before checking provisioning order."""
+    steps = reading.job_steps(job)
+    if _has_full_build_tool_install(steps):
+        return False
+    return _has_ordered_component_install(steps, route_step)
+
+
+def _has_full_build_tool_install(steps: list[dict[str, Any]]) -> bool:
+    """Reject full local installation anywhere the shared action owns linkers."""
+    return any(
+        re.search(r"make[ \t]+install-build-tools\b", str(step.get("run", "")))
+        for step in steps
+    )
+
+
+def _has_ordered_component_install(
+    steps: list[dict[str, Any]], route_step: int
+) -> bool:
+    """Find binding component installation after linker setup and before use."""
+    setup_seen = False
+    for index, step in enumerate(steps):
+        if index >= route_step:
+            break
+        if not _is_unconditional(step):
             continue
-        if not INSTALL_STEP_RE.fullmatch(run.strip()):
+        if _is_shared_linker_setup(step):
+            setup_seen = True
+        if not setup_seen:
             continue
-        if index < route_step:
+        if _is_component_install(step):
             return True
     return False
+
+
+def _is_shared_linker_setup(step: dict[str, Any]) -> bool:
+    """Recognize the pinned action only when both linker inputs are enabled."""
+    pinned_action = re.fullmatch(
+        r"leynos/shared-actions/\.github/actions/setup-rust@[0-9a-f]{40}",
+        reading.uses(step),
+    )
+    if pinned_action is None:
+        return False
+    return _shared_linker_inputs(step)
+
+
+def _is_component_install(step: dict[str, Any]) -> bool:
+    """Recognize only a standalone component-only installation command."""
+    run = step.get("run")
+    if not isinstance(run, str):
+        return False
+    return INSTALL_STEP_RE.fullmatch(run.strip()) is not None
+
+
+def _shared_linker_inputs(step: dict[str, Any]) -> bool:
+    """Require the shared owner to provision both pinned linker inputs."""
+    inputs = step.get("with")
+    return isinstance(inputs, dict) and all(
+        inputs.get(name) == "true" for name in ("install-mold", "install-clang-lld")
+    )
 
 
 def _mutation_setup_findings(
@@ -281,6 +330,8 @@ def _mutation_setup_findings(
     findings = []
     if "if" in job or job.get("continue-on-error") is True:
         findings.append(f"{workflow_name}:{job_id} may skip or soften its suite call")
+    if not _shared_linker_inputs(job):
+        findings.append(f"{workflow_name}:{job_id} must forward shared linker inputs")
     setup = _mutation_setup_commands(job)
     if not isinstance(setup, str):
         return findings + [f"{workflow_name}:{job_id} has no determinate caller setup"]
@@ -299,14 +350,8 @@ def _mutation_setup_commands(job: dict[str, Any]) -> object:
 def _mutation_setup_order_findings(
     workflow_name: str, job_id: str, setup: str
 ) -> list[str]:
-    """Require compiler provisioning before exactly one build-tool install."""
-    findings = []
-    install = setup.find(INSTALL_COMMAND)
-    if setup.count(INSTALL_COMMAND) != 1 or install < 0:
-        findings.append(f"{workflow_name}:{job_id} must pass one {INSTALL_COMMAND}")
-    compiler = setup.find("apt-get install")
-    if compiler < 0 or compiler > install:
-        findings.append(
-            f"{workflow_name}:{job_id} must install Linux compiler tools before build tools"
-        )
-    return findings
+    """Require only component provisioning after the shared linker setup."""
+    expected = INSTALL_COMMAND + '\necho "$HOME/.local/bin" >> "$GITHUB_PATH"'
+    if setup.strip() != expected:
+        return [f"{workflow_name}:{job_id} must pass only binding component setup"]
+    return []
