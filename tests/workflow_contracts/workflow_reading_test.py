@@ -90,6 +90,23 @@ def test_unique_mappings_and_standard_booleans_survive_nesting(
     )
 
 
+@settings(derandomize=True)
+@given(containers=NESTED_CONTAINERS)
+def test_valid_leaf_values_and_types_survive_generated_nesting(
+    containers: tuple[str, ...],
+) -> None:
+    """Generated wrappers preserve booleans and the quoted trigger-like string."""
+    source = _nested_yaml("enabled: true\ndisabled: false\nname: 'on'", containers)
+    leaf = reading.parse("generated-valid.yml", source)["payload"]
+    for container in reversed(containers):
+        leaf = leaf["nested"] if container == "mapping" else leaf[0]
+    expected_leaf = {"enabled": True, "disabled": False, "name": "on"}
+    assert leaf == expected_leaf, f"generated nesting changed the leaf mapping: {leaf!r}"
+    assert leaf["enabled"] is True, "enabled must retain its boolean value and type"
+    assert leaf["disabled"] is False, "disabled must retain its boolean value and type"
+    assert isinstance(leaf["name"], str), "the quoted name must remain a string"
+
+
 @pytest.mark.parametrize("trigger", ["on", "'on'"])
 def test_root_trigger_key_is_accepted(trigger: str) -> None:
     """The GitHub root trigger spelling is permitted despite YAML 1.1."""

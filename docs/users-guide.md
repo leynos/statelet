@@ -27,13 +27,14 @@ observations record and how they are read.
 
 ## Quick start
 
-Install `rustup` and `uv` before running the validation entrypoint. The
-repository pins its Rust nightly and components in `rust-toolchain.toml`; `uv`
-provisions managed CPython 3.14 for repository scripts, tests, linting, and
-typechecking. On Linux, native development builds need `clang` and the pinned
-`mold` linker; `lld` is needed only for coverage. The linker installer uses
-`curl`, `sha256sum`, and `tar`. Markdown lint installation needs Node.js and
-`npm`.
+Install `rustup` and `uv` before running the validation entrypoint. Follow the
+[uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
+to install `uv`. The repository pins its Rust nightly and components in
+`rust-toolchain.toml`; `uv` provisions managed CPython 3.14 for repository
+scripts, tests, linting, and typechecking. On Linux, native development builds
+need `clang` and the pinned `mold` linker; `lld` is needed only for coverage.
+The linker installer uses `curl`, `sha256sum`, and `tar`. Markdown lint
+installation needs Node.js and `npm`.
 
 After those prerequisites are available, `make install-build-tools` installs
 the pinned linker and Rust toolchain components. The test gate also requires
