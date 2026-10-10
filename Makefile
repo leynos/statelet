@@ -72,8 +72,11 @@ CV005_CONTRACTS = $(UV_ENV) $(UV) tool run --python 3.13 \
 PYTHON_BASELINE ?= 3.14
 PYLINT_VERSION ?= 4.0.9
 PYTEST_VERSION ?= 9.0.2
+HYPOTHESIS_VERSION ?= 6.151.9
 TY_VERSION ?= 0.0.74
-PYTHON_DEPENDENCIES = --with pytest==$(PYTEST_VERSION) --with 'pyyaml>=6'
+# Test imports must resolve in the isolated lint, typecheck, and pytest tools.
+PYTHON_DEPENDENCIES = --with pytest==$(PYTEST_VERSION) --with 'pyyaml>=6' \
+	--with hypothesis==$(HYPOTHESIS_VERSION)
 DF12_PYTHON_LINTS_REF ?= 4cf41736cce2f7ba2778882a5c629c044568a0e5
 DF12_PYTHON_LINTS = git+https://github.com/leynos/df12-python-lints.git@$(DF12_PYTHON_LINTS_REF)
 DF12_PYLINT_MESSAGES = R9101,C9102,R9103,R9104,C9105,C9106,C9107,R9108,R9109,R9110,R9111,R9112,C9112

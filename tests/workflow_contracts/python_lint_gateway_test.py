@@ -337,3 +337,22 @@ def test_workflow_contract_tests_use_pinned_managed_python() -> None:
     assert "pytest==$(PYTEST_VERSION)" in dependencies, (
         "workflow contract tests must pin their pytest dependency"
     )
+
+
+def test_property_dependency_is_pinned_in_all_python_tool_environments() -> None:
+    """Property-test imports resolve consistently in test and inspection gates."""
+    assert _make_variable("HYPOTHESIS_VERSION") == "6.151.9", (
+        "Hypothesis must use the approved exact test-tool version"
+    )
+    dependencies = _make_variable("PYTHON_DEPENDENCIES")
+    assert "--with hypothesis==$(HYPOTHESIS_VERSION)" in dependencies, (
+        "shared Python tooling dependencies must include the Hypothesis pin"
+    )
+    environments = (
+        _make_variable("PYLINT"),
+        _make_variable("TY"),
+        _recipe("test-workflow-contracts"),
+    )
+    assert all("$(PYTHON_DEPENDENCIES)" in environment for environment in environments), (
+        "lint, typecheck, and pytest must use the same property-test dependency"
+    )

@@ -74,6 +74,7 @@ extend-ignore-re = [
     "mold is Linux-only",
     "mold not found on PATH",
     "mold-(?:2\\.41\\.0-(?:x86_64|aarch64)-linux|fixture)\\.tar\\.gz",
+    "mold-\\{MOLD_VERSION\\}-\\{architecture\\}-linux\\.tar\\.gz",
     "name=\\\"mold-\\$version-\\$arch-linux\\.tar\\.gz\\\"",
     "opened, reopened, synchronize, labeled, ready_for_review",
     "tool_bin / \\\"mold\\\"",

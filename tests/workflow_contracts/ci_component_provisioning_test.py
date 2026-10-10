@@ -35,7 +35,7 @@ def test_ci_component_route_rejects_provisioning_regressions(mutation: str) -> N
 
 
 @pytest.mark.parametrize("failure", ["none", "toolchain", "components"])
-def test_component_only_installer_is_binding_and_never_downloads_mold(
+def test_component_only_installer_is_binding_and_never_downloads_linker(
     tmp_path: Path, failure: str
 ) -> None:
     """Exercise the real entrypoint with no linker/download tools on PATH."""

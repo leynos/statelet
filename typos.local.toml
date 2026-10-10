@@ -20,6 +20,8 @@ ignore = [
   "└── mold/",
   "github\\.com/rui314/mold/releases/download",
   "mold-(?:2\\.41\\.0-(?:x86_64|aarch64)-linux|fixture)\\.tar\\.gz",
+  # Preserve the exact version/architecture placeholders in archive fixtures.
+  "mold-\\{MOLD_VERSION\\}-\\{architecture\\}-linux\\.tar\\.gz",
   "name=\\\"mold-\\$version-\\$arch-linux\\.tar\\.gz\\\"",
   "command -v mold",
   "mold --version",
