@@ -873,3 +873,64 @@ advisories above remain at 9.68. Its JSON results are under
 `/tmp/codescene-statelet-final-88a9597/`. Three shell scripts were not
 supported by `cs` 1.0.33 and were checked with ShellCheck instead. Hosted
 checks and review remain pending on the eventual committed head.
+
+## Final local candidate checkpoint at `a26f13e` (2026-10-10)
+
+The final review repair commit `a26f13ec8ff4d7fae4637c074dafd76641ad5b13`
+contains the exact source tree measured in the final local run. The measurement
+used the parent `dfbbbc0fda6d1347f4a9afe569892e89b8f2f205` plus the eight-file
+candidate patch
+`ba15ff1cc68718ed18c5f684de7195aa4cfb517136a08f71b4f8c38461bdb7f0`. The commit
+preserves that tested source tree. After appending this record, the final
+`make fmt` changed only this document's spacing and line wrapping. The
+subsequent `make check-fmt`, `make markdownlint` (30 files, zero issues),
+`make nixie`, and `git diff --check` passed. Their logs are
+`/tmp/fmt-docs-statelet-rust-baseline-completion-20261010-final.out`,
+`/tmp/check-fmt-docs-statelet-rust-baseline-completion-20261010-final.out`,
+`/tmp/markdownlint-docs-statelet-rust-baseline-completion-20261010-final.out`,
+`/tmp/nixie-docs-statelet-rust-baseline-completion-20261010-final.out`, and
+`/tmp/diff-check-docs-statelet-rust-baseline-completion-20261010-final.out`.
+
+The Markdown selection experiment used a visible, untracked, non-ignored
+`docs/formatting-selection-scratch.md` containing a deliberately misaligned
+table. `make check-fmt` failed and identified that file, `make fmt` repaired
+it, and a second `make check-fmt` passed. The scratch file was removed, and the
+tracked candidate fingerprint stayed unchanged during the experiment.
+
+All final local gates passed sequentially: `make check-fmt`, `make lint`,
+`make typecheck`, `make test`, `make markdownlint`, `make nixie`, `make audit`,
+`mbake validate Makefile`, `shellcheck scripts/*.sh`, and `git diff --check`.
+`make lint` passed rustdoc, Clippy, Whitaker, Pylint, and DF12 Python lints.
+`make typecheck` used managed CPython 3.14 and passed the Rust and Python type
+checks. `make test` passed 150 Rust tests, one doctest, and 398 Python workflow
+contracts. The Markdown gates checked 30 files with zero issues. The RustSec
+audit loaded 1,296 advisories and reported no findings.
+
+The repository Rust toolchain was `nightly-2026-09-13`. The local Whitaker
+check reported its toolchain as `nightly-2026-05-28`, but did not print the
+rolling suite revision. The exact suite revision must therefore be taken from
+the hosted installer output for this candidate, not inferred from the local
+check. The Whitaker action remains pinned at
+`6dea5677a84fec60ca51b07202570e3af12ffdb4`; its rolling suite is not pinned.
+
+All seven selected Concordat rule audits passed with no findings. Concordat CLI
+0.1.0 used source revision `8a4a1faba1290687c0b6b221e1fc96439ba3ba43`; makeutil
+0.1.0 used source revision `f405b89e4a903718b188d812044acbe4749bdbab`. The
+audited rules and versions were `rust-build-defaults` 0.1.1,
+`rust-makefile-baseline` 0.3.2, `markdown-formatting-baseline` 0.2.0,
+`main-owned-codescene-coverage` 0.3.0, `spelling-config-baseline` 0.1.0,
+`whitaker-provisioning` 0.1.0, and `dependabot-update-shape` 0.1.0.
+
+The full-scope spelling gate used typos-config-builder v0.1.3, resolved to
+`c8a4f95d7cf7f6a1b7517f2775d122d47d5721eb`. It passed after adding one exact
+archive-template exception to `typos.local.toml` and regenerating `typos.toml`;
+the test identifier now describes the installer as avoiding linker downloads.
+No lint suppression or broad spelling exemption was added.
+
+CodeScene CLI 1.0.52 (`efcaeed1f35ec099062c9e30bc98f092aed16b6f`) reported
+`no-issues-found`: four eligible files were checked, with an empty findings
+array. The detailed command logs for this checkpoint use the
+`/tmp/*-statelet-rust-baseline-completion-20261010-final.out` prefix. At the
+time of this local checkpoint, PR #101 still pointed to the earlier published
+head `63c5ce795a7830ea9e7000171ab922bac5e84428`; hosted validation and the
+rolling suite provenance for the final candidate were pending publication.
