@@ -1995,7 +1995,13 @@ Timestamps are added as each item completes.
   `record_from_line` admits `x` as well as a space, and
   `check_success_criterion` finds the task by title fragment, not by checkbox.
   The only tests that need a task to be open name 3.1.3, 3.2.1 and 3.2.2.
-  Recorded as D74.
+  Recorded as D74. The follow-up was gated green on all eight gates, with
+  `make test` at 147/147. A
+  `coderabbit review --agent --committed --base origin/main` pass over its two
+  commits returned `"findings":0`. That pass reviewed only the follow-up's diff
+  — this plan, the roadmap tick and a regenerated `typos.toml` — not the 1.1.3
+  implementation, so it does not discharge EP-M5's bar after the fact, and
+  D74's waiver stands.
 
 Timestamps are added as each item completes.
 
