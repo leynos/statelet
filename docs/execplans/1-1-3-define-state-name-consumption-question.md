@@ -6,9 +6,11 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Conformance basis`, and `Verification plan` must be kept up to date as work
 proceeds.
 
-Status: IN PROGRESS — resumed 2026-09-19 after the approval gate settled Q5.
-The filesystem-lint deviation is accepted in the path-scoped form; see Q5, D18,
-and D20. Stage A and the two documents in Step 2 are done.
+Status: COMPLETE — PR #71 was squash-merged as `450e10b` on 2026-09-30, and
+roadmap task 1.1.3 and EP-M5 were ticked on 2026-10-10 on the repository
+owner's direction. EP-M5's zero-finding review bar was never met. D74 records
+it as waived, not as met. The filesystem-lint deviation is accepted in the
+path-scoped form; see Q5, D18, and D20.
 
 ## Purpose / big picture
 
@@ -1403,7 +1405,7 @@ outcome, and a reviewer should approve it on that understanding.
       inline links). The last two are **repeats**: the heading number returns
       in the next pass, and the date's stop had been falsified in the post-fix
       round. Recorded as D32.
-- [ ] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
+- [x] EP-M5 — delivery: full gates, review, roadmap ticked. The gate half is
       done twice over: first at `26da23f` after the post-fix round, then again
       at `dd5b37c` — the tree D30 delivers — where all seven gates pass
       sequentially, **including the Whitaker leg** that the earliest run never
@@ -1501,7 +1503,10 @@ outcome, and a reviewer should approve it on that understanding.
       defect the trap describes — D56's pairing again, which is why the repair
       is recorded as such rather than as an erratum. EP-M5 stays unticked, and
       roadmap task 1.1.3 with it, for that reason and for the review bar the
-      paragraph above records.
+      paragraph above records. **Ticked `2026-10-10T14:24:00+02:00`
+      (`2026-10-10T12:24:00Z`) under D74**: PR #71's merge and the repository
+      owner's direction close this item. The zero-finding review bar was never
+      met. It is recorded as waived by that direction, not as met.
 - [x] The twenty-ninth round returned **four findings, all `major`**, on the
       published tip `84381d48`; the round is D63's, and the D60/D61/D62 work
       order was carried out before the review was requested. Two of the four
@@ -1951,6 +1956,46 @@ Timestamps are added as each item completes.
   property did not catch the whole-cell verb mutation is the reason the
   displacement property exists, and is written down here so the pair is not
   later collapsed as duplication.
+- 2026-09-30, PR #71 is approved and squash-merged. Wall-clock
+  `2026-09-30T22:22:51+02:00` (`2026-09-30T20:22:51Z`). CodeRabbit's
+  `@coderabbitai approve` comment returned
+  `Approve command performed: Comments resolved. Approval completed`, all
+  fifteen review threads stood resolved, and `gh pr view` reported
+  `reviewDecision=APPROVED` with `mergeStateStatus=CLEAN` before the merge was
+  invoked. Every other required check had concluded: `build-test` — the only
+  check `rulesets/18427786` requires — passed in 5m30s, `act-validation`
+  passed, and `CodeScene Code Health Review (main)` passed in 57s, which is
+  **the first green CodeScene result on this branch** after it had failed
+  continuously since the check first appeared; the failure had been adjudicated
+  as advisory (D-observation, §Decision log) and never gated the merge. The
+  squash landed as `450e10b` on `origin/main`, whose prior tip was `84bf61b`
+  (#82, merged while this branch was in review). The merge is verified by
+  containment rather than by the API's success code:
+  `git diff d20455c origin/main` over every path this branch owns — `docs/`,
+  `tests/`, `src/`, `Cargo.toml`, `dylint.toml` — is empty, so the squash
+  carries the branch's content byte for byte, and the non-empty remainder is
+  the four `.github/` files inherited from #82. EP-M5's bar is **still unmet**:
+  the merge closed no review round with zero findings, it ended the review
+  while the bar was outstanding, and the two items that hang on that bar —
+  EP-M5 itself and roadmap task 1.1.3 — therefore stay unticked, as D44
+  requires. The branch's own record of that is the last of the D-series entries
+  above.
+- 2026-10-10, roadmap task 1.1.3 and EP-M5 are ticked, and the plan is
+  closed. Wall-clock `2026-10-10T14:24:00+02:00` (`2026-10-10T12:24:00Z`). PR
+  #71 merged without either tick, because the merge ended the review while
+  D44's zero-finding bar was still outstanding. The repository owner has since
+  directed that the task be marked complete, so both ticks land on a follow-up
+  branch, `1-1-3-mark-roadmap-task-complete`, cut from `origin/main` at
+  `02f8923`. That branch also carries the merge record above. It was written
+  after the squash, so it existed only in the merged branch's local archive
+  commit `59ad4b8` and never reached `main`. Before the tick, the success
+  criterion was re-checked against the merged tree, and it still holds: ADR 004
+  and `docs/phase-2-validation-note-template.md` are on `origin/main`. The tick
+  cannot break the contract suite, for two reasons. The roadmap reader's
+  `record_from_line` admits `x` as well as a space, and
+  `check_success_criterion` finds the task by title fragment, not by checkbox.
+  The only tests that need a task to be open name 3.1.3, 3.2.1 and 3.2.2.
+  Recorded as D74.
 
 Timestamps are added as each item completes.
 
@@ -4784,6 +4829,25 @@ design.
   distinguishing an absent convention from an absent problem by asking what a
   reader loses rather than what a guide mandates.
 
+- D74: **Roadmap task 1.1.3 and EP-M5 are ticked on the repository owner's
+  direction. EP-M5's zero-finding review bar is recorded as waived, not as
+  met.** D31 and D44 held both ticks back until a CodeRabbit round over the
+  shipped revision returned zero findings. No completed round ever did. PR #71
+  was approved and squash-merged as `450e10b` with that bar still outstanding,
+  as the 2026-09-30 merge record in `Progress` states. After the merge, the
+  repository owner directed that the task be marked complete and this plan be
+  brought up to date. That direction is an acceptance decision, and this plan
+  defers to it. It is not evidence of a clean review, so the record keeps both
+  facts. The deliverables named by the roadmap's success criterion are on
+  `origin/main`: ADR 004, the Phase 2 validation note template with its four
+  fields, and the contract suite that binds the criterion to them. Every hosted
+  review thread stood resolved at merge, and `reviewDecision` was `APPROVED`.
+  The local zero-finding bar, by contrast, was never met. The earlier "stays
+  unticked" entries are left as written, because each was true when written.
+  This entry supersedes their conclusion, not their content. Date/Author:
+  `2026-10-10T14:24:00+02:00` (`2026-10-10T12:24:00Z`), implementing agent, on
+  the owner's instruction to mark the task complete in a follow-up PR.
+
 - Observation: **an edit to the conformance basis is an edit to the test
   contract, not to prose about it.** Repairing the two stale counts turned up
   six citations of the form `<module>::<test>` that named the wrong module:
@@ -5103,12 +5167,14 @@ design.
 
 ### What was delivered
 
-Roadmap task 1.1.3 is linked, and its tick waits on EP-M5's zero-finding review
-(D31). ADR 004 defines the `StateName` consumption evidence;
-`docs/phase-2-validation-note-template.md` is the form a Phase 2 engineer
-copies; `tests/state_name_consumption_contract.rs` and its nineteen child
-modules guard both against drift. The task's own success criterion is itself
-checked, so the instrument is bound to the sentence that grades it.
+Roadmap task 1.1.3 is linked and ticked. The tick came from the repository
+owner's direction after PR #71 merged, not from EP-M5's zero-finding review,
+which never returned clean (D31, D74). ADR 004 defines the `StateName`
+consumption evidence; `docs/phase-2-validation-note-template.md` is the form a
+Phase 2 engineer copies; `tests/state_name_consumption_contract.rs` and its
+nineteen child modules guard both against drift. The task's own success
+criterion is itself checked, so the instrument is bound to the sentence that
+grades it.
 
 The task's stated purpose was to make task 3.2.1's instruction executable. A
 Phase 2 engineer now has a form to fill, a rule that turns the filled form into
@@ -5330,6 +5396,11 @@ having and exactly when it looks like bureaucracy.
 
 ### Residual gaps, stated rather than implied
 
+- **EP-M5's zero-finding review bar was never met.** No completed review
+  round returned zero findings. The item and roadmap task 1.1.3 are ticked
+  under D74, on the owner's direction rather than on a clean pass. The hosted
+  review's threads all stood resolved at merge, but no local review round over
+  the merged bytes returned zero findings.
 - **`parse_table` names a fixed path in a message about a variable file.** A
   malformed committed note composes as
   `2.2.1-mdtablefix.md: docs/phase-2-validation-note-template.md: no note
@@ -5849,6 +5920,8 @@ EP-M5 both require.
 - **Recovery**: the branch reverts as a unit; nothing is published.
 - **Remaining gaps**: none for 1.1.3. The verdict belongs to task 3.2.1.
 - **Compatibility decision**: none.
+- **Closure**: ticked under D74. The repository owner's direction waives the
+  zero-finding review clause; it was not met.
 
 ## Concrete steps
 
