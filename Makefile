@@ -98,8 +98,14 @@ PYTHON_PRUNED_DIRECTORIES = \
 	-name target -prune -o -name vendor -prune -o -name node_modules -prune -o \
 	-name __pycache__ -prune -o -name .pytest_cache -prune -o \
 	-name .mypy_cache -prune -o -name .ruff_cache -prune -o
-PYTHON_SOURCES = $(strip $(shell find $(PYTHON_EXISTING_SOURCE_ROOTS) \
-	$(PYTHON_PRUNED_DIRECTORIES) -type f -name '*.py' -print | sort))
+PYTHON_DISCOVERY_COMMAND = find $(PYTHON_EXISTING_SOURCE_ROOTS) \
+	$(PYTHON_PRUNED_DIRECTORIES) -type f -name '*.py' -print | sort
+# Capture discovery in the recipe shell: Make's $(shell ...) discards failures.
+# pipefail rejects partial find output before either checker receives filenames.
+PYTHON_DISCOVERY = set -eo pipefail; \
+	sources=$$($(PYTHON_DISCOVERY_COMMAND)); \
+	test -n "$$sources" || { echo 'No Python sources found under $(PYTHON_SOURCE_ROOTS)' >&2; exit 2; }; \
+	mapfile -t python_sources <<< "$$sources";
 # Workflow contracts import sibling modules as top-level modules; pass all
 # source roots so ty resolves the same import layout as pytest.
 PYTHON_IMPORT_ROOTS = $(addprefix --extra-search-path ,$(PYTHON_EXISTING_SOURCE_ROOTS))
@@ -187,15 +193,15 @@ typecheck: check-build-tools ## Type-check Python and Rust sources without build
 	+$(MAKE) typecheck-rust
 
 typecheck-python: ## Type-check all repository Python sources with ty
-	@test -n "$(PYTHON_SOURCES)" || { echo 'typecheck-python: no Python sources found under $(PYTHON_SOURCE_ROOTS)' >&2; exit 2; }
-	$(TY) check --python-version $(PYTHON_BASELINE) $(PYTHON_IMPORT_ROOTS) $(PYTHON_SOURCES)
+	$(PYTHON_DISCOVERY) \
+	$(TY) check --python-version $(PYTHON_BASELINE) $(PYTHON_IMPORT_ROOTS) "$${python_sources[@]}"
 
 typecheck-rust: check-build-tools ## Type-check Rust sources without building
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) check $(CARGO_FLAGS)
 
 lint-python: ## Run Pylint and the pinned df12 house lints on every Python source
-	@test -n "$(PYTHON_SOURCES)" || { echo 'lint-python: no Python sources found under $(PYTHON_SOURCE_ROOTS)' >&2; exit 2; }
-	$(PYLINT) $(PYTHON_SOURCES)
+	$(PYTHON_DISCOVERY) \
+	$(PYLINT) "$${python_sources[@]}"
 
 fmt: ## Format Rust and Markdown sources
 	$(CARGO) fmt --all

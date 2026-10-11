@@ -192,6 +192,7 @@ def _run_make(
 
 
 def _initialize_checkout(checkout: Path) -> None:
+    """Seed a temporary Git repository so selection uses real ignore rules."""
     checkout.mkdir()
     shutil.copy2(ROOT / ".markdownlint-cli2.jsonc", checkout / ".markdownlint-cli2.jsonc")
     (checkout / ".gitignore").write_text(
@@ -220,6 +221,7 @@ def _initialize_checkout(checkout: Path) -> None:
 
 
 def _create_markdown_checkout(tmp_path: Path, defect: str) -> MarkdownCheckout:
+    """Place the same defect in visible and ignored files for selection checks."""
     checkout = tmp_path / "checkout"
     _initialize_checkout(checkout)
     untracked = checkout / "untracked.md"
@@ -246,6 +248,7 @@ def _assert_generated_markdown_is_ignored(checkout: Path) -> None:
 
 
 def _markdown_tools(tmp_path: Path) -> MarkdownTools:
+    """Require the pinned real formatter and record linter calls with a stub."""
     mdtablefix = shutil.which("mdtablefix")
     assert mdtablefix is not None, "install pinned mdtablefix before this contract"
     version = subprocess.run(

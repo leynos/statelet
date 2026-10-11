@@ -934,3 +934,42 @@ array. The detailed command logs for this checkpoint use the
 time of this local checkpoint, PR #101 still pointed to the earlier published
 head `63c5ce795a7830ea9e7000171ab922bac5e84428`; hosted validation and the
 rolling suite provenance for the final candidate were pending publication.
+
+## PR #101 publication checkpoint (2026-10-11)
+
+PR [#101](https://github.com/leynos/statelet/pull/101) published head
+`ebca8a1b474602e7fea9f404afa9420f06fcf70f` against `main` at
+`8d4f74669387dc20435108010ad856ce99ca0b5c`. Hosted validation on that head
+completed successfully: `build-test` run
+[38088360909](https://github.com/leynos/statelet/actions/runs/38088360909), Act
+Validation run
+[38088361062](https://github.com/leynos/statelet/actions/runs/38088361062),
+[CodeScene result 7897010][pr101-codescene], and Gecko Security Review passed.
+These results apply to the published head; subsequent remediation needs its own
+local and hosted validation.
+
+[pr101-codescene]: https://codescene.io/projects/81801/delta/results/7897010
+
+The hosted Whitaker installation used shared-action pin
+`6dea5677a84fec60ca51b07202570e3af12ffdb4`, installer `0.2.9`, and the rolling
+suite observed at revision `6d8d5bb0e6ee490c89f3adc2201778efe469c0ce`. Its
+published asset was
+`whitaker-lints-6d8d5bb-nightly-2026-05-28-x86_64-unknown-linux-gnu.tar.zst`,
+and its installer-managed toolchain was `nightly-2026-05-28`. This records the
+observed suite revision without pinning the rolling suite.
+
+CodeRabbit review `5480974979` requested changes on that head. Its official
+diff-touched docstring coverage was 79.89%, covering 373 functions across 46
+files, with 11 unsupported cases skipped; the threshold is 80%. The review also
+identified partial Python source discovery after a filesystem traversal
+failure, local Whitaker provisioning guidance, and this record's stale
+publication status. The remediation adds a failure-aware discovery boundary
+shared by the Python gateways, regression contracts for partial output,
+substantive helper docstrings, and corrected local setup guidance. The next
+official CodeRabbit measurement must establish whether docstring coverage
+passes; local source counts do not substitute for that result.
+
+The protected main-only coverage publisher still awaits post-merge verification
+of report generation, baseline persistence, upload, or an intentional
+token-absent skip. The successful PR checks do not establish those publisher
+outcomes.

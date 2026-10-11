@@ -43,6 +43,7 @@ def _write_executable(path: Path, content: str) -> None:
 
 
 def _link_host_utilities(binary_dir: Path) -> None:
+    """Expose only host utilities needed by scripts in the closed test PATH."""
     for utility in ("bash", "awk", "dirname"):
         resolved = subprocess.run(
             ["which", utility], capture_output=True, check=True, text=True
@@ -51,6 +52,7 @@ def _link_host_utilities(binary_dir: Path) -> None:
 
 
 def _write_fake_rustup(binary_dir: Path) -> None:
+    """Serve declared toolchains and components, rejecting unexpected commands."""
     _write_executable(
         binary_dir / "rustup",
         "#!/bin/sh\n"
@@ -82,6 +84,7 @@ def _write_fake_clang(binary_dir: Path, options: EnvironmentOptions) -> None:
 
 
 def _installed_components(options: EnvironmentOptions) -> tuple[str, ...]:
+    """Use an explicit override or derive host component names from the manifest."""
     if options.components is not None:
         return options.components
     manifest_components = tomllib.loads(

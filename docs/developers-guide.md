@@ -30,14 +30,20 @@ components, and Linux linker, then `make check-build-tools` to verify them.
 Install the Markdown tools with `make install-mdtablefix` and
 `make install-markdownlint`. In CI, the shared `setup-rust` action owns the
 linkers and `make install-rust-toolchain` installs only additional repository
-components. Install the published Nextest binary without source fallback:
+components. Install the published Nextest binary for `make test` and the
+`cargo-audit` binary for `make audit` without source fallback:
 
 ```sh
 cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
+cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-audit
 ```
 
-Provision Whitaker through the approved shared `install-whitaker` action; its
-managed toolchain is separate from Statelet's development toolchain.
+CI provisions Whitaker through the approved shared `install-whitaker` action.
+For local setup, follow the existing
+[standalone installation](whitaker-users-guide.md#standalone-installation-recommended)
+guide, including its `cargo-dylint` and `dylint-link` prerequisites. Local
+`make lint` requires the installed `whitaker` executable on `PATH`. Whitaker's
+installer-managed toolchain is separate from Statelet's development toolchain.
 
 Use `make all` for formatting, linting, typechecking, tests, workflow
 contracts, and spelling. `make lint` runs rustdoc, Clippy, Whitaker, and the
@@ -68,10 +74,12 @@ The generated `Makefile` exposes these public targets:
   `scripts`, `benches`, and `benchmarks`.
 - `make typecheck-python` runs the pinned `ty` typechecker over the same
   discovered files. Both gateways use managed CPython 3.14; their versions and
-  the complete source inventory are defined in the Makefile. The root
-  `.python-version` selects 3.14 for direct `uv` script launches; the
-  [scripting standards](scripting-standards.md) describe the managed shebang,
-  lint, typecheck, and test policy without suppressions.
+  the complete source inventory are defined in the Makefile. Both recipes share
+  a failure-aware discovery boundary: an incomplete filesystem traversal aborts
+  before either checker runs, and successful filenames are sorted and passed as
+  separate arguments. The root `.python-version` selects 3.14 for direct `uv`
+  script launches; the [scripting standards](scripting-standards.md) describe
+  the managed shebang, lint, typecheck, and test policy without suppressions.
 - Workflow contract readers stay under `tests/workflow_contracts`. The
   `suite_provisioning.py` module owns command and runner classification, while
   `suite_discovery.py` owns graph traversal and route inventory for those

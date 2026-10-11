@@ -137,7 +137,8 @@ def test_every_python_file_is_inside_a_linted_source_root() -> None:
     assert SOURCE_ROOTS <= roots, (
         "test_every_python_file_is_inside_a_linted_source_root contract failed"
     )
-    assert "find $(PYTHON_EXISTING_SOURCE_ROOTS)" in _make_variable("PYTHON_SOURCES"), (
+    discovery = _make_variable("PYTHON_DISCOVERY_COMMAND")
+    assert "find $(PYTHON_EXISTING_SOURCE_ROOTS)" in discovery, (
         "test_every_python_file_is_inside_a_linted_source_root contract failed"
     )
     escaped = [
@@ -155,7 +156,7 @@ def test_python_discovery_prunes_generated_and_vendor_trees() -> None:
     assert pruned == PRUNED_DIRECTORIES, (
         "test_python_discovery_prunes_generated_and_vendor_trees contract failed"
     )
-    discovery = _make_variable("PYTHON_SOURCES")
+    discovery = _make_variable("PYTHON_DISCOVERY_COMMAND")
     assert "-type f -name '*.py' -print" in discovery and "| sort" in discovery, (
         "test_python_discovery_prunes_generated_and_vendor_trees contract failed"
     )
@@ -165,19 +166,20 @@ def test_make_lint_runs_pylint_and_typecheck_runs_ty() -> None:
     """The lint and typecheck leaves must use the same discovered sources."""
     pylint = _recipe("lint-python")
     typecheck = _recipe("typecheck-python")
-    assert "$(PYLINT) $(PYTHON_SOURCES)" in pylint, (
+    assert '$(PYLINT) "$${python_sources[@]}"' in pylint, (
         "test_make_lint_runs_pylint_and_typecheck_runs_ty contract failed"
     )
     assert "$(TY) check --python-version $(PYTHON_BASELINE)" in typecheck, (
         "test_make_lint_runs_pylint_and_typecheck_runs_ty contract failed"
     )
-    assert "$(PYTHON_IMPORT_ROOTS) $(PYTHON_SOURCES)" in typecheck, (
+    assert '$(PYTHON_IMPORT_ROOTS) "$${python_sources[@]}"' in typecheck, (
         "test_make_lint_runs_pylint_and_typecheck_runs_ty contract failed"
     )
     assert "--from ty==$(TY_VERSION)" in _make_variable("TY"), (
         "test_make_lint_runs_pylint_and_typecheck_runs_ty contract failed"
     )
     for recipe in (pylint, typecheck):
+        assert "$(PYTHON_DISCOVERY)" in recipe, "both gateways must guard discovery"
         assert not re.search(r"(?m)^\s*[-+]\s*\$\(", recipe), (
             "test_make_lint_runs_pylint_and_typecheck_runs_ty contract failed"
         )
