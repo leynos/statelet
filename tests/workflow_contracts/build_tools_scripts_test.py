@@ -17,6 +17,11 @@ MOLD_VERSION = (ROOT / "tools" / "mold" / "VERSION").read_text("utf-8").strip()
 TOOLCHAIN = tomllib.loads((ROOT / "rust-toolchain.toml").read_text("utf-8"))[
     "toolchain"
 ]["channel"]
+INSTALLER_FUNCTIONS = {
+    "mold_version": "mold_version",
+    "pinned_toolchain": "pinned_toolchain",
+    "mold_arch": "mold_arch",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,6 +228,25 @@ class BuildToolsScriptTests(unittest.TestCase):
             text=True,
         )
 
+    def _run_installer_function(
+        self, function_name: str, overrides: dict[str, str]
+    ) -> subprocess.CompletedProcess[str]:
+        """Run one selected installer helper in a fresh Bash process."""
+        command = INSTALLER_FUNCTIONS[function_name]
+        return subprocess.run(
+            [
+                "bash",
+                "-c",
+                f'source "$1"; {command}',
+                "build-tools-test",
+                str(INSTALL_SCRIPT),
+            ],
+            capture_output=True,
+            check=False,
+            env={**os.environ, **overrides},
+            text=True,
+        )
+
     def test_installer_checksum_verification_accepts_the_matching_archive(self) -> None:
         """Accept the archive when its digest matches the published checksum."""
         archive = self.tmp_path / "mold-fixture.tar.gz"
@@ -249,6 +273,75 @@ class BuildToolsScriptTests(unittest.TestCase):
         self.assertIn("checksum mismatch", wrong.stderr)
         self.assertNotEqual(duplicate.returncode, 0)
         self.assertIn("checksums recorded", duplicate.stderr)
+
+    def test_installer_checksum_verification_rejects_missing_and_malformed_records(self) -> None:
+        """Reject absent, non-hex, and wrong-length checksum records."""
+        cases = (
+            ("missing", "", "no checksum recorded"),
+            (
+                "non-hex",
+                f"{'g' * 64}  mold-fixture.tar.gz\n",
+                "invalid checksum recorded",
+            ),
+            (
+                "wrong-length",
+                f"{'a' * 63}  mold-fixture.tar.gz\n",
+                "invalid SHA-256 checksum length",
+            ),
+        )
+        for name, rows, diagnostic in cases:
+            with self.subTest(record=name):
+                result = self._run_checksum_check(rows)
+
+                self.assertNotEqual(result.returncode, 0, result.stderr)
+                self.assertIn(diagnostic, result.stderr)
+
+    def test_installer_rejects_invalid_and_multiline_version_pins(self) -> None:
+        """Reject whitespace and multiple records in the linker version pin."""
+        cases = (
+            ("invalid", "2.1.0 stable\n", "version pin contains whitespace"),
+            ("multiline", "2.1.0\n2.2.0\n", "expected one line in version pin"),
+        )
+        pin = self.tmp_path / "linker-version"
+        for name, content, diagnostic in cases:
+            with self.subTest(pin=name):
+                pin.write_text(content, encoding="utf-8")
+                result = self._run_installer_function(
+                    "mold_version", {"MOLD_VERSION_FILE": str(pin)}
+                )
+
+                self.assertNotEqual(result.returncode, 0, result.stderr)
+                self.assertIn(diagnostic, result.stderr)
+
+    def test_installer_rejects_an_invalid_toolchain_channel(self) -> None:
+        """Reject a toolchain pin containing unsupported punctuation."""
+        manifest = self.tmp_path / "rust-toolchain.toml"
+        manifest.write_text(
+            '[toolchain]\nchannel = "nightly/stable"\n',
+            encoding="utf-8",
+        )
+
+        result = self._run_installer_function(
+            "pinned_toolchain", {"RUST_TOOLCHAIN_FILE": str(manifest)}
+        )
+
+        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertIn("invalid toolchain channel", result.stderr)
+
+    def test_installer_rejects_unsupported_linker_architectures(self) -> None:
+        """Fail with a diagnostic when the host architecture has no pinned build."""
+        binary_dir = self.tmp_path / "unsupported-architecture-bin"
+        binary_dir.mkdir()
+        _link_host_utilities(binary_dir)
+        _write_executable(binary_dir / "uname", "#!/bin/sh\nprintf 's390x\\n'\n")
+
+        result = self._run_installer_function("mold_arch", {"PATH": str(binary_dir)})
+
+        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            "unsupported architecture for the pinned linker release: s390x",
+            result.stderr,
+        )
 
     def test_installer_adds_every_manifest_component_to_the_pinned_toolchain(self) -> None:
         """Install all manifest components after installing the pinned toolchain."""
