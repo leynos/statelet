@@ -1,4 +1,8 @@
-"""Bind coverage action inputs to the intended validation and publication."""
+"""Verify coverage inputs in both workflows with ``make test-workflow-contracts``.
+
+These contracts keep coverage configured for Rust while preventing public
+artefact publication in both CI workflows.
+"""
 
 from copy import deepcopy
 from pathlib import Path
