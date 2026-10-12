@@ -61,11 +61,13 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
+      - name: Install repository Rust components
+        run: make install-rust-toolchain
       - name: Install test runner
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUSTFLAGS: ""
-        run: cargo binstall --no-confirm cargo-nextest
+        run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
       - name: Generate coverage
         uses: leynos/shared-actions/.github/actions/generate-coverage@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
         env:
@@ -74,9 +76,11 @@ jobs:
           CFLAGS: -fuse-ld=lld
           LDFLAGS: -fuse-ld=lld
         with:
+          language: rust
           output-path: lcov.info
           format: lcov
           with-ratchet: 'true'
+          publish-artefact: 'false'
       # Whether the token is set, as a plain step output. The expression is
       # evaluated before the shell runs, so this step binds nothing: the token
       # sits in no `env` in this workflow, because the upload action is

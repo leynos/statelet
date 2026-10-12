@@ -23,7 +23,11 @@ jobs:
       # CI runs tests with --all-features, so mutants must face the same
       # feature surface.
       extra-args: "--all-features"
-      # .cargo/config.toml pins the linker to clang with mold, so plain
+      # .cargo/config.toml pins the linker to clang with `mold`, so plain
       # cargo builds fail without them; mirror the CI setup-rust inputs.
       install-mold: 'true'
       install-clang-lld: 'true'
+      # setup-rust owns the linkers; add Statelet's extra Rust components.
+      setup-commands: |
+        make install-rust-toolchain
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"

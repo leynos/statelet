@@ -27,6 +27,8 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
+      - name: Install repository Rust components
+        run: make install-rust-toolchain
       - name: Install mdtablefix
         # `make check-fmt` runs `mdtablefix --check --git`; 0.6.0 is the
         # first release with `--check` and `--git`.
@@ -49,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUSTFLAGS: ""
-        run: cargo binstall --no-confirm cargo-nextest
+        run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
       # Dependency audits report advisories against the whole lockfile, so a
       # newly published advisory would fail every Dependabot PR regardless of
       # content and deadlock auto-merge. The scheduled audit workflow covers
@@ -59,14 +61,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUSTFLAGS: ""
-        run: cargo binstall --no-confirm cargo-audit
+        run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-audit
       - name: Setup Python for audit manifest extraction
         if: github.actor != 'dependabot[bot]'
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: '3.x'
+          python-version: '3.14'
       - name: Install Whitaker
-        uses: leynos/shared-actions/.github/actions/install-whitaker@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        uses: leynos/shared-actions/.github/actions/install-whitaker@6dea5677a84fec60ca51b07202570e3af12ffdb4
         with:
           cranelift: true
       - name: Audit dependencies
@@ -74,6 +76,8 @@ jobs:
         run: make audit
       - name: Lint
         run: make lint
+      - name: Typecheck
+        run: make typecheck
       - name: Workflow contract tests
         run: make test-workflow-contracts
       - name: Log coverage linker configuration
@@ -90,6 +94,7 @@ jobs:
           CFLAGS: -fuse-ld=lld
           LDFLAGS: -fuse-ld=lld
         with:
+          language: rust
           output-path: lcov.info
           format: lcov
           # The pull request measures coverage for its own ratchet check and

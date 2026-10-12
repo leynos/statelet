@@ -26,6 +26,21 @@ jobs:
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
+      - name: Install repository Rust components
+        run: make install-rust-toolchain
+      - name: Install mdtablefix
+        uses: leynos/shared-actions/.github/actions/install-mdtablefix@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        with:
+          version: "0.6.1"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@b06acff4b6a41bdd9cdac56507ead0bd7734e757
+        with:
+          python-version: '3.14'
+      - name: Install test runner
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUSTFLAGS: ""
+        run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
       - name: Install act
         run: |
           curl -fsSL "https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz" |

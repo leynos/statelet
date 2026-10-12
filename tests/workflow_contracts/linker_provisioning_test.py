@@ -1,6 +1,6 @@
-"""Contract tests for how the workflows provision clang, lld and mold.
+"""Contract tests for how the workflows provision clang, lld and ``mold``.
 
-``.cargo/config.toml`` links Linux builds with clang and mold, and coverage
+``.cargo/config.toml`` links Linux builds with clang and ``mold``, and coverage
 links with lld, so the runner needs all three before any cargo command runs.
 The CI, coverage-main and act-validation workflows get them from ``setup-rust``'s
 ``install-mold`` and ``install-clang-lld`` inputs, and the mutation-testing
@@ -11,8 +11,6 @@ surface only as a failed link on a runner.
 
 Run via ``make test-workflow-contracts``.
 """
-
-from __future__ import annotations
 
 import re
 import typing as typ
@@ -57,7 +55,7 @@ def _joined(script: str) -> str:
 
 @pytest.mark.parametrize("workflow", PROVISIONING_WORKFLOWS)
 def test_setup_rust_installs_the_linkers(workflow: str) -> None:
-    """Every ``setup-rust`` step installs mold, clang and lld, pinned by SHA."""
+    """Every ``setup-rust`` step installs ``mold``, clang and lld, pinned by SHA."""
     steps = _setup_rust_steps(workflow)
 
     assert steps, f"{workflow} must run setup-rust pinned to a full commit SHA"
@@ -72,7 +70,7 @@ def test_setup_rust_installs_the_linkers(workflow: str) -> None:
 
 @pytest.mark.parametrize("workflow", PROVISIONING_WORKFLOWS)
 def test_no_step_installs_the_linkers_by_hand(workflow: str) -> None:
-    """No run step apt-installs clang, lld or mold alongside ``setup-rust``."""
+    """No run step apt-installs clang, lld or ``mold`` alongside ``setup-rust``."""
     offenders = [
         str(step.get("name", step))
         for step in _steps(workflow)
@@ -94,4 +92,6 @@ def test_no_step_installs_the_linkers_by_hand(workflow: str) -> None:
 )
 def test_the_hand_install_reader_sees_split_commands(script: str, caught: bool) -> None:
     """A package list on a continuation line is still a hand-rolled install."""
-    assert bool(HAND_INSTALL.search(_joined(script))) is caught
+    assert bool(HAND_INSTALL.search(_joined(script))) is caught, (
+        f"hand-install detection disagrees with the expected result for {script!r}"
+    )

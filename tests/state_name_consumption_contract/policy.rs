@@ -85,6 +85,15 @@ fn is_blocked(rows: &[StatusRow], note: &NoteRow) -> bool {
         .any(|row| row.field == note.field && row.status == note.status && !row.admissible)
 }
 
+/// Finds a register row for contribution and cell-vocabulary checks.
+///
+/// Blocking scans *every* matching row separately: a duplicated status with an
+/// inadmissible copy must still block even if an admissible copy comes first.
+fn registered_status<'a>(rows: &'a [StatusRow], note: &NoteRow) -> Option<&'a StatusRow> {
+    rows.iter()
+        .find(|row| row.field == note.field && row.status == note.status)
+}
+
 /// Reduces an admissible note's cells to a verdict, rejecting a contradictory
 /// note rather than resolving it.
 ///
@@ -101,10 +110,7 @@ fn is_blocked(rows: &[StatusRow], note: &NoteRow) -> bool {
 fn contribution(rows: &[StatusRow], note: &[NoteRow]) -> Result<Resolution, String> {
     let mut selected: Option<(&str, &str)> = None;
     for row in note {
-        let Some(status) = rows
-            .iter()
-            .find(|status| status.field == row.field && status.status == row.status)
-        else {
+        let Some(status) = registered_status(rows, row) else {
             continue;
         };
         if status.contributes == NOTHING {
@@ -135,34 +141,36 @@ fn contribution(rows: &[StatusRow], note: &[NoteRow]) -> Result<Resolution, Stri
 /// `identifier-need` obligations.
 pub(crate) fn check_note_cells(rows: &[StatusRow], note: &[NoteRow]) -> Result<(), String> {
     for row in note {
-        if row.status.contains("TBD") || row.evidence.contains("TBD") {
-            return Err(format!(
-                "a StateName note still holds TBD in field {:?}. Repair: the note records an \
-                 observation, so every cell must be filled.",
-                row.field
-            ));
-        }
-        if !rows
-            .iter()
-            .any(|status| status.field == row.field && status.status == row.status)
-        {
-            return Err(format!(
-                "a StateName note records status {:?} for field {:?}, which the status register \
-                 does not define. Repair: use a status ADR 004 lists for that field.",
-                row.status, row.field
-            ));
-        }
-        if !is_citation_shaped(&row.evidence) {
-            return Err(format!(
-                "a StateName note records evidence for field {:?} that is not a citation of the \
-                 shape <repo>@<sha>:<path>. Repair: cite the revision the observation was made \
-                 against.",
-                row.field
-            ));
-        }
+        check_note_cell(rows, row)?;
     }
     check_state_display_name_evidence(note)?;
     check_identifier_need_evidence(note)
+}
+
+/// Checks one cell's completeness, registered status, and citation in that order.
+fn check_note_cell(rows: &[StatusRow], row: &NoteRow) -> Result<(), String> {
+    if row.status.contains("TBD") || row.evidence.contains("TBD") {
+        return Err(format!(
+            "a StateName note still holds TBD in field {:?}. Repair: the note records an \
+             observation, so every cell must be filled.",
+            row.field
+        ));
+    }
+    if registered_status(rows, row).is_none() {
+        return Err(format!(
+            "a StateName note records status {:?} for field {:?}, which the status register does \
+             not define. Repair: use a status ADR 004 lists for that field.",
+            row.status, row.field
+        ));
+    }
+    if !is_citation_shaped(&row.evidence) {
+        return Err(format!(
+            "a StateName note records evidence for field {:?} that is not a citation of the shape \
+             <repo>@<sha>:<path>. Repair: cite the revision the observation was made against.",
+            row.field
+        ));
+    }
+    Ok(())
 }
 
 /// Checks the obligation ADR 004 places on an `Enumerated` cell.

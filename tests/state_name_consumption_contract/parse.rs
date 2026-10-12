@@ -122,78 +122,79 @@ fn is_divider(cell: &str) -> bool {
 
 /// Maps the status register, rejecting a token its own vocabulary lacks.
 pub(crate) fn status_rows(adr: &str) -> Result<Vec<StatusRow>, ParseError> {
-    let mut rows = Vec::new();
-    for (offset, cells) in parse_table(adr, Register::Status)?.iter().enumerate() {
-        let [field, status, admissible, contributes] = cells.as_slice() else {
-            return Err(ParseError::MalformedRow {
-                register: Register::Status,
-                row: offset + 1,
-            });
-        };
-        rows.push(StatusRow {
-            field: field.clone(),
-            status: status.clone(),
-            admissible: parse_admissible(admissible)?,
-            contributes: contributes.clone(),
-        });
-    }
-    Ok(rows)
+    map_rows(
+        adr,
+        Register::Status,
+        |[field, status, admissible, contributes]| {
+            Ok(StatusRow {
+                field: field.clone(),
+                status: status.clone(),
+                admissible: parse_admissible(admissible)?,
+                contributes: contributes.clone(),
+            })
+        },
+    )
 }
 
 /// Maps the aggregation register.
 pub(crate) fn aggregation_rows(adr: &str) -> Result<Vec<AggRow>, ParseError> {
-    let mut rows = Vec::new();
-    for (offset, cells) in parse_table(adr, Register::Aggregation)?.iter().enumerate() {
-        let [contributing_notes, any_insufficient, outcome] = cells.as_slice() else {
-            return Err(ParseError::MalformedRow {
-                register: Register::Aggregation,
-                row: offset + 1,
-            });
-        };
-        rows.push(AggRow {
-            contributing_notes: contributing_notes.clone(),
-            any_insufficient: any_insufficient.clone(),
-            outcome: outcome.clone(),
-        });
-    }
-    Ok(rows)
+    map_rows(
+        adr,
+        Register::Aggregation,
+        |[contributing_notes, any_insufficient, outcome]| {
+            Ok(AggRow {
+                contributing_notes: contributing_notes.clone(),
+                any_insufficient: any_insufficient.clone(),
+                outcome: outcome.clone(),
+            })
+        },
+    )
 }
 
 /// Maps the gate table.
 pub(crate) fn gate_rows(adr: &str) -> Result<Vec<GateRow>, ParseError> {
-    let mut rows = Vec::new();
-    for (offset, cells) in parse_table(adr, Register::Gates)?.iter().enumerate() {
-        let [gate, fragment] = cells.as_slice() else {
-            return Err(ParseError::MalformedRow {
-                register: Register::Gates,
-                row: offset + 1,
-            });
-        };
-        rows.push(GateRow {
+    map_rows(adr, Register::Gates, |[gate, fragment]| {
+        Ok(GateRow {
             gate: gate.clone(),
             fragment: fragment.clone(),
-        });
-    }
-    Ok(rows)
+        })
+    })
 }
 
 /// Maps a validation note's own register.
 pub(crate) fn note_rows(note: &str) -> Result<Vec<NoteRow>, ParseError> {
-    let mut rows = Vec::new();
-    for (offset, cells) in parse_table(note, Register::Note)?.iter().enumerate() {
-        let [field, status, evidence] = cells.as_slice() else {
-            return Err(ParseError::MalformedRow {
-                register: Register::Note,
-                row: offset + 1,
-            });
-        };
-        rows.push(NoteRow {
+    map_rows(note, Register::Note, |[field, status, evidence]| {
+        Ok(NoteRow {
             field: field.clone(),
             status: status.clone(),
             evidence: evidence.clone(),
-        });
-    }
-    Ok(rows)
+        })
+    })
+}
+
+/// Applies one register's typed row constructor after checking its exact width.
+///
+/// Only the four delimited registers in this module use this mapper. Each
+/// constructor retains its own vocabulary, while malformed rows still report
+/// their register and one-based data-row number.
+fn map_rows<const N: usize, T>(
+    source: &str,
+    register: Register,
+    construct: impl Fn(&[String; N]) -> Result<T, ParseError>,
+) -> Result<Vec<T>, ParseError> {
+    parse_table(source, register)?
+        .iter()
+        .enumerate()
+        .map(|(offset, cells)| {
+            let validated_cells = <&[String; N]>::try_from(cells.as_slice()).map_err(|_| {
+                ParseError::MalformedRow {
+                    register,
+                    row: offset + 1,
+                }
+            })?;
+            construct(validated_cells)
+        })
+        .collect()
 }
 
 /// Reads the status register, rendering a parse failure as its own repair

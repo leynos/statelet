@@ -72,6 +72,8 @@ set.
 
 ## Engineering practice
 
+- [Rust baseline execution record](rust-baseline-execution.md) tracks the
+  single-PR hardening work, policy evidence, gates and open decisions.
 - [Complexity antipatterns and refactoring strategies](complexity-antipatterns-and-refactoring-strategies.md)
   explains cognitive complexity, the bumpy-road antipattern, and refactoring
   approaches for maintainable code.
