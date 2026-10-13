@@ -49,7 +49,7 @@ outcome informs every later implementation slice. See terms-of-reference.md
   - Success: the exit note maps B1 and B2 to concrete evidence from
     design.md §11.1 and failure modes in design.md §§13.6-13.7:
     [ADR 003](adr-003-v0-1-exit-register.md).
-- [ ] 1.1.3. Define the `StateName` consumption question for Phase 2.
+- [x] 1.1.3. Define the `StateName` consumption question for Phase 2.
   - Requires 1.1.2.
   - Decide what `mdtablefix` must consume to prove whether `&'static str` is
     enough or whether a stable numeric identifier is needed.
@@ -378,7 +378,7 @@ real diagnostics while preserving ordinary Rust ownership and control flow.
 This idea is false if plain tracing remains clearer, the observations interfere
 with domain execution, or the extra vocabulary has no demonstrated consumer.
 
-The five RFCs and ADR 005 remain proposed until their review tasks record a
+The five RFCs and ADR 006 remain proposed until their review tasks record a
 verdict. Start with handwritten, example-local experiments. Preserve ADR 003's
 ship-nothing, conventions-only, and macro exits; preserve ADR 004's accepted
 naming evidence. Trasic is supplementary to `mdtablefix` and `wireframe`, not a
@@ -423,7 +423,7 @@ accept a narrowed experiment, defer a feature, or reject a proposal entirely.
     missing delivery; preserve the separate async gate at 5.2.1.
 - [ ] 6.1.6. Review transition and outcome naming evidence.
   - Requires 1.1.3.
-  - Review [ADR 005](adr-005-stable-transition-and-outcome-names.md) without
+  - Review [ADR 006](adr-006-stable-transition-and-outcome-names.md) without
     reopening ADR 004's accepted aggregation rule implicitly.
   - Success: record the disposition and a consumer-led stability question;
     neither numeric identifiers nor a global registry become default policy.

@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 005: Stable transition and outcome names
+# Architectural decision record (ADR) 006: Stable transition and outcome names
 
 ## Status
 

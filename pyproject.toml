@@ -1,0 +1,14 @@
+# Statelet is a Rust crate. This file configures its repository-owned Python
+# lint and typecheck gates; it intentionally defines no Python package.
+
+[tool.pylint.main]
+# Keep Pylint aligned with the managed interpreter used by Make and CI.
+py-version = "3.14"
+recursive = true
+max-module-lines = 400
+
+[tool.pylint.design]
+max-args = 4
+max-locals = 20
+max-statements = 70
+max-positional-arguments = 4

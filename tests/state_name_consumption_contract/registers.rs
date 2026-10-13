@@ -26,10 +26,10 @@ const DEFERRED_CLAUSE: &str =
 /// itself uses — "Blocked", "Ratify", "Amend" — cut to the verb that introduces
 /// each, so that the repair messages below read as instructions: a register that
 /// does not *block* there, one that does not *ratify*, one that does not *amend*.
-const AGGREGATION_STATES: [(&str, &str, &str); 3] = [
-    ("None", "n/a", "Block"),
-    ("One or more", "No", "Ratify"),
-    ("One or more", "Yes", "Amend"),
+const AGGREGATION_STATES: [MultisetState; 3] = [
+    MultisetState::Uninhabited,
+    MultisetState::Ratified,
+    MultisetState::Amended,
 ];
 
 /// Checks that `docs/design.md` §6.1 still carries the clause the whole
@@ -47,42 +47,8 @@ pub(crate) fn check_deferred_clause(design: &str) -> Result<(), String> {
 /// Checks that the aggregation register maps each reachable state of the note
 /// multiset to exactly one outcome, and to the right one.
 pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
-    for (notes, insufficient, expected) in AGGREGATION_STATES {
-        let matches = rows
-            .iter()
-            .filter(|row| matches_state(row, notes, insufficient))
-            .collect::<Vec<&AggRow>>();
-        match matches.as_slice() {
-            [row] if row.outcome.starts_with(expected) => {}
-            [row] => {
-                return Err(format!(
-                    "docs/adr-004-state-name-consumption-evidence.md: {} contributing notes with \
-                     any insufficient {} yields {:?} where it must {expected}. Repair: a register \
-                     that does not {expected} there is not a decision procedure.",
-                    notes.to_lowercase(),
-                    insufficient.to_lowercase(),
-                    row.outcome
-                ));
-            }
-            [] => {
-                return Err(format!(
-                    "docs/adr-004-state-name-consumption-evidence.md: the aggregation register \
-                     does not cover {} contributing notes with any insufficient {}. Repair: add \
-                     that row; it must {expected}.",
-                    notes.to_lowercase(),
-                    insufficient.to_lowercase()
-                ));
-            }
-            _ => {
-                return Err(format!(
-                    "docs/adr-004-state-name-consumption-evidence.md: the aggregation register is \
-                     ambiguous for {} contributing notes with any insufficient {}. Repair: keep \
-                     exactly one row for that state.",
-                    notes.to_lowercase(),
-                    insufficient.to_lowercase()
-                ));
-            }
-        }
+    for state in AGGREGATION_STATES {
+        check_aggregation_state(rows, state)?;
     }
     if rows.len() != AGGREGATION_STATES.len() {
         return Err(format!(
@@ -93,6 +59,41 @@ pub(crate) fn check_aggregation_total(rows: &[AggRow]) -> Result<(), String> {
         ));
     }
     Ok(())
+}
+
+/// Checks one reachable state before the register's global row-count check.
+fn check_aggregation_state(rows: &[AggRow], state: MultisetState) -> Result<(), String> {
+    let (notes, insufficient) = state.columns();
+    let expected = state.expected_prefix();
+    let matches = rows
+        .iter()
+        .filter(|row| matches_state(row, notes, insufficient))
+        .collect::<Vec<&AggRow>>();
+    match matches.as_slice() {
+        [row] if row.outcome.starts_with(expected) => Ok(()),
+        [row] => Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: {} contributing notes with any \
+             insufficient {} yields {:?} where it must {expected}. Repair: a register that does \
+             not {expected} there is not a decision procedure.",
+            notes.to_lowercase(),
+            insufficient.to_lowercase(),
+            row.outcome
+        )),
+        [] => Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
+             cover {} contributing notes with any insufficient {}. Repair: add that row; it must \
+             {expected}.",
+            notes.to_lowercase(),
+            insufficient.to_lowercase()
+        )),
+        _ => Err(format!(
+            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register is \
+             ambiguous for {} contributing notes with any insufficient {}. Repair: keep exactly \
+             one row for that state.",
+            notes.to_lowercase(),
+            insufficient.to_lowercase()
+        )),
+    }
 }
 
 /// Whether an aggregation row covers one reachable state.
@@ -125,6 +126,26 @@ enum MultisetState {
     Ratified,
     /// Notes contributed, and at least one was insufficient.
     Amended,
+}
+
+impl MultisetState {
+    /// The register-column values that identify this reachable state.
+    const fn columns(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Uninhabited => ("None", "n/a"),
+            Self::Ratified => ("One or more", "No"),
+            Self::Amended => ("One or more", "Yes"),
+        }
+    }
+
+    /// The outcome verb the register must use for this state.
+    const fn expected_prefix(self) -> &'static str {
+        match self {
+            Self::Uninhabited => "Block",
+            Self::Ratified => "Ratify",
+            Self::Amended => "Amend",
+        }
+    }
 }
 
 /// The outcome ADR 004's aggregation register selects for a multiset of notes.
@@ -160,11 +181,7 @@ pub(crate) fn aggregate_resolutions(
         (_, false) => MultisetState::Ratified,
         (_, true) => MultisetState::Amended,
     };
-    let (notes, insufficient) = match state {
-        MultisetState::Uninhabited => ("None", "n/a"),
-        MultisetState::Ratified => ("One or more", "No"),
-        MultisetState::Amended => ("One or more", "Yes"),
-    };
+    let (notes, insufficient) = state.columns();
     rows.iter()
         .find(|row| matches_state(row, notes, insufficient))
         .map_or_else(

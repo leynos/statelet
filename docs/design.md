@@ -801,7 +801,7 @@ publication exits in ADR 003.
   test consumption, late-field handling, and explicit evidence completeness.
 - [RFC 0005](rfcs/0005-incomplete-completion-and-cancellation.md) distinguishes
   return, observed unwinding, and incomplete capture without owning cleanup.
-- [ADR 005](adr-005-stable-transition-and-outcome-names.md) proposes extending
+- [ADR 006](adr-006-stable-transition-and-outcome-names.md) proposes extending
   naming-consumption evidence to transition and domain-outcome names.
 
 Roadmap Phase 6 records review, handwritten validation, adoption, and

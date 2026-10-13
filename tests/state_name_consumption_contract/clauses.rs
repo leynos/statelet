@@ -13,41 +13,47 @@ use super::{
     types::{ParseError, Register, TaskRecord},
 };
 
-/// Where each supported source document stands in for a clause's attribution.
+/// The three source documents whose clauses ADR 004 is allowed to quote.
 ///
-/// The first element is the name ADR 004 uses in its attribution — `design`,
-/// not `docs/design.md` — because that is what the resolver reads out of the
-/// clause. The second is the file the clause is checked against. Comparing the
-/// attribution against the path would reject every well-formed clause.
-const SOURCES: [(&str, &str); 3] = [
-    ("design", "docs/design.md"),
-    ("roadmap", "docs/roadmap.md"),
-    ("adr-002", "docs/adr-002-transition-boundary-scope.md"),
-];
+/// An attribution is a document role, not an arbitrary path: each role is
+/// resolved to its one source and repair path inside this contract.
+#[derive(Clone, Copy)]
+pub(crate) struct ClauseSources<'a> {
+    /// Text of the technical design.
+    pub(crate) design: &'a str,
+    /// Text of the roadmap, read as task records where required.
+    pub(crate) roadmap: &'a str,
+    /// Text of the transition-boundary scope decision.
+    pub(crate) adr_002: &'a str,
+}
+
+impl<'a> ClauseSources<'a> {
+    /// Resolves an ADR attribution to its source and repository path.
+    fn attributed(self, name: &str) -> Option<(&'static str, &'a str)> {
+        match name {
+            "design" => Some(("docs/design.md", self.design)),
+            "roadmap" => Some(("docs/roadmap.md", self.roadmap)),
+            "adr-002" => Some(("docs/adr-002-transition-boundary-scope.md", self.adr_002)),
+            _ => None,
+        }
+    }
+}
 
 /// Checks that each quoted clause still resolves in its named section.
 ///
 /// Failures name the *file* the clause was quoted from, not the attribution word
 /// the ADR uses for it: a reader told only that "design" has drifted has to
 /// guess which file to open, and the two differ by a path.
-pub(crate) fn check_quoted_clauses(
-    adr: &str,
-    design: &str,
-    roadmap: &str,
-    adr_002: &str,
-) -> Result<(), String> {
-    let sources = [design, roadmap, adr_002];
+pub(crate) fn check_quoted_clauses(adr: &str, sources: ClauseSources<'_>) -> Result<(), String> {
     for clause in quoted_clauses(adr)? {
         let (document, section, quoted) = resolve_clause(&clause)?;
-        let Some(index) = SOURCES.iter().position(|(name, _)| *name == document) else {
+        let Some((path, source)) = sources.attributed(&document) else {
             return Err(format!(
                 "docs/adr-004-state-name-consumption-evidence.md attributes a clause to \
                  {document:?}, which this contract does not read. Repair: use design, roadmap or \
                  adr-002."
             ));
         };
-        let path = SOURCES.get(index).map_or("", |(_, path)| *path);
-        let source = sources.get(index).copied().unwrap_or_default();
         // A roadmap clause resolves against the *record* the section names, and
         // a heading-shaped one against the section body. Asking the record first
         // is what keeps `PROSE_RANK`'s long tail from satisfying a task's own

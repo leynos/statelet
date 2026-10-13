@@ -27,18 +27,36 @@ observations record and how they are read.
 
 ## Quick start
 
-Run the public validation entrypoint from a fresh checkout:
+Install `rustup` and `uv` before running the validation entrypoint. Follow the
+[uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
+to install `uv`. The repository pins its Rust nightly and components in
+`rust-toolchain.toml`; `uv` provisions managed CPython 3.14 for repository
+scripts, tests, linting, and typechecking. On Linux, native development builds
+need `clang` and the pinned `mold` linker; `lld` is needed only for coverage.
+The linker installer uses `curl`, `sha256sum`, and `tar`. Markdown lint
+installation needs Node.js and `npm`.
+
+After those prerequisites are available, `make install-build-tools` installs
+the pinned linker and Rust toolchain components. The test gate also requires
+`cargo-nextest`, and the lint gate requires Whitaker. Follow the installation
+commands in the [developer guide](developers-guide.md#local-workflow) before
+running `make all`.
+
+Then run the public validation entrypoint from a fresh checkout:
 
 ```bash
 git clone https://github.com/leynos/statelet.git
 cd statelet
+make install-build-tools
+make install-mdtablefix
+make install-markdownlint
 make all
 ```
 
 The most useful public commands are:
 
-- `make all` builds confidence by running formatting checks, linting, and
-  tests.
+- `make all` runs formatting checks, linting, typechecking, Rust and Python
+  tests, shared workflow contracts, and spelling.
 - `make lint` runs the repository lint suite.
 - `make test` runs the repository test suite.
 

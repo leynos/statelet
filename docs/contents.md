@@ -56,8 +56,11 @@ set.
 - [ADR 004: Define the StateName consumption evidence](adr-004-state-name-consumption-evidence.md)
   defines what a `StateName` consumption observation records and the rule that
   reads one note, or several, into an outcome at task 3.2.1.
+- [ADR 005: Adopt the shared CV-005 contract library](adr-005-adopt-the-shared-cv005-contract-library.md)
+  records the move from a local copy of the CV-005 contract to the pinned
+  shared check.
 
-- [ADR 005: Stable transition and outcome names](adr-005-stable-transition-and-outcome-names.md)
+- [ADR 006: Stable transition and outcome names](adr-006-stable-transition-and-outcome-names.md)
   proposes extending naming-consumption evidence without changing ADR 004's
   accepted register or the pending `StateName` return-shape verdict.
 
@@ -88,6 +91,8 @@ These RFCs remain proposed; none describes an implemented runtime API.
 
 ## Engineering practice
 
+- [Rust baseline execution record](rust-baseline-execution.md) tracks the
+  single-PR hardening work, policy evidence, gates and open decisions.
 - [Complexity antipatterns and refactoring strategies](complexity-antipatterns-and-refactoring-strategies.md)
   explains cognitive complexity, the bumpy-road antipattern, and refactoring
   approaches for maintainable code.
