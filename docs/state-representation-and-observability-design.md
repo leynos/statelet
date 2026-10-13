@@ -14,7 +14,7 @@ Governing and companion documents:
   Statelet's marker-only ownership boundary.
 - [ADR 001](adr-001-proving-ground-candidates.md) remains the authority for the
   proving-ground selection.
-- [ADR 006](adr-006-representation-and-observability-contracts.md) proposes the
+- [ADR 007](adr-007-representation-and-observability-contracts.md) proposes the
   refinements explained by this document.
 - [Technical design](design.md) remains the primary design for crate topology,
   feature policy, and the existing macro gate.

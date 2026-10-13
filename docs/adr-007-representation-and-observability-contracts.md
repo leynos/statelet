@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 006: Refine representation and observability contracts
+# Architectural decision record (ADR) 007: Refine representation and observability contracts
 
 ## Status
 
@@ -44,6 +44,15 @@ where branching logic interacts with several invariants; newtypes combined with
 This ADR asks how Statelet should preserve that division of responsibility
 while tightening the naming, observability, and validation contracts used by
 its proving grounds.
+
+This record carries number 007. It was first numbered 006 against a base that
+predated [ADR 006](adr-006-stable-transition-and-outcome-names.md), which
+landed on `main` afterwards. The two records changed different paths, so no
+merge conflict flagged the duplicate number, and it was found only after both
+had merged. This record is the later arrival and yields the lower number,
+following the rule already applied to ADR 003, ADR 004, and ADR 005. Its file,
+title, in-body links, and decision-records index entry were renumbered
+together. ADR 006's own file and references were left untouched.
 
 ## Decision drivers
 

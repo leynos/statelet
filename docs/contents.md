@@ -67,14 +67,13 @@ set.
 - [ADR 005: Adopt the shared CV-005 contract library](adr-005-adopt-the-shared-cv005-contract-library.md)
   records the move from a local copy of the CV-005 contract to the pinned
   shared check.
-- [ADR 006: Refine representation and observability
-  contracts](adr-006-representation-and-observability-contracts.md) proposes
-  stronger prerequisites and field semantics for payload-carrying states,
-  semantic labels, domain outcomes, and asynchronous boundaries.
-
 - [ADR 006: Stable transition and outcome names](adr-006-stable-transition-and-outcome-names.md)
   proposes extending naming-consumption evidence without changing ADR 004's
   accepted register or the pending `StateName` return-shape verdict.
+- [ADR 007: Refine representation and observability
+  contracts](adr-007-representation-and-observability-contracts.md) proposes
+  stronger prerequisites and field semantics for payload-carrying states,
+  semantic labels, domain outcomes, and asynchronous boundaries.
 
 ## Observation integration proposals
 
