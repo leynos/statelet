@@ -3,7 +3,7 @@
 Status: Proposed companion roadmap
 
 Scope: Evidence-producing work for the refinements proposed by
-[ADR 006](adr-006-representation-and-observability-contracts.md).
+[ADR 007](adr-007-representation-and-observability-contracts.md).
 
 Audience: Maintainers sequencing the `mdtablefix` and `wireframe` proving
 grounds and deciding whether Statelet ships nothing, conventions only, or a
@@ -21,12 +21,12 @@ instrumentation value before either proving ground runs.
 
 ### 1.1. Define the representation prerequisite
 
-- [ ] 1.1.1. Review ADR 006's honest-representation rule.
+- [ ] 1.1.1. Review ADR 007's honest-representation rule.
   - Confirm that project-owned algebraic data types (ADTs), newtypes, and
     typestate remain outside Statelet ownership.
   - Confirm that a synthetic enum introduced only for tracing is a negative
     control.
-  - Success: ADR 006 is accepted, revised, or rejected unambiguously.
+  - Success: ADR 007 is accepted, revised, or rejected unambiguously.
 - [ ] 1.1.2. Add separate representation and instrumentation verdicts to the
   proving-ground note.
   - Requires 1.1.1.
@@ -154,5 +154,5 @@ beats the conventions baseline.
   Statelet value.
 - [ ] 5.2. Give every proposed public contract a named consumer or defer it.
 - [ ] 5.3. Select the existing ship-nothing, conventions-only, or macro exit.
-- [ ] 5.4. If ADR 006 is accepted, integrate surviving requirements into
+- [ ] 5.4. If ADR 007 is accepted, integrate surviving requirements into
   `design.md`, `roadmap.md`, and user guidance.
