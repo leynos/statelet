@@ -6,8 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 7, 10, and 11;
-  [RFC 0001](0001-transition-capture-semantics.md);
-  [RFC 0002](0002-explicit-observation-context.md).
+  [RFC 0001](0001-transition-capture-semantics.md); [RFC 0002](0002-explicit-observation-context.md).
 
 ## Summary
 
@@ -62,15 +61,23 @@ the same preconditions.
 ### Evaluation-count contract
 
 For an invocation selected for observation, evaluate each configured entry
-projection at most once before domain execution. Evaluate each configured
-completion projection at most once after a normal return. Repeated formatting
+projection exactly once before domain execution. Evaluate each configured
+completion projection exactly once after a normal return. Repeated formatting
 or subscriber visits must not re-evaluate the domain projection.
+
+An upper bound alone is not the contract. "At most once" is also satisfied by
+never evaluating the projection at all, so a wrapper that silently drops every
+entry and completion projection would present false-positive non-interference
+evidence. Exactly-once therefore has both bounds: at least once for a target
+that is enabled and whose projection is configured and available, and no more
+than once for any target, so no path may re-evaluate it.
 
 When the observation is disabled before capture, do not evaluate its
 observation-only projections. A runtime filter may change or an exporter may
 drop data after selection; this does not authorize replay of a projection or
 promise that a record reaches storage. Zero capture on a disabled target and
-successful delivery are different contracts.
+successful delivery are different contracts, and neither permits zero capture
+on an enabled, available target.
 
 Use lazy capture around the actual enabled target rather than eagerly
 constructing strings and then discarding them. Compile-time disabled and
@@ -83,8 +90,8 @@ Do not add blanket `Debug`, `Display`, `Clone`, `Serialize`, `Send`, or
 values can carry narrowly documented requirements. Do not clone an event to
 observe it before its original move into the operation.
 
-Consuming methods and functions returning borrows require positive controls.
-If a capture combination cannot preserve a valid signature, require explicit
+Consuming methods and functions returning borrows require positive controls. If
+a capture combination cannot preserve a valid signature, require explicit
 omission or report the combination as unsupported. Do not silently change the
 return type, drop timing of application values, or domain error type.
 
@@ -97,7 +104,9 @@ or evaluate post-state from a destructor.
 - **N1:** Domain execution occurs exactly once under every supported observation
   configuration.
 - **N2:** Observation-only projections obey the stated capture counts and
-  disabled-target rule; output delivery is not assumed.
+  disabled-target rule. An enabled, available projection executes exactly once
+  for its configured phase; no target executes one more than once. Output
+  delivery is not assumed.
 - **N3:** The same input produces the same return, diagnostics, semantic
   effects, and required restoration, subject to the documented callback
   preconditions.
@@ -115,24 +124,26 @@ outputs and service interactions; exclude observation records themselves.
 
 The following matrix separates assertions that otherwise become conflated.
 
-| Fixture | Required evidence |
-| --- | --- |
-| Disabled target | No observation-only projection executes |
-| Enabled target | Each configured projection executes no more than once |
-| Error after mutation | The same effects and returned error survive |
-| Early return and `?` | The same exit and required cleanup occur |
-| Non-`Clone` event and non-`Debug` error | Supported code still compiles |
-| Consuming method and borrowed return | No retained entry borrow or new lifetime requirement |
-| Nested observations | Service calls and frame restoration remain unchanged |
+| Fixture                                 | Required evidence                                                     |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| Disabled target                         | No observation-only projection executes                               |
+| Enabled target                          | Each configured, available projection executes exactly once per phase |
+| Error after mutation                    | The same effects and returned error survive                           |
+| Early return and `?`                    | The same exit and required cleanup occur                              |
+| Non-`Clone` event and non-`Debug` error | Supported code still compiles                                         |
+| Consuming method and borrowed return    | No retained entry borrow or new lifetime requirement                  |
+| Nested observations                     | Service calls and frame restoration remain unchanged                  |
 
 *Table 1: Non-interference validation fixtures.*
 
 Add negative controls that duplicate the operation, evaluate a projection
-before filtering, or rerun a geometry query for logging. Tests must reject each
-control. Use bounded generated operation sequences to exercise nesting and
-cleanup invariants; shrink failures to reviewable examples. Use compile-fail
-fixtures for unsupported capture shapes rather than claiming runtime testing
-proves ownership preservation universally.
+before filtering, rerun a geometry query for logging, or drop every enabled
+projection while reporting success. Tests must reject each control, and a
+zero-call counter is a failure for a target that is enabled and whose
+projection is configured. Use bounded generated operation sequences to exercise
+nesting and cleanup invariants; shrink failures to reviewable examples. Use
+compile-fail fixtures for unsupported capture shapes rather than claiming
+runtime testing proves ownership preservation universally.
 
 Reject a helper or macro shape if preservation requires application cloning,
 new broad bounds, or compensating domain logic. The local tracing baseline

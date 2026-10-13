@@ -6,8 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 9 and 11;
-  [RFC 0001](0001-transition-capture-semantics.md);
-  [RFC 0002](0002-explicit-observation-context.md).
+  [RFC 0001](0001-transition-capture-semantics.md); [RFC 0002](0002-explicit-observation-context.md).
 
 ## Summary
 
@@ -31,9 +30,10 @@ must not require HgPovRay to follow the same internal transition sequence.
 ## Goals and non-goals
 
 The proposal enables test-local recording, stable semantic assertions, context
-correlation, and explicit evidence completeness. It does not replace application
-unit tests, scene conformance snapshots, model checking, or tracing itself.
-There is no new public observer API or serialization dependency in this RFC.
+correlation, and explicit evidence completeness. It does not replace
+application unit tests, scene conformance snapshots, model checking, or tracing
+itself. There is no new public observer API or serialization dependency in this
+RFC.
 
 ## Proposed design
 
@@ -46,9 +46,9 @@ record and keep explicit completion distinct from span closure.
 
 Retaining another span handle can delay closure. Tests must therefore inspect
 explicitly completed observations and report outstanding records at the end of
-the collection scope rather than treating `on_close` as operation success.
-A missing post-state remains missing; the recorder must not copy the entry
-label into it.
+the collection scope rather than treating `on_close` as operation success. A
+missing post-state remains missing; the recorder must not copy the entry label
+into it.
 
 Install the recorder with a scoped dispatcher for synchronous tests rather than
 a global subscriber. Tracing provides `with_default` for a scoped default.[^2]
@@ -91,15 +91,15 @@ produce an explicit unusable-evidence result, not disappear silently.
 
 ### Keep evidence formats separate
 
-Store observation-integration notes under a distinct marker and schema from
-ADR 004's `StateName` consumption notes. Do not change that accepted register
-or feed new note fields into its parser implicitly. Naming evidence relevant
-to `StateName` still uses its existing instrument.
+Store observation-integration notes under a distinct marker and schema from ADR
+004's `StateName` consumption notes. Do not change that accepted register or
+feed new note fields into its parser implicitly. Naming evidence relevant to
+`StateName` still uses its existing instrument.
 
 Each integration note records the compared baseline, fixture revision, capture
 configuration, semantic assertions, observed defect, and keep/revise/reject
-verdict. Missing or truncated evidence cannot support a publication claim.
-The schema and marker must be reviewed before executable tests consume them.
+verdict. Missing or truncated evidence cannot support a publication claim. The
+schema and marker must be reviewed before executable tests consume them.
 
 ## Requirements
 

@@ -13,21 +13,26 @@
 Provide a conventions-only integration pattern that retains the exact
 observation target for an invocation. Let callers supply application context
 and attach observations discovered during execution without retaining a borrow
-of their mutable state. Compare caller-owned tracing spans with a narrow
-handle before designing a new public wrapper.
+of their mutable state. Required late fields are validated against the target's
+declared field set, because tracing fails silently when a field is undeclared.
+Compare caller-owned tracing spans with a narrow handle before designing a new
+public wrapper.
 
 ## Problem and current state
 
-The existing field contract specifies observations but not how application
-code finds the correct invocation to update. A Trasic source origin may be
-known at entry, an object identifier may appear during elaboration, and the
-outcome arrives at return. Nested operations make an implicit current span an
-ambiguous destination for those facts.
+The existing field contract specifies observations but not how application code
+finds the correct invocation to update. A Trasic source origin may be known at
+entry, an object identifier may appear during elaboration, and the outcome
+arrives at return. Nested operations make an implicit current span an ambiguous
+destination for those facts.
 
 Tracing fixes a span's field set in its metadata. A declared empty field can
 receive a later value; recording an undeclared field does not extend that
-set.[^1] An API promising arbitrary late-added fields would therefore need
-another explicit representation.
+set.[^1] The failure is silent: `Span::record` reports no error, so a required
+field that was never declared leaves the span unchanged and notifies no layer.
+An API promising arbitrary late-added fields would therefore need another
+explicit representation, and a negative control cannot rely on observing the
+attempt through the subscriber alone.
 
 ## Goals and non-goals
 
@@ -47,13 +52,13 @@ Completion records against the same target, regardless of the current nested
 operation.
 
 A disabled target remains disabled. Never fall back to `Span::current()` or
-`or_current()` when recording a child's completion: doing so could attribute
-it to an enabled parent. Selecting a parent for a new context span is a
-separate, explicit operation, not a completion fallback.
+`or_current()` when recording a child's completion: doing so could attribute it
+to an enabled parent. Selecting a parent for a new context span is a separate,
+explicit operation, not a completion fallback.
 
-A handle may retain observation metadata and tracing context. It must not
-retain `&self`, `&mut self`, an application callback with mutation authority,
-or a deferred state accessor that obstructs the body's borrows.
+A handle may retain observation metadata and tracing context. It must not retain
+`&self`, `&mut self`, an application callback with mutation authority, or a
+deferred state accessor that obstructs the body's borrows.
 
 ### Two baseline integration forms
 
@@ -73,9 +78,9 @@ remain behind the tracing integration feature.
 
 ### Ownership and context vocabulary
 
-Statelet owns the accepted `transition.*` field contract. Applications own their
-extension namespaces. Trasic-local candidates include the following fields;
-they are examples, not additions to Statelet's public vocabulary.
+Statelet owns the accepted `transition.*` field contract. Applications own
+their extension namespaces. Trasic-local candidates include the following
+fields; they are examples, not additions to Statelet's public vocabulary.
 
 ```plaintext
 trasic.source_id
@@ -86,17 +91,25 @@ trasic.invocation_id
 trasic.object_id
 ```
 
-Source paths, input text, and error details require a caller-selected disclosure
-policy. Do not capture them by default. High-cardinality invocation and object
-identifiers are diagnostic context, not state labels or metric dimensions.
-Statelet must not depend on Trasic's source-map or scene types.
+Source paths, input text, and error details require a caller-selected
+disclosure policy. Do not capture them by default. High-cardinality invocation
+and object identifiers are diagnostic context, not state labels or metric
+dimensions. Statelet must not depend on Trasic's source-map or scene types.
 
 ### Field validation and semantic events
 
-The test adapter must detect attempts to use required undeclared fields rather
-than silently accepting an incomplete record. Production integrations may
-choose a documented omission or diagnostic policy, but must not invent fields
-that tracing cannot attach.
+The test adapter must detect an attempt to use a required undeclared field
+rather than silently accepting an incomplete record. It cannot detect that
+attempt by watching the recorder: `Layer::on_record`[^2] observes values that
+were actually recorded, so an undeclared field never reaches the layer.
+Validation therefore has to happen at the call site.
+
+The baseline adapter checks the declaration before recording. It looks the
+field name up in the target span's metadata field set and fails the fixture
+when the declaration is absent, instead of issuing a record call whose silent
+no-op the fixture would then read as a pass. Production integrations may choose
+a documented omission or diagnostic policy, but must not invent fields that
+tracing cannot attach.
 
 Domain facts such as `DefaultTextureResolved` remain application events. The
 handle can associate them with an invocation without turning them into new
@@ -109,7 +122,8 @@ control states or Statelet-owned event types.
 - **H2:** Entry capture cannot retain an application-state borrow across domain
   execution or change the operation's ownership model.
 - **H3:** Caller context has an explicit declaration and attachment path.
-  Required missing fields must fail the validation example.
+  Required missing fields must fail the validation example, and the failure
+  must be detected at the call site rather than inferred from recorder output.
 - **H4:** The no-default-feature path introduces no tracing-specific public
   type requirement. Applications retain source and identity ownership.
 - **H5:** Statelet emits observations, not application actions. No integration
@@ -123,8 +137,13 @@ verify that child completion never changes the parent's fields. Then enable
 both and verify that late object identity reaches only the intended invocation.
 
 Include a missing `Empty` field declaration, a non-current explicit target,
-multiple sibling operations, and a mutable state that cannot be cloned. Verify
-that a local recorder distinguishes parent context from child fields.
+multiple sibling operations, and a mutable state that cannot be cloned.
+
+The missing-declaration control must fail through the call-site check, not
+through the recorder. Pair it with a positive control that records the same
+field after declaring it, so a suite that never detects the omission is
+distinguishable from one that detects it correctly. Verify that a local
+recorder distinguishes parent context from child fields.
 
 Reject a wrapper if ordinary `Span` handles solve the problem more clearly.
 Reject any variant requiring application restructuring, implicit parent
@@ -156,5 +175,11 @@ Does an actual second consumer justify a wrapper beyond a tracing span?
 Keep observation targets explicit and application borrows short. Prove a need
 for a public handle rather than making one a prerequisite for validation.
 
-[^1]: [Tracing Span::record documentation](https://docs.rs/tracing/latest/tracing/span/struct.Span.html#method.record),
-    consulted 2026-10-07.
+[^1]: [Tracing `Span::record` documentation](https://docs.rs/tracing/latest/tracing/span/struct.Span.html#method.record),
+    consulted 2026-10-13. The same page documents that the fields associated
+    with a span are part of its metadata and cannot be extended later, so a
+    record call for an undeclared field has no effect.
+[^2]: [`Layer::on_record` documentation](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/layer/trait.Layer.html#method.on_record),
+    consulted 2026-10-13. The method notifies a layer that a span with the
+    given `Id` recorded the given `values`; it therefore observes values that
+    were recorded, and cannot observe an attempt that recorded nothing.

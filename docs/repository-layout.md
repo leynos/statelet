@@ -23,6 +23,7 @@ compact and omits build output such as `target/`.
 │   ├── contents.md
 │   ├── developers-guide.md
 │   ├── repository-layout.md
+│   ├── rfcs/
 │   ├── users-guide.md
 │   └── ...
 ├── src/
@@ -65,6 +66,13 @@ compact and omits build output such as `target/`.
   tooling used to work on the generated project.
 - `docs/repository-layout.md`: Documents the repository tree and path
   responsibilities.
+- `docs/rfcs/`: Holds the numbered Requests for Comments that propose, and
+  record the disposition of, integration contracts not yet accepted into the
+  design. An RFC states requirements, alternatives, validation and
+  falsification controls, and its own status; it is a proposal record, not a
+  binding contract, and only an accepted ADR or the technical design carries
+  authority. Each RFC is named `<number>-<subject>.md` and is indexed from
+  `docs/contents.md`.
 
 - `src/lib.rs`: Contains the library crate root and exported public API
   surface.

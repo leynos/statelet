@@ -3,8 +3,8 @@
 ## Status
 
 Proposed. Extend naming-consumption evidence to transition names and domain
-outcomes without pre-empting the `StateName` return-shape decision or publishing
-new runtime vocabulary.
+outcomes without pre-empting the `StateName` return-shape decision or
+publishing new runtime vocabulary.
 
 ## Date
 
@@ -39,12 +39,12 @@ to validate, not evidence that Statelet needs a registry or a new public trait.
 
 ## Options considered
 
-| Option | Benefit | Limitation | Proposed disposition |
-| --- | --- | --- | --- |
-| Derive all labels from Rust names | Minimal configuration | Source renames can change operational contracts | Retain only where no stability consumer exists |
-| Explicit namespaced static strings | Reviewable meanings independent of source spelling | Requires a naming and change policy | Preferred validation baseline |
-| Mandatory numeric identifiers | Compact explicit representation | Needs allocation policy; does not supply stability by itself | Defer without a consumer requirement |
-| Global registry or generated schema | Central coordination | Adds ownership and maintenance before demonstrated need | Reject for the current scope |
+| Option                              | Benefit                                            | Limitation                                                   | Proposed disposition                           |
+| ----------------------------------- | -------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| Derive all labels from Rust names   | Minimal configuration                              | Source renames can change operational contracts              | Retain only where no stability consumer exists |
+| Explicit namespaced static strings  | Reviewable meanings independent of source spelling | Requires a naming and change policy                          | Preferred validation baseline                  |
+| Mandatory numeric identifiers       | Compact explicit representation                    | Needs allocation policy; does not supply stability by itself | Defer without a consumer requirement           |
+| Global registry or generated schema | Central coordination                               | Adds ownership and maintenance before demonstrated need      | Reject for the current scope                   |
 
 *Table 1: Candidate naming strategies and their evidence requirements.*
 
@@ -59,8 +59,8 @@ transition.outcome = "duplicate_else"
 ```
 
 These examples are not reserved Statelet names. Statelet owns its accepted
-field schema and any generic completion vocabulary eventually accepted from
-RFC 0005. Applications own the meanings and naming policy of their states,
+field schema and any generic completion vocabulary eventually accepted from RFC
+0005. Applications own the meanings and naming policy of their states,
 transitions, and domain outcomes. A display description may change without
 changing a stable operational label; keep those roles separate when needed.
 
@@ -77,9 +77,9 @@ numeric representation earns consideration. Neither enum position nor a Rust
 discriminant is an implicit operational identity contract.
 
 Source positions, resource paths, invocation IDs, and object IDs belong in
-selected diagnostic context. They must not be interpolated into stable state
-or outcome names. Metric use needs a finite, reviewed label vocabulary; hashing
-or numbering an unbounded set does not make its cardinality bounded.
+selected diagnostic context. They must not be interpolated into stable state or
+outcome names. Metric use needs a finite, reviewed label vocabulary; hashing or
+numbering an unbounded set does not make its cardinality bounded.
 
 ## Evidence and acceptance criteria
 
@@ -96,8 +96,8 @@ meaning, readable display, numeric representation, or none of these.
 Validate a source-method rename and an outcome-variant rename while preserving
 the declared operational names. Include a negative control that derives the
 label from the renamed source item; the affected query or assertion must fail.
-Include a genuine semantic rename and show that compatibility review detects
-it rather than silently keeping an obsolete meaning.
+Include a genuine semantic rename and show that compatibility review detects it
+rather than silently keeping an obsolete meaning.
 
 Acceptance requires concrete evidence from the existing proving grounds and an
 explicit decision about which labels need stability. Trasic may add depth but
@@ -108,18 +108,18 @@ that result rather than manufacturing a numeric-ID requirement.
 ## Consequences
 
 The proposed convention makes operational names reviewable independently of
-Rust identifiers and gives tests a stable assertion vocabulary. It adds a
-small naming-policy obligation for applications that elect to expose stable
-labels. It does not make arbitrary names stable automatically, change
-`StateName`'s return type, or justify `TransitionOutcome` publication.
+Rust identifiers and gives tests a stable assertion vocabulary. It adds a small
+naming-policy obligation for applications that elect to expose stable labels.
+It does not make arbitrary names stable automatically, change `StateName`'s
+return type, or justify `TransitionOutcome` publication.
 
 ## Migration plan
 
-Roadmap task 6.1.6 reviews this decision. Task 6.3.2 runs rename and cardinality
-controls, and 6.3.3 gathers consumer evidence. Task 6.3.4 decides adoption and
-updates the technical design before any new naming contract becomes public.
-Existing fields and ADR 004 evidence remain authoritative while this ADR is
-proposed.
+Roadmap task 6.1.6 reviews this decision. Task 6.3.2 runs rename and
+cardinality controls, and 6.3.3 gathers consumer evidence. Task 6.3.4 decides
+adoption and updates the technical design before any new naming contract
+becomes public. Existing fields and ADR 004 evidence remain authoritative while
+this ADR is proposed.
 
 ## Known risks and limitations
 

@@ -16,8 +16,8 @@ code.
 
 The observation proposals in Phase 6 are separately gated extensions. Phase
 numbers remain stable identifiers, not a requirement to complete unrelated
-deferred work first; each task states its prerequisites. Proposed documents
-are not implementation evidence, and their existence completes no task.
+deferred work first; each task states its prerequisites. Proposed documents are
+not implementation evidence, and their existence completes no task.
 
 ## 1. Foundational contracts and kill gates
 
@@ -462,9 +462,9 @@ proc-macro implementation. Reject a shape that needs domain restructuring.
 ### 6.3. Consume evidence and decide the integration boundary
 
 This step tests whether observations serve actual readers. It feeds extension
-adoption, not a replacement B1/B2 decision procedure. Incomplete captures cannot
-justify a feature. Publication can reject every proposed extension and retain
-the existing conventions baseline.
+adoption, not a replacement B1/B2 decision procedure. Incomplete captures
+cannot justify a feature. Publication can reject every proposed extension and
+retain the existing conventions baseline.
 
 - [ ] 6.3.1. Build an example-local structured recorder.
   - Requires 6.1.4 accepting an experiment and 6.2.2.
@@ -496,8 +496,8 @@ the existing conventions baseline.
 ### 6.4. Test Trasic as a supplementary diagnostic integration
 
 This optional step asks whether the conventions help explain semantic-scene
-mismatches without requiring an FSM framework or identical reference traces.
-It does not gate runtime publication or replace `wireframe` evidence.
+mismatches without requiring an FSM framework or identical reference traces. It
+does not gate runtime publication or replace `wireframe` evidence.
 
 - [ ] 6.4.1. Select real conditional and restoration boundaries in Trasic.
   - Requires 6.3.4 retaining useful conventions and available Trasic code.

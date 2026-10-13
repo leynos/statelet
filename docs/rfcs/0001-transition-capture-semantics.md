@@ -51,14 +51,14 @@ logic and effects remain in the annotated operation.
 Use the following candidate fields in the handwritten validation baseline.
 Existing field meanings remain unchanged while the RFC is proposed.
 
-| Field | Proposed meaning | Omission rule |
-| --- | --- | --- |
-| `transition.state.before` | Selected label immediately before domain execution | Omit when no safe entry projection exists |
-| `transition.state.after` | Selected label after normal return, including `Err` | Omit when unconfigured or unavailable |
-| `transition.completion` | Observation of invocation completion | See RFC 0005; absence is not success |
-| `transition.return_kind` | Caller classification such as `ok`, `err`, or `value` | Omit when unclassified or no return occurred |
-| `transition.outcome` | Application-defined meaning of the operation | Omit when no outcome projection exists |
-| `transition.error` | Explicitly selected, redacted error information | Omit when unavailable or deliberately excluded |
+| Field                     | Proposed meaning                                      | Omission rule                                  |
+| ------------------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| `transition.state.before` | Selected label immediately before domain execution    | Omit when no safe entry projection exists      |
+| `transition.state.after`  | Selected label after normal return, including `Err`   | Omit when unconfigured or unavailable          |
+| `transition.completion`   | Observation of invocation completion                  | See RFC 0005; absence is not success           |
+| `transition.return_kind`  | Caller classification such as `ok`, `err`, or `value` | Omit when unclassified or no return occurred   |
+| `transition.outcome`      | Application-defined meaning of the operation          | Omit when no outcome projection exists         |
+| `transition.error`        | Explicitly selected, redacted error information       | Omit when unavailable or deliberately excluded |
 
 *Table 1: Candidate capture fields and their omission semantics.*
 
@@ -104,10 +104,10 @@ then requires no syntactic recognition by Statelet. A future macro may invoke
 an explicitly supplied projection, with Rust checking its types.
 
 Automatic syntactic recognition remains descriptive and conservative. It must
-not become mandatory when a manual projection exists. Explicit projections
-must not impose `Debug`, `Display`, `Clone`, or serialization bounds on the
-whole state, event, result, or error. Formatting requires only the selected
-fields' documented capabilities.
+not become mandatory when a manual projection exists. Explicit projections must
+not impose `Debug`, `Display`, `Clone`, or serialization bounds on the whole
+state, event, result, or error. Formatting requires only the selected fields'
+documented capabilities.
 
 ## Requirements
 
@@ -144,8 +144,8 @@ claim universal function wrapping.
 ## Compatibility and migration
 
 Start with example-local conventions. Record acceptance, revision, or rejection
-for each field before extending the published operational contract.
-Existing dashboards and naming evidence retain their current meaning.
+for each field before extending the published operational contract. Existing
+dashboards and naming evidence retain their current meaning.
 
 Roadmap tasks 6.1.1 and 6.2.1 cover contract review and the handwritten
 baseline; 6.3.4 governs adoption. Task 6.5.1 evaluates macro projection syntax
@@ -156,9 +156,9 @@ only after the existing macro gate permits implementation.
 A single `Stay`/`Move`/`Error` outcome loses information and mistakes selected
 labels for complete state. Automatic result inference cannot resolve arbitrary
 aliases syntactically. Serializing the entire state introduces ownership,
-privacy, and representation coupling that the contract does not require.
-Plain tracing with local projections remains the control implementation and a
-valid final product outcome.
+privacy, and representation coupling that the contract does not require. Plain
+tracing with local projections remains the control implementation and a valid
+final product outcome.
 
 ## Open questions
 

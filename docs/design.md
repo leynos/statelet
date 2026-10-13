@@ -808,11 +808,11 @@ Roadmap Phase 6 records review, handwritten validation, adoption, and
 conditional macro/async work. It preserves `mdtablefix` and `wireframe` as the
 proving sequence; Trasic supplies supplementary evidence only. No public
 observer, handle wrapper, outcome enum, or additional crate follows
-automatically.
-Accepted changes must update the governing sections before their API ships.
+automatically. Accepted changes must update the governing sections before their
+API ships.
 
 The opposing runtime/proc-macro edges currently permitted by sections 4 and 5
 are tracked separately in
-[issue 112](https://github.com/leynos/statelet/issues/112).
-The RFC documentation does not resolve that topology contradiction or claim a
-failure in the current single-crate production dependency graph.
+[issue 112](https://github.com/leynos/statelet/issues/112). The RFC
+documentation does not resolve that topology contradiction or claim a failure
+in the current single-crate production dependency graph.

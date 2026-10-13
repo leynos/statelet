@@ -6,8 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 11.3 and 14;
-  [RFC 0001](0001-transition-capture-semantics.md);
-  [RFC 0003](0003-observational-non-interference.md).
+  [RFC 0001](0001-transition-capture-semantics.md); [RFC 0003](0003-observational-non-interference.md).
 
 ## Summary
 
@@ -47,24 +46,24 @@ executor, or lifecycle manager.
 The candidate vocabulary records what the observer knows, not why the domain
 operation behaved that way.
 
-| Completion | Meaning | Does not establish |
-| --- | --- | --- |
-| `returned` | The operation returned and completion capture ran | Domain success, rollback, or post-state availability |
+| Completion        | Meaning                                            | Does not establish                                           |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| `returned`        | The operation returned and completion capture ran  | Domain success, rollback, or post-state availability         |
 | `unwind_observed` | An unfinished observation noticed active unwinding | Which operation caused the panic or whether cleanup finished |
-| `incomplete` | The observation ended without recorded completion | Cancellation, failure, or absence of effects |
-| Field absent | No completion observation is available | Any terminal outcome |
+| `incomplete`      | The observation ended without recorded completion  | Cancellation, failure, or absence of effects                 |
+| Field absent      | No completion observation is available             | Any terminal outcome                                         |
 
 *Table 1: Proposed completion labels and inference limits.*
 
-A returned `Err` uses `returned` plus the independent return classification from
-RFC 0001. Successful early returns and `?` exits should reach explicit
+A returned `Err` uses `returned` plus the independent return classification
+from RFC 0001. Successful early returns and `?` exits should reach explicit
 completion when an implemented wrapper claims to support those shapes. A
 handwritten path that omits finish instead yields incomplete evidence.
 
 ### Observation handle lifecycle
 
-The baseline has an active observation and at most one explicit completion.
-Its handle owns metadata only. Finishing consumes or otherwise terminally marks
+The baseline has an active observation and at most one explicit completion. Its
+handle owns metadata only. Finishing consumes or otherwise terminally marks
 that observation so later drop cannot overwrite a completed result. A test
 adapter must reject contradictory or duplicate terminal recordings.
 
@@ -84,8 +83,8 @@ unwind emission and report unavailable completion rather than adding a
 
 Async support remains out of scope until roadmap task 5.2.1 accepts it. When
 that gate opens, use poll-aware future instrumentation rather than holding an
-entered-span guard across `.await`. Tracing's `Instrument` provides the relevant
-poll-scoped integration.[^3]
+entered-span guard across `.await`. Tracing's `Instrument` provides the
+relevant poll-scoped integration.[^3]
 
 Specify when observation begins: future construction or first poll. A future
 created and dropped without polling must not look like an executed transition.
@@ -115,9 +114,9 @@ executor thread; tests must install or propagate the intended context.
 
 First test normal return, returned error, early return, `?`, an omitted finish,
 and nested cleanup. Verify that required application restoration matches the
-uninstrumented baseline even when an error follows a committed mutation.
-Reject a negative control that labels every unfinished observation cancelled.
-Reject a duplicate-completion control and one that reads post-state in `Drop`.
+uninstrumented baseline even when an error follows a committed mutation. Reject
+a negative control that labels every unfinished observation cancelled. Reject a
+duplicate-completion control and one that reads post-state in `Drop`.
 
 Use an isolated unwind test only where the configured panic strategy supports
 unwinding. Process-abort and explicit-exit cases must not require a destructor
