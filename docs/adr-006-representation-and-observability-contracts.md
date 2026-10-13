@@ -195,7 +195,7 @@ The recommended contract has these refinements:
    `ActiveOutput` seams. Use `MessageSeries` only after `wireframe`
    independently adopts an honest ADT representation for its correlated state.
 4. Record the observed need for state-after, event labels, outcome labels, and
-   identifier shape in both validation notes.
+   identifier shape in the validation notes that reach task 3.2.1.
 5. Before macro publication, settle after-state syntax and evaluation semantics,
    then exercise synchronous and asynchronous success, error, early-return,
    cancellation, and borrowing cases.

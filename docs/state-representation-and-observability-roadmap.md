@@ -30,7 +30,16 @@ instrumentation value before either proving ground runs.
 - [ ] 1.1.2. Add separate representation and instrumentation verdicts to the
   proving-ground note.
   - Requires 1.1.1.
-  - Success: a downstream type refactor cannot count as Statelet product value.
+  - Reconcile the transport with ADR 004 before either verdict is recorded. The
+    only proving-ground note schema is ADR 004's, and the note contract admits
+    exactly its four register fields, so a fifth field is rejected rather than
+    ignored.
+  - Either extend ADR 004's register and note template to carry the verdicts and
+    update the note contract in the same change, or carry the verdicts in a
+    separate note that ADR 004 does not read.
+  - Success: a downstream type refactor cannot count as Statelet product value,
+    and the representation verdict is traceable without invalidating the
+    machine-checked evidence.
 - [ ] 1.1.3. Record unsuitable seams explicitly.
   - Include counter-balance, token tables, build graphs, and decorative state
     projections.
