@@ -530,6 +530,24 @@ feature-leak risk called out by the design review.
 
 ### 11.6 Dependency topology
 
+The [task 1.2.1 execution plan](execplans/1-2-1-topology-check-placeholder.md)
+proposes `make topology-check` as a private integration-test-backed gate for
+the initial single-package state. This proposal awaits approval and is not
+implemented yet. It consumes `cargo metadata --no-deps --format-version 1`,
+requires the sole workspace member to be the `statelet` runtime library, and
+rejects declared `statelet-macros` dependencies even when renamed, optional, or
+target-specific. External testing proc macros remain permitted. Additional
+workspace members require a deliberate policy revision; the placeholder does
+not claim to validate a future resolved graph or feature leakage.
+
+That future revision must reconcile the allowed directions in sections 4–5: an
+optional runtime-to-macro re-export cannot coexist with a reciprocal
+macro-to-runtime edge that creates a cycle. Macro admission remains an
+evidence-led decision, never a command-line bypass or an inferred roadmap
+checkbox. The later admission change must also reconcile task 4.1.1's reference
+to 3.1.3 choosing “ship macro” with ADR 003's distinction between B1 at 3.1.3
+and the B2 publication decision at 4.3.1.
+
 The dependency-topology gate must fail on forbidden workspace cycles or
 unexpected edges. `rstest-bdd` showed that macro, runtime, harness, examples,
 and test-support crates can grow complex quickly. `statelet` should keep the
