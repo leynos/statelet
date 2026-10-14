@@ -542,11 +542,14 @@ not claim to validate a future resolved graph or feature leakage.
 
 That future revision must reconcile the allowed directions in sections 4–5: an
 optional runtime-to-macro re-export cannot coexist with a reciprocal
-macro-to-runtime edge that creates a cycle. Macro admission remains an
-evidence-led decision, never a command-line bypass or an inferred roadmap
-checkbox. The later admission change must also reconcile task 4.1.1's reference
-to 3.1.3 choosing “ship macro” with ADR 003's distinction between B1 at 3.1.3
-and the B2 publication decision at 4.3.1.
+macro-to-runtime edge that creates a cycle. Resolve
+[issue 112](https://github.com/leynos/statelet/issues/112) before defining that
+later workspace policy, as roadmap 1.2.1 requires; the single-crate placeholder
+does not resolve it. Macro admission remains an evidence-led decision, never a
+command-line bypass or an inferred roadmap checkbox. The later admission change
+must also reconcile task 4.1.1's reference to 3.1.3 choosing “ship macro” with
+ADR 003's distinction between B1 at 3.1.3 and the B2 publication decision at
+4.3.1.
 
 The dependency-topology gate must fail on forbidden workspace cycles or
 unexpected edges. `rstest-bdd` showed that macro, runtime, harness, examples,
