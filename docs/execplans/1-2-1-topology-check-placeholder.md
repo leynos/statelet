@@ -89,6 +89,9 @@ before a future change admits a macro package.
   ownership.
 - [x] (2026-10-14) Validate this plan for draft publication: formatting, lint,
   typechecking, tests, Markdown/spelling, and Mermaid gates passed.
+- [x] (2026-10-14) Rebase onto `7cb1267` without conflicts and reconcile the
+  issue 112 prerequisite and newly proposed observation documents. All six
+  validation gates passed on the rebased candidate.
 - [ ] Receive explicit plan approval.
 - [ ] M1: implement and verify the private policy and local command.
 - [ ] M2: integrate routine gates, reconcile documentation, and mark 1.2.1 done.
@@ -167,6 +170,17 @@ functions ignored with a documented reason so routine discovery never starts
 nested build commands during the coverage run. The dedicated gate selects
 ignored tests explicitly and fails if it selects none.
 
+D7 (2026-10-14): incorporate `main` through
+`7cb12674737491af3c76c18220862a84b60d1e15`. Roadmap 1.2.1 now explicitly
+requires resolution of
+[issue 112](https://github.com/leynos/statelet/issues/112) before defining the
+later workspace policy. Keep this placeholder closed to additional members and
+do not present its future constraints as a settled allow-list or as a fix for
+that issue. Preserve the new Phase 6 RFCs and ADRs 006–007 as proposals, not
+permission for additional crates, public APIs, or new release gates. The
+upstream changes add documentation, not reusable runtime helpers or build
+changes; no implementation adaptation is needed.
+
 ## Outcomes & retrospective
 
 Planning has established the metadata boundary and a bounded implementation
@@ -180,7 +194,7 @@ are ready for draft publication; implementation outcomes await approval.
 
 ## Context and orientation
 
-The baseline is commit `5472352d94bc363fde0ad5cbb92c95a06bf481b5`. `Cargo.toml`
+The baseline is commit `7cb12674737491af3c76c18220862a84b60d1e15`. `Cargo.toml`
 declares only `statelet` and an empty `[dependencies]` table. `src/lib.rs` is
 the library root. Existing integration tests under `tests/` check build
 configuration and ADR contracts; their private child modules show how to keep
@@ -223,6 +237,14 @@ v0.2, [roadmap](../roadmap.md), accepted
 [ADR 003](../adr-003-v0-1-exit-register.md). There is no separate topology RFC
 or component architecture document. The design owns the policy; the repository
 layout and developer guide own its implementation placement and operation.
+
+The observation RFCs indexed in
+[design Appendix C](../design.md), [ADR 006](../adr-006-stable-transition-and-outcome-names.md),
+and [ADR 007](../adr-007-representation-and-observability-contracts.md) remain
+proposed. Follow the repository layout's distinction between proposal records
+and accepted design authority. Their presence does not admit a new workspace
+member or change this task's acceptance criteria. Roadmap 1.2.1's issue 112
+prerequisite governs any later workspace-policy definition.
 
 R1: roadmap 1.2.1 and design sections 4–5 require a single-runtime starting
 state and no premature macro edge. M1 discharges this through policy table
@@ -309,7 +331,9 @@ Distinguish acquisition/parse errors from policy rejection; never print the
 success line on failure. Do not prescribe an exact non-zero code because Cargo
 and Make wrap failures.
 
-The future policy must document: runtime dependencies on support/example/tool
+Before defining a later workspace policy, resolve issue 112 as required by
+roadmap 1.2.1. Preserve these existing design constraints as review inputs, not
+a complete future allow-list: runtime dependencies on support/example/tool
 packages are forbidden; optional macro re-export requires feature gating;
 macro-to-runtime and runtime-to-macro edges cannot coexist as a cycle; test
 support and examples may consume the runtime and, after approval, macro crates;
@@ -549,10 +573,20 @@ reference. Do not mark the roadmap done or start M1 before explicit approval.
 
 ## Artefacts and notes
 
-Planning validation covered the baseline revision plus the three documentation
-changes in this branch. `make fmt`, `make check-fmt`, `make lint`,
-`make typecheck`, `make test`, `make markdownlint`, and `make nixie` all
-passed. The successful test retry is recorded in
+Rebase validation on 2026-10-14 passed `make check-fmt`, `make test`,
+`make typecheck`, `make lint`, `make markdownlint`, and `make nixie` after the
+D7 changes. Tests passed 150 nextest cases, one doctest, and 416 workflow cases
+with five subtests; Markdown lint reported zero issues across 40 files. Logs use
+`/tmp/<gate>-statelet-topology-rebase-20261014.out`. The replayed planning
+commit was patch-equivalent to its original, and target-only files were
+preserved. The follow-up documentation commit records the upstream prerequisite
+without changing the implementation approval boundary.
+
+Initial planning validation covered revision
+`5472352d94bc363fde0ad5cbb92c95a06bf481b5` plus the three documentation
+changes, before the rebase recorded in D7. `make fmt`, `make check-fmt`,
+`make lint`, `make typecheck`, `make test`, `make markdownlint`, and
+`make nixie` all passed. The successful test retry is recorded in
 `/tmp/test-statelet-1-2-1-topology-check-placeholder-2.out`; other gate logs
 use the command names and branch suffix shown above. Markdown lint reported
 zero issues, and Nixie validated all diagrams. No hosted-check result is
