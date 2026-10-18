@@ -64,6 +64,11 @@ The generated `Makefile` exposes these public targets:
 - `make test` runs cargo-nextest, Cargo doctests, then Python workflow
   contracts in sequence, even when invoked with `make -j`. The workflow
   contracts use pinned dependencies and managed CPython 3.14.
+- `make topology-check` applies the dependency-topology policy to Cargo's
+  metadata for this workspace. `make check-topology` is the same check with the
+  repository manifest pinned, and `make test-topology-command` runs the
+  command-boundary cases sequentially. Routine `make test` never starts those
+  cases: they are ignored by default and selected only by the dedicated target.
 - `make build` builds the debug target.
 - `make release` builds the release target.
 - `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
@@ -252,6 +257,64 @@ still checked. It resolves to `Not resolved`, names the blocking field and
 status, and contributes nothing to the verdict. Such a note is never deleted to
 make the suite pass: a blocked note that names its blocker is a finding, and
 the finding is the point.
+
+## Dependency-topology check
+
+`make topology-check` runs `tests/topology_check.rs`, which applies a closed
+policy to Cargo's own metadata for this workspace. The target is wired into
+routine validation; `make check-topology` is the form that pins the repository
+manifest and ignores any fixture override, and `make test-topology-command`
+runs the command-boundary cases after the ordinary tests.
+
+The modules own distinct concerns and must stay that way:
+
+- `tests/topology_check/policy.rs` is pure. It reads a metadata `Value` and
+  returns `Ok(())` or the first `TopologyViolation`, and never prints, spawns,
+  or decides a process status. Every rule lives here, so a case never needs
+  Cargo.
+- `tests/topology_check/metadata.rs` is the acquisition adapter and the only
+  place the check touches process state. It reads `CARGO` and the optional
+  `STATELET_TOPOLOGY_MANIFEST_PATH`, runs
+  `cargo metadata --no-deps --format-version 1`, checks the exit status before
+  parsing stdout, and returns a `MetadataError` that stays distinguishable from
+  a policy rejection.
+- `tests/topology_check/fixtures.rs` and `policy_cases.rs` hold the accepted
+  document and the named partitions. `claim_properties.rs` holds metamorphic
+  properties over the same evaluator, and `behaviour.rs` the `rstest-bdd`
+  scenarios from `tests/features/topology_check.feature`.
+- `tests/topology_command.rs` is the only place the *command* is exercised. Its
+  cases are `#[ignore]`d because each starts a nested Cargo process, so a
+  routine or coverage run must never select them. The dedicated gate selects
+  them with `--run-ignored only --no-tests fail --test-threads=1`.
+
+The command-boundary harness passes the fixture as
+`TOPOLOGY_MANIFEST_PATH=<path>` on the make command line, not as an exported
+environment variable. The recipe assigns `STATELET_TOPOLOGY_MANIFEST_PATH` from
+that variable, so an environment value is overwritten and every case would
+check the repository manifest while reporting success. `make test` and
+`make test-topology-command` clear the variable at their own boundary with
+`env -u`, and `check-topology` pins the repository manifest, so a stray value
+cannot redirect routine validation.
+
+`tests/topology_check/metadata.rs` is the one place the repository's
+`disallowed_methods` policy for `std::env::var*` is waived, through two
+`#[expect]` attributes that each carry a reason. The waiver is not general: a
+test binary has no caller that could inject the Cargo executable or the
+manifest override, and the environment is the only channel those two inputs can
+arrive through. Read the environment anywhere else and the lint should catch it.
+
+`cap-std` is a development dependency because the harness writes fixture
+manifests through an opened capability handle (`Dir::create_ambient_dir_all`
+followed by `create_dir_all` and `write` on the handle). Ambient `std::fs`
+writes would trip Whitaker's `no_std_fs_operations` lane, and the capability
+handle also confines a fixture path that escapes the scratch directory.
+
+When the check fails, read the message before changing the policy. A
+`MetadataError` means the check could not *see* metadata — usually a manifest
+path that does not exist or a Cargo that refused to parse it — and no policy
+was consulted. A `TopologyViolation` names both the violated rule and the
+repair. Adding the first macro package is an evidence-led roadmap change, not a
+Makefile edit, and the diagnostic says so.
 
 ## Development build standard
 

@@ -2,12 +2,15 @@
 	markdownlint nixie audit rust-audit test-workflow-contracts spelling \
 	install-build-tools install-rust-toolchain check-build-tools check-nextest install-mdtablefix \
 	install-markdownlint \
-	lint-clippy lint-whitaker lint-python typecheck typecheck-python typecheck-rust
+	lint-clippy lint-whitaker lint-python typecheck typecheck-python typecheck-rust \
+	topology-check check-topology test-topology-command
 
 SHELL := bash
 
 # Compiler and Python gateways remain ordered even when callers use `make -j`.
-.NOTPARALLEL: all lint typecheck test
+# The topology targets are here too: each test target owns the build directory
+# while it runs, and the command gate nests another Cargo invocation.
+.NOTPARALLEL: all lint typecheck test topology-check check-topology test-topology-command
 
 BUILD_TOOLS_PREFIX ?= $(HOME)/.local
 export BUILD_TOOLS_PREFIX
@@ -152,6 +155,7 @@ clean: ## Remove build artefacts
 	$(CARGO) clean
 
 test: check-nextest ## Run tests with warnings treated as errors
+	env -u STATELET_TOPOLOGY_MANIFEST_PATH \
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) nextest run $(TEST_FLAGS) $(BUILD_JOBS)
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) test --workspace --doc --all-features $(BUILD_JOBS)
 	+$(MAKE) test-workflow-contracts
@@ -160,6 +164,30 @@ test-workflow-contracts: ## Validate the workflow contracts (mutation testing, C
 	$(CV005_CONTRACTS) check --repository .
 	$(UV_ENV) $(UV) run --no-project --managed-python --python $(PYTHON_BASELINE) \
 		$(PYTHON_DEPENDENCIES) pytest tests/workflow_contracts -q
+
+# Selects another manifest for the checker subprocess only. It changes the
+# input, never the policy; routine entrypoints bind the repository manifest on
+# the command line and clear it in the environment, so a stray value cannot
+# redirect routine validation.
+TOPOLOGY_MANIFEST_PATH ?=
+
+topology-check: check-nextest ## Check the declared dependency topology
+	@printf '%s\n' 'Topology policy: statelet only; statelet-macros is forbidden before the macro baseline gate.'
+	STATELET_TOPOLOGY_MANIFEST_PATH="$(TOPOLOGY_MANIFEST_PATH)" \
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) nextest run --test topology_check --no-tests fail \
+		--run-ignored default -E 'test(=repository_obeys_topology)'
+	@printf '%s\n' 'Topology check passed: one runtime package; no forbidden declared edge.'
+	@printf '%s\n' 'This placeholder does not validate a future multi-crate graph or feature leakage.'
+
+check-topology: ## Check topology against the repository manifest, ignoring fixture overrides
+	+$(MAKE) topology-check TOPOLOGY_MANIFEST_PATH="$(CURDIR)/Cargo.toml"
+
+test-topology-command: check-nextest ## Run the topology command boundary cases sequentially
+	env -u STATELET_TOPOLOGY_MANIFEST_PATH \
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) nextest run --test topology_command --run-ignored only \
+		--no-tests fail --test-threads=1
 
 target/%/$(TARGET): ## Build binary in debug or release mode
 	$(if $(findstring release,$(@)),$(RELEASE_RUSTFLAGS),$(DEBUG_RUSTFLAGS)) $(CARGO) build $(BUILD_JOBS) $(if $(findstring release,$(@)),--release)

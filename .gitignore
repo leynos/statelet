@@ -5,9 +5,10 @@ __pycache__/
 # Coverage output: `make coverage` and the CI action both write it here
 lcov.info
 
-# Local spelling-policy caches and helper tool state
+# Local tool caches, test-run artefacts, and helper tool state
 .coverage
 .pytest_cache/
+.hypothesis/
 .uv-cache/
 .uv-tools/
 .typos-oxendict-base.json
