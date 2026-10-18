@@ -91,14 +91,30 @@ invalid_codeblock_attributes        = "deny"
 unescaped_backticks                 = "deny"
 
 [dev-dependencies]
+# The topology command boundary builds isolated Cargo manifests in a scratch
+# directory. Capability-scoped access keeps those writes inside one opened
+# directory handle instead of ambient `std::fs` calls; the developer guide
+# records the boundary. See D9 in the topology-check plan.
+cap-std = "4.0.3"
 camino = "1.2.5"
 googletest = "0.14.3"
 pretty_assertions = "1.4.1"
 # The evidence predicates read arbitrary text, so their invariants are
 # properties rather than cases; measured at 45 to 75 resolved packages when
-# added. See D52 in the plan for the reversal of D9's refusal.
+# added. See D8 in the plan for the resulting scope.
 proptest = "1.11.0"
 rstest = "0.27.0"
+# Behavioural scenarios for the topology policy run through the repository's
+# BDD framework rather than a second policy implementation. The 0.6.0 pair was
+# preflighted with this repository's rstest 0.27.0 on 2026-10-18.
+rstest-bdd = "0.6.0"
+rstest-bdd-macros = "0.6.0"
+# Cargo metadata is JSON, and the topology policy reads it as a document rather
+# than trusting a schema version it cannot inspect.
+serde_json = "1.0.154"
+# Private acquisition and policy errors are semantic enums at the test-only
+# boundary; `thiserror` derives their `Display` and `Error` implementations.
+thiserror = "2.0.21"
 # The codegen-backend contract parses `.cargo/config.toml` structurally; a
 # substring search would accept a commented-out table as a live one.
 toml = "1.1.4"

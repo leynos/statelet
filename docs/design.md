@@ -530,15 +530,19 @@ feature-leak risk called out by the design review.
 
 ### 11.6 Dependency topology
 
-The [task 1.2.1 execution plan](execplans/1-2-1-topology-check-placeholder.md)
-proposes `make topology-check` as a private integration-test-backed gate for
-the initial single-package state. This proposal awaits approval and is not
-implemented yet. It consumes `cargo metadata --no-deps --format-version 1`,
-requires the sole workspace member to be the `statelet` runtime library, and
-rejects declared `statelet-macros` dependencies even when renamed, optional, or
-target-specific. External testing proc macros remain permitted. Additional
-workspace members require a deliberate policy revision; the placeholder does
-not claim to validate a future resolved graph or feature leakage.
+`make topology-check` is a private integration-test-backed gate for the initial
+single-package state, implemented under the
+[task 1.2.1 execution plan](execplans/1-2-1-topology-check-placeholder.md). It
+consumes `cargo metadata --no-deps --format-version 1`, requires the sole
+workspace member to be the `statelet` runtime library with a library target,
+and rejects declared `statelet-macros` dependencies — and a declared dependency
+on `statelet` itself — even when renamed, optional, build-kind, or
+target-specific. External testing proc macros remain permitted. The check is
+not a schema reader: it evaluates declarations, so a feature that would leave
+an edge inactive does not make that edge acceptable. Additional workspace
+members require a deliberate policy revision; the placeholder does not claim to
+validate a future resolved graph or feature leakage, and its success message
+says so.
 
 That future revision must reconcile the allowed directions in sections 4–5: an
 optional runtime-to-macro re-export cannot coexist with a reciprocal
