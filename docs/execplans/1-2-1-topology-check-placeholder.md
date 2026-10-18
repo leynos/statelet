@@ -276,6 +276,35 @@ before a future change admits a macro package.
     `make check-fmt`, and `make markdownlint` were re-run green on the final
     tree, and the full workflow-contract directory passed 429 tests with 5
     subtests. M2 is complete.
+  - [x] (2026-10-18 23:05Z) The hosted CodeScene check failed on `e02f5e3`
+    with three files below the 10.00 bar; the local `cs` 1.0.52 delta against
+    the true PR base `7cb1267` reproduced it exactly. `behaviour.rs` scored
+    9.38 for Code Duplication: the two `Then` steps were structurally
+    identical, and the shared `require_refusal` helper did not change that
+    because both bodies still built their expectation inline. Hoisting the
+    expectations to the named consts `MACRO_GATE` and `WORKSPACE_EXPANSION`
+    made each step a one-liner over a distinct identifier. `topology_command.rs`
+    scored 9.68 for String Heavy Function Arguments; the `CaseName`,
+    `PackageName`, and `Library` domain types replaced the `&str` parameters.
+    `topology_wiring_contract.py` scored 9.68 for Complex Method;
+    `_findings_check_recipe` split into `_findings_policy_selector` and
+    `_findings_success_order`. Each file then scored 10.0 and `cs delta`
+    printed nothing.
+  - [x] (2026-10-18 23:10Z) The first repair pass introduced five Clippy
+    findings, all in `tests/topology_command.rs`: four `shadow_reuse`
+    bindings (`name` and `library` in `package_manifest`, `relative` in
+    `materialize` and `write_file`) and one `match_same_arms` pair at the two
+    `Cargo.toml` arms. Renamed to `package`, `lib`, `declared`, and `name`,
+    and merged only the genuinely identical arms into a single or-pattern.
+    The scrutineer re-ran `make check-fmt` (40 files unchanged) and the full
+    `make lint` chain, which this time progressed past `lint-clippy` into
+    `lint-whitaker` and `lint-python` (10.00/10) and was green. Evidence:
+    `/tmp/check-fmt-codescene2-statelet-1-2-1-topology-check-placeholder.out`
+    and `/tmp/lint-codescene2-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-18 23:12Z) Committed as `1972342` and published; the SSH
+    push was verified against `ls-remote`, and the refreshed
+    `refs/remotes/origin/1-2-1-topology-check-placeholder` resolved to the
+    same commit as the local `HEAD`.
 
 ## Surprises & discoveries
 
@@ -377,6 +406,23 @@ would compare a whole `Result` and print a sparse message, while the rewritten
 case returns `expected {expected:?}, got {other:?}`. That is why the table's
 diagnostic is now built by hand rather than by the assertion macro; the
 `panic_in_result_fn` finding forced the change and improved the failure text.
+
+CodeScene grades a repair by the shape of the code, not by whether the file got
+smaller, and a helper shared by two call sites does not by itself clear a
+duplication finding. The first `behaviour.rs` repair extracted
+`require_refusal` and still scored 9.38, because both step bodies kept
+constructing the same inline struct literal. The metric only moved when the
+expectations became named constants, leaving two one-line call sites whose
+arguments are distinct identifiers. The same lesson applies to `cs review`
+versus `cs delta`: only the delta against the true PR base proves the hosted
+comparison is clear, so each repair was checked both ways.
+
+CodeScene's thresholds are absolute and small per file. A file below roughly
+seven functions is graded as a whole, so a cohesion-motivated split can raise
+the grade of the file it leaves while creating a new below-threshold file. The
+`topology_command.rs` repair therefore used domain types rather than a further
+decomposition, and the Python split kept both halves comfortably above the
+function count.
 
 ## Decision log
 
@@ -557,6 +603,20 @@ which also brings `build_standard_test.py` back under the 400-line file limit
 `topology_wiring_contract.py` evaluates evidence and holds the finding
 functions, while `topology_wiring_test.py` holds the live fixture, the gold
 case, and the twelve mutations. Both are well under the limit.
+
+D18 (2026-10-18): the CodeScene repair is a separate commit from the M2 feature
+commit, and it changes test-support structure only. The hosted check scored
+three test files below 10.00 on `e02f5e3`. The repairs were chosen to make each
+unit express one thing: named expectation constants in the BDD steps, domain
+newtypes for the fixture's string-soup parameters, and two
+single-responsibility finding helpers in the Python contract. None of them
+changes a verdict, a fixture, or an assertion, so the acceptance evidence for
+M2 still stands unchanged; the repair commit is justified by the CodeScene
+delta and the full gate set alone. Deliberately rejected: splitting
+`topology_command.rs` into further modules (a file-level gate makes the split a
+new finding risk), and suppressing or threshold-raising in CodeScene (the
+repository carries no rules file and the hosted profile is "Pay Down Tech
+Debt").
 
 ## Outcomes & retrospective
 
