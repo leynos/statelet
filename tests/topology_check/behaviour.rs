@@ -126,50 +126,77 @@ fn topology_accepted(world: &TopologyWorld) -> Result<(), String> {
     Err(format!("the topology was refused: {message}"))
 }
 
-/// Requires a refusal that names the macro baseline gate as the repair.
-#[then("the topology is rejected with the macro baseline gate explanation")]
-fn macro_gate_explanation(world: &TopologyWorld) -> Result<(), String> {
+/// What one refusal scenario expects the stored verdict to say.
+///
+/// The four fields are separate because a scenario that matched the wrong
+/// partition can still mention the right words: `partition` proves the policy
+/// chose the branch the `Given` built, and `repair` proves the message tells a
+/// contributor the repair that branch needs.
+struct RefusalExpectation {
+    /// The message when the policy accepted the document the `Given` built.
+    accepted: &'static str,
+    /// Whether the refusal came from the partition the `Given` built.
+    partition: fn(&TopologyViolation) -> bool,
+    /// What that partition is called in a diagnosis.
+    partition_name: &'static str,
+    /// The repair the refusal must name.
+    repair: &'static str,
+}
+
+/// Requires the stored verdict to refuse as `expected` describes.
+///
+/// # Errors
+///
+/// Returns the expectation's own description when the stored verdict accepted,
+/// when it refused through another partition, or when its message does not name
+/// the expected repair.
+fn require_refusal(world: &TopologyWorld, expected: &RefusalExpectation) -> Result<(), String> {
     let violation = match stored_verdict(world)? {
-        Ok(()) => {
-            return Err("the renamed macro declaration was accepted".to_owned());
-        }
+        Ok(()) => return Err(expected.accepted.to_owned()),
         Err(violation) => violation,
     };
-    if !matches!(violation, TopologyViolation::ForbiddenDependency { .. }) {
+    if !(expected.partition)(&violation) {
         return Err(format!(
-            "the refusal named {violation:?} rather than the forbidden declaration"
+            "the refusal named {violation:?} rather than the {}",
+            expected.partition_name
         ));
     }
     let message = violation.to_string();
-    if !message.contains("macro baseline gate") {
+    if !message.contains(expected.repair) {
         return Err(format!(
-            "the refusal did not name the baseline gate: {message}"
+            "the refusal did not name the {}: {message}",
+            expected.repair
         ));
     }
     Ok(())
 }
 
+/// What the renamed-macro scenario expects from the stored verdict.
+const MACRO_GATE: RefusalExpectation = RefusalExpectation {
+    accepted: "the renamed macro declaration was accepted",
+    partition: |violation| matches!(violation, TopologyViolation::ForbiddenDependency { .. }),
+    partition_name: "forbidden declaration",
+    repair: "macro baseline gate",
+};
+
+/// What the extra-member scenario expects from the stored verdict.
+const WORKSPACE_EXPANSION: RefusalExpectation = RefusalExpectation {
+    accepted: "the additional workspace member was accepted",
+    partition: |violation| matches!(violation, TopologyViolation::WorkspaceMemberCount { .. }),
+    partition_name: "member count",
+    repair: "workspace expansion",
+};
+
+/// Requires a refusal that names the macro baseline gate as the repair.
+#[then("the topology is rejected with the macro baseline gate explanation")]
+fn macro_gate_explanation(world: &TopologyWorld) -> Result<(), String> {
+    require_refusal(world, &MACRO_GATE)
+}
+
 /// Requires a refusal that names the workspace expansion as the repair.
 #[then("the topology is rejected with a workspace expansion explanation")]
 fn workspace_expansion_explanation(world: &TopologyWorld) -> Result<(), String> {
-    let violation = match stored_verdict(world)? {
-        Ok(()) => {
-            return Err("the additional workspace member was accepted".to_owned());
-        }
-        Err(violation) => violation,
-    };
-    if !matches!(violation, TopologyViolation::WorkspaceMemberCount { .. }) {
-        return Err(format!(
-            "the refusal named {violation:?} rather than the member count"
-        ));
-    }
-    let message = violation.to_string();
-    if !message.contains("workspace expansion") {
-        return Err(format!(
-            "the refusal did not name the workspace expansion: {message}"
-        ));
-    }
-    Ok(())
+    require_refusal(world, &WORKSPACE_EXPANSION)
 }
 
 /// The initial runtime package passes.
