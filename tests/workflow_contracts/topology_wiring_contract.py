@@ -238,6 +238,29 @@ def _findings_command_line(line: str) -> list[str]:
     return problems
 
 
+def _findings_policy_selector(command_line: str) -> list[str]:
+    """Check the policy selector's closed failure and full test-set flags."""
+    problems = []
+    if "--no-tests fail" not in command_line:
+        problems.append("the policy selector must pass `--no-tests fail`")
+    if "--run-ignored default" not in command_line:
+        problems.append("the policy selector must pass `--run-ignored default`")
+    if f"-E 'test(={POLICY_TEST})'" not in command_line:
+        problems.append(f"the policy selector must name `{POLICY_TEST}`")
+    return problems
+
+
+def _findings_success_order(recipe: str) -> list[str]:
+    """Check that the success line is emitted only after the guarded run."""
+    run_index = recipe.find("--test topology_check")
+    success_index = recipe.find("Topology check passed")
+    if success_index < 0:
+        return ["a passing run must print the success line"]
+    if success_index < run_index:
+        return ["the success line must print only after the guard"]
+    return []
+
+
 def _findings_check_recipe(recipe: str) -> list[str]:
     """Check the pinned manifest and the closed failure of the policy selector."""
     lines = recipe_lines(recipe)
@@ -247,18 +270,8 @@ def _findings_check_recipe(recipe: str) -> list[str]:
     problems = []
     if REPOSITORY_MANIFEST not in recipe or HEALTHY_FIXTURE in recipe:
         problems.append("`check-topology` must pin the repository manifest")
-    if "--no-tests fail" not in command_line:
-        problems.append("the policy selector must pass `--no-tests fail`")
-    if "--run-ignored default" not in command_line:
-        problems.append("the policy selector must pass `--run-ignored default`")
-    if f"-E 'test(={POLICY_TEST})'" not in command_line:
-        problems.append(f"the policy selector must name `{POLICY_TEST}`")
-    run_index = recipe.find("--test topology_check")
-    success_index = recipe.find("Topology check passed")
-    if success_index < 0:
-        problems.append("a passing run must print the success line")
-    elif success_index < run_index:
-        problems.append("the success line must print only after the guard")
+    problems += _findings_policy_selector(command_line)
+    problems += _findings_success_order(recipe)
     return problems
 
 
