@@ -19,7 +19,10 @@ COVERAGE_ACTION = "leynos/shared-actions/.github/actions/generate-coverage"
 MUTATION_WORKFLOW = "leynos/shared-actions/.github/workflows/mutation-cargo.yml"
 MUTATION_CALL_RE = re.compile(rf"^{re.escape(MUTATION_WORKFLOW)}@[0-9a-f]{{40}}$")
 EXPECTED_COVERAGE_WORKFLOWS = {"ci.yml", "coverage-main.yml"}
-MAKE_SUITE_TARGETS = {"all", "build", "coverage", "lint", "test", "typecheck"}
+MAKE_SUITE_TARGETS = {
+    "all", "build", "check-topology", "coverage", "lint", "test",
+    "test-topology-command", "typecheck",
+}
 MAKE_NON_SUITE_TARGETS = {
     "audit", "check-build-tools", "check-fmt", "check-nextest", "fmt",
     "install-build-tools", "install-rust-toolchain", "install-mdtablefix", "markdownlint", "nixie",

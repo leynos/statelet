@@ -34,6 +34,10 @@ compact and omits build output such as `target/`.
 ├── tests/
 │   ├── state_name_consumption_contract.rs
 │   ├── state_name_consumption_contract/
+│   ├── topology_check.rs
+│   ├── topology_check/
+│   ├── topology_command.rs
+│   ├── workflow_contracts/
 │   └── v0_1_exit_register_contract.rs
 ├── scripts/
 │   ├── build-tools-common.sh
@@ -114,6 +118,17 @@ compact and omits build output such as `target/`.
   starts a nested Cargo process that routine tests and coverage must not host.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
+- `tests/workflow_contracts/topology_wiring_contract.py` and
+  `tests/workflow_contracts/topology_wiring_test.py`: Guard the topology gate's
+  routine wiring. The contract module evaluates `make -n` output for `all`,
+  `test`, and `check-topology`, parses `ci.yml` with the strict workflow
+  reader, and holds the finding functions that require the pinned CI step, the
+  post-coverage command step, the cleared manifest environment, the closed
+  policy selector, and both `.NOTPARALLEL` entries. The test module supplies
+  the live evidence and twelve negative controls, one per clause.
+- `tests/workflow_contracts/mock_wiring.py`: The single test-only boundary for
+  evaluating Make recipes without running them, shared by the workflow
+  contracts that assert on `make -n` output.
 - `tests/state_name_consumption_contract/`: Holds that contract's private
   child modules: the table parser, the register vocabulary, the evidence-cell
   predicates, the note policy and its verdict checks, the cross-register

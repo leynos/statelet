@@ -544,6 +544,14 @@ members require a deliberate policy revision; the placeholder does not claim to
 validate a future resolved graph or feature leakage, and its success message
 says so.
 
+The check is part of routine validation rather than an optional operator step:
+`make all` runs the pinned-input `make check-topology` form after tests and
+before spelling, `make test` ends with `make test-topology-command` after the
+ordinary routes, and CI runs the same two targets in the same relative order.
+`tests/workflow_contracts/topology_wiring_test.py` holds that wiring, including
+a negative control for each clause, so a Makefile or workflow edit that
+disconnects the gate fails the workflow contracts.
+
 That future revision must reconcile the allowed directions in sections 4–5: an
 optional runtime-to-macro re-export cannot coexist with a reciprocal
 macro-to-runtime edge that creates a cycle. Resolve

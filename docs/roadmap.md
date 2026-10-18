@@ -65,7 +65,7 @@ design boundaries before a second crate or feature matrix exists. Its outcome
 unlocks the runtime baseline work and prevents topology checks from becoming a
 late clean-up task. See design.md §§5, 10, 11.5-11.7.
 
-- [ ] 1.2.1. Add a topology-check command placeholder for the single-crate
+- [x] 1.2.1. Add a topology-check command placeholder for the single-crate
   state.
   - Requires 1.1.1.
   - Implement the command so it passes on the initial runtime crate and has a
