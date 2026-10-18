@@ -245,7 +245,7 @@ fn scratch_dir(fixture: &Fixture) -> PathBuf {
 }
 
 /// Writes every file a fixture declares and returns its manifest path.
-fn materialise(fixture: &Fixture) -> Result<PathBuf, String> {
+fn materialize(fixture: &Fixture) -> Result<PathBuf, String> {
     let scratch = scratch_dir(fixture);
     Dir::create_ambient_dir_all(&scratch, ambient_authority())
         .map_err(|error| format!("cannot create {}: {error}", scratch.display()))?;
@@ -283,7 +283,7 @@ fn invoke_target(manifest: &Path) -> Result<std::process::Output, String> {
 
 /// Checks one fixture's observable contract.
 fn run_case(fixture: &Fixture) -> Result<(), String> {
-    let manifest = materialise(fixture)?;
+    let manifest = materialize(fixture)?;
     let output = invoke_target(&manifest)?;
     let combined = format!(
         "{}{}",

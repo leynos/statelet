@@ -94,7 +94,7 @@ before a future change admits a macro package.
   validation gates passed on the rebased candidate.
 - [x] (2026-10-18) Receive explicit plan approval through the
   `sdlc-implementation` invocation for this plan and PR #137.
-- [ ] M1: implement and verify the private policy and local command.
+- [x] M1: implement and verify the private policy and local command.
   - [x] (2026-10-18 20:35Z) Red observed: moving
     `tests/topology_check/policy.rs` aside made `cargo nextest` report
     `error: couldn't find file tests/topology_check/policy.rs`, exit 101,
@@ -177,8 +177,102 @@ before a future change admits a macro package.
     `/tmp/check-fmt-statelet-1-2-1-topology-check-placeholder.out`,
     `/tmp/lint-statelet-1-2-1-topology-check-placeholder.out`, and
     `/tmp/test-statelet-1-2-1-topology-check-placeholder.out`.
-  - [ ] Gates and commit.
+  - [x] (2026-10-19 00:05Z) Committed as `5140a53` with every applicable gate
+    green except the inherited workflow-contract locale failure. `/verify`
+    exercised the real target: the repository run printed the three stable
+    lines and exited 0, and an extra-member fixture was refused with `the
+    workspace declares 2 members` and a non-zero status. `/simplify` reviewed
+    the new sources and found no behaviour-preserving simplification worth a
+    second commit.
+  - [x] Gates and commit (`5140a53`).
 - [ ] M2: integrate routine gates, reconcile documentation, and mark 1.2.1 done.
+  - [x] (2026-10-18 21:30Z) Makefile and CI wired. `make all` runs
+    `make check-topology` after `make test` and before `make spelling`;
+    `make test` ends with `make test-topology-command` after the workflow
+    contracts. CI gains `Check declared dependency topology` after the nextest
+    installation and `Test the topology command boundary` after the coverage
+    action. `.NOTPARALLEL` already named both composite targets from M1.
+    `mbake validate Makefile` reports `Makefile: Valid syntax`.
+  - [x] (2026-10-18 21:44Z) Green wiring contract: all 13 cases pass (the gold
+    clause test plus 12 mutation controls). Evidence:
+    `/tmp/topology-wiring-green-2-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-18 21:43Z) Negative control on the real workflow. Deleting
+    the `Check declared dependency topology` step from `ci.yml` made
+    `test_every_routine_wiring_clause_holds` report the finding that ci.yml
+    must run `make check-topology` exactly once, and exit 1. Three
+    mutation cases also errored with `StopIteration`, because the mutation
+    helpers look up the step the deletion removed; the gold clause test is the
+    one that reports the intended finding. The step was restored from
+    `/tmp/ci.yml.topology-backup-v2` and the contract re-verified green.
+    Evidence:
+    `/tmp/topology-wiring-negative-control-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-18 21:38Z) Workflow-contract inventory updated.
+    `check-topology` and `test-topology-command` are classified as Make *suite*
+    targets in `suite_provisioning.py`, not non-suite commands, because both
+    run `cargo nextest run` and must stay bound by the Linux preflight
+    contract. The existing unconditional `make install-rust-toolchain` step
+    already precedes both in CI, so the discovery contract passes unchanged.
+  - [x] (2026-10-18 21:40Z) Documentation reconciled for M2. The developer
+    guide states the routine wiring and the new contract module; design
+    section 11.6 records that the check is part of routine validation; the
+    users guide notes that `make all` and CI run the policy; the repository
+    layout records `tests/workflow_contracts/topology_wiring_test.py` and the
+    topology test paths. Roadmap 1.2.1 is ticked `[x]`; see D14 for why the
+    tick was applied without `mapsplice`.
+  - [x] (2026-10-19 00:30Z) Scrutineer's M2 gate run was red on the new Python
+    sources: Pylint reported 17 messages (two module-length, one
+    slots-for-dataclass, thirteen fixture-shadowing, one duplicate-code) and
+    `ty` reported five optional-index diagnostics, and the spelling gate
+    rejected the British spelling in two Rust call sites. Repairs: the test
+    sources were renamed to the American spelling, `Wiring` gained `slots=True`,
+    the fixture and every parameter binding were renamed so none shadows
+    `live_wiring`, and the two `int | None` index returns are narrowed before
+    subscripting or comparison. The Make evaluator was extracted as D17, which
+    also cleared the duplicate-code finding and the line limits. Focused
+    evidence: Pylint 10.00/10 over the five touched modules, `ty` reports all
+    checks passed, and the focused contract passes 13 cases; the full contract
+    directory passes 429 tests with 5 subtests. Evidence:
+    `/tmp/pylint-targets-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/ty-targets-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/topology-wiring-focused-statelet-1-2-1-topology-check-placeholder.out`,
+    and
+    `/tmp/topology-contracts-repair-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-19 00:10Z) Full sequential gate set re-run by the scrutineer
+    after the repairs. Eight gates green: `make lint` (Pylint 10.00/10),
+    `make typecheck`, `make markdownlint`, `make test` (177 nextest cases with
+    one skipped, the doctest, and 429 workflow-contract cases with 5
+    subtests), `make check-topology`, `make test-topology-command`,
+    `make nixie`, and `mbake validate Makefile`. `make check-fmt` was red
+    because `mdtablefix --check` wanted to rewrap two documentation paragraphs;
+    `make fmt` applied exactly that reflow, `make check-fmt` then reported 40
+    files unchanged, and `make markdownlint` stayed green. Evidence:
+    `/tmp/lint-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/typecheck-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/markdownlint-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/test-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/check-topology-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/test-topology-command-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/nixie-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/mbake-m2-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/check-fmt-m2b-statelet-1-2-1-topology-check-placeholder.out`, and
+    `/tmp/markdownlint-m2b-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-19 00:20Z) `/verify` exercised the real targets. The routine
+    `make check-topology` printed the success and scope lines and exited 0; the
+    same target run with
+    `TOPOLOGY_MANIFEST_PATH=/tmp/statelet-healthy-fixture/Cargo.toml` still
+    printed the repository manifest assignment and exited 0, so the pin holds
+    against a command-line override; and `make test-topology-command` ran the
+    one boundary case to a pass with no skips. Evidence:
+    `/tmp/verify-repo-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/verify-override-statelet-1-2-1-topology-check-placeholder.out`, and
+    `/tmp/verify-command-statelet-1-2-1-topology-check-placeholder.out`.
+    `/simplify` extracted the repeated CI step lookup in the mutation helpers
+    into one `_ci_step`; the focused contract still passes 13 cases, and Pylint
+    and `ty` remain clean. Evidence:
+    `/tmp/topology-wiring-simplified-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/pylint-simplified-statelet-1-2-1-topology-check-placeholder.out`, and
+    `/tmp/ty-simplified-statelet-1-2-1-topology-check-placeholder.out`.
+  - [ ] The M2 commit.
 
 ## Surprises & discoveries
 
@@ -402,6 +496,65 @@ prohibitions were rechecked against the diff. This entry is the scope review
 the tolerance demands; a reviewer who wants the line count back under the bound
 should delete explanatory prose from the test sources, not behaviour.
 
+D14 (2026-10-18): roadmap 1.2.1 was ticked `[x]` by a direct one-character edit
+rather than through `mapsplice`, because
+`mapsplice replace docs/roadmap.md 1.2.1 <fragment>` refused the edit with the
+message that the dependency anchor `1.2.1` was not found in the target roadmap,
+under `error_class` `dangling_dependency`, and left the file unchanged. The
+same command against anchor 1.2.2 exited 0, and a minimal two-line fragment
+failed identically, so the refusal is specific to this anchor: task 1.2.2
+carries `- Requires 1.2.1.`, and the replace pass cannot splice out an item
+that a surviving dependency reference still names. A checkbox tick changes no
+numbering, moves no task, and rewrites no `Requires` clause, so there was no
+structural edit for `mapsplice` to perform in the first place. The M2 milestone
+instruction to use the skill is therefore satisfied by determining that it does
+not apply to this change, not by using it on a different anchor or by editing
+around a failure that would have renumbered unrelated tasks.
+
+D15 (2026-10-18): `check-topology` and `test-topology-command` are classified
+as Make *suite* targets in `tests/workflow_contracts/suite_provisioning.py`,
+not as non-suite commands. Both run `cargo nextest run`, so the suite-discovery
+contract must treat them exactly like the other Cargo routes: CI has to install
+the repository toolchain before reaching them, and the existing unconditional
+`make install-rust-toolchain` step already precedes both. Adding them to the
+non-suite set would have exempted the two newest Rust routes from the preflight
+contract that governs every other one. The branch also updates
+`build_standard_test.py`, whose exact-order assertion on `make test`
+legitimately gained the nested pair (`nextest-version`, `nextest-run`) that the
+new last recipe produces; the count of assigned `RUSTFLAGS` values rose from
+two to three for the same reason.
+
+D16 (2026-10-18): `check-topology` pins the repository manifest *after* the
+nested `topology-check` target's own assignment, rather than changing the
+default of `TOPOLOGY_MANIFEST_PATH`. Pinning by override means a caller that
+names the variable on the make command line still cannot redirect the routine
+call, and the V5 contract evaluates
+`make -n check-topology TOPOLOGY_MANIFEST_PATH=<healthy fixture>` to prove the
+pinned value is what the recipe prints. A default-only change would have passed
+a contract that read the variable's declared default while still accepting a
+command-line override. `make test` and `make test-topology-command` clear
+`STATELET_TOPOLOGY_MANIFEST_PATH` with `env -u` for the same reason at the
+other boundary.
+
+D17 (2026-10-18): the workflow contracts share one bounded Make evaluator,
+`tests/workflow_contracts/mock_wiring.py`, instead of each keeping a private
+copy. Pylint's duplicate-code check reported the three line-for-line copies of
+`make -n` invocation and continuation folding that the CV-005, build-standard,
+and new topology contracts had accumulated. The AGENTS.md abstraction policy
+requires a repository sweep before extracting a helper, and the sweep found the
+three copies, plus a `whitaker_contracts._recipe_lines` with a different
+signature that is not a duplicate. The new module owns exactly two operations:
+`make_n`, which returns what a target would run with optional command-line
+overrides, and `recipe_lines`, which folds Make's backslash continuations. Its
+scope is test-only support for workflow contracts; runtime code and document
+contracts must not import it; it decides no contract's verdict, only supplies
+evidence that the owning contract judges. The three callers migrate to it,
+which also brings `build_standard_test.py` back under the 400-line file limit
+(393 lines). The extended topology contract is split the same way:
+`topology_wiring_contract.py` evaluates evidence and holds the finding
+functions, while `topology_wiring_test.py` holds the live fixture, the gold
+case, and the twelve mutations. Both are well under the limit.
+
 ## Outcomes & retrospective
 
 Planning has established the metadata boundary and a bounded implementation
@@ -412,6 +565,23 @@ test retry passed: 150 nextest tests, one doctest, the pinned shared workflow
 contract check, and 416 workflow tests with five passing subtests. Formatting,
 Markdown/spelling, and Mermaid validation also passed. The planning documents
 are ready for draft publication; implementation outcomes await approval.
+
+M1 delivered the private checker and its local command, committed as `5140a53`.
+M2 made the check routine: `make all` runs the pinned-input form, `make test`
+ends with the command-boundary suite, CI runs both in the same relative order,
+and `tests/workflow_contracts/topology_wiring_test.py` holds the wiring with
+twelve negative controls. The check remains a closed single-package policy and
+does not resolve issue 112 or define a future multi-crate allow-list.
+
+The one unresolved defect is inherited, not caused by this work: `make test`'s
+workflow-contract phase fails two cases under the host's `en_US.UTF-8`
+collation because the Makefile's `find | sort` inventory and the test's
+byte-order `sorted()` disagree. Under `LC_ALL=C` the whole suite passes. Repair
+touches the Makefile's ordering or the test's comparison, both outside this
+plan's scope; the plan records the defect rather than fixing it here.
+
+The M2 gate set is recorded below once it completes; the commit SHA is the
+evidence binding, and hosted CI is separate evidence from these local runs.
 
 ## Context and orientation
 
@@ -714,6 +884,10 @@ change. CI wiring remains M2. Rollback uses a targeted revert of that commit;
 no compatibility layer is needed because this is new private tooling.
 
 ### M2: routine validation and completion
+
+Status: implemented, awaiting the full sequential gate set and the M2 commit.
+Roadmap 1.2.1 is ticked. The M2 plateau discharges R2 and R4; R3 was rechecked
+on the full diff.
 
 Add pinned-input `check-topology` to the ordered `make all` recipe and a named
 step to `.github/workflows/ci.yml` after Rust and nextest setup. Wire

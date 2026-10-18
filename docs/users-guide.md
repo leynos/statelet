@@ -22,7 +22,10 @@ The installed surface is unchanged by the repository's own validation tooling.
 `make topology-check` checks that the workspace is still the `statelet` runtime
 library alone and that no `statelet-macros` edge has been declared ahead of the
 macro baseline gate; it adds no runtime API, feature, or dependency, and it
-does not validate a future multi-crate workspace.
+does not validate a future multi-crate workspace. The same policy runs as part
+of `make all` and in continuous integration, so a checkout cannot drift into a
+second workspace member or a forbidden macro edge while its other gates stay
+green.
 
 The shape of the state name itself is likewise unsettled. Whether a
 `&'static str` is enough, or whether consumers need a stable identifier as

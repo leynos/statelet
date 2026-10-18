@@ -125,6 +125,7 @@ all: ## Perform a comprehensive check of code
 	+$(MAKE) lint
 	+$(MAKE) typecheck
 	+$(MAKE) test
+	+$(MAKE) check-topology
 	+$(MAKE) spelling
 
 install-build-tools: ## Install the pinned development build tools
@@ -159,6 +160,7 @@ test: check-nextest ## Run tests with warnings treated as errors
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) nextest run $(TEST_FLAGS) $(BUILD_JOBS)
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) test --workspace --doc --all-features $(BUILD_JOBS)
 	+$(MAKE) test-workflow-contracts
+	+$(MAKE) test-topology-command
 
 test-workflow-contracts: ## Validate the workflow contracts (mutation testing, CodeScene coverage)
 	$(CV005_CONTRACTS) check --repository .

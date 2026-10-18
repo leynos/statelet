@@ -12,11 +12,12 @@ Run via ``make test-workflow-contracts``.
 """
 
 import re
-import subprocess
 import tomllib
 from pathlib import Path
 
 import yaml
+
+from mock_wiring import make_n
 
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = "leynos/statelet"
@@ -27,18 +28,6 @@ SOURCE = (
 )
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 PIN = re.compile(r"^CV005_CONTRACTS_REF \?= (\S+)$", re.MULTILINE)
-
-
-def _make_n(target: str) -> str:
-    """Return the commands ``make -n TARGET`` would run."""
-    result = subprocess.run(
-        ["make", "-n", target],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout
 
 
 def _pinned_commit() -> str:
@@ -56,7 +45,7 @@ def test_the_pin_is_a_full_commit() -> None:
 
 def test_the_target_runs_the_pinned_checker_on_this_repository() -> None:
     """Run ``check --repository .`` from the pinned source under Python 3.13."""
-    commands = _make_n(TARGET)
+    commands = make_n(TARGET)
     source = SOURCE.format(ref=_pinned_commit())
     runs = [line for line in commands.splitlines() if "cv005-contracts" in line]
     assert len(runs) == 1, f"expected one checker invocation, got {runs!r}"
@@ -75,7 +64,9 @@ def test_the_repository_parameter_names_this_repository() -> None:
 
 def test_make_all_includes_the_target() -> None:
     """Run the checker from the comprehensive gate as well as on its own."""
-    assert "cv005-contracts check" in _make_n("all"), "make all must run the shared CV-005 checker"
+    assert "cv005-contracts check" in make_n("all"), (
+        "make all must run the shared CV-005 checker"
+    )
 
 
 def test_ci_runs_the_target_unconditionally() -> None:

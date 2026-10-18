@@ -45,30 +45,34 @@ guide, including its `cargo-dylint` and `dylint-link` prerequisites. Local
 `make lint` requires the installed `whitaker` executable on `PATH`. Whitaker's
 installer-managed toolchain is separate from Statelet's development toolchain.
 
-Use `make all` for formatting, linting, typechecking, tests, workflow
-contracts, and spelling. `make lint` runs rustdoc, Clippy, Whitaker, and the
-Python lint gateways. `make test` requires the binary-installed cargo-nextest
-runner and runs the Python workflow contracts under managed CPython 3.14.
+Use `make all` for formatting, linting, typechecking, tests, the
+dependency-topology check, workflow contracts, and spelling. `make lint` runs
+rustdoc, Clippy, Whitaker, and the Python lint gateways. `make test` requires
+the binary-installed cargo-nextest runner and runs the Python workflow
+contracts under managed CPython 3.14, then the topology command-boundary suite.
 `make audit` derives the Rust workspace root with `cargo metadata`, extracts
 its manifests under the same managed interpreter, and runs `cargo audit` once
 from the workspace root. `make coverage` uses `cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
-- `make all` runs formatting checks, linting, typechecking, tests, and spelling.
+- `make all` runs formatting checks, linting, typechecking, tests, the
+  pinned-input topology check, and spelling, in that order.
 - `make check-fmt` verifies Rust formatting and Markdown formatting.
 - `make lint` runs rustdoc, Clippy, Whitaker, Pylint, and the pinned df12
   Python lints. Rust warnings are denied.
 - `make typecheck` runs `ty` over every repository Python source and Cargo
   check over the Rust targets.
-- `make test` runs cargo-nextest, Cargo doctests, then Python workflow
-  contracts in sequence, even when invoked with `make -j`. The workflow
-  contracts use pinned dependencies and managed CPython 3.14.
+- `make test` runs cargo-nextest, Cargo doctests, Python workflow contracts,
+  then the topology command-boundary suite in sequence, even when invoked with
+  `make -j`. The workflow contracts use pinned dependencies and managed CPython
+  3.14.
 - `make topology-check` applies the dependency-topology policy to Cargo's
   metadata for this workspace. `make check-topology` is the same check with the
   repository manifest pinned, and `make test-topology-command` runs the
-  command-boundary cases sequentially. Routine `make test` never starts those
-  cases: they are ignored by default and selected only by the dedicated target.
+  command-boundary cases sequentially. The `#[ignore]`d cases are selected only
+  by the dedicated target: `make test` runs that target after its ordinary
+  routes, and a bare nextest run never starts a nested Cargo process.
 - `make build` builds the debug target.
 - `make release` builds the release target.
 - `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
@@ -90,7 +94,10 @@ The generated `Makefile` exposes these public targets:
   `suite_discovery.py` owns graph traversal and route inventory for those
   contracts. `markdown_ci_contract.py` and `whitaker_contracts.py` own their
   invocation policies; `workflow_reading.py` provides generic YAML and job
-  parsing. Shared CV-005 coverage policy stays in the pinned upstream library.
+  parsing, `mock_wiring.py` evaluates Make recipes without running them, and
+  `topology_wiring_contract.py` holds the topology gate's wiring evidence and
+  findings while `topology_wiring_test.py` holds its gold case and negative
+  controls. Shared CV-005 coverage policy stays in the pinned upstream library.
   Private helpers split shape validation and individual findings within their
   owning module. These support modules remain test-only; runtime code and
   unrelated document contracts must not depend on them.
@@ -261,10 +268,37 @@ the finding is the point.
 ## Dependency-topology check
 
 `make topology-check` runs `tests/topology_check.rs`, which applies a closed
-policy to Cargo's own metadata for this workspace. The target is wired into
-routine validation; `make check-topology` is the form that pins the repository
-manifest and ignores any fixture override, and `make test-topology-command`
-runs the command-boundary cases after the ordinary tests.
+policy to Cargo's own metadata for this workspace. `make check-topology` is the
+form that pins the repository manifest and ignores any fixture override, and
+`make test-topology-command` runs the command-boundary cases after the ordinary
+tests.
+
+Routine validation reaches both forms. `make all` ends with
+`make check-topology` after tests and before spelling, so the pinned form runs
+without an operator remembering it. `make test` ends with
+`make test-topology-command`, after nextest, the doctests, and the workflow
+contracts. CI mirrors that split: a `Check declared dependency topology` step
+runs `make check-topology` once between the nextest installation and the audit,
+and a `Test the topology command boundary` step runs
+`make test-topology-command` after the coverage action. The second step is
+deliberately separate from coverage: each boundary case starts a nested Cargo
+process, and it must not inherit the coverage instrumentation, `RUSTFLAGS`, or
+the clang/lld linker environment.
+
+`tests/workflow_contracts/topology_wiring_test.py` holds that wiring contract,
+with the evaluation and finding functions in the sibling
+`topology_wiring_contract.py`. It evaluates `make -n` output for `all`, `test`,
+and `check-topology` and parses CI with the strict workflow reader, so the live
+repository and each negative control are judged by the same finding functions.
+`tests/workflow_contracts/mock_wiring.py` owns the single `make -n` and
+recipe-folding boundary that this contract, the CV-005 contract, and the build
+standard share. Twelve mutations — an unpinned `make all`, a missing,
+conditional, or misordered CI step, a missing or unguarded test gate, an
+inherited coverage environment, an open policy selector, an early success line,
+and a parallel composite target — must each be reported. Deleting the CI step
+from the real workflow was observed to fail the contract before it was
+restored, so the negative control holds against the repository and not only in
+memory.
 
 The modules own distinct concerns and must stay that way:
 
@@ -293,8 +327,12 @@ environment variable. The recipe assigns `STATELET_TOPOLOGY_MANIFEST_PATH` from
 that variable, so an environment value is overwritten and every case would
 check the repository manifest while reporting success. `make test` and
 `make test-topology-command` clear the variable at their own boundary with
-`env -u`, and `check-topology` pins the repository manifest, so a stray value
-cannot redirect routine validation.
+`env -u`, and `check-topology` pins the repository manifest *after* the nested
+`topology-check` target's assignment, so a stray value cannot redirect routine
+validation. The topology wiring contract also evaluates
+`make -n check-topology TOPOLOGY_MANIFEST_PATH=<healthy fixture>` and requires
+the repository manifest in the printed recipe, which fails if the pin is
+softened to a default rather than an override.
 
 `tests/topology_check/metadata.rs` is the one place the repository's
 `disallowed_methods` policy for `std::env::var*` is waived, through two
