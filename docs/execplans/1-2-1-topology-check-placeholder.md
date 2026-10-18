@@ -272,7 +272,10 @@ before a future change admits a macro package.
     `/tmp/topology-wiring-simplified-statelet-1-2-1-topology-check-placeholder.out`,
     `/tmp/pylint-simplified-statelet-1-2-1-topology-check-placeholder.out`, and
     `/tmp/ty-simplified-statelet-1-2-1-topology-check-placeholder.out`.
-  - [ ] The M2 commit.
+  - [x] (2026-10-19 00:30Z) Committed as `902927d` after `make fmt`,
+    `make check-fmt`, and `make markdownlint` were re-run green on the final
+    tree, and the full workflow-contract directory passed 429 tests with 5
+    subtests. M2 is complete.
 
 ## Surprises & discoveries
 
