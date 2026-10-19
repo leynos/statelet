@@ -27,7 +27,10 @@ use thiserror::Error;
 const CARGO_ENV: &str = "CARGO";
 
 /// The private variable selecting another manifest for the end-to-end gate.
-const MANIFEST_OVERRIDE_ENV: &str = "STATELET_TOPOLOGY_MANIFEST_PATH";
+///
+/// Visible to the sibling case module so a diagnostic assertion can name the
+/// real variable rather than repeat its spelling.
+pub(crate) const MANIFEST_OVERRIDE_ENV: &str = "STATELET_TOPOLOGY_MANIFEST_PATH";
 
 /// The metadata format version requested from Cargo.
 const METADATA_ARGUMENTS: [&str; 5] = [
@@ -63,7 +66,14 @@ pub(crate) enum MetadataError {
     MissingVariable { variable: &'static str },
 
     /// An environment value is not valid UTF-8 where a path must be.
-    #[error("the value of {variable} is not valid UTF-8")]
+    ///
+    /// The unreadable value cannot be quoted back: it has no valid UTF-8 form.
+    /// The variable name is the only locator a contributor needs, so the repair
+    /// names it and says where the check expects the value to come from.
+    #[error(
+        "the value of {variable} is not valid UTF-8. Repair: set {variable} to a UTF-8 path, or \
+         unset it to read the repository's own manifest through `make topology-check`."
+    )]
     NonUnicodeValue { variable: &'static str },
 
     /// The Cargo process could not be started.

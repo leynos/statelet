@@ -1,9 +1,11 @@
 //! Process, fixture, and assertion helpers for the command-boundary suite.
 //!
 //! `tests/topology_command.rs` holds the three tests; this module holds the
-//! machinery they share. Splitting the file keeps the entrypoint readable and
-//! the repository's 400-line rule satisfied without changing a single verdict:
-//! every helper is the same code, moved.
+//! process machinery they share. The manifest *text* lives beside it in
+//! `manifests.rs`, because deciding what a fixture contains and running a
+//! process against it are separate responsibilities and the pair together
+//! breached the repository's 400-line rule. Every helper is the same code,
+//! moved; no verdict changed.
 //!
 //! Fixtures are written through a capability handle rather than ambient
 //! filesystem calls, so a path escaping the scratch directory is a refused
@@ -18,6 +20,8 @@ use std::{
 };
 
 use cap_std::{ambient_authority, fs::Dir};
+
+use super::manifests::{EMPTY_LIB, PackageName, manifest_for, plain_package};
 
 /// The Cargo executable this test binary was started with.
 ///
@@ -39,39 +43,12 @@ impl CaseName {
     pub(super) const fn as_str(self) -> &'static str { self.0 }
 }
 
-/// The `name` field of one fixture's `[package]` table.
-#[derive(Clone, Copy)]
-pub(super) struct PackageName(pub(super) &'static str);
-
-impl PackageName {
-    /// The package name as it appears in the manifest.
-    pub(super) const fn as_str(self) -> &'static str { self.0 }
-}
-
-/// The library target a fixture package declares.
-///
-/// The two tables differ only in the `proc-macro` key, but which one a fixture
-/// declares is the policy's subject, so the choice is an enum rather than a
-/// free-form manifest fragment that a caller could mistype.
-#[derive(Clone, Copy)]
-pub(super) enum Library {
-    /// An ordinary library target.
-    Ordinary,
-    /// A procedural-macro library target.
-    ProcMacro,
-}
-
-impl Library {
-    /// The `[lib]` table this target kind is written as.
-    const fn table(self) -> &'static str {
-        match self {
-            Self::Ordinary => "[lib]\npath = \"src/lib.rs\"\n",
-            Self::ProcMacro => "[lib]\npath = \"src/lib.rs\"\nproc-macro = true\n",
-        }
-    }
-}
-
 /// One fixture workspace and the verdict its manifest must produce.
+///
+/// The shape stays here rather than in `manifests.rs`: a fixture's expected
+/// verdict is what the command boundary asserts, while the manifest module only
+/// answers what text a declared file contains. Splitting on that line is what
+/// separates the two files' responsibilities.
 pub(super) struct Fixture {
     /// The case name, used as the scratch directory name and in messages.
     pub(super) name: CaseName,
@@ -81,39 +58,6 @@ pub(super) struct Fixture {
     pub(super) should_succeed: bool,
     /// Text the failure output must contain, empty when success is expected.
     pub(super) expected_text: &'static str,
-}
-
-/// A single-package manifest naming `name`, with `library`, then `trailing`.
-///
-/// The package holds no registry dependencies, so `cargo metadata --no-deps`
-/// answers without a fetch and without compiling the fixture. That is what
-/// makes a fixture cheap enough to write per case and safe to run inside a
-/// test.
-///
-/// `trailing` is appended after the library table, which is where a workspace
-/// or dependency declaration belongs. The library table itself is emitted
-/// exactly once and cannot be replaced by a `trailing` fragment, because Cargo
-/// refuses a repeated table with a duplicate-key error — a fixture that
-/// intended to exercise the policy would instead fail in the manifest parser.
-fn package_manifest(name: PackageName, library: Library, trailing: &str) -> String {
-    let package = name.as_str();
-    let lib = library.table();
-    format!(
-        r#"[package]
-name = "{package}"
-version = "0.1.0"
-edition = "2024"
-
-{lib}{trailing}"#
-    )
-}
-
-/// An empty library source, so a fixture has the file its target names.
-pub(super) const EMPTY_LIB: &str = "";
-
-/// An ordinary single-package fixture naming `name`.
-pub(super) fn plain_package(name: PackageName, trailing: &str) -> String {
-    package_manifest(name, Library::Ordinary, trailing)
 }
 
 /// The repository root the target is invoked from.
@@ -139,86 +83,72 @@ pub(super) fn unique_scratch_dir(name: CaseName) -> PathBuf {
     scratch_root().join(format!("{}-{}-{nanos}", name.as_str(), process::id()))
 }
 
-/// Returns the concrete manifest text for a fixture file.
-///
-/// `fixtures.rs` states each fixture's shape once; this function turns that
-/// shape into manifests. Keeping the two apart means a case's expectation is
-/// read beside its construction, while the exact manifest text lives in one
-/// place instead of in nine nearly identical string literals.
-///
-/// An unlisted pair is an error rather than an empty file. A fallback that
-/// returned `String::new()` made a missing arm indistinguishable from a
-/// deliberately empty fixture: Cargo then rejected the manifest for having no
-/// package table, and the case failed with a manifest-parser message that said
-/// nothing about the real mistake.
-pub(super) fn manifest_for(name: CaseName, relative: &Path) -> Result<String, String> {
-    let case = name.as_str();
-    let text = match (case, relative.to_str().unwrap_or_default()) {
-        ("one-runtime-package" | "path containing spaces", "Cargo.toml")
-        | ("runtime-alias-dependency", "runtime/Cargo.toml") => {
-            plain_package(PackageName("statelet"), "")
-        }
-        ("additional-workspace-member", "Cargo.toml") => format!(
-            "{}\n[workspace]\nmembers = [\"extra\"]\n",
-            plain_package(PackageName("statelet"), "")
-        ),
-        ("additional-workspace-member", "extra/Cargo.toml") => {
-            plain_package(PackageName("statelet-extra"), "")
-        }
-        ("proc-macro-workspace-member", "Cargo.toml") => format!(
-            "{}\n[workspace]\nmembers = [\"macros\"]\n",
-            plain_package(PackageName("statelet"), "")
-        ),
-        ("proc-macro-workspace-member", "macros/Cargo.toml") => {
-            package_manifest(PackageName("macros-helper"), Library::ProcMacro, "")
-        }
-        ("inactive-renamed-macro-edge", "Cargo.toml") => plain_package(
-            PackageName("statelet"),
-            "\n[dependencies]\nmacros = { package = \"statelet-macros\", path = \"../macros\", \
-             optional = true }\n",
-        ),
-        // The kind is carried into the diagnostic, so one case per kind proves
-        // the message a contributor sees, not merely that the edge was seen.
-        ("build-kind-macro-edge", "Cargo.toml") => plain_package(
-            PackageName("statelet"),
-            "\n[build-dependencies]\nstatelet-macros = { path = \"../macros\" }\n",
-        ),
-        ("runtime-alias-dependency", "Cargo.toml") => plain_package(
-            PackageName("statelet"),
-            "\n[dependencies]\nruntime = { package = \"statelet\", path = \"runtime\" }\n",
-        ),
-        ("proc-macro-runtime-package", "Cargo.toml") => {
-            package_manifest(PackageName("statelet"), Library::ProcMacro, "")
-        }
-        ("invalid-manifest", "Cargo.toml") => "[package\nname = \"statelet\"\n".to_owned(),
-        // Every library source is empty: the fixture declares a target, and
-        // `cargo metadata --no-deps` never compiles it.
-        (_, path) if path.ends_with("src/lib.rs") => EMPTY_LIB.to_owned(),
-        _ => {
-            return Err(format!(
-                "fixture {case:?} declares {} but has no manifest for it",
-                relative.display()
-            ));
-        }
-    };
-    Ok(text)
-}
-
 /// Writes every file a fixture declares and returns its manifest path.
 ///
-/// The caller owns the returned directory and removes it once the command has
-/// finished, whether the fixture passed or failed.
+/// Cleanup is owned from the moment the root exists, not from the moment the
+/// caller receives it. Materialization can fail *after* the directory is
+/// created — opening it, or writing a later file, may refuse — and returning
+/// that error with `?` would otherwise leave a half-written tree behind for the
+/// next run to inherit. Every failure path therefore removes the root it
+/// created before reporting what went wrong, and a cleanup refusal is appended
+/// to the original error rather than replacing it.
 pub(super) fn materialize(fixture: &Fixture) -> Result<(PathBuf, PathBuf), String> {
     let scratch = unique_scratch_dir(fixture.name);
-    Dir::create_ambient_dir_all(&scratch, ambient_authority())
-        .map_err(|error| format!("cannot create {}: {error}", scratch.display()))?;
-    let directory = Dir::open_ambient_dir(&scratch, ambient_authority())
-        .map_err(|error| format!("cannot open {}: {error}", scratch.display()))?;
-    for declared in fixture.files {
-        let relative = Path::new(declared);
-        write_file(&directory, relative, &manifest_for(fixture.name, relative)?)?;
+    let manifest = scratch.join("Cargo.toml");
+    let outcome = write_fixture(fixture, &scratch);
+    match outcome {
+        Ok(()) => Ok((scratch, manifest)),
+        Err(error) => Err(append_cleanup(error, remove_scratch(&scratch))),
     }
-    Ok((scratch.clone(), scratch.join("Cargo.toml")))
+}
+
+/// Creates one fixture root and writes every file it declares into it.
+fn write_fixture(fixture: &Fixture, scratch: &Path) -> Result<(), String> {
+    Dir::create_ambient_dir_all(scratch, ambient_authority())
+        .map_err(|error| format!("cannot create {}: {error}", scratch.display()))?;
+    let directory = Dir::open_ambient_dir(scratch, ambient_authority())
+        .map_err(|error| format!("cannot open {}: {error}", scratch.display()))?;
+    fixture.files.iter().try_for_each(|declared| {
+        let relative = Path::new(declared);
+        let contents = manifest_for(fixture.name, relative)?;
+        write_file(&directory, relative, &contents)
+    })
+}
+
+/// Writes the V5 pin control's two-member workspace under `root`.
+///
+/// The control needs a tree whose manifest Cargo can load but whose shape the
+/// policy refuses, so a manifest naming a member with no manifest of its own
+/// would fail during acquisition instead. Cleanup follows the same rule as
+/// [`materialize`]: the root is removed on a write failure, so the caller never
+/// inherits a partially written tree.
+pub(super) fn write_pinned_fixture(root: &Path, forbidden: &str) -> Result<(), String> {
+    let outcome = (|| {
+        Dir::create_ambient_dir_all(root, ambient_authority())
+            .map_err(|error| format!("cannot create {}: {error}", root.display()))?;
+        let directory = Dir::open_ambient_dir(root, ambient_authority())
+            .map_err(|error| format!("cannot open {}: {error}", root.display()))?;
+        write_file(&directory, Path::new("Cargo.toml"), forbidden)?;
+        write_file(&directory, Path::new("src/lib.rs"), EMPTY_LIB)?;
+        write_file(
+            &directory,
+            Path::new("extra/Cargo.toml"),
+            &plain_package(PackageName("statelet-extra"), ""),
+        )?;
+        write_file(&directory, Path::new("extra/src/lib.rs"), EMPTY_LIB)
+    })();
+    match outcome {
+        Ok(()) => Ok(()),
+        Err(error) => Err(append_cleanup(error, remove_scratch(root))),
+    }
+}
+
+/// Reports a cleanup refusal beside the error that made cleanup necessary.
+fn append_cleanup(error: String, cleanup: Result<(), String>) -> String {
+    match cleanup {
+        Ok(()) => error,
+        Err(cleanup_error) => format!("{error}; additionally, {cleanup_error}"),
+    }
 }
 
 /// Writes one fixture file, creating its parent directory first.
@@ -369,6 +299,9 @@ pub(super) fn check_observable_contract(fixture: &Fixture, manifest: &Path) -> R
 }
 
 /// Checks one fixture's observable contract, then removes its root.
+///
+/// A materialization failure already cleaned up after itself, so the `?` here
+/// returns a tree-free error rather than skipping cleanup.
 pub(super) fn run_case(fixture: &Fixture) -> Result<(), String> {
     let (scratch, manifest) = materialize(fixture)?;
     let outcome = check_observable_contract(fixture, &manifest);

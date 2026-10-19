@@ -37,23 +37,14 @@
 mod fixtures;
 #[path = "topology_command/harness.rs"]
 mod harness;
+#[path = "topology_command/manifests.rs"]
+mod manifests;
 
 use std::{path::Path, process::Command};
 
-use cap_std::{ambient_authority, fs::Dir};
 use fixtures::fixtures;
-use harness::{
-    CARGO,
-    CaseName,
-    EMPTY_LIB,
-    PackageName,
-    check_verdict,
-    plain_package,
-    remove_scratch,
-    run_case,
-    unique_scratch_dir,
-    write_file,
-};
+use harness::{CARGO, CaseName, check_verdict, remove_scratch, run_case, unique_scratch_dir};
+use manifests::{PackageName, plain_package};
 
 /// The pin wins over a supplied override, so the refusal names the pinned tree.
 ///
@@ -69,27 +60,15 @@ use harness::{
             coverage runs must not start it"]
 fn the_pin_overrides_a_healthy_fixture_override() -> Result<(), String> {
     let root = unique_scratch_dir(CaseName("v5-pin"));
-    Dir::create_ambient_dir_all(&root, ambient_authority())
-        .map_err(|error| format!("cannot create {}: {error}", root.display()))?;
-    let directory = Dir::open_ambient_dir(&root, ambient_authority())
-        .map_err(|error| format!("cannot open {}: {error}", root.display()))?;
     let forbidden = format!(
         "{}\n[workspace]\nmembers = [\"extra\"]\n",
         plain_package(PackageName("statelet"), "")
     );
     let supplied = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
-    let outcome = (|| {
-        write_file(&directory, Path::new("Cargo.toml"), &forbidden)?;
-        write_file(&directory, Path::new("src/lib.rs"), EMPTY_LIB)?;
-        write_file(
-            &directory,
-            Path::new("extra/Cargo.toml"),
-            &plain_package(PackageName("statelet-extra"), ""),
-        )?;
-        write_file(&directory, Path::new("extra/src/lib.rs"), EMPTY_LIB)?;
+    let outcome = harness::write_pinned_fixture(&root, &forbidden).and_then(|()| {
         let pinned = harness::invoke_pinned(&root, &supplied)?;
         check_verdict("the pinned run", &pinned, false, "remove the extra member")
-    })();
+    });
     let cleanup = remove_scratch(&root);
     outcome.and(cleanup)
 }

@@ -121,29 +121,71 @@ pub(super) fn reverse_dependencies(document: &mut Value) -> bool {
     edit_declarations(document, |declarations| declarations.reverse())
 }
 
-/// Reverses every package's target list and each target's kind list.
+/// Reverses every package's target list.
 ///
-/// The policy reads target kinds as a set, so neither order carries meaning; a
-/// policy that read the first kind, or the first target, would answer
-/// differently here.
+/// The policy reads targets as a set, so their order carries no meaning; a
+/// policy that read only the first target would answer differently here.
+///
+/// The returned flag means *the target order actually changed*, not merely that
+/// a target array was found. Reversing a list of length zero or one changes
+/// nothing, so a caller that treated "found the array" as success could compare
+/// the document with itself and call the invariance proven. Comparing the list
+/// before and after states the change directly instead of inferring it from a
+/// length.
 pub(super) fn reverse_targets(document: &mut Value) -> bool {
-    let Some(packages) = document.get_mut("packages").and_then(Value::as_array_mut) else {
-        return false;
-    };
-    let mut applied = false;
-    for package in packages {
-        let Some(targets) = package.get_mut("targets").and_then(Value::as_array_mut) else {
-            continue;
-        };
+    let mut changed = false;
+    for_each_target_list(document, |targets| {
+        let before = targets.clone();
         targets.reverse();
-        for target in targets {
+        changed |= *targets != before;
+    });
+    changed
+}
+
+/// Reverses each target's kind list.
+///
+/// Separately reported rather than folded into [`reverse_targets`]: when both
+/// reversals share one flag, a package holding two targets satisfies it on
+/// target order alone, and the kind reversal can stop changing anything without
+/// any property noticing. The finding that prompted this split was exactly that
+/// silent no-op.
+///
+/// The flag is true only when at least one kind list changed order. The
+/// accepted fixture's runtime target declares two kinds for this reason; with
+/// one kind everywhere, the returned `false` makes the caller fail rather than
+/// assert an invariance nobody exercised.
+pub(super) fn reverse_kind_lists(document: &mut Value) -> bool {
+    let mut changed = false;
+    for_each_target_list(document, |targets| {
+        let before = kind_snapshot(targets);
+        for target in targets.iter_mut() {
             if let Some(kinds) = target.get_mut("kind").and_then(Value::as_array_mut) {
                 kinds.reverse();
             }
         }
-        applied = true;
+        changed |= before != kind_snapshot(targets);
+    });
+    changed
+}
+
+/// Every target's kind list in target order, an absent list as `None`.
+fn kind_snapshot(targets: &[Value]) -> Vec<Option<Vec<Value>>> {
+    targets
+        .iter()
+        .map(|target| target.get("kind").and_then(Value::as_array).cloned())
+        .collect()
+}
+
+/// Applies `edit` to every package's target array, where one exists.
+fn for_each_target_list(document: &mut Value, mut edit: impl FnMut(&mut Vec<Value>)) {
+    let Some(packages) = document.get_mut("packages").and_then(Value::as_array_mut) else {
+        return;
+    };
+    for package in packages {
+        if let Some(targets) = package.get_mut("targets").and_then(Value::as_array_mut) {
+            edit(targets);
+        }
     }
-    applied
 }
 
 /// Replaces every package identifier, and every reference to it, with an
