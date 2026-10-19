@@ -724,6 +724,45 @@ shared their whole Make setup, so they now call one `make_command` builder and
 differ only in the arguments that give them separate meanings. No verdict,
 selector, or fixture changed, and the focused suite still reports 49 passed.
 
+D21 (2026-10-19): the follow-up assessment on `c687aad` discharged three of the
+six D19 findings and kept three open, and each remaining one identified a
+verification gap rather than a defect in the policy. All three are repaired
+here. (1) The accepted fixture declared one kind per target, so
+`reverse_targets` reversed two kind lists of length one and changed nothing
+while still reporting that it had edited the document. The runtime target now
+declares `["lib", "rlib"]`, which was checked against real Cargo output before
+being adopted: a package with `crate-type = ["lib", "rlib"]` emits exactly that
+pair, so the fixture describes a shape Cargo produces rather than one invented
+to make a test pass. The two reversals were also split into `reverse_targets`
+and `reverse_kind_lists` with separate properties. Under one shared flag a
+two-target package satisfied it on target order alone, which would let the kind
+reversal regress to a silent no-op — the exact failure being repaired. Each now
+compares the list before and after the edit and reports a change only when the
+order really differs. (2) `MetadataError::NonUnicodeValue` gained the missing
+`Repair:` instruction, which contradicted both the D19 follow-up and D19's own
+account of all variants carrying one. Its branch cannot be raised from a test:
+`std::env::set_var` is denied repository-wide and mutating the process
+environment even under a guard would race every other case in the binary, so
+the assertion constructs the variant and pins the rendered diagnostic, checking
+the variable name and the repair sentence rather than the bare word `Repair:`.
+That is the assertion the finding asked for, and the raising branch stays a
+two-line `match` arm with no decision to get wrong. (3) Fixture cleanup is now
+owned from the moment the root exists rather than from the moment the caller
+receives it: `materialize` and `write_pinned_fixture` remove the root on any
+write failure and append a cleanup refusal to the original error. Verification:
+the focused suite reports 51 passed, clippy is clean, and
+`make test-topology-command` passes all three command-boundary tests against
+the rewritten helpers. One further consequence was caught by the gate run
+rather than by review: the cleanup rewrite grew
+`tests/topology_command/harness.rs` to 431 lines, past the repository's
+400-line rule. Whitaker reports that as a warning rather than a failure, so
+`make lint` stayed green, but the rule is a hard constraint in `AGENTS.md`. The
+manifest *text* construction moved to `tests/topology_command/manifests.rs`,
+leaving `harness.rs` at 311 lines and its new sibling at 141; the `Fixture`
+shape stayed with the process machinery because an expected verdict is what the
+boundary asserts, while the manifest module only answers what a declared file
+contains.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established

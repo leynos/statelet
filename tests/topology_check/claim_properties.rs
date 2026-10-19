@@ -35,6 +35,7 @@ use super::{
         append_package_records,
         replace_identifiers_with_opaque,
         reverse_dependencies,
+        reverse_kind_lists,
         reverse_packages,
         reverse_targets,
     },
@@ -278,6 +279,7 @@ proptest! {
         still_refused_after(&mut document, "reversing declarations", reverse_dependencies)?;
         still_refused_after(&mut document, "reversing packages", reverse_packages)?;
         still_refused_after(&mut document, "reversing targets", reverse_targets)?;
+        still_refused_after(&mut document, "reversing kind lists", reverse_kind_lists)?;
         still_refused_after(
             &mut document,
             "renaming identifiers",
@@ -343,11 +345,12 @@ proptest! {
         );
     }
 
-    /// Reversing target and kind order never changes the verdict.
+    /// Reversing target order never changes the verdict.
     ///
-    /// The policy reads target kinds as a set, so neither order carries
-    /// meaning. A policy that read the first target, or the first kind, would
-    /// answer differently once the lists are reversed.
+    /// The policy reads targets as a set, so their order carries no meaning; a
+    /// policy that read only the first target would answer differently once the
+    /// list is reversed. Kind order is a separate property, because one flag
+    /// covering both reversals would let either fall silent unnoticed.
     #[test]
     fn target_order_never_changes_the_verdict(
         dependencies in prop::collection::vec(generated_dependency(), 0..=MAX_EXTRAS),
@@ -362,7 +365,33 @@ proptest! {
         prop_assert_eq!(
             before,
             is_accepted(&document),
-            "reversing target and kind order changed the verdict"
+            "reversing target order changed the verdict"
+        );
+    }
+
+    /// Reversing each target's kind order never changes the verdict.
+    ///
+    /// The policy reads kinds as a set. The accepted fixture's runtime target
+    /// declares `["lib", "rlib"]` — a pair Cargo genuinely emits for
+    /// `crate-type = ["lib", "rlib"]` — so the transformation reports `true`
+    /// only because a real order change happened. A one-kind fixture would make
+    /// `reverse_kind_lists` return `false`, and this assertion would fail
+    /// instead of passing vacuously.
+    #[test]
+    fn kind_order_never_changes_the_verdict(
+        dependencies in prop::collection::vec(generated_dependency(), 0..=MAX_EXTRAS),
+        names in prop::collection::vec(extra_package_name(), 0..=MAX_EXTRAS),
+    ) {
+        let mut document = accepted_document();
+        prop_assert!(is_accepted(&document), "the base fixture was refused");
+        prop_assert!(append_declarations(&mut document, dependencies));
+        prop_assert!(append_package_records(&mut document, &names));
+        let before = is_accepted(&document);
+        prop_assert!(reverse_kind_lists(&mut document), "no kind list was reversed");
+        prop_assert_eq!(
+            before,
+            is_accepted(&document),
+            "reversing kind order changed the verdict"
         );
     }
 }

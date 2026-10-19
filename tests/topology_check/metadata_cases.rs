@@ -11,13 +11,15 @@
 //! cannot resolve, a Cargo refusal by a manifest path that does not exist, and
 //! unreadable output by a successful process that prints its arguments rather
 //! than JSON. None of the three needs a writable directory, so there is no
-//! scratch tree to leak.
+//! scratch tree to leak. The remaining variant cannot be raised from a test at
+//! all — see `an_unreadable_environment_value_names_the_variable_and_repair`
+//! for why its *rendered* message is asserted instead.
 
 use std::ffi::OsStr;
 
 use camino::Utf8Path;
 
-use super::metadata::{MetadataError, read_metadata};
+use super::metadata::{MANIFEST_OVERRIDE_ENV, MetadataError, read_metadata};
 
 /// The Cargo executable this test binary was started with.
 const CARGO: &str = env!("CARGO");
@@ -83,6 +85,35 @@ fn a_cargo_refusal_is_reported_before_stdout_is_parsed() {
         other => panic!("expected Cargo's failure, got {other:?}"),
     }
     assert!(error.to_string().contains("Repair:"), "{error}");
+}
+
+/// An unreadable environment value names its variable and its repair.
+///
+/// The other variants are raised by *doing* something to the adapter. This one
+/// cannot be: `std::env::set_var` is banned repository-wide, and mutating the
+/// process environment even under a guard would race every other case in the
+/// binary. Constructing the variant therefore asserts the only thing the
+/// finding asked for — the rendered diagnostic — and leaves the branch that
+/// raises it covered by the `NotUnicode` match arm in `optional_variable`,
+/// which is a two-line translation with no decision to get wrong.
+///
+/// The repair is asserted as a *sentence*, not as the bare word: a message
+/// saying "not valid UTF-8" beside an unrelated "Repair:" would satisfy a
+/// word-level check while telling a contributor nothing about what to do.
+#[test]
+fn an_unreadable_environment_value_names_the_variable_and_repair() {
+    let rendered = MetadataError::NonUnicodeValue {
+        variable: MANIFEST_OVERRIDE_ENV,
+    }
+    .to_string();
+    assert!(
+        rendered.contains(MANIFEST_OVERRIDE_ENV),
+        "the variable was not named: {rendered}"
+    );
+    assert!(
+        rendered.contains("Repair:") && rendered.contains("UTF-8 path"),
+        "the repair did not say how to supply a readable value: {rendered}"
+    );
 }
 
 /// A successful process printing non-JSON is reported as unreadable output.

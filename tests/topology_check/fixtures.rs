@@ -56,7 +56,14 @@ pub(crate) fn accepted_metadata() -> String {
     TEMPLATE.replace(DEPENDENCY_MARKER, &dependencies)
 }
 
-/// The accepted document's shape: one member, one package, one library target.
+/// The accepted document's shape: one member, one package, two library targets.
+///
+/// The runtime target declares two kinds, `["lib", "rlib"]`, because Cargo
+/// genuinely emits more than one kind for some targets. That shape is what makes
+/// a kind-order transformation observable: with one kind per target, reversing
+/// a kind list changes nothing, and an evaluator that read only the first kind
+/// would satisfy every property vacuously. The second target keeps the test
+/// kind, so target order is exercised independently of kind order.
 ///
 /// Each placeholder is replaced once by [`accepted_metadata`]; the template is
 /// a private constant so no case can silently hold marked-up text that happens
@@ -70,7 +77,7 @@ const TEMPLATE: &str = r#"{
       "manifest_path": "/repo/Cargo.toml",
       "metadata": {},
       "targets": [
-        {"name": "statelet", "kind": ["lib"], "crate_types": ["lib"]},
+        {"name": "statelet", "kind": ["lib", "rlib"], "crate_types": ["lib"]},
         {"name": "topology_check", "kind": ["test"], "crate_types": ["bin"]}
       ],
       "dependencies": [
