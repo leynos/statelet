@@ -1,6 +1,8 @@
 # Add the single-crate topology-check placeholder
 
-Status: IN PROGRESS — M1 is complete except for its commit; M2 is not started.
+Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
+published on PR #137. The assessment repairs and the final gate set are
+recorded under Progress; delivery remains with `pr-babysitting`.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -185,7 +187,9 @@ before a future change admits a macro package.
     the new sources and found no behaviour-preserving simplification worth a
     second commit.
   - [x] Gates and commit (`5140a53`).
-- [ ] M2: integrate routine gates, reconcile documentation, and mark 1.2.1 done.
+- [x] M2: integrate routine gates, reconcile documentation, and mark 1.2.1 done.
+  Completed as `902927d`, followed by the CodeScene repair `1972342` and the
+  assessment repairs recorded below.
   - [x] (2026-10-18 21:30Z) Makefile and CI wired. `make all` runs
     `make check-topology` after `make test` and before `make spelling`;
     `make test` ends with `make test-topology-command` after the workflow
@@ -305,6 +309,47 @@ before a future change admits a macro package.
     push was verified against `ls-remote`, and the refreshed
     `refs/remotes/origin/1-2-1-topology-check-placeholder` resolved to the
     same commit as the local `HEAD`.
+  - [x] (2026-10-19) ExecPlan assessment repairs, recorded as D19. The six
+    CodeRabbit findings on assessment reply `6256307011` are repaired:
+    - V2: `claim_properties.rs` now generates the forbidden witness itself,
+      generates alias, kind, optionality, and target condition independently,
+      and applies all five transformations V2 names. The transformations moved
+      to `tests/topology_check/transformations.rs`, which locates the runtime
+      package by its member ID instead of `/packages/0`.
+    - V1: `policy_cases.rs` gained the missing field partitions through the new
+      `accepted_removed` helper — real field removal, duplicate and empty IDs,
+      empty names, empty target and kind lists — and
+      `tests/topology_check/metadata_cases.rs` pins the three acquisition
+      failure categories and their diagnostics.
+    - V5: `tests/topology_command.rs` now runs both executable controls. The
+      pin control builds a real two-member fixture under an owned root and
+      asserts the refusal names the pinned tree; the selector control runs
+      nextest with a zero-selection filter in two spellings and asserts the
+      `--no-tests fail` exit.
+    - Acquisition diagnostics now name the manifest and carry a `Repair:`
+      instruction for every variant.
+    - Every fixture invocation owns a unique root and removes it on both
+      outcomes.
+    - The stale completion statements in this plan and `docs/contents.md` now
+      describe the implemented state, with the planning-phase text kept as
+      explicitly historical.
+  - [x] (2026-10-19) V2 negative control re-executed against the rewritten
+    properties. Removing the forbidden-name comparison from
+    `reject_forbidden_declarations` made
+    `a_generated_forbidden_declaration_is_refused_however_spelled` fail with
+    `the forbidden declaration was accepted`, together with the BDD
+    regression `inactive_renamed_macro_edge_is_forbidden` and
+    `reordering_never_turns_a_refusal_into_an_acceptance`; the guard was
+    restored and all 49 cases pass. Evidence:
+    `/tmp/topology-negative-control-v2-statelet-1-2-1-topology-check-placeholder.out`
+    and
+    `/tmp/test-topology-check-restored-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-19) V5 executable controls green: `make test-topology-command`
+    runs all three ignored cases with no skips, including
+    `the_pin_overrides_a_healthy_fixture_override`, whose first fixture shape
+    was refused by Cargo for a missing member manifest before the policy ran;
+    the fixture now writes the member. Evidence:
+    `/tmp/test-topology-command-repair-statelet-1-2-1-topology-check-placeholder.out`.
 
 ## Surprises & discoveries
 
@@ -423,6 +468,33 @@ the grade of the file it leaves while creating a new below-threshold file. The
 `topology_command.rs` repair therefore used domain types rather than a further
 decomposition, and the Python split kept both halves comfortably above the
 function count.
+
+The V2 negative control has to fail for the *witness* reason, not merely fail.
+With the forbidden-name comparison removed, three tests report failures, but
+only the generated property prints `the forbidden declaration was accepted` at
+its own assertion; the BDD scenario and the reordering property fail because
+their documents depend on the same guard. Reading only the exit status would
+credit all three to the same control. The first attempt to run this control
+also hid the answer: piping nextest through `tail` made `$?` report the pipe's
+last command, so a failing run looked green until `pipefail` was set.
+
+`CURDIR` is a command-line-overridable GNU Make variable, and an override of it
+propagates into the recursive `$(MAKE)` invocation. That is what makes the V5
+pin executable without editing the repository manifest:
+`make check-topology CURDIR=<fixture>` writes its pin as
+`<fixture>/Cargo.toml`, so a supplied `TOPOLOGY_MANIFEST_PATH` is provably
+overwritten. The first fixture built for this control declared a member whose
+manifest did not exist, and Cargo refused it during metadata acquisition; the
+control only exercised the policy once the fixture became a real two-member
+workspace. A boundary control that cannot get past the acquisition adapter
+proves the adapter, not the boundary.
+
+`--run-ignored` accepts only `default`, `only`, or `all`. The zero-selection
+control therefore spells its two cases as an absent test name under `default`
+and the guard's real name under `only`, rather than the invalid `ignored` that
+the first draft used. nextest's zero-selection exit is 4 with
+`error: no tests to run`, so the control asserts a real failure rather than a
+cosmetic flag.
 
 ## Decision log
 
@@ -618,16 +690,36 @@ new finding risk), and suppressing or threshold-raising in CodeScene (the
 repository carries no rules file and the hosted profile is "Pay Down Tech
 Debt").
 
+D19 (2026-10-19): the CodeRabbit ExecPlan assessment's six findings are
+repaired as one commit, because each one restores evidence the plan already
+promised rather than extending scope. V2's witness is now generated and its
+five transformations are applied to the runtime package found by member ID; the
+properties moved partly into `transformations.rs` so `claim_properties.rs`
+stays under 400 lines, and that module is the only new file. V1's missing
+partitions arrive through `accepted_removed`, so an absent field is tested as
+an absent key rather than a `null` value; `metadata_cases.rs` is the second new
+file and needs no fixture tree. V5's two controls run real processes: the pin
+control sets `CURDIR` to an owned two-member fixture and the selector control
+runs nextest itself. The acquisition errors name the manifest and end with a
+`Repair:` instruction; the environment-variable variants gained the same
+instruction where they had none. Fixture roots are unique per invocation and
+removed on both outcomes. The stale completion text is replaced, with the
+planning-phase paragraph explicitly labelled historical. Deliberately rejected:
+weakening the V2 properties to the fixed literal the assessment objected to,
+and showing the V5 pin through a dry run — the assessment required executable
+evidence.
+
 ## Outcomes & retrospective
 
-Planning has established the metadata boundary and a bounded implementation
-route. No topology command, runtime change, or roadmap completion has been
-implemented. All six expert perspectives have been reconciled. Lint and
-typechecking passed on the unchanged runtime baseline. On 2026-10-14 the full
-test retry passed: 150 nextest tests, one doctest, the pinned shared workflow
-contract check, and 416 workflow tests with five passing subtests. Formatting,
-Markdown/spelling, and Mermaid validation also passed. The planning documents
-are ready for draft publication; implementation outcomes await approval.
+Historical planning record (2026-10-14, before approval): planning established
+the metadata boundary and a bounded implementation route, and at that time no
+topology command, runtime change, or roadmap completion had been implemented.
+All six expert perspectives had been reconciled, and lint and typechecking had
+passed on the unchanged runtime baseline. The full test retry passed: 150
+nextest tests, one doctest, the pinned shared workflow contract check, and 416
+workflow tests with five passing subtests. Formatting, Markdown/spelling, and
+Mermaid validation also passed. Those planning documents were then ready for
+draft publication.
 
 M1 delivered the private checker and its local command, committed as `5140a53`.
 M2 made the check routine: `make all` runs the pinned-input form, `make test`
@@ -643,8 +735,17 @@ byte-order `sorted()` disagree. Under `LC_ALL=C` the whole suite passes. Repair
 touches the Makefile's ordering or the test's comparison, both outside this
 plan's scope; the plan records the defect rather than fixing it here.
 
-The M2 gate set is recorded below once it completes; the commit SHA is the
-evidence binding, and hosted CI is separate evidence from these local runs.
+The M2 gate set ran to completion before `902927d`, and the CodeScene repair
+was gated again before `1972342`. The commit SHA binds the local evidence;
+hosted CI and the hosted assessments remain separate evidence and are owned by
+`pr-babysitting`.
+
+The CodeRabbit ExecPlan assessment on `6256307011` then raised six findings.
+They were repaired as D19: the generated forbidden witness and the runtime
+package lookup, the missing V1 and acquisition-error partitions, the executable
+V5 controls, the acquisition diagnostics, the isolated fixture roots, and these
+completion records. The V2 negative control was re-executed against the
+rewritten properties and recorded under Progress.
 
 ## Context and orientation
 
@@ -948,9 +1049,9 @@ no compatibility layer is needed because this is new private tooling.
 
 ### M2: routine validation and completion
 
-Status: implemented, awaiting the full sequential gate set and the M2 commit.
-Roadmap 1.2.1 is ticked. The M2 plateau discharges R2 and R4; R3 was rechecked
-on the full diff.
+Status: implemented in `902927d` after the full sequential gate set passed; the
+CodeScene repair followed in `1972342`. Roadmap 1.2.1 is ticked. The M2 plateau
+discharges R2 and R4; R3 was rechecked on the full diff.
 
 Add pinned-input `check-topology` to the ordered `make all` recipe and a named
 step to `.github/workflows/ci.yml` after Rust and nextest setup. Wire

@@ -67,19 +67,29 @@ pub(crate) enum MetadataError {
     NonUnicodeValue { variable: &'static str },
 
     /// The Cargo process could not be started.
-    #[error("cannot run {cargo}: {source}")]
+    #[error(
+        "cannot run {cargo} for {manifest}: {source}. Repair: check that the named executable is \
+         a Cargo binary and that the manifest path exists."
+    )]
     Spawn {
         /// The Cargo executable as it was named.
         cargo: String,
+        /// The manifest the check asked Cargo to read.
+        manifest: String,
         /// The operating-system failure.
         source: std::io::Error,
     },
 
     /// Cargo ran and refused the metadata request.
-    #[error("{cargo} metadata failed with {status}: {stderr}")]
+    #[error(
+        "{cargo} metadata failed for {manifest} with {status}: {stderr}. Repair: correct the \
+         manifest or the workspace it declares, then rerun the check."
+    )]
     Failed {
         /// The Cargo executable as it was named.
         cargo: String,
+        /// The manifest the check asked Cargo to read.
+        manifest: String,
         /// The exit status, or the signal that replaced it.
         status: String,
         /// Cargo's standard error, preserved whole.
@@ -87,8 +97,13 @@ pub(crate) enum MetadataError {
     },
 
     /// Cargo's standard output was not the JSON document it claims.
-    #[error("Cargo printed unreadable metadata: {source}")]
+    #[error(
+        "Cargo printed unreadable metadata for {manifest}: {source}. Repair: confirm the manifest \
+         is valid JSON-emitting Cargo metadata and rerun the check."
+    )]
     Unreadable {
+        /// The manifest the check asked Cargo to read.
+        manifest: String,
         /// The JSON syntax or encoding failure.
         source: serde_json::Error,
     },
@@ -170,20 +185,27 @@ fn optional_variable(name: &'static str) -> Result<Option<String>, MetadataError
 ///
 /// Returns the spawn, status, or parse failure in [`MetadataError`].
 pub(crate) fn read_metadata(cargo: &OsStr, manifest: &Utf8Path) -> Result<Value, MetadataError> {
+    let executable = cargo.to_string_lossy().into_owned();
+    let path = manifest.as_str().to_owned();
     let output = Command::new(cargo)
         .args(METADATA_ARGUMENTS)
         .arg(manifest.as_str())
         .output()
         .map_err(|source| MetadataError::Spawn {
-            cargo: cargo.to_string_lossy().into_owned(),
+            cargo: executable.clone(),
+            manifest: path.clone(),
             source,
         })?;
     if !output.status.success() {
         return Err(MetadataError::Failed {
-            cargo: cargo.to_string_lossy().into_owned(),
+            cargo: executable,
+            manifest: path,
             status: output.status.to_string(),
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         });
     }
-    serde_json::from_slice(&output.stdout).map_err(|source| MetadataError::Unreadable { source })
+    serde_json::from_slice(&output.stdout).map_err(|source| MetadataError::Unreadable {
+        manifest: path,
+        source,
+    })
 }
