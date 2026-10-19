@@ -56,7 +56,14 @@ class Wiring:
 
 
 def evaluate_live_wiring() -> Wiring:
-    """Evaluate the real recipes and workflow, with a fixture override supplied."""
+    """Evaluate the real recipes and workflow, with a fixture override supplied.
+
+    Returns
+    -------
+    Wiring
+        The evaluated ``all``, ``test``, and pinned ``check-topology`` recipes,
+        the Makefile text, and the parsed CI workflow.
+    """
     return Wiring(
         workflow=reading.parse(
             WORKFLOW.name, WORKFLOW.read_text(encoding="utf-8")
@@ -71,7 +78,19 @@ def evaluate_live_wiring() -> Wiring:
 
 
 def step_command(step: reading.Step) -> str:
-    """Return one step's run command, stripped, or the empty string."""
+    """Return one step's run command, stripped, or the empty string.
+
+    Parameters
+    ----------
+    step : reading.Step
+        One parsed workflow step.
+
+    Returns
+    -------
+    str
+        The step's ``run`` command with surrounding whitespace removed, or the
+        empty string when the step has no readable command.
+    """
     value = step.get("run")
     return value.strip() if isinstance(value, str) else ""
 
@@ -87,6 +106,17 @@ def ci_steps(workflow: reading.Workflow) -> list[reading.Step]:
 
     The job's list is returned rather than a filtered copy: the negative
     controls mutate it in place, and a copy would accept every removal.
+
+    Parameters
+    ----------
+    workflow : reading.Workflow
+        The parsed workflow to read.
+
+    Returns
+    -------
+    list[reading.Step]
+        The steps of the single CI job, or an empty list when the workflow does
+        not have exactly one readable job with a step list.
     """
     jobs = reading.jobs(workflow)
     if len(jobs) != 1:
@@ -228,10 +258,29 @@ def _findings_make_test(recipe: str) -> list[str]:
 
 
 def _findings_command_line(line: str) -> list[str]:
-    """Check one evaluated command-suite invocation for its isolation flags."""
+    """Check one evaluated command-suite invocation for its isolation flags.
+
+    The caller-flags copy belongs to the same isolation contract: each case nests
+    a `make topology-check` that composes `RUSTFLAGS` again, so the harness needs
+    the caller's value to avoid duplicating every flag. Because `env` is the
+    command word here, every assignment operand expands against the unmodified
+    environment of this recipe shell, so the copy beside the composed assignment
+    really does read the caller's value. A recipe that dropped it would still
+    compile and still pass: this toolchain tolerates every repository flag
+    appearing twice, which was measured rather than assumed. The copy is required
+    so composition stays idempotent — a caller flag without a duplication-safe
+    meaning would otherwise change the nested build — not to avert a failure.
+    """
     problems = []
-    if not line.startswith("env -u STATELET_TOPOLOGY_MANIFEST_PATH"):
+    words = line.split()
+    # Compared as words rather than as a prefix: folding a continued recipe
+    # leaves the doubled space between the environment and the assignment.
+    if words[:3] != ["env", "-u", "STATELET_TOPOLOGY_MANIFEST_PATH"]:
         problems.append("the topology command suite must clear the manifest override")
+    if words[3:4] != ['STATELET_TOPOLOGY_CALLER_FLAGS="${RUSTFLAGS-}"']:
+        problems.append(
+            "the topology command suite must hand Make the caller's RUSTFLAGS"
+        )
     for flag in ("--run-ignored only", "--no-tests fail", "--test-threads=1"):
         if flag not in line:
             problems.append(f"the topology command suite must pass `{flag}`")
@@ -288,7 +337,19 @@ def _findings_not_parallel(makefile: str) -> list[str]:
 
 
 def findings(wiring: Wiring) -> list[str]:
-    """Return every routine-wiring clause the evaluated evidence fails."""
+    """Return every routine-wiring clause the evaluated evidence fails.
+
+    Parameters
+    ----------
+    wiring : Wiring
+        The evaluated recipes, Makefile text, and workflow to judge.
+
+    Returns
+    -------
+    list[str]
+        One message per failed clause, in recipe, CI, and Makefile order; empty
+        when every clause holds.
+    """
     return [
         *_findings_make_all(wiring.all_recipe),
         *_ci_findings(wiring.workflow),

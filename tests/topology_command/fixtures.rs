@@ -2,7 +2,7 @@
 //!
 //! Each fixture states one verdict the command must produce and the exact
 //! repair text a contributor should see. The manifests are built by
-//! `harness::manifest_for`, so this table holds the shape and the expectation
+//! `manifests::manifest_for`, so this table holds the shape and the expectation
 //! while the text lives in one place.
 
 use super::harness::{CaseName, Fixture};

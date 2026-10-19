@@ -15,7 +15,8 @@ gold case, and one negative control per clause. The clauses are:
 - CI runs ``check-topology`` once, unconditionally, after the Rust toolchain
   and nextest are installed.
 - ``make test`` runs the command-boundary suite after the ordinary nextest and
-  doctest routes, from a cleared manifest environment.
+  doctest routes, from a cleared manifest environment, and hands the harness
+  the caller's ``RUSTFLAGS`` so the nested recipe composes them only once.
 - CI runs that suite after the coverage action, with none of the coverage
   environment inherited.
 - The policy selector fails closed: an absent or ignored match fails through
@@ -27,8 +28,8 @@ Run via ``make test-workflow-contracts``.
 """
 
 import copy
+from collections.abc import Callable
 from dataclasses import replace
-from typing import Callable
 
 import pytest
 
@@ -124,6 +125,16 @@ def _unguarded_test_gate(wiring: Wiring) -> Wiring:
     )
 
 
+def _drop_caller_flags(wiring: Wiring) -> Wiring:
+    """Return command-suite evidence with no caller-flags copy for the harness."""
+    return replace(
+        wiring,
+        test_recipe=wiring.test_recipe.replace(
+            'STATELET_TOPOLOGY_CALLER_FLAGS="${RUSTFLAGS-}" \\\n', ""
+        ),
+    )
+
+
 def _inherit_coverage_env(wiring: Wiring) -> Wiring:
     """Return a workflow whose command suite inherits coverage RUSTFLAGS."""
     workflow = copy.deepcopy(wiring.workflow)
@@ -177,6 +188,7 @@ MUTATIONS: list[tuple[str, Callable[[Wiring], Wiring]]] = [
     ("check-before-nextest", lambda wiring: _move_ci_check(wiring, "cargo-nextest")),
     ("missing-test-gate", _drop_test_gate),
     ("unguarded-test-gate", _unguarded_test_gate),
+    ("missing-caller-flags", _drop_caller_flags),
     ("missing-ci-command", lambda wiring: _drop_ci_step(wiring, COMMAND_TARGET)),
     ("inherited-coverage-env", _inherit_coverage_env),
     ("open-policy-selector", _drop_fail_closed),
