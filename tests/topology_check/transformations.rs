@@ -85,16 +85,26 @@ fn runtime_package_mut(document: &mut Value) -> Option<&mut Value> {
         .find(|package| package.get("id").and_then(Value::as_str) == Some(member.as_str()))
 }
 
-/// Appends declarations to the runtime package's declaration list.
-pub(super) fn append_declarations(document: &mut Value, declarations: Vec<Value>) -> bool {
-    let Some(existing) = runtime_package_mut(document)
+/// Applies one edit to the runtime package's declaration list.
+///
+/// Both declaration transformations need the same lookup and the same
+/// found-or-not contract, and differ only in the edit. Sharing the lookup keeps
+/// the "which package is the runtime package" rule in one place; a second copy
+/// is how a positional lookup came back before.
+fn edit_declarations(document: &mut Value, edit: impl FnOnce(&mut Vec<Value>)) -> bool {
+    let Some(declarations) = runtime_package_mut(document)
         .and_then(|package| package.get_mut("dependencies"))
         .and_then(Value::as_array_mut)
     else {
         return false;
     };
-    existing.extend(declarations);
+    edit(declarations);
     true
+}
+
+/// Appends declarations to the runtime package's declaration list.
+pub(super) fn append_declarations(document: &mut Value, declarations: Vec<Value>) -> bool {
+    edit_declarations(document, |existing| existing.extend(declarations))
 }
 
 /// Reverses the top-level package list.
@@ -108,14 +118,7 @@ pub(super) fn reverse_packages(document: &mut Value) -> bool {
 
 /// Reverses the runtime package's dependency declarations.
 pub(super) fn reverse_dependencies(document: &mut Value) -> bool {
-    let Some(declarations) = runtime_package_mut(document)
-        .and_then(|package| package.get_mut("dependencies"))
-        .and_then(Value::as_array_mut)
-    else {
-        return false;
-    };
-    declarations.reverse();
-    true
+    edit_declarations(document, |declarations| declarations.reverse())
 }
 
 /// Reverses every package's target list and each target's kind list.

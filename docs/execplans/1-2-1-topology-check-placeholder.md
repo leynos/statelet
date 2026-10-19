@@ -709,6 +709,21 @@ weakening the V2 properties to the fixed literal the assessment objected to,
 and showing the V5 pin through a dry run — the assessment required executable
 evidence.
 
+D20 (2026-10-19): the D19 commit failed hosted CodeScene with two new-file
+duplication findings, at `tests/topology_check/transformations.rs` and
+`tests/topology_command/harness.rs`, even though a local `cs delta` run before
+the commit reported none. The local run was taken while both files were still
+untracked, and the delta compares committed state plus uncommitted changes to
+*tracked* files, so the pair was simply not analysed. The lesson is recorded
+rather than the finding disputed: a delta that must cover new files runs after
+they are committed, or after an explicit `git add`. Both pairs were genuine.
+`append_declarations` and `reverse_dependencies` shared their lookup and
+differed only in the edit, so they now call one `edit_declarations` helper that
+owns the "find the runtime package" rule. `invoke_target` and `invoke_pinned`
+shared their whole Make setup, so they now call one `make_command` builder and
+differ only in the arguments that give them separate meanings. No verdict,
+selector, or fixture changed, and the focused suite still reports 49 passed.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established

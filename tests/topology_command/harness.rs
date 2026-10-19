@@ -235,13 +235,25 @@ pub(super) fn write_file(directory: &Dir, relative: &Path, contents: &str) -> Re
         .map_err(|error| format!("cannot write {name}: {error}"))
 }
 
+/// Starts one Make invocation of `target`, ready for its own arguments.
+///
+/// Both entrypoints run Make from the repository root and forward the Cargo
+/// executable this test binary was started with. Sharing that setup keeps the
+/// two invocations differing only in the arguments that give them their
+/// separate meanings.
+fn make_command(target: &str) -> Command {
+    let mut command = Command::new("make");
+    command
+        .arg(target)
+        .current_dir(repository_root())
+        .env("CARGO", OsString::from(CARGO));
+    command
+}
+
 /// Runs the Make target against one fixture and returns its combined output.
 pub(super) fn invoke_target(manifest: &Path) -> Result<process::Output, String> {
-    Command::new("make")
-        .arg("topology-check")
+    make_command("topology-check")
         .arg(format!("TOPOLOGY_MANIFEST_PATH={}", manifest.display()))
-        .current_dir(repository_root())
-        .env("CARGO", OsString::from(CARGO))
         .output()
         .map_err(|error| format!("cannot run make: {error}"))
 }
@@ -253,12 +265,9 @@ pub(super) fn invoke_target(manifest: &Path) -> Result<process::Output, String> 
 /// caller-visible root is the only way to show that an inherited
 /// `TOPOLOGY_MANIFEST_PATH` is overwritten rather than honoured.
 pub(super) fn invoke_pinned(root: &Path, supplied: &Path) -> Result<process::Output, String> {
-    Command::new("make")
-        .arg("check-topology")
+    make_command("check-topology")
         .arg(format!("TOPOLOGY_MANIFEST_PATH={}", supplied.display()))
         .arg(format!("CURDIR={}", root.display()))
-        .current_dir(repository_root())
-        .env("CARGO", OsString::from(CARGO))
         .output()
         .map_err(|error| format!("cannot run make check-topology: {error}"))
 }
