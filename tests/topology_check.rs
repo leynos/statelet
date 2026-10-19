@@ -20,10 +20,14 @@ mod claim_properties;
 mod fixtures;
 #[path = "topology_check/metadata.rs"]
 mod metadata;
+#[path = "topology_check/metadata_cases.rs"]
+mod metadata_cases;
 #[path = "topology_check/policy.rs"]
 mod policy;
 #[path = "topology_check/policy_cases.rs"]
 mod policy_cases;
+#[path = "topology_check/transformations.rs"]
+mod transformations;
 
 use policy::{evaluate_metadata, limitation_message, policy_message, success_message};
 

@@ -21,10 +21,10 @@ use thiserror::Error;
 const FORMAT_VERSION: u64 = 1;
 
 /// The sole accepted workspace package.
-const RUNTIME_PACKAGE: &str = "statelet";
+pub(crate) const RUNTIME_PACKAGE: &str = "statelet";
 
 /// The package forbidden before the macro baseline gate.
-const FORBIDDEN_MACROS: &str = "statelet-macros";
+pub(crate) const FORBIDDEN_MACROS: &str = "statelet-macros";
 
 /// The pre-macro policy, printed before the guard runs.
 #[must_use]

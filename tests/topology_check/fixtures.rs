@@ -118,3 +118,51 @@ pub(crate) fn accepted_with(pointer: &str, value: Value) -> Result<Value, String
     *slot = value;
     Ok(document)
 }
+
+/// Parses the accepted document, then appends one value to a named array.
+///
+/// A duplicate package identifier cannot be produced by [`accepted_with`],
+/// because the pointer addresses a whole array: replacing `/packages` would
+/// need a second copy of the entire record. Appending is also closer to the
+/// failure being described, since a duplicated identifier arrives as one extra
+/// record rather than as a rewritten document.
+///
+/// # Errors
+///
+/// Returns the parse failure or the absent-array failure.
+pub(crate) fn accepted_extended(pointer: &str, value: Value) -> Result<Value, String> {
+    let mut document = parse(&accepted_metadata())?;
+    let array = document
+        .pointer_mut(pointer)
+        .and_then(Value::as_array_mut)
+        .ok_or_else(|| format!("the accepted fixture has no array at {pointer}"))?;
+    array.push(value);
+    Ok(document)
+}
+
+/// Parses the accepted document, then removes one object field.
+///
+/// Assigning `null` tests a wrong *type*, not an absent field, and the policy
+/// distinguishes them in its message. A required field is absent in the way a
+/// handwritten or filtered document omits it, so the control has to delete the
+/// key rather than shadow its value.
+///
+/// # Errors
+///
+/// Returns the parse failure or the absent-field failure.
+pub(crate) fn accepted_removed(pointer: &str) -> Result<Value, String> {
+    let mut document = parse(&accepted_metadata())?;
+    let (parent, field) = pointer
+        .rsplit_once('/')
+        .ok_or_else(|| format!("{pointer} does not name an object field"))?;
+    let object = document
+        .pointer_mut(parent)
+        .and_then(Value::as_object_mut)
+        .ok_or_else(|| format!("the accepted fixture has no object at {parent}"))?;
+    if object.remove(field).is_none() {
+        return Err(format!(
+            "the accepted fixture has no field {field} at {parent}"
+        ));
+    }
+    Ok(document)
+}
