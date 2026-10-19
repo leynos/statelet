@@ -763,6 +763,16 @@ shape stayed with the process machinery because an expected verdict is what the
 boundary asserts, while the manifest module only answers what a declared file
 contains.
 
+The follow-up assessment on `8e3627e` discharged findings 1, 4, and 5, which
+together with the earlier discharge of 2, 3, and 6 closes all six original
+findings with no remaining in-scope defect. One correction came back with it:
+the diagnostic case asserts message *fragments* — the variable name, `Repair:`,
+and `UTF-8 path` — not the complete repair sentence, and should not be
+described as an exact-message assertion. The assessor also noted that it did
+not build, test, or execute repository code, so the local gate results and the
+Cargo metadata probe are supplied evidence rather than independently reproduced
+results.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established
