@@ -45,25 +45,34 @@ guide, including its `cargo-dylint` and `dylint-link` prerequisites. Local
 `make lint` requires the installed `whitaker` executable on `PATH`. Whitaker's
 installer-managed toolchain is separate from Statelet's development toolchain.
 
-Use `make all` for formatting, linting, typechecking, tests, workflow
-contracts, and spelling. `make lint` runs rustdoc, Clippy, Whitaker, and the
-Python lint gateways. `make test` requires the binary-installed cargo-nextest
-runner and runs the Python workflow contracts under managed CPython 3.14.
+Use `make all` for formatting, linting, typechecking, tests, the
+dependency-topology check, workflow contracts, and spelling. `make lint` runs
+rustdoc, Clippy, Whitaker, and the Python lint gateways. `make test` requires
+the binary-installed cargo-nextest runner and runs the Python workflow
+contracts under managed CPython 3.14, then the topology command-boundary suite.
 `make audit` derives the Rust workspace root with `cargo metadata`, extracts
 its manifests under the same managed interpreter, and runs `cargo audit` once
 from the workspace root. `make coverage` uses `cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
-- `make all` runs formatting checks, linting, typechecking, tests, and spelling.
+- `make all` runs formatting checks, linting, typechecking, tests, the
+  pinned-input topology check, and spelling, in that order.
 - `make check-fmt` verifies Rust formatting and Markdown formatting.
 - `make lint` runs rustdoc, Clippy, Whitaker, Pylint, and the pinned df12
   Python lints. Rust warnings are denied.
 - `make typecheck` runs `ty` over every repository Python source and Cargo
   check over the Rust targets.
-- `make test` runs cargo-nextest, Cargo doctests, then Python workflow
-  contracts in sequence, even when invoked with `make -j`. The workflow
-  contracts use pinned dependencies and managed CPython 3.14.
+- `make test` runs cargo-nextest, Cargo doctests, Python workflow contracts,
+  then the topology command-boundary suite in sequence, even when invoked with
+  `make -j`. The workflow contracts use pinned dependencies and managed CPython
+  3.14.
+- `make topology-check` applies the dependency-topology policy to Cargo's
+  metadata for this workspace. `make check-topology` is the same check with the
+  repository manifest pinned, and `make test-topology-command` runs the
+  command-boundary cases sequentially. The `#[ignore]`d cases are selected only
+  by the dedicated target: `make test` runs that target after its ordinary
+  routes, and a bare nextest run never starts a nested Cargo process.
 - `make build` builds the debug target.
 - `make release` builds the release target.
 - `make coverage` writes `lcov.info` using `cargo llvm-cov` and `lld`.
@@ -85,7 +94,10 @@ The generated `Makefile` exposes these public targets:
   `suite_discovery.py` owns graph traversal and route inventory for those
   contracts. `markdown_ci_contract.py` and `whitaker_contracts.py` own their
   invocation policies; `workflow_reading.py` provides generic YAML and job
-  parsing. Shared CV-005 coverage policy stays in the pinned upstream library.
+  parsing, `mock_wiring.py` evaluates Make recipes without running them, and
+  `topology_wiring_contract.py` holds the topology gate's wiring evidence and
+  findings while `topology_wiring_test.py` holds its gold case and negative
+  controls. Shared CV-005 coverage policy stays in the pinned upstream library.
   Private helpers split shape validation and individual findings within their
   owning module. These support modules remain test-only; runtime code and
   unrelated document contracts must not depend on them.
@@ -252,6 +264,100 @@ still checked. It resolves to `Not resolved`, names the blocking field and
 status, and contributes nothing to the verdict. Such a note is never deleted to
 make the suite pass: a blocked note that names its blocker is a finding, and
 the finding is the point.
+
+## Dependency-topology check
+
+`make topology-check` runs `tests/topology_check.rs`, which applies a closed
+policy to Cargo's own metadata for this workspace. `make check-topology` is the
+form that pins the repository manifest and ignores any fixture override, and
+`make test-topology-command` runs the command-boundary cases after the ordinary
+tests.
+
+Routine validation reaches both forms. `make all` ends with
+`make check-topology` after tests and before spelling, so the pinned form runs
+without an operator remembering it. `make test` ends with
+`make test-topology-command`, after nextest, the doctests, and the workflow
+contracts. CI mirrors that split: a `Check declared dependency topology` step
+runs `make check-topology` once between the nextest installation and the audit,
+and a `Test the topology command boundary` step runs
+`make test-topology-command` after the coverage action. The second step is
+deliberately separate from coverage: each boundary case starts a nested Cargo
+process, and the step therefore avoids the coverage action's environment — its
+instrumentation, its `RUSTFLAGS`, and its clang/lld linker settings. The
+avoidance is scoped to that environment, not to flags generally: the recipe
+still composes any `RUSTFLAGS` it inherits, and the harness hands Make the
+caller's original value so the nested recipe composes them only once.
+
+`tests/workflow_contracts/topology_wiring_test.py` holds that wiring contract,
+with the evaluation and finding functions in the sibling
+`topology_wiring_contract.py`. It evaluates `make -n` output for `all`, `test`,
+and `check-topology` and parses CI with the strict workflow reader, so the live
+repository and each negative control are judged by the same finding functions.
+`tests/workflow_contracts/mock_wiring.py` owns the single `make -n` and
+recipe-folding boundary that this contract, the CV-005 contract, and the build
+standard share. Thirteen mutations — an unpinned `make all`; a missing,
+conditional, or misordered CI check step; a missing command step; a missing or
+unguarded test gate; a missing caller-flags copy; an inherited coverage
+environment; an open policy selector; an early success line; and a parallel
+composite target — must each be reported. Deleting the CI step from the real
+workflow was observed to fail the contract before it was restored, so the
+negative control holds against the repository and not only in memory.
+
+The modules own distinct concerns and must stay that way:
+
+- `tests/topology_check/policy.rs` is pure. It reads a metadata `Value` and
+  returns `Ok(())` or the first `TopologyViolation`, and never prints, spawns,
+  or decides a process status. Every rule lives here, so a case never needs
+  Cargo.
+- `tests/topology_check/metadata.rs` is the acquisition adapter and the only
+  place the check touches process state. It reads `CARGO` and the optional
+  `STATELET_TOPOLOGY_MANIFEST_PATH`, runs
+  `cargo metadata --no-deps --format-version 1`, checks the exit status before
+  parsing stdout, and returns a `MetadataError` that stays distinguishable from
+  a policy rejection.
+- `tests/topology_check/fixtures.rs` and `policy_cases.rs` hold the accepted
+  document and the named partitions. `claim_properties.rs` holds metamorphic
+  properties over the same evaluator, and `behaviour.rs` the `rstest-bdd`
+  scenarios from `tests/features/topology_check.feature`.
+- `tests/topology_command.rs` is the only place the *command* is exercised. Its
+  cases are `#[ignore]`d because each starts a nested Cargo process, so a
+  routine or coverage run must never select them. The dedicated gate selects
+  them with `--run-ignored only --no-tests fail --test-threads=1`.
+
+The command-boundary harness passes the fixture as
+`TOPOLOGY_MANIFEST_PATH=<path>` on the make command line, not as an exported
+environment variable. The recipe assigns `STATELET_TOPOLOGY_MANIFEST_PATH` from
+that variable, so an environment value is overwritten and every case would
+check the repository manifest while reporting success. `make test` and
+`make test-topology-command` clear the variable at their own boundary with
+`env -u`, and `check-topology` pins the repository manifest *after* the nested
+`topology-check` target's assignment, so a stray value cannot redirect routine
+validation. The topology wiring contract also evaluates
+`make -n check-topology TOPOLOGY_MANIFEST_PATH=<healthy fixture>` and requires
+the repository manifest in the printed recipe, which fails if the pin is
+softened to a default rather than an override.
+
+Two test modules hold every waiver of the repository's `disallowed_methods`
+policy for `std::env::var*`, each through scoped `#[expect]` attributes that
+carry a reason. `tests/topology_check/metadata.rs` reads the Cargo executable
+and the manifest override; `tests/topology_command/harness.rs` reads the
+caller's `RUSTFLAGS` and the copy the recipe keeps beside it. The waiver is not
+general: a test binary has no caller that could inject those inputs, and the
+environment is the only channel through which they arrive. Read the environment
+anywhere else and the lint should catch it.
+
+`cap-std` is a development dependency because the harness writes fixture
+manifests through an opened capability handle (`Dir::create_ambient_dir_all`
+followed by `create_dir_all` and `write` on the handle). Ambient `std::fs`
+writes would trip Whitaker's `no_std_fs_operations` lane, and the capability
+handle also confines a fixture path that escapes the scratch directory.
+
+When the check fails, read the message before changing the policy. A
+`MetadataError` means the check could not *see* metadata — usually a manifest
+path that does not exist or a Cargo that refused to parse it — and no policy
+was consulted. A `TopologyViolation` names both the violated rule and the
+repair. Adding the first macro package is an evidence-led roadmap change, not a
+Makefile edit, and the diagnostic says so.
 
 ## Development build standard
 
