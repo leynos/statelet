@@ -282,8 +282,11 @@ runs `make check-topology` once between the nextest installation and the audit,
 and a `Test the topology command boundary` step runs
 `make test-topology-command` after the coverage action. The second step is
 deliberately separate from coverage: each boundary case starts a nested Cargo
-process, and it must not inherit the coverage instrumentation, `RUSTFLAGS`, or
-the clang/lld linker environment.
+process, and the step therefore avoids the coverage action's environment — its
+instrumentation, its `RUSTFLAGS`, and its clang/lld linker settings. The
+avoidance is scoped to that environment, not to flags generally: the recipe
+still composes any `RUSTFLAGS` it inherits, and the harness hands Make the
+caller's original value so the nested recipe composes them only once.
 
 `tests/workflow_contracts/topology_wiring_test.py` holds that wiring contract,
 with the evaluation and finding functions in the sibling
@@ -292,13 +295,13 @@ and `check-topology` and parses CI with the strict workflow reader, so the live
 repository and each negative control are judged by the same finding functions.
 `tests/workflow_contracts/mock_wiring.py` owns the single `make -n` and
 recipe-folding boundary that this contract, the CV-005 contract, and the build
-standard share. Twelve mutations — an unpinned `make all`, a missing,
-conditional, or misordered CI step, a missing or unguarded test gate, an
-inherited coverage environment, an open policy selector, an early success line,
-and a parallel composite target — must each be reported. Deleting the CI step
-from the real workflow was observed to fail the contract before it was
-restored, so the negative control holds against the repository and not only in
-memory.
+standard share. Thirteen mutations — an unpinned `make all`; a missing,
+conditional, or misordered CI check step; a missing command step; a missing or
+unguarded test gate; a missing caller-flags copy; an inherited coverage
+environment; an open policy selector; an early success line; and a parallel
+composite target — must each be reported. Deleting the CI step from the real
+workflow was observed to fail the contract before it was restored, so the
+negative control holds against the repository and not only in memory.
 
 The modules own distinct concerns and must stay that way:
 
@@ -334,12 +337,14 @@ validation. The topology wiring contract also evaluates
 the repository manifest in the printed recipe, which fails if the pin is
 softened to a default rather than an override.
 
-`tests/topology_check/metadata.rs` is the one place the repository's
-`disallowed_methods` policy for `std::env::var*` is waived, through two
-`#[expect]` attributes that each carry a reason. The waiver is not general: a
-test binary has no caller that could inject the Cargo executable or the
-manifest override, and the environment is the only channel those two inputs can
-arrive through. Read the environment anywhere else and the lint should catch it.
+Two test modules hold every waiver of the repository's `disallowed_methods`
+policy for `std::env::var*`, each through scoped `#[expect]` attributes that
+carry a reason. `tests/topology_check/metadata.rs` reads the Cargo executable
+and the manifest override; `tests/topology_command/harness.rs` reads the
+caller's `RUSTFLAGS` and the copy the recipe keeps beside it. The waiver is not
+general: a test binary has no caller that could inject those inputs, and the
+environment is the only channel through which they arrive. Read the environment
+anywhere else and the lint should catch it.
 
 `cap-std` is a development dependency because the harness writes fixture
 manifests through an opened capability handle (`Dir::create_ambient_dir_all`

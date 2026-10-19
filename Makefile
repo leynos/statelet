@@ -185,8 +185,15 @@ topology-check: check-nextest ## Check the declared dependency topology
 check-topology: ## Check topology against the repository manifest, ignoring fixture overrides
 	+$(MAKE) topology-check TOPOLOGY_MANIFEST_PATH="$(CURDIR)/Cargo.toml"
 
+# The boundary cases nest a `make topology-check`, whose recipe composes
+# `RUSTFLAGS` itself. The caller's value is therefore copied beside the composed
+# one for the harness to hand Make, because nextest passes this composed value to
+# the test process and composing it a second time duplicates every flag. The copy
+# is deliberately named `..._FLAGS` rather than `..._RUSTFLAGS`: the build
+# standard's contract reads the first `RUSTFLAGS="` on an evaluated line.
 test-topology-command: check-nextest ## Run the topology command boundary cases sequentially
 	env -u STATELET_TOPOLOGY_MANIFEST_PATH \
+	STATELET_TOPOLOGY_CALLER_FLAGS="$${RUSTFLAGS-}" \
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
 		$(CARGO) nextest run --test topology_command --run-ignored only \
 		--no-tests fail --test-threads=1

@@ -350,6 +350,33 @@ before a future change admits a macro package.
     was refused by Cargo for a missing member manifest before the policy ran;
     the fixture now writes the member. Evidence:
     `/tmp/test-topology-command-repair-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-19) Nine formal-review findings on `ffb89c4` repaired as one
+    commit, recorded as D22: the `# Examples` section, the coverage-environment
+    claim, the complete additional-member fixture, the stale module reference,
+    the caller-flags copy with its contract clause and thirteenth mutation,
+    the `check_verdict` delegation, the two NumPy docstring sections, and the
+    `collections.abc` import. Focused evidence:
+    `/tmp/test-topology-check-cr2-statelet-1-2-1-topology-check-placeholder.out`
+    (51 passed),
+    `/tmp/pytest-workflow-contracts-cr2-statelet-1-2-1-topology-check-placeholder.out`
+    (430 passed, 5 subtests),
+    `/tmp/test-topology-command-cr1-statelet-1-2-1-topology-check-placeholder.out`
+    (3 passed, no skips),
+    `/tmp/lint-clippy-cr1b-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/check-fmt-cr1-statelet-1-2-1-topology-check-placeholder.out`, and
+    `/tmp/markdownlint-cr1-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-19) `/verify` falsified one justification written for finding
+    5 and both statements were corrected before commit. Three probes agreed
+    that duplicated `RUSTFLAGS` are tolerated: `cargo check --lib` with every
+    repository flag written twice exited zero; the nested `make topology-check`
+    with the composed value exited zero; and the exact pre-repair boundary run
+    with `STATELET_TOPOLOGY_CALLER_FLAGS` absent passed 3/3. The harness
+    docstring and the `_findings_command_line` docstring now say the flags would
+    be repeated and composition would stop being idempotent, rather than that
+    the nested case would fail. The Surprises entry and D22 carry the same
+    correction. Evidence:
+    `/tmp/verify-prerepair-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/verify-nested-composed.out`, and `/tmp/verify-nested-caller.out`.
 
 ## Surprises & discoveries
 
@@ -477,6 +504,32 @@ their documents depend on the same guard. Reading only the exit status would
 credit all three to the same control. The first attempt to run this control
 also hid the answer: piping nextest through `tail` made `$?` report the pipe's
 last command, so a failing run looked green until `pipefail` was set.
+
+The shell semantics of an `env` command line decide where a copied variable may
+live. If the line were an assignment prefix to a command, every right-hand side
+would expand before any assignment took effect, so a copy of `RUSTFLAGS` would
+read the composed value. Here `env` *is* the command word, so each `NAME=value`
+operand is an argument to `env` and all of them expand against the unmodified
+recipe environment. A local probe confirmed both behaviours: the `env`-first
+spelling leaves the copy reading the caller's value, while the
+assignment-prefix spelling leaves it reading the composed one. The distinction
+is worth recording because the second spelling looks equivalent and would
+silently weaken the repair.
+
+The reason to avoid that duplication turned out to be weaker than the first
+draft claimed. `cargo check --lib` with every repository flag written twice
+exits zero, so the toolchain tolerates a repeated `-Zthreads=8` and a repeated
+`-C link-arg`. The full pre-repair condition confirmed it: the boundary suite
+run with `STATELET_TOPOLOGY_CALLER_FLAGS` absent and the composed value in
+`RUSTFLAGS` passed all three cases. Dropping the copy therefore does not break
+the build, and the two docstrings that said the nested case "would fail on a
+duplicate `-Zthreads=8`" were corrected to state what is actually true — the
+flags are repeated, and composition stops being idempotent. The copy is still
+kept, both because the reviewer asked for a caller-first fallback and because a
+future caller flag that is not duplication-safe would change meaning in the
+nested build. The general lesson: a consequence asserted to justify a repair is
+itself a claim, and a cheap probe can falsify it; measure before writing "would
+fail" into a comment.
 
 `CURDIR` is a command-line-overridable GNU Make variable, and an override of it
 propagates into the recursive `$(MAKE)` invocation. That is what makes the V5
@@ -772,6 +825,50 @@ described as an exact-message assertion. The assessor also noted that it did
 not build, test, or execute repository code, so the local gate results and the
 Cargo metadata probe are supplied evidence rather than independently reproduced
 results.
+
+D22 (2026-10-19): the formal CodeRabbit review of `ffb89c4` submitted
+`CHANGES_REQUESTED` with nine inline findings, and all nine are repaired in one
+commit because each is a local correctness or documentation repair to code this
+plan already owns. (1) `evaluate_metadata` gained an `# Examples` section, the
+first in `tests/`, showing an accepted single-package document and the
+`WorkspaceMemberCount` refusal of the same document with a second member and
+its package record. (2) The developer guide no longer claims the command step
+must not inherit `RUSTFLAGS` generally; it now says the step avoids the
+coverage action's *step-scoped* environment, and that the recipe still composes
+inherited flags. (3) The additional-member BDD fixture is built from complete
+metadata: the package record is appended before the member identifier, so the
+refusal is the count check rather than a dangling member. (4) A stale
+module-doc reference in `tests/topology_command/fixtures.rs` names
+`manifests::manifest_for`, where the helper actually lives. (5) Argument: the
+reviewer observed that the nested `make topology-check` composes `RUSTFLAGS` a
+second time. The repair copies the caller's value into
+`STATELET_TOPOLOGY_CALLER_FLAGS` on the `env` line and prefers it in
+`make_command`, with a workflow-contract clause and a thirteenth mutation
+proving the copy cannot be dropped silently. The variable deliberately does not
+end in `RUSTFLAGS`: the build standard's contract reads the *first*
+`RUSTFLAGS="` on an evaluated line, and a name ending in the same token would
+make it read the copy instead of the composed assignment. A shell probe settled
+the ordering question the reviewer's suggested placement raised: `env` is the
+command word, so every assignment operand expands against the unmodified recipe
+environment and the copy still reads the caller's value even beside the
+composed assignment. The first draft justified the repair by saying the nested
+case "would fail on a duplicate `-Zthreads=8`"; a probe of the actual
+pre-repair condition falsified that, since the suite passed 3/3 with the copy
+absent, and the docstrings and Surprises entry now say only that the flags
+would be repeated. The `var_os` read is a scoped
+`#[expect(clippy::disallowed_methods)]` with a reason, matching the two
+existing waivers, and the guide's waiver paragraph now names both modules. (6)
+`check_observable_contract` delegates to `check_verdict` instead of
+reimplementing it. (7)-(8) NumPy `Parameters` and `Returns` sections were added
+to the Python helpers the reviewer named; the repository had no NumPy
+precedent, so this follows the reviewer's convention rather than an existing
+house style. (9) `Callable` now imports from `collections.abc`. Verification:
+430 workflow-contract cases plus five subtests (up from 429 and one new
+mutation), 51 focused topology cases, `make test-topology-command` with three
+passes and no skips, `make lint-clippy`, `make check-fmt`, and
+`make markdownlint` all green. The first Clippy run after the repair caught one
+`shadow_reuse`: the match arm binding reused the scrutinee's `rustflags` name,
+which this repository denies.
 
 ## Outcomes & retrospective
 

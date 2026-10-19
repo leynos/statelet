@@ -18,7 +18,7 @@ use rstest_bdd_macros::{ScenarioState, given, scenario, then, when};
 use serde_json::Value;
 
 use super::{
-    fixtures::{accepted_metadata, accepted_with, parse},
+    fixtures::{accepted_extended, accepted_metadata, accepted_with, parse},
     policy::{TopologyViolation, evaluate_metadata},
 };
 
@@ -94,18 +94,38 @@ fn renamed_macro_edge(world: &TopologyWorld) -> Result<(), String> {
 }
 
 /// The accepted document plus a second member and its package record.
+///
+/// The package record is appended before the member list is extended, so the
+/// document is complete metadata rather than a member Cargo could not have
+/// produced. A member with no package record would still be refused, but only
+/// because the count check runs first, and the scenario exists to show that a
+/// well-formed two-member workspace is refused.
 #[given("metadata with an additional workspace member")]
 fn additional_member(world: &TopologyWorld) -> Result<(), String> {
-    store_document(
-        world,
-        accepted_with(
-            "/workspace_members",
-            serde_json::json!([
-                "path+file:///repo#statelet@0.1.0",
-                "path+file:///repo#statelet-extra@0.1.0"
-            ]),
-        ),
+    let extended = accepted_extended(
+        "/packages",
+        serde_json::json!({
+            "name": "statelet-extra",
+            "version": "0.1.0",
+            "id": "path+file:///repo/extra#statelet-extra@0.1.0",
+            "manifest_path": "/repo/extra/Cargo.toml",
+            "targets": [
+                {"name": "statelet_extra", "kind": ["lib"], "crate_types": ["lib"]}
+            ],
+            "dependencies": [],
+        }),
     )
+    .and_then(|mut parsed| {
+        parsed
+            .pointer_mut("/workspace_members")
+            .and_then(Value::as_array_mut)
+            .ok_or_else(|| "the accepted fixture has no member list".to_owned())?
+            .push(Value::String(
+                "path+file:///repo/extra#statelet-extra@0.1.0".to_owned(),
+            ));
+        Ok(parsed)
+    });
+    store_document(world, extended)
 }
 
 /// Runs the policy over the stored document and keeps its verdict.

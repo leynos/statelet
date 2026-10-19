@@ -139,6 +139,49 @@ pub(crate) enum TopologyViolation {
 ///
 /// Returns the first [`TopologyViolation`] found. The caller prints it and exits
 /// non-zero; nothing here prints or decides a process status.
+///
+/// # Examples
+///
+/// A metadata document for the single runtime package is accepted, while the
+/// same document declaring a second member and its package record is refused:
+///
+/// ```rust,no_run
+/// let runtime = serde_json::json!({
+///     "name": "statelet",
+///     "id": "path+file:///repo#statelet@0.1.0",
+///     "targets": [{"name": "statelet", "kind": ["lib"], "crate_types": ["lib"]}],
+///     "dependencies": [],
+/// });
+/// let accepted = serde_json::json!({
+///     "packages": [runtime],
+///     "workspace_members": ["path+file:///repo#statelet@0.1.0"],
+///     "version": 1,
+/// });
+/// assert!(evaluate_metadata(&accepted).is_ok());
+///
+/// let expanded = serde_json::json!({
+///     "packages": [
+///         accepted["packages"][0].clone(),
+///         {
+///             "name": "statelet-extra",
+///             "id": "path+file:///repo/extra#statelet-extra@0.1.0",
+///             "targets": [
+///                 {"name": "statelet_extra", "kind": ["lib"], "crate_types": ["lib"]}
+///             ],
+///             "dependencies": [],
+///         },
+///     ],
+///     "workspace_members": [
+///         "path+file:///repo#statelet@0.1.0",
+///         "path+file:///repo/extra#statelet-extra@0.1.0",
+///     ],
+///     "version": 1,
+/// });
+/// assert_eq!(
+///     evaluate_metadata(&expanded),
+///     Err(TopologyViolation::WorkspaceMemberCount { found: 2 })
+/// );
+/// ```
 pub(crate) fn evaluate_metadata(document: &Value) -> Result<(), TopologyViolation> {
     let root = document.as_object().ok_or(TopologyViolation::NotAnObject)?;
     require_format_version(root)?;

@@ -167,16 +167,50 @@ pub(super) fn write_file(directory: &Dir, relative: &Path, contents: &str) -> Re
 
 /// Starts one Make invocation of `target`, ready for its own arguments.
 ///
-/// Both entrypoints run Make from the repository root and forward the Cargo
-/// executable this test binary was started with. Sharing that setup keeps the
-/// two invocations differing only in the arguments that give them their
-/// separate meanings.
+/// Both entrypoints run Make from the repository root, forward the Cargo
+/// executable this test binary was started with, and hand Make the caller's
+/// original `RUSTFLAGS`.
+///
+/// The restore matters because this binary is started by `cargo nextest run`,
+/// which passes the composed `RUSTFLAGS` — the caller's value plus the
+/// repository flags — to the test process. A fixture case then runs
+/// `make topology-check`, whose recipe composes `RUSTFLAGS` again, so passing
+/// the inherited value would make every repository flag appear twice. This
+/// toolchain tolerates that duplication: a nested run with the composed value
+/// still compiles, which was measured rather than assumed. The copy is kept
+/// anyway so composition stays idempotent — a caller flag that is not
+/// duplication-safe would otherwise change meaning in the nested build.
+/// `test-topology-command` therefore copies the caller's value beside the
+/// composed one, and that copy is preferred here.
+///
+/// `RUSTFLAGS` is set from whichever value is found, or removed from the child
+/// when neither is present, rather than left to inherit. `None` covers a direct
+/// `cargo test` invocation, where inheriting the composed value would reintroduce
+/// the duplication. The copy ends in `FLAGS`, not `RUSTFLAGS`, because the build
+/// standard's contract reads the first `RUSTFLAGS="` on an evaluated recipe line.
+///
+/// The environment read is a scoped, reason-bearing exemption from the
+/// repository's `disallowed_methods` policy: the caller's flags can only arrive
+/// through the environment of this process, exactly as in the acquisition
+/// adapter, and no caller can inject them into a test binary.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "This module is the command boundary: the caller's RUSTFLAGS and the composed copy \
+              reach the test binary only through this process's environment. The developer guide \
+              records the scope."
+)]
 fn make_command(target: &str) -> Command {
+    let rustflags = std::env::var_os("STATELET_TOPOLOGY_CALLER_FLAGS")
+        .or_else(|| std::env::var_os("RUSTFLAGS"));
     let mut command = Command::new("make");
     command
         .arg(target)
         .current_dir(repository_root())
         .env("CARGO", OsString::from(CARGO));
+    match rustflags {
+        Some(inherited) => command.env("RUSTFLAGS", inherited),
+        None => command.env_remove("RUSTFLAGS"),
+    };
     command
 }
 
@@ -257,45 +291,17 @@ pub(super) fn check_verdict(
 }
 
 /// Checks status and message of one already-materialized fixture.
+///
+/// The verdict is [`check_verdict`] over the fixture's own expectations; this
+/// helper only supplies the process and the words it is judged against.
 pub(super) fn check_observable_contract(fixture: &Fixture, manifest: &Path) -> Result<(), String> {
     let output = invoke_target(manifest)?;
-    let combined = format!(
-        "{}{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let status = output.status;
-    if status.success() != fixture.should_succeed {
-        return Err(format!(
-            "{} exited {status}: {combined}",
-            fixture.name.as_str()
-        ));
-    }
-    if fixture.should_succeed {
-        return if combined.contains("Topology check passed") {
-            Ok(())
-        } else {
-            Err(format!(
-                "{} printed no success message: {combined}",
-                fixture.name.as_str()
-            ))
-        };
-    }
-    if combined.contains("Topology check passed") {
-        return Err(format!(
-            "{} printed success text: {combined}",
-            fixture.name.as_str()
-        ));
-    }
-    if combined.contains(fixture.expected_text) {
-        Ok(())
-    } else {
-        Err(format!(
-            "{} did not mention {:?}: {combined}",
-            fixture.name.as_str(),
-            fixture.expected_text
-        ))
-    }
+    check_verdict(
+        fixture.name.as_str(),
+        &output,
+        fixture.should_succeed,
+        fixture.expected_text,
+    )
 }
 
 /// Checks one fixture's observable contract, then removes its root.

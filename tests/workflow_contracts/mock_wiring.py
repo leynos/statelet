@@ -22,9 +22,18 @@ ROOT = Path(__file__).resolve().parents[2]
 def make_n(*arguments: str, overrides: tuple[str, ...] = ()) -> str:
     """Return the recipes ``make -n`` would run, without directory chatter.
 
-    ``arguments`` are targets or ``name=value`` assignments passed in order;
-    ``overrides`` are appended after them, which lets a caller show that a
-    command-line assignment cannot override the recipe's own binding.
+    Parameters
+    ----------
+    *arguments : str
+        Targets or ``name=value`` assignments, passed to ``make`` in order.
+    overrides : tuple[str, ...], optional
+        Assignments appended after ``arguments``, which lets a caller show that
+        a command-line assignment cannot override the recipe's own binding.
+
+    Returns
+    -------
+    str
+        The recipes Make would run, as printed by ``make -n``.
 
     >>> "make" in make_n("help")
     True
@@ -45,6 +54,16 @@ def recipe_lines(recipe: str) -> list[str]:
     Make prints a continued recipe across several lines. Comparing line
     positions or searching for a flag would miss a command split at a
     backslash, so the continuation is folded first.
+
+    Parameters
+    ----------
+    recipe : str
+        Recipe output as ``make -n`` printed it, possibly continued.
+
+    Returns
+    -------
+    list[str]
+        Non-empty recipe lines, stripped and in command order.
     """
     return [
         line.strip()
