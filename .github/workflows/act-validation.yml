@@ -22,14 +22,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Rust
-        uses: leynos/shared-actions/.github/actions/setup-rust@b804b69fa7f978cf9091b9d9bd5481d8ce58c2ea
+        uses: leynos/shared-actions/.github/actions/setup-rust@5ac271baf94615e9a876ce1b77a4b266dd81f201
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
       - name: Install repository Rust components
         run: make install-rust-toolchain
       - name: Install mdtablefix
-        uses: leynos/shared-actions/.github/actions/install-mdtablefix@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        uses: leynos/shared-actions/.github/actions/install-mdtablefix@5ac271baf94615e9a876ce1b77a4b266dd81f201
         with:
           version: "0.6.1"
       - name: Setup uv
