@@ -1,11 +1,13 @@
 # Add the single-crate topology-check placeholder
 
 Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
-published on PR #137, whose head is `abc3e57`. That head carries the CodeScene
-repair, both assessment rounds, and the nine formal-review repairs; all nine
-review threads are resolved and every hosted check on it is green. Delivery
-remains with `pr-babysitting`, and the branch is currently `CONFLICTING` with
-`main` on `Cargo.lock`.
+published on PR #137, whose head is `abc426f`, a documentation-only commit
+recording this plan's final state. The implementation head `abc3e57` carries
+the CodeScene repair, both assessment rounds, and the nine formal-review
+repairs; all nine review threads are resolved and every hosted check on it is
+green. Delivery remains with `pr-babysitting`, and the branch is currently
+`CONFLICTING` with `main` on `Cargo.lock`, which suppresses its `pull_request`
+workflows.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -389,6 +391,18 @@ before a future change admits a macro package.
     bumps landed after this branch's base; `pr-babysitting` owns the rebase.
     The gate logs cited above have since passed the host's ten-day `/tmp`
     expiry; the SHAs are the durable record.
+  - [x] (2026-10-25) `abc426f` published: this plan's status, Progress,
+    Surprises, and Outcomes sections brought up to the published state, and
+    the negative-control count corrected to thirteen in D17, in Outcomes, and
+    in `docs/repository-layout.md`. Documentation-only, so the applicable
+    gates are the Markdown ones: `make fmt`, `make check-fmt`, and
+    `make markdownlint` all green (40 files, 0 issues). Hosted on `abc426f`:
+    CodeScene Code Health Review, Gecko Security Review, and the CodeRabbit
+    status all `success`, with `Sourcery review` and `automerge` `skipped`.
+    `CI` and `Act Validation` did not run, and cannot while the branch is
+    `CONFLICTING`: GitHub documents that `pull_request` workflows do not run
+    on a pull request with a merge conflict. The rebase is
+    `pr-babysitting`'s.
 
 ## Surprises & discoveries
 
@@ -569,6 +583,19 @@ window, not a record, and should name the SHA and the command rather than the
 file. The `/tmp` convention in `AGENTS.md` remains right for keeping bulky gate
 output out of the planning context; it is the *citation* of that output as
 lasting proof that does not survive.
+
+A merge conflict silently suppresses the checks that would judge a push. GitHub
+documents that workflows on the `pull_request` event do not run while a pull
+request has a merge conflict, while `pull_request_target` workflows still do.
+The push of `abc426f` produced no `CI` or `Act Validation` run at all — only the
+`pull_request_target` `dependabot-automerge` job, plus the checks that report
+from outside Actions. A missing check is therefore not a queued or slow check
+here, and waiting for it would wait forever. The absence was diagnosed by
+querying the runs API for everything created since the push and finding one
+row, then confirming the rule in GitHub's own event documentation rather than
+inferring it from the silence. The consequence for this plan is that a
+conflicted branch cannot be validated by hosted CI until it is rebased, so the
+rebase is a prerequisite for evidence, not merely for mergeability.
 
 ## Decision log
 
@@ -943,16 +970,26 @@ pre-repair boundary suite passed 3/3 with the caller-flags copy absent. The
 repair stands on idempotence rather than on a failure it does not cause, and
 the docstrings, the Surprises entry, and D22 now say so.
 
-The final head is `abc3e57`. Local gates on it: 51 focused topology cases, 430
-workflow-contract cases with five subtests, `make test-topology-command` with
-three passes and no skips, `make lint-clippy`, `make check-fmt`, and
-`make markdownlint` all green. Hosted on the same SHA: `build-test`,
-`act-validation`, CodeScene Code Health Review, Gecko Security Review, and the
-CodeRabbit status all `success`, with `Sourcery review` and `automerge`
-`skipped` by configuration. All nine review threads — eight from
+The implementation head is `abc3e57`. Local gates on it: 51 focused topology
+cases, 430 workflow-contract cases with five subtests,
+`make test-topology-command` with three passes and no skips, `make lint-clippy`,
+`make check-fmt`, and `make markdownlint` all green. Hosted on the same SHA:
+`build-test`, `act-validation`, CodeScene Code Health Review, Gecko Security
+Review, and the CodeRabbit status all `success`, with `Sourcery review` and
+`automerge` `skipped` by configuration. All nine review threads — eight from
 `coderabbitai`, one from `chatgpt-codex-connector` — are `isResolved: true`.
 The aggregate `reviewDecision` still reads `CHANGES_REQUESTED` because it
 summarizes the superseded submission on `ffb89c4`; no thread remains open.
+
+The published head is `abc426f`, one documentation-only commit on top of
+`abc3e57`. It brings this plan's status, Progress, Surprises, and Outcomes up
+to the published state and corrects the negative-control count to thirteen in
+D17, in Outcomes, and in `docs/repository-layout.md`. The Markdown gates are
+green on it; `CI` and `Act Validation` did not run, because a conflicted pull
+request suppresses `pull_request` workflows. That is the one fact this
+retrospective would most want a successor to carry: on this repository, a
+conflicted branch has no hosted CI to wait for, so the rebase is the
+prerequisite for evidence rather than a step after it.
 
 Two delivery facts belong to `pr-babysitting` rather than to this plan's
 implementation record. The PR is `CONFLICTING` with `main` on `Cargo.lock` only:
@@ -962,7 +999,9 @@ contain, while `Cargo.toml` is untouched by those bumps. And the `/tmp` gate
 logs this plan cites are gone: the host's `tmpfiles.d` rule expires `/tmp`
 entries after ten days, so a 2026-10-19 log is past its window on 2026-10-25.
 The commit SHA each entry names is the durable record; the path was only ever a
-convenience.
+convenience. The conflict also suppresses hosted `pull_request` workflows
+entirely, so `abc426f` has no `CI` run to await and the rebase is what will
+produce one.
 
 ## Context and orientation
 
