@@ -1,13 +1,13 @@
 # Add the single-crate topology-check placeholder
 
 Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
-published on PR #137, whose head is `abc426f`, a documentation-only commit
-recording this plan's final state. The implementation head `abc3e57` carries
-the CodeScene repair, both assessment rounds, and the nine formal-review
-repairs; all nine review threads are resolved and every hosted check on it is
-green. Delivery remains with `pr-babysitting`, and the branch is currently
-`CONFLICTING` with `main` on `Cargo.lock`, which suppresses its `pull_request`
-workflows.
+published on PR #137. The implementation head is `abc3e57`; it carries the
+CodeScene repair, both assessment rounds, and the nine formal-review repairs,
+all nine review threads on it are resolved, and every hosted check on it is
+green. Documentation-only commits follow it, so the branch tip is deliberately
+not named here. Delivery remains with `pr-babysitting`, and the branch is
+currently `CONFLICTING` with `main` on `Cargo.lock`, which suppresses its
+`pull_request` workflows.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -391,18 +391,19 @@ before a future change admits a macro package.
     bumps landed after this branch's base; `pr-babysitting` owns the rebase.
     The gate logs cited above have since passed the host's ten-day `/tmp`
     expiry; the SHAs are the durable record.
-  - [x] (2026-10-25) `abc426f` published: this plan's status, Progress,
-    Surprises, and Outcomes sections brought up to the published state, and
-    the negative-control count corrected to thirteen in D17, in Outcomes, and
-    in `docs/repository-layout.md`. Documentation-only, so the applicable
-    gates are the Markdown ones: `make fmt`, `make check-fmt`, and
-    `make markdownlint` all green (40 files, 0 issues). Hosted on `abc426f`:
-    CodeScene Code Health Review, Gecko Security Review, and the CodeRabbit
-    status all `success`, with `Sourcery review` and `automerge` `skipped`.
-    `CI` and `Act Validation` did not run, and cannot while the branch is
-    `CONFLICTING`: GitHub documents that `pull_request` workflows do not run
-    on a pull request with a merge conflict. The rebase is
-    `pr-babysitting`'s.
+  - [x] (2026-10-25) Two documentation-only commits published on top of
+    `abc3e57`: `abc426f` brings this plan's status, Progress, Surprises, and
+    Outcomes sections up to the published state and corrects the
+    negative-control count to thirteen in D17, in Outcomes, and in
+    `docs/repository-layout.md`; `614e97c` records the merge-conflict CI
+    suppression. Documentation-only, so the applicable gates are the Markdown
+    ones: `make fmt`, `make check-fmt`, and `make markdownlint` all green
+    (40 files, 0 issues). Hosted on `abc426f`: CodeScene Code Health Review,
+    Gecko Security Review, and the CodeRabbit status all `success`, with
+    `Sourcery review` and `automerge` `skipped`. `CI` and `Act Validation` did
+    not run, and cannot while the branch is `CONFLICTING`: GitHub documents
+    that `pull_request` workflows do not run on a pull request with a merge
+    conflict. The rebase is `pr-babysitting`'s.
 
 ## Surprises & discoveries
 
@@ -981,15 +982,16 @@ Review, and the CodeRabbit status all `success`, with `Sourcery review` and
 The aggregate `reviewDecision` still reads `CHANGES_REQUESTED` because it
 summarizes the superseded submission on `ffb89c4`; no thread remains open.
 
-The published head is `abc426f`, one documentation-only commit on top of
-`abc3e57`. It brings this plan's status, Progress, Surprises, and Outcomes up
-to the published state and corrects the negative-control count to thirteen in
-D17, in Outcomes, and in `docs/repository-layout.md`. The Markdown gates are
-green on it; `CI` and `Act Validation` did not run, because a conflicted pull
-request suppresses `pull_request` workflows. That is the one fact this
-retrospective would most want a successor to carry: on this repository, a
-conflicted branch has no hosted CI to wait for, so the rebase is the
-prerequisite for evidence rather than a step after it.
+Documentation-only commits follow `abc3e57`. The first brings this plan's
+status, Progress, Surprises, and Outcomes up to the published state and
+corrects the negative-control count to thirteen in D17, in Outcomes, and in
+`docs/repository-layout.md`; the second records the merge-conflict CI
+suppression described below. The Markdown gates are green on them; `CI` and
+`Act Validation` did not run, because a conflicted pull request suppresses
+`pull_request` workflows. That is the one fact this retrospective would most
+want a successor to carry: on this repository, a conflicted branch has no
+hosted CI to wait for, so the rebase is the prerequisite for evidence rather
+than a step after it.
 
 Two delivery facts belong to `pr-babysitting` rather than to this plan's
 implementation record. The PR is `CONFLICTING` with `main` on `Cargo.lock` only:
