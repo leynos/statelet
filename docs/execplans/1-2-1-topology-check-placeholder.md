@@ -1,8 +1,11 @@
 # Add the single-crate topology-check placeholder
 
 Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
-published on PR #137. The assessment repairs and the final gate set are
-recorded under Progress; delivery remains with `pr-babysitting`.
+published on PR #137, whose head is `abc3e57`. That head carries the CodeScene
+repair, both assessment rounds, and the nine formal-review repairs; all nine
+review threads are resolved and every hosted check on it is green. Delivery
+remains with `pr-babysitting`, and the branch is currently `CONFLICTING` with
+`main` on `Cargo.lock`.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -377,6 +380,15 @@ before a future change admits a macro package.
     correction. Evidence:
     `/tmp/verify-prerepair-statelet-1-2-1-topology-check-placeholder.out`,
     `/tmp/verify-nested-composed.out`, and `/tmp/verify-nested-caller.out`.
+  - [x] (2026-10-19) Committed as `abc3e57` and published. All nine
+    formal-review threads are resolved, and every hosted check on that SHA is
+    green: `build-test`, `act-validation`, CodeScene Code Health Review, Gecko
+    Security Review, and the CodeRabbit status all `success`, with
+    `Sourcery review` and `automerge` `skipped` by configuration. The branch
+    is `CONFLICTING` with `main` on `Cargo.lock` alone, from three dependency
+    bumps landed after this branch's base; `pr-babysitting` owns the rebase.
+    The gate logs cited above have since passed the host's ten-day `/tmp`
+    expiry; the SHAs are the durable record.
 
 ## Surprises & discoveries
 
@@ -548,6 +560,15 @@ and the guard's real name under `only`, rather than the invalid `ignored` that
 the first draft used. nextest's zero-selection exit is 4 with
 `error: no tests to run`, so the control asserts a real failure rather than a
 cosmetic flag.
+
+Every gate log this plan cites under `/tmp` has since been removed by the host's
+`tmpfiles.d` rule, which expires `/tmp` entries after ten days. The citations
+were accurate when written and are not evidence now; the commit SHA beside each
+one is. A plan that treats a scratch path as durable evidence is relying on a
+window, not a record, and should name the SHA and the command rather than the
+file. The `/tmp` convention in `AGENTS.md` remains right for keeping bulky gate
+output out of the planning context; it is the *citation* of that output as
+lasting proof that does not survive.
 
 ## Decision log
 
@@ -727,7 +748,8 @@ which also brings `build_standard_test.py` back under the 400-line file limit
 (393 lines). The extended topology contract is split the same way:
 `topology_wiring_contract.py` evaluates evidence and holds the finding
 functions, while `topology_wiring_test.py` holds the live fixture, the gold
-case, and the twelve mutations. Both are well under the limit.
+case, and the twelve mutations the contract then held. Both are well under the
+limit. D22 adds a thirteenth.
 
 D18 (2026-10-18): the CodeScene repair is a separate commit from the M2 feature
 commit, and it changes test-support structure only. The hosted check scored
@@ -886,8 +908,9 @@ M1 delivered the private checker and its local command, committed as `5140a53`.
 M2 made the check routine: `make all` runs the pinned-input form, `make test`
 ends with the command-boundary suite, CI runs both in the same relative order,
 and `tests/workflow_contracts/topology_wiring_test.py` holds the wiring with
-twelve negative controls. The check remains a closed single-package policy and
-does not resolve issue 112 or define a future multi-crate allow-list.
+twelve negative controls, one per clause; D22 adds a thirteenth for the
+caller-flags copy. The check remains a closed single-package policy and does
+not resolve issue 112 or define a future multi-crate allow-list.
 
 The one unresolved defect is inherited, not caused by this work: `make test`'s
 workflow-contract phase fails two cases under the host's `en_US.UTF-8`
@@ -907,6 +930,39 @@ package lookup, the missing V1 and acquisition-error partitions, the executable
 V5 controls, the acquisition diagnostics, the isolated fixture roots, and these
 completion records. The V2 negative control was re-executed against the
 rewritten properties and recorded under Progress.
+
+Two further rounds followed. The follow-up assessment on `c687aad` discharged
+three of the six and kept three open, each a verification gap rather than a
+policy defect; D21 repairs them, and the assessment on `8e3627e` then confirmed
+all six discharged. The formal CodeRabbit review of `ffb89c4` submitted
+`CHANGES_REQUESTED` with nine inline findings, repaired in one commit as D22.
+That round also produced the one correction this plan had to make to its own
+reasoning: the first draft of finding 5's repair claimed the nested build
+"would fail on a duplicate `-Zthreads=8`", and three probes falsified it — the
+pre-repair boundary suite passed 3/3 with the caller-flags copy absent. The
+repair stands on idempotence rather than on a failure it does not cause, and
+the docstrings, the Surprises entry, and D22 now say so.
+
+The final head is `abc3e57`. Local gates on it: 51 focused topology cases, 430
+workflow-contract cases with five subtests, `make test-topology-command` with
+three passes and no skips, `make lint-clippy`, `make check-fmt`, and
+`make markdownlint` all green. Hosted on the same SHA: `build-test`,
+`act-validation`, CodeScene Code Health Review, Gecko Security Review, and the
+CodeRabbit status all `success`, with `Sourcery review` and `automerge`
+`skipped` by configuration. All nine review threads — eight from
+`coderabbitai`, one from `chatgpt-codex-connector` — are `isResolved: true`.
+The aggregate `reviewDecision` still reads `CHANGES_REQUESTED` because it
+summarizes the superseded submission on `ffb89c4`; no thread remains open.
+
+Two delivery facts belong to `pr-babysitting` rather than to this plan's
+implementation record. The PR is `CONFLICTING` with `main` on `Cargo.lock` only:
+`main` has since taken three dependency bumps (`662870c`, `419cb15`,
+`781583c`) that this branch's single `Cargo.lock` change in `5140a53` does not
+contain, while `Cargo.toml` is untouched by those bumps. And the `/tmp` gate
+logs this plan cites are gone: the host's `tmpfiles.d` rule expires `/tmp`
+entries after ten days, so a 2026-10-19 log is past its window on 2026-10-25.
+The commit SHA each entry names is the durable record; the path was only ever a
+convenience.
 
 ## Context and orientation
 
