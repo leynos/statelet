@@ -34,7 +34,7 @@ pub(crate) const FORBIDDEN_MACROS: &str = "statelet-macros";
 /// `"lib"`. Treating only `"lib"` as a library would refuse a perfectly
 /// ordinary runtime manifest with a repair telling its author to restore the
 /// library they never removed.
-const LIBRARY_KINDS: [&str; 5] = ["lib", "rlib", "dylib", "cdylib", "staticlib"];
+pub(crate) const LIBRARY_KINDS: [&str; 5] = ["lib", "rlib", "dylib", "cdylib", "staticlib"];
 
 /// The pre-macro policy, printed before the guard runs.
 #[must_use]

@@ -1027,6 +1027,35 @@ workflow-contract cases with five subtests under `LC_ALL=C`, `make check-fmt`,
 and `make lint` (Clippy, whitaker, Pylint 10.00/10) are green; `make test` under
 `LC_ALL=C` is recorded in the commit that carries this entry.
 
+D25 (2026-10-25): `aa3e2a3`, the commit carrying D24, passed every local gate
+but failed the hosted CodeScene check with "1 new file with code health below
+10.00" and one "String Heavy Function Arguments" finding in
+`tests/topology_check/policy_cases.rs` at 9.69. That rule is not a named rule in
+`rules-catalogue.md`; it is threshold-driven, and no local CodeScene CLI is
+installed here, so the diagnostic was read from the hosted review body and the
+finding located by inspecting what that commit had added. The new code was the
+library-kind coverage: an `rstest` whose case arguments were `&[&str]` plus a
+helper `accept_target_kinds(kinds: &[&str])`, which is a function taking a
+string collection and doing little else. Both are gone. One parameterless
+`every_library_kind_is_accepted` now reads the policy's own `LIBRARY_KINDS` —
+widened to `pub(crate)` for that purpose — and iterates `json!` values, so
+there is no string-slice parameter to flag and no second place listing the
+kinds. Reading the constant rather than repeating it also strengthens the case:
+adding a kind to the policy without accepting it now fails here. The
+`cdylib`+`rlib` pairing is still judged, because a manifest may name more than
+one crate type. This is a decomposition of the offending function, not a
+threshold change or a suppression. The case count falls from 61 to 56 as a
+direct consequence: six `rstest` rows became one test, and the enumerated names
+still cover every rejection plus the accepted document, the accepted-kind
+sweep, the non-object refusal, and the extension case. Non-vacuity was
+re-established after the rewrite by restoring the `"lib"`-only test: the
+focused suite then ran one case and failed it (`MUTANT_EXIT=100`, 0 passed, 1
+failed), so the rewritten case still discriminates. The five kinds and the
+pairing are the same six inputs the six `rstest` rows supplied. Verification:
+56 focused topology cases, `make check-fmt`, `make lint` (Clippy, whitaker,
+Pylint 10.00/10), and `make test` under `LC_ALL=C` (206 nextest, 1 doctest, 432
+workflow-contract cases with five subtests, 3 command-boundary) are green.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established

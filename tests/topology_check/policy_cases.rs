@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 
 use super::{
     fixtures::{accepted_extended, accepted_metadata, accepted_removed, accepted_with, parse},
-    policy::{TopologyViolation, evaluate_metadata},
+    policy::{LIBRARY_KINDS, TopologyViolation, evaluate_metadata},
 };
 
 /// A case document and the verdict it must produce.
@@ -309,22 +309,28 @@ fn rejected_documents_report_their_violation(
 /// section naming `rlib` yields `kind: ["rlib"]` and never mentions `"lib"`.
 /// Judging only `"lib"` would refuse an ordinary runtime manifest and tell its
 /// author to restore the library they never removed.
-#[rstest]
-#[case::plain(&["lib"])]
-#[case::rlib(&["rlib"])]
-#[case::dylib(&["dylib"])]
-#[case::cdylib(&["cdylib"])]
-#[case::staticlib(&["staticlib"])]
-#[case::cdylib_and_rlib(&["cdylib", "rlib"])]
-fn every_library_kind_is_accepted(#[case] kinds: &[&str]) -> Result<(), String> {
-    let targets = json!([{
-        "name": "statelet",
-        "kind": kinds,
-        "crate_types": kinds,
-    }]);
-    let document = accepted_with("/packages/0/targets", targets)?;
-    evaluate_metadata(&document)
-        .map_err(|violation| format!("the library kind {kinds:?} was refused: {violation}"))
+///
+/// The kinds are read from [`LIBRARY_KINDS`] rather than repeated here, so
+/// adding one to the policy without accepting it fails this case. The
+/// `cdylib` + `rlib` pairing is judged separately: a manifest may name more
+/// than one crate type, and the rule must accept the list as a whole.
+#[test]
+fn every_library_kind_is_accepted() -> Result<(), String> {
+    let single_kinds = LIBRARY_KINDS.map(|kind| json!([kind]));
+    let combinations = single_kinds
+        .into_iter()
+        .chain(std::iter::once(json!(["cdylib", "rlib"])));
+    for kinds in combinations {
+        let targets = json!([{
+            "name": "statelet",
+            "kind": kinds,
+            "crate_types": kinds,
+        }]);
+        let document = accepted_with("/packages/0/targets", targets)?;
+        evaluate_metadata(&document)
+            .map_err(|violation| format!("the library kinds {kinds} were refused: {violation}"))?;
+    }
+    Ok(())
 }
 
 /// A document that is not an object at all is named as such.
