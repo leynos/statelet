@@ -58,6 +58,7 @@ extend-ignore-re = [
     "\\{color\\}",
     "`(?:recognise|recognised|recognises|mis-spelling|mis-addressed|mis)`",
     "`color`",
+    "`materialised`",
     "`mold`",
     "`var\\.iamge_id` instead of `var\\.image_id`",
     "binary_dir / \\\"mold\\\"",

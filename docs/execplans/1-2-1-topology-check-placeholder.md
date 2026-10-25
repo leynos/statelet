@@ -496,6 +496,25 @@ before a future change admits a macro package.
     `/tmp/topology-probe2-statelet-1-2-1-topology-check-placeholder.out`; as
     the Surprises entry records, a scratch path is not durable evidence, so the
     command above is what a successor should re-run.
+  - [x] (2026-10-25 14:05Z) The review covering `1da5b25` completed with
+    CodeRabbit's pre-merge table reporting three errors and two warnings and no
+    inline findings, so the thread count is unchanged at 16. All five rows are
+    adjudicated as D27. Four restate D26, whose measurements the re-run above
+    reproduced, and are declined on their recorded grounds. The new Testing
+    (Unit And Behavioural) error is also declined, on a measurement rather than
+    a preference: `make topology-check` runs
+    `cargo nextest run --test topology_check` (`Makefile:176-183`) and
+    `behaviour.rs` is a non-ignored module of that target
+    (`tests/topology_check.rs:16`), so moving the BDD scenarios onto the real
+    Make boundary would start a nested compiling build inside the routine test
+    run that D6 forbids. The boundary is already covered by all nine fixtures
+    through the real target in
+    `every_fixture_produces_its_documented_verdict`, including the three
+    behaviours the feature file states. `mergeStateStatus` read
+    `CLEAN` with `mergeable: MERGEABLE` on this head, so `CHANGES_REQUESTED`
+    remains an aggregate over the superseded `fb1d00b` submission rather than a
+    merge blocker. Only this plan changed this round, so the Markdown gates are
+    the applicable set.
 
 ## Surprises & discoveries
 
@@ -717,6 +736,18 @@ rendered line. The record was wrong while every gate stayed green, and it was
 found only by re-running the target and reading stderr. When a plan quotes a
 program's output, the quotation should come from a run, and a quotation already
 written from source should be re-measured rather than trusted.
+
+A remedy can be coherent about the seam it dislikes and still be impossible
+where it lands. D27's new finding correctly observed that the BDD scenarios call
+`evaluate_metadata` directly, and its remedy — move them onto the real Make
+boundary — is the shape that coverage would take in a repository with no rule
+about nested builds. Here the remedy's destination is the obstacle: the
+scenario module is compiled into the same test target that
+`make topology-check` selects, so adopting the remedy would have the target's
+own test process start the target. Reading the resolution in isolation would
+have accepted it; reading the recipe it would land in declined it. A finding
+that names a seam is worth checking against the command that would carry the
+change, not only against the code the seam sits in.
 
 ## Decision log
 
@@ -1220,6 +1251,69 @@ Verification for this round: `make check-fmt`, `make lint`, `make typecheck`,
 and `make test` under `LC_ALL=C`, in that order; `make test-topology-command`
 for the changed command boundary.
 
+D27 (2026-10-25): CodeRabbit's pre-merge table covering the current head
+`1da5b25` reports three errors and two warnings, again with no inline threads.
+Four rows restate D26 findings and are re-adjudicated below on their present
+wording; one is new.
+
+The Testing (Unit And Behavioural) error is new and is declined. It observes,
+correctly, that `tests/topology_check/behaviour.rs:135` calls the private
+`evaluate_metadata` on an in-memory document, so the BDD scenarios exercise the
+same seam as the unit cases. Its remedy is that those scenarios instead "invoke
+the real `make topology-check` boundary against `materialised` Cargo manifests,
+and assert process status and diagnostic output", reusing the command harness.
+The finding's own spelling of that word is retained inside the quotation rather
+than corrected, because the quotation is evidence of what the review said. That
+remedy is refused for a measured reason, not a stylistic one: it would place a
+compiling Cargo build inside the routine test run. `make topology-check`
+executes `cargo nextest run --test topology_check` (`Makefile:176-183`), and
+the behavioural scenarios are a non-ignored module of that very target
+(`mod behaviour;` at `tests/topology_check.rs:16`). Adopting the remedy would
+make `cargo nextest run` start a nested Cargo build of the same target from
+inside its own test process, which is precisely what D6 forbids: end-to-end
+command tests belong in the dedicated sequential gate, and routine and coverage
+discovery must never start nested build commands. The separation of seams the
+finding objects to is therefore deliberate and is the constraint, not an
+oversight. Nor is boundary coverage missing: nine fixtures, including all three
+behaviours the feature file states, are already driven through the real
+`make topology-check` by `every_fixture_produces_its_documented_verdict`
+(`tests/topology_command.rs:121-139`), which asserts exit status and diagnostic
+text and is reported by `make test-topology-command` as 3 passed with 0
+skipped. The finding and its resolution also disagree with each other: it
+concedes that `topology_command.rs` "runs real `make topology-check` processes
+against Cargo fixtures and checks exit status and diagnostics", then asks for
+that same coverage to be duplicated. Duplicating it inside the instrumented run
+would add a second, differently-scoped path to the same boundary while making
+the routine gate depend on a compiler invocation. What the feature file adds is
+a readable statement of the rule over three named scenarios; it is deliberately
+not a second execution path, and its module doc says so.
+
+The Unit Architecture error is D26's finding reworded, and is declined for the
+reason D26 recorded. It now concedes that fallibility is visible and that
+`ROOT_SERIAL` exists, but still asks for an injected clock. The clock is not
+the uniqueness mechanism: the process-wide serial is, and it is what makes two
+calls in the same nanosecond differ, while the clock only separates successive
+runs where a fixed value would collide across process-id reuse. Injecting a
+deterministic clock would therefore make the root less unique, not more
+testable, and would add a seam whose only purpose is to be stubbed. That the
+finding cites `tests/topology_command.rs:61-73` as evidence of a hard-coded
+dependency does not change the argument: a caller cannot prove a source is
+uninjectable when the design does not need it injected.
+
+The Testing (Overall) error and the Testing (Compile-Time / Ui) and Domain
+Architecture warnings restate D26 with no new evidence, and their dispositions
+are unchanged: the macro-edge fixtures were measured to produce their
+documented refusals through the real target, `insta` would have to redact the
+run-specific fields the acquisition assertions rely on, and explicit metadata
+model types are a real design deliberately outside this task's closed-predicate
+scope. The transcription correction recorded above changed none of those
+measurements.
+
+Verification for this round: `make fmt`, `make check-fmt`, and
+`make markdownlint`, because the only changed file is this plan and no source,
+test, or build configuration was touched. No code gate is re-run for a
+documentation-only commit.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established
@@ -1334,6 +1428,16 @@ surfaced it was a second record of the same measurement disagreeing with the
 first. The lesson generalizes: a quotation in a plan is evidence and should be
 copied from a run, and when two records of one measurement disagree, neither
 may be assumed correct — the disagreement is the signal to re-measure.
+
+A fourth lesson came from the last review round. The plan declined four
+restated findings and one new one across two rounds, and the new one was the
+most plausible of the five: it described the code accurately and its remedy was
+the ordinary way to test a command. What defeated it was not its reading of
+`behaviour.rs` but the recipe it would have changed — the scenario module is
+compiled into the target that the target selects. Adjudicating a finding means
+following its remedy to the place it would land, because a remedy can be right
+about a seam and wrong about the command that owns it. A plan that only
+re-reads the cited lines will accept findings it should decline.
 
 ## Context and orientation
 
