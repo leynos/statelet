@@ -26,6 +26,16 @@ pub(crate) const RUNTIME_PACKAGE: &str = "statelet";
 /// The package forbidden before the macro baseline gate.
 pub(crate) const FORBIDDEN_MACROS: &str = "statelet-macros";
 
+/// The target kinds that make a package a Rust library.
+///
+/// `cargo metadata` reports the *crate types* a `[lib]` section names, not the
+/// generic `"lib"` kind, whenever `crate-type` is set explicitly: a
+/// `crate-type = ["rlib"]` section yields `kind: ["rlib"]` and never mentions
+/// `"lib"`. Treating only `"lib"` as a library would refuse a perfectly
+/// ordinary runtime manifest with a repair telling its author to restore the
+/// library they never removed.
+const LIBRARY_KINDS: [&str; 5] = ["lib", "rlib", "dylib", "cdylib", "staticlib"];
+
 /// The pre-macro policy, printed before the guard runs.
 #[must_use]
 pub(crate) const fn policy_message() -> &'static str {
@@ -302,7 +312,7 @@ fn require_library_target(package: &Value) -> Result<(), TopologyViolation> {
     if has_kind("proc-macro") {
         return Err(TopologyViolation::RuntimePackageIsProcMacro);
     }
-    if !has_kind("lib") {
+    if !LIBRARY_KINDS.iter().any(|kind| has_kind(kind)) {
         return Err(TopologyViolation::MissingLibraryTarget);
     }
     Ok(())

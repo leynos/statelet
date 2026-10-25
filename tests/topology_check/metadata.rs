@@ -170,7 +170,24 @@ fn required_variable(name: &'static str) -> Result<OsString, MetadataError> {
               module note and the developer guide's acquisition-owner entry."
 )]
 fn optional_variable(name: &'static str) -> Result<Option<String>, MetadataError> {
-    match std::env::var(name) {
+    classify_optional(name, std::env::var(name))
+}
+
+/// Decides what one optional-variable read means.
+///
+/// The caller supplies the `Result` the reader already produced, so every arm is
+/// reachable from a case without `set_var` and without process-global state.
+/// `VarError::NotUnicode` carries a public `OsString`, so a case builds that
+/// error directly instead of trying to coerce this binary's own environment.
+///
+/// Visible to the sibling case module: `optional_variable` is the only live
+/// caller, and a case that could not name this function could only test it by
+/// mutating the process environment, which the repository forbids.
+pub(crate) fn classify_optional(
+    name: &'static str,
+    read: Result<String, std::env::VarError>,
+) -> Result<Option<String>, MetadataError> {
+    match read {
         // An empty value is how Make spells "not set": `VAR="$(EMPTY)"` exports
         // the empty string rather than omitting the variable, and reading that
         // as an override would send Cargo an empty manifest path.

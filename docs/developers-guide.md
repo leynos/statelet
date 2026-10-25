@@ -295,13 +295,14 @@ and `check-topology` and parses CI with the strict workflow reader, so the live
 repository and each negative control are judged by the same finding functions.
 `tests/workflow_contracts/mock_wiring.py` owns the single `make -n` and
 recipe-folding boundary that this contract, the CV-005 contract, and the build
-standard share. Thirteen mutations — an unpinned `make all`; a missing,
+standard share. Fifteen mutations — an unpinned `make all`; a missing,
 conditional, or misordered CI check step; a missing command step; a missing or
 unguarded test gate; a missing caller-flags copy; an inherited coverage
-environment; an open policy selector; an early success line; and a parallel
-composite target — must each be reported. Deleting the CI step from the real
-workflow was observed to fail the contract before it was restored, so the
-negative control holds against the repository and not only in memory.
+environment at step, job, or workflow scope; an open policy selector; an early
+success line; and a parallel composite target — must each be reported. Deleting
+the CI step from the real workflow was observed to fail the contract before it
+was restored, so the negative control holds against the repository and not only
+in memory.
 
 The modules own distinct concerns and must stay that way:
 

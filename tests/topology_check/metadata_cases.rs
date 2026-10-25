@@ -11,15 +11,19 @@
 //! cannot resolve, a Cargo refusal by a manifest path that does not exist, and
 //! unreadable output by a successful process that prints its arguments rather
 //! than JSON. None of the three needs a writable directory, so there is no
-//! scratch tree to leak. The remaining variant cannot be raised from a test at
-//! all — see `an_unreadable_environment_value_names_the_variable_and_repair`
-//! for why its *rendered* message is asserted instead.
+//! scratch tree to leak.
+//!
+//! The non-Unicode variant is the exception: no fixture can put a non-UTF-8
+//! value into this binary's environment without `set_var`, which the repository
+//! forbids. `optional_variable` therefore hands its read to a pure classifier,
+//! and these cases drive the classifier directly — one per arm — so the branch
+//! that raises the variant is judged as well as the message it renders.
 
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 
 use camino::Utf8Path;
 
-use super::metadata::{MANIFEST_OVERRIDE_ENV, MetadataError, read_metadata};
+use super::metadata::{MANIFEST_OVERRIDE_ENV, MetadataError, classify_optional, read_metadata};
 
 /// The Cargo executable this test binary was started with.
 const CARGO: &str = env!("CARGO");
@@ -89,17 +93,13 @@ fn a_cargo_refusal_is_reported_before_stdout_is_parsed() {
 
 /// An unreadable environment value names its variable and its repair.
 ///
-/// The other variants are raised by *doing* something to the adapter. This one
-/// cannot be: `std::env::set_var` is banned repository-wide, and mutating the
-/// process environment even under a guard would race every other case in the
-/// binary. Constructing the variant therefore asserts the only thing the
-/// finding asked for — the rendered diagnostic — and leaves the branch that
-/// raises it covered by the `NotUnicode` match arm in `optional_variable`,
-/// which is a two-line translation with no decision to get wrong.
-///
-/// The repair is asserted as a *sentence*, not as the bare word: a message
-/// saying "not valid UTF-8" beside an unrelated "Repair:" would satisfy a
-/// word-level check while telling a contributor nothing about what to do.
+/// The *raising* branch is exercised directly by
+/// [`an_unreadable_read_is_reported_as_a_non_unicode_value`]; this case covers
+/// the diagnostic a contributor reads once it has been raised, which is a
+/// separate contract. The repair is asserted as a *sentence*, not as the bare
+/// word: a message saying "not valid UTF-8" beside an unrelated "Repair:" would
+/// satisfy a word-level check while telling a contributor nothing about what to
+/// do.
 #[test]
 fn an_unreadable_environment_value_names_the_variable_and_repair() {
     let rendered = MetadataError::NonUnicodeValue {
@@ -114,6 +114,56 @@ fn an_unreadable_environment_value_names_the_variable_and_repair() {
         rendered.contains("Repair:") && rendered.contains("UTF-8 path"),
         "the repair did not say how to supply a readable value: {rendered}"
     );
+}
+
+/// A non-empty read is the override the operator supplied.
+#[test]
+fn a_non_empty_read_is_the_override() {
+    match classify_optional(MANIFEST_OVERRIDE_ENV, Ok("/fixture/Cargo.toml".to_owned())) {
+        Ok(Some(path)) => assert_eq!(path, "/fixture/Cargo.toml"),
+        other => panic!("expected the override to be kept, got {other:?}"),
+    }
+}
+
+/// An empty read means "not set", because that is how Make spells it.
+///
+/// `VAR="$(EMPTY)"` exports the empty string rather than omitting the variable,
+/// so reading the empty value as an override would hand Cargo an empty manifest
+/// path instead of the repository's own.
+#[test]
+fn an_empty_read_means_no_override() {
+    match classify_optional(MANIFEST_OVERRIDE_ENV, Ok(String::new())) {
+        Ok(None) => {}
+        other => panic!("expected an empty read to mean unset, got {other:?}"),
+    }
+}
+
+/// An absent variable means no override.
+#[test]
+fn an_absent_read_means_no_override() {
+    let absent = Err(std::env::VarError::NotPresent);
+    match classify_optional(MANIFEST_OVERRIDE_ENV, absent) {
+        Ok(None) => {}
+        other => panic!("expected an absent variable to mean unset, got {other:?}"),
+    }
+}
+
+/// A read that is not UTF-8 is reported as such, naming the variable.
+///
+/// This is the arm the rendered-message case below cannot reach: a successful
+/// read of a value this binary cannot decode. `VarError::NotUnicode` carries a
+/// public `OsString`, so the error is constructed rather than produced.
+#[test]
+fn an_unreadable_read_is_reported_as_a_non_unicode_value() {
+    let unreadable = Err(std::env::VarError::NotUnicode(OsString::from(OsStr::new(
+        "not \u{FFFD} UTF-8",
+    ))));
+    match classify_optional(MANIFEST_OVERRIDE_ENV, unreadable) {
+        Err(MetadataError::NonUnicodeValue { variable }) => {
+            assert_eq!(variable, MANIFEST_OVERRIDE_ENV);
+        }
+        other => panic!("expected a non-Unicode report, got {other:?}"),
+    }
 }
 
 /// A successful process printing non-JSON is reported as unreadable output.

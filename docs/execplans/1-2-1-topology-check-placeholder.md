@@ -994,6 +994,39 @@ command-boundary) all green, plus 432 workflow-contract cases with five
 subtests; `/verify` ran the real `make topology-check` against a manifest
 reproducing the alias fixture and observed the corrected guidance.
 
+D24 (2026-10-25): the review of `0319086`, the head carrying the plan
+correction, raised four findings. All four were verified against current source
+and repaired; none was declined. (1) `require_library_target` judged only the
+`"lib"` target kind. Cargo reports an explicit `crate-type` as the *kind*, so a
+`[lib]` section naming `rlib`, `dylib`, `cdylib`, or `staticlib` yields that
+kind and never mentions `"lib"`; a probe of all five crate types with real
+`cargo metadata` on this toolchain confirmed each mapping before the fix was
+written. Such a manifest is an ordinary runtime library, and the refusal told
+its author to restore a library they had not removed. `LIBRARY_KINDS` now names
+all five, the proc-macro rejection is untouched, and
+`every_library_kind_is_accepted` covers each kind plus the `cdylib`+`rlib`
+combination. Non-vacuity was established by restoring the `"lib"`-only test:
+exactly the five non-plain cases fail, with the predicted repair text. (2)
+`optional_variable` handled four outcomes in one `match` with no direct case,
+because the non-Unicode arm cannot be raised from a test: `set_var` is banned
+repository-wide and mutating the environment would race every other case in the
+binary. The `match` now lives in a pure `classify_optional` that takes the
+already-produced `Result<String, VarError>`; `optional_variable` stays the thin
+reader holding the scoped `#[expect]`. Four cases drive the classifier directly
+— non-empty, empty, `NotPresent`, and a constructed `NotUnicode` — and the
+existing rendered-message case now says the raising branch is covered elsewhere
+instead of claiming two lines cannot be wrong. (3) and (4) are documentation
+counts: `docs/developers-guide.md` and `docs/repository-layout.md` still said
+thirteen mutations after D23 added the job- and workflow-scope coverage
+controls, and the plan's pre-rebase head and conflict statements still read as
+present tense three paragraphs after describing the rebase. The counts now say
+fifteen, the guide names the three `env` scopes, and both statements are past
+tense retaining `abc3e57` and the `Cargo.lock` conflict as historical evidence
+rather than replacing them. Verification: 61 focused topology cases, 432
+workflow-contract cases with five subtests under `LC_ALL=C`, `make check-fmt`,
+and `make lint` (Clippy, whitaker, Pylint 10.00/10) are green; `make test` under
+`LC_ALL=C` is recorded in the commit that carries this entry.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established
@@ -1045,8 +1078,8 @@ pre-repair boundary suite passed 3/3 with the caller-flags copy absent. The
 repair stands on idempotence rather than on a failure it does not cause, and
 the docstrings, the Surprises entry, and D22 now say so.
 
-The implementation head is `abc3e57`. Local gates on it: 51 focused topology
-cases, 430 workflow-contract cases with five subtests,
+The pre-rebase implementation head was `abc3e57`. Local gates on it: 51 focused
+topology cases, 430 workflow-contract cases with five subtests,
 `make test-topology-command` with three passes and no skips, `make lint-clippy`,
 `make check-fmt`, and `make markdownlint` all green. Hosted on the same SHA:
 `build-test`, `act-validation`, CodeScene Code Health Review, Gecko Security
@@ -1068,16 +1101,16 @@ hosted CI to wait for, so the rebase is the prerequisite for evidence rather
 than a step after it.
 
 Two delivery facts belong to `pr-babysitting` rather than to this plan's
-implementation record. The PR is `CONFLICTING` with `main` on `Cargo.lock` only:
-`main` has since taken three dependency bumps (`662870c`, `419cb15`,
-`781583c`) that this branch's single `Cargo.lock` change in `5140a53` does not
-contain, while `Cargo.toml` is untouched by those bumps. And the `/tmp` gate
-logs this plan cites are gone: the host's `tmpfiles.d` rule expires `/tmp`
-entries after ten days, so a 2026-10-19 log is past its window on 2026-10-25.
-The commit SHA each entry names is the durable record; the path was only ever a
-convenience. The conflict also suppresses hosted `pull_request` workflows
-entirely, so `abc426f` has no `CI` run to await and the rebase is what will
-produce one.
+implementation record. Before the rebase, the PR was `CONFLICTING` with `main`
+on `Cargo.lock` only: `main` has since taken three dependency bumps (`662870c`,
+`419cb15`, `781583c`) that this branch's single `Cargo.lock` change in
+`5140a53` does not contain, while `Cargo.toml` is untouched by those bumps. And
+the `/tmp` gate logs this plan cites are gone: the host's `tmpfiles.d` rule
+expires `/tmp` entries after ten days, so a 2026-10-19 log is past its window
+on 2026-10-25. The commit SHA each entry names is the durable record; the path
+was only ever a convenience. The conflict also suppresses hosted `pull_request`
+workflows entirely, so `abc426f` has no `CI` run to await and the rebase is
+what will produce one.
 
 ## Context and orientation
 

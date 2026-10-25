@@ -303,6 +303,30 @@ fn rejected_documents_report_their_violation(
     }
 }
 
+/// Every library crate kind is accepted as the runtime library.
+///
+/// Cargo reports an explicit `crate-type` as the target *kind*, so a `[lib]`
+/// section naming `rlib` yields `kind: ["rlib"]` and never mentions `"lib"`.
+/// Judging only `"lib"` would refuse an ordinary runtime manifest and tell its
+/// author to restore the library they never removed.
+#[rstest]
+#[case::plain(&["lib"])]
+#[case::rlib(&["rlib"])]
+#[case::dylib(&["dylib"])]
+#[case::cdylib(&["cdylib"])]
+#[case::staticlib(&["staticlib"])]
+#[case::cdylib_and_rlib(&["cdylib", "rlib"])]
+fn every_library_kind_is_accepted(#[case] kinds: &[&str]) -> Result<(), String> {
+    let targets = json!([{
+        "name": "statelet",
+        "kind": kinds,
+        "crate_types": kinds,
+    }]);
+    let document = accepted_with("/packages/0/targets", targets)?;
+    evaluate_metadata(&document)
+        .map_err(|violation| format!("the library kind {kinds:?} was refused: {violation}"))
+}
+
 /// A document that is not an object at all is named as such.
 #[test]
 fn a_non_object_document_is_refused() {

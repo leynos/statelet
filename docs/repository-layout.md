@@ -125,7 +125,8 @@ compact and omits build output such as `target/`.
   reader, and holds the finding functions that require the pinned CI step, the
   post-coverage command step, the cleared manifest environment, the closed
   policy selector, and both `.NOTPARALLEL` entries. The test module supplies
-  the live evidence and thirteen negative controls, one per clause.
+  the live evidence and fifteen negative controls, one per clause and one per
+  `env` scope the coverage boundary reads.
 - `tests/workflow_contracts/mock_wiring.py`: The single test-only boundary for
   evaluating Make recipes without running them, shared by the workflow
   contracts that assert on `make -n` output.
