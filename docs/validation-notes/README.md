@@ -29,6 +29,28 @@ Never edit the template to record an observation. The template is the blank
 form; editing it changes the schema for every future note and breaks the
 contract that checks the form against the register it instantiates.
 
+## Macro cost benchmark notes
+
+For roadmap task 1.2.3, copy the fenced register from
+[`docs/macro-cost-benchmark-note-template.md`](../macro-cost-benchmark-note-template.md)
+to `4.2.1-mdtablefix-macro-cost.md` or `4.2.2-synthetic-macro-cost.md`. Keep
+the `<!-- macro-cost-note -->` marker and fill every row with a value and
+revision-bound evidence. Use `mdtablefix` for the real comparison and
+`synthetic-20` for the fixture with exactly 20 annotated transitions.
+
+The real note may be committed before the synthetic note. Its
+`stress-fixture-results` value must be exactly
+`Not applicable: real comparison`. All other values must be complete; only the
+`review` row may say `Pending: G3 decision not yet recorded`. Record
+unavailable measurements with a cited failure record and an `Inconclusive`
+verdict. Do not use illustrative or fabricated measurements as committed
+evidence.
+
+The `macro-cost-note` marker opts a note into the macro cost contract. A
+completed 4.2.2 roadmap claim selects one synthetic note; the G3 claim at 4.3.1
+selects one real and one synthetic note bound to the same macro and design
+revisions. Other contracts ignore these notes.
+
 ## Which contracts read this directory
 
 - `tests/state_name_consumption_contract.rs` reads notes carrying the
@@ -36,6 +58,9 @@ contract that checks the form against the register it instantiates.
   1.1.3's instrument and its `StateName` return-shape decision at task 3.2.1.
   The rule those notes are read under is
   `docs/adr-004-state-name-consumption-evidence.md`.
+- `tests/macro_cost_note_contract.rs` reads notes carrying the
+  `<!-- macro-cost-note -->` marker. It checks required values, revision-bound
+  citations, the synthetic annotation count and the selected roadmap evidence.
 
 Further contracts will read notes carrying their own markers. A note is ignored
 by every contract whose marker it does not declare.

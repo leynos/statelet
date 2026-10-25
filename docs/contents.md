@@ -17,6 +17,9 @@ set.
 - [Phase 2 validation note template](phase-2-validation-note-template.md) is
   the blank form a Phase 2 engineer copies to record a `StateName` consumption
   observation; it is the schema ADR 004's rule reads, not design material.
+- [Macro cost benchmark note template](macro-cost-benchmark-note-template.md)
+  is the blank form for the real `mdtablefix` and synthetic 20-transition cost
+  comparisons; its private contract guards the Phase 4 evidence prerequisites.
 - [Validation notes directory](validation-notes/README.md) is the directory
   those filled forms are committed to, and explains how a note is named and
   marked.
@@ -37,7 +40,7 @@ set.
 
   - [Add a benchmark note template for macro cost budgets](execplans/1-2-3-macro-cost-benchmark-note-template.md)
     specifies the cost evidence form and Phase 4 completeness checks;
-    implementation is approved.
+    EP-M1 is delivered and acceptance remains in progress.
 
 ## Product and design
 

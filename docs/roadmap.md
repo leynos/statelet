@@ -85,10 +85,14 @@ late clean-up task. See design.md §§5, 10, 11.5-11.7.
   - See design.md §§10 and 11.5.
 - [ ] 1.2.3. Add a benchmark note template for macro cost budgets.
   - Requires 1.1.2.
-  - Include fields for clean debug build time, release artefact size,
-    per-annotation marginal cost, and synthetic 20-transition stress fixture
-    results.
-  - Success: Phase 4 cannot claim the macro gate without filling the template.
+  - Use the
+    [macro cost benchmark note template](macro-cost-benchmark-note-template.md)
+    for the real `mdtablefix` comparison and synthetic 20-transition fixture.
+  - Include fields for clean-debug build time, release artefact size,
+    per-annotation marginal cost, and synthetic stress fixture results.
+  - Success: the private evidence-completeness contract rejects incomplete
+    marked notes and prevents Phase 4 tasks 4.2.2 and 4.3.1 from completing
+    without their selected, candidate-bound cost evidence.
   - See design.md §11.7.
 
 ## 2. Vertical slice 1: Runtime conventions in `mdtablefix`
@@ -287,10 +291,21 @@ design.md §§11.2-11.7 and 12.
   - See design.md §§11.2 and 12.
 - [ ] 4.2.2. Measure macro cost with a synthetic stress fixture.
   - Requires 4.1.3.
-  - Use a 20-transition synthetic downstream crate to calculate marginal
-    clean-debug build cost per annotation and release artefact growth.
-  - Success: the results stay inside design.md §11.7 or the design is revised
-    before the macro ships.
+  - Use a 20-transition synthetic downstream crate to record clean-debug
+    build time, per-annotation marginal cost, release artefact size, and the
+    stress fixture results.
+  - Record a complete
+    [synthetic macro cost note](validation-notes/4.2.2-synthetic-macro-cost.md)
+    using the benchmark template. Cite the fixture, raw samples, commands,
+    outputs, and the macro and governing design revisions.
+  - On completion, add one adjacent candidate comment in the form
+    `<!-- macro-cost-candidate: <macro-sha>; design-revision: <design-sha> -->`.
+    The selected note must name the same revisions.
+  - Success: the selected note is complete and reports the measurements and
+    their budget verdict. Record failed or inconclusive results as such; this
+    task records evidence and does not approve macro publication.
+  - See design.md §11.7 and
+    [the macro cost benchmark note template](macro-cost-benchmark-note-template.md).
 - [ ] 4.2.3. Add feature-matrix and topology coverage for the macro crate.
   - Requires 4.1.1.
   - Exercise no-default, default, tracing, serde, macros, derive, and
@@ -308,10 +323,22 @@ design.md §§13-14.
   - Requires steps 4.1-4.2.
   - A macro that adopts Phase 6 observation extensions also requires 6.5.2.
     Handwritten evidence does not certify generated-code preservation.
-  - Include compile-time budget, binary-size budget, topology results, and
-    baseline comparison.
-  - Success: one decision note either publishes the macro, defers it, or
-    removes it from v0.1 scope.
+  - Require both real and synthetic macro cost notes, complete and bound to the
+    evaluated macro and design revisions.
+  - Select the
+    [real macro cost note](validation-notes/4.2.1-mdtablefix-macro-cost.md)
+    and [synthetic macro cost note](validation-notes/4.2.2-synthetic-macro-cost.md).
+    The selected evidence is the basis for the cost portion of G3.
+  - Include compile-time budget, binary-size budget, topology results, and the
+    baseline comparison alongside the cost notes.
+  - On completion, add one adjacent candidate comment in the form
+    `<!-- macro-cost-candidate: <macro-sha>; design-revision: <design-sha> -->`.
+  - Success: one recorded decision either publishes the macro, defers it, or
+    removes it from v0.1 scope, with both selected notes and the other required
+    evidence. A complete form or passing cost result alone does not decide the
+    v0.1 exit.
+  - See design.md §§11.7 and 13 and
+    [ADR 003](adr-003-v0-1-exit-register.md).
 - [ ] 4.3.2. Update user and developer documentation for the chosen boundary.
   - Requires 4.3.1.
   - Keep graph-first users pointed at `stateless` and other graph-owning

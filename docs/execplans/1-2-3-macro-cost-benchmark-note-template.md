@@ -16,9 +16,9 @@ records into the macro publication decision. Missing evidence must block a
 claim that the cost gate is complete. Filling a form does not itself establish
 that the macro deserves publication.
 
-This plan authorizes future template, documentation and private test work only
-after approval. It does not authorize creating the macro, running its future
-benchmarks, selecting a v0.1 exit, or marking task 1.2.3 complete now.
+This approved plan authorizes the template, documentation and private contract
+work. It does not authorize creating the macro, running its future benchmarks,
+selecting a v0.1 exit, or marking task 1.2.3 complete before EP-M2 acceptance.
 
 ## Constraints
 
@@ -77,7 +77,20 @@ and obtain explicit approval before proceeding.
   lint, tests, type checking, Markdown, spelling and diagrams passed.
 - [x] (2026-10-25) Obtain explicit approval and record APPROVED before
   implementation; the approved scope and tolerances remain unchanged.
-- [ ] EP-M1: deliver the template, gate bindings and private contract together.
+- [x] EP-M1: deliver the template, gate bindings and private contract together.
+  - Implementation is in progress. The focused red run passed 18 cases and
+    failed only on the missing live template path, as intended.
+  - The focused green run now passes 22 contract cases, one doctest, 432
+    workflow contract tests plus five subtests, and three topology-command
+    tests. The first full gate attempt passed `make check-fmt`, then stopped at
+    `make lint`: Clippy reported 51 findings in the new integration contract.
+    A second run passed formatting and reduced the lint findings to six.
+    A third run passed all gates but reported two module-size and two branch
+    count advisories. A fourth run found two unused imports and one missing
+    documentation code span after the module split. Those issues were fixed;
+    the fifth full sequence passed without Clippy or Whitaker findings. Its
+    logs are under `/tmp/*statelet-1-2-3-macro-cost-benchmark-note-template-
+    ep-m1-5.out`.
 - [ ] EP-M2: validate acceptance evidence and mark roadmap task 1.2.3 done.
 
 ## Surprises & discoveries
@@ -92,6 +105,15 @@ There is no macro crate or stress fixture to measure at this stage. Empty
 benchmark-note directories must therefore pass before Phase 4 claims
 completion. The blank template intentionally contains placeholders; copied
 notes used as evidence must not.
+
+The `cap-std` dependency is present without its optional `fs_utf8` feature. The
+test boundary therefore uses `cap_std::fs::Dir` with `camino::Utf8Path` inputs
+and reports entry-name, enumeration and content-read failures explicitly; it
+does not change Cargo features. `mapsplice` preview and application worked for
+task 1.2.3 and task 4.2.2. Its task-level replacement of 4.3.1 failed with a
+`dependency anchor 4.3.1 was not found` error even for the unchanged fragment,
+so that one task is updated by a narrowly scoped text patch and inspected in
+the diff.
 
 ## Decision log
 
@@ -109,15 +131,27 @@ notes used as evidence must not.
 - (2026-10-25, approved) No Verus milestone: this work introduces no runtime
   invariant, lemma or mathematical business-policy evaluator. Finite document
   schema checks and deliberate negative controls match the obligation.
+- (2026-10-25, implementation) Keep the filesystem adapter on the enabled
+  `cap_std::fs::Dir` API. Enabling `fs_utf8` would alter the dependency feature
+  set without adding value for the relative note scan.
 
 ## Outcomes & retrospective
 
-The reviewed plan has been approved. No implementation or cost measurement has
-occurred. Local validation passed: 206 Rust tests, one doctest, 432 workflow
-contract tests plus five subtests, and three topology-command tests.
-Formatting, lint, type checking, Markdown, spelling and diagram gates also
-passed. Shared Cargo locks and compiler admission lengthened validation without
-causing a failure. The implementation retrospective must distinguish task 1.2.3
+The reviewed plan has been approved and implementation is under way. Approval
+validation passed: 206 Rust tests, one doctest, 432 workflow contract tests
+plus five subtests, and three topology-command tests. Approval formatting,
+linting, type checking, Markdown, spelling and diagram gates also passed. The
+focused EP-M1 green run passed 22 contract cases, one doctest, 432 workflow
+tests plus five subtests, and three topology-command tests. The first full
+attempt passed formatting before Clippy found 51 findings. The second reduced
+those to six. A third passed all gates with four Whitaker advisories; a fourth
+passed formatting before lint found two unused imports and a missing code span.
+The fifth full sequence passed without Clippy or Whitaker findings: 228 Rust
+tests (three skipped), one doctest, 432 workflow tests plus five subtests,
+three topology tests, type checking, Markdown lint, spelling, Mermaid
+validation, and diff checks. Shared Cargo locks and compiler admission
+lengthened validation. EP-M2 remains: acceptance evidence and the 1.2.3 roadmap
+completion mark. The final retrospective must distinguish that task's
 completion from Phase 4 budget success and the independent G3 decision.
 
 ## Context and orientation
@@ -417,13 +451,14 @@ separate base change; never edit the generated file manually or bury it here.
 If a gate fails, read its log, fix the owned cause and rerun affected gates on
 the revised candidate. Do not weaken lints or treat queued builds as failures.
 
-For this plan-only pull request, run the same ordinary gates before committing
-and publishing; there is no red/green implementation run yet. Push via SSH,
-refresh `origin/1-2-3-macro-cost-benchmark-note-template`, set the named
-upstream and verify the remote head. Create a draft PR titled
-`Plan: Add macro cost benchmark note template (1.2.3)`, link this document on
-the branch, and end the body with the Lody session reference. Publication does
-not count as approval.
+The plan-only draft PR and its approval checkpoint are already published. For
+each implementation milestone, run the focused contract test and the same
+ordinary gates before committing. Push via SSH, refresh
+`origin/1-2-3-macro-cost-benchmark-note-template`, set the named upstream and
+verify the remote head. Keep the PR in draft during implementation. Its title,
+summary and References section must describe the delivered work and retain the
+branch-wise plan link and Lody session reference. Do not merge without explicit
+authorization.
 
 ## Idempotence and recovery
 
@@ -442,6 +477,14 @@ profile, `--locked` for lockfile stability and `--timings` for compilation
 reports. Record exact commands and timing boundaries; compilation reports alone
 do not establish an uncontended, uncached wall-time comparison. No additional
 benchmark dependency is proposed.
+
+Firecrawl also checked the pinned capability-filesystem API:
+[`cap_std::fs::Dir`](https://docs.rs/cap-std/4.0.3/cap_std/fs/struct.Dir.html)
+and
+[`cap_std::fs::DirEntry`](https://docs.rs/cap-std/4.0.3/cap_std/fs/struct.DirEntry.html).
+The enabled API supports relative directory opening, enumeration and reads;
+missing directories can be distinguished from other I/O errors. The optional
+UTF-8 module is not enabled in this repository.
 
 Two Wyvern agents supplied contract and verification reconnaissance through
 context pack `pk_u2bhz5hg`. CodeGraph indexing and symbol navigation confirmed
@@ -466,3 +509,50 @@ change the future contract tests; implementation remains unstarted.
 2026-10-25: Recorded the successful plan-publication gates and the user's
 explicit approval of this scope and its tolerances. Implementation may proceed
 through EP-M1 and EP-M2; no performance verdict is implied.
+
+2026-10-25: Started EP-M1 after approval. The focused red test run confirmed
+that the live-template check fails with the intended missing-file path while
+the other 18 contract cases pass. After adding the form and bindings, the
+focused target passed 22 cases; the `make test` routes also passed one doctest,
+432 workflow contract tests plus five subtests, and three topology-command
+tests. One nested topology fixture took 97.627 seconds under shared compiler
+admission. Full EP-M1 gates remain to be run on the complete candidate.
+
+2026-10-25: The first full EP-M1 attempt passed `make check-fmt` and stopped at
+`make lint`, which reported 51 Clippy findings in the newly added contract
+tests. The fixes replace unchecked slices and indexing, split note validation
+into smaller helpers, and remove fallible fixture assumptions. No later gate
+ran on that candidate; the complete sequence must be repeated after cleanup.
+
+2026-10-25: The second full attempt again passed `make check-fmt` and stopped at
+`make lint`. It reduced the diagnostics to two shadowed local names and four
+ignored formatting results. The latest revision gives those locals distinct
+names and builds fixture rows with direct string appends. No later gate ran;
+the complete sequence must be repeated on this revision.
+
+2026-10-25: The third complete gate sequence passed `make check-fmt`,
+`make lint`, `make test`, `make typecheck`, Markdown lint, spelling, Mermaid
+checks, and staged/unstaged diff checks. Tests included 228 Rust cases (three
+skipped), one doctest, 432 workflow tests plus five subtests, and three
+topology tests. Whitaker reported that the contract and fixture modules exceed
+its 400-line limit and flagged two conditional branch counts. Split the modules
+and simplify those conditions before accepting EP-M1; rerun every gate on the
+resulting candidate.
+
+2026-10-25: Split candidate-bound roadmap parsing into `claims.rs`, and moved
+two focused schema-isolation tests into their own child modules. Reduced the
+measurement-count and heading checks to explicit predicates. All Rust source
+files are now at most 366 lines; the complete gate sequence must run on this
+revision before EP-M1 can be committed.
+
+2026-10-25: The fourth full sequence passed `make check-fmt` and stopped at
+`make lint`. It found two unused imports introduced by the split and a missing
+code span in a module comment. The latest revision removes both imports and
+marks `StateName` as code; rerun the full sequence before acceptance.
+
+2026-10-25: The fifth full EP-M1 sequence passed every gate on the 14-path
+candidate. Clippy and Whitaker reported no findings; Python lint rated 10/10.
+`make test` passed 228 Rust tests (three skipped), one doctest, 432 workflow
+tests plus five subtests, and three topology tests. Type checking, Markdown,
+spelling, Mermaid and staged/unstaged diff checks passed. EP-M1 is complete;
+EP-M2 remains before the roadmap entry can be marked done.
