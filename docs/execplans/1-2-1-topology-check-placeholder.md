@@ -1,16 +1,17 @@
 # Add the single-crate topology-check placeholder
 
 Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
-published on PR #137. The implementation head is `abc3e57`; it carries the
-CodeScene repair, both assessment rounds, and the nine formal-review repairs,
-and all nine review threads on it are resolved. The branch was rebased onto
-`main` at target `781583c` and force-pushed as `73451d9`, so the pre-rebase
-commit identities above survive only in the recovery refs recorded under
-Idempotence and recovery; the rebased equivalents are the same patches with
-different hashes. The rebase cleared the `Cargo.lock` conflict that had been
-suppressing hosted `pull_request` workflows, and `CI` and `Act Validation` now
-run. Delivery remains with `pr-babysitting`, and the branch tip is deliberately
-not named here.
+published on PR #137. The pre-rebase implementation head was `abc3e57`; it
+carried the CodeScene repair, both assessment rounds, and the nine
+formal-review repairs. The branch was rebased onto `main` at target `781583c`,
+so the pre-rebase commit identities above survive only in the recovery refs
+recorded under Idempotence and recovery; the rebased equivalents are the same
+patches with different hashes. The rebase cleared the `Cargo.lock` conflict
+that had been suppressing hosted `pull_request` workflows, and `CI` and
+`Act Validation` now run. A review of the rebased head raised three further
+findings, repaired in `e1a44ac` as D23, and the commit after it records that
+round here. Delivery remains with `pr-babysitting`, and the branch tip is
+deliberately not named here.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
