@@ -957,6 +957,42 @@ passes and no skips, `make lint-clippy`, `make check-fmt`, and
 `shadow_reuse`: the match arm binding reused the scrutinee's `rustflags` name,
 which this repository denies.
 
+D23 (2026-10-25): the review of the rebased head `25f1e6d`, dispatched through
+the managed queue after the commit influx left CodeRabbit's automatic reviews
+paused, raised three findings, and all three are repaired in `e1a44ac` because
+each hardens a check this plan already owns. (1) The `ForbiddenDependency`
+diagnostic named only `statelet-macros`, but the predicate refuses a declared
+edge to `statelet` itself as well; the `runtime-alias-dependency` fixture
+declares `runtime = { package = "statelet" }` and is exactly that second case,
+so the old text sent a contributor to the macro-admission rule for a dependency
+that is never admitted at any gate. Only the attribute text changed, and the
+`refusal` assertion in `behaviour.rs` still matches it because the macro-gate
+phrase survives. (2) The workflow contract read coverage environment from the
+command step alone. GitHub layers `env` at workflow, job, and step scope, and a
+variable set by an enclosing scope reaches the step regardless, so flags
+exported one level up would have passed. `_coverage_names` now reports one
+scope's coverage names and `_findings_command_step` unions the workflow, job,
+and step scopes, using the job mapping already returned by
+`reading.jobs(workflow)`; the review was right that no `reading.Job` type
+exists. There is no workflow- or job-level `env` today, so this is
+future-regression coverage rather than a current defect, and two mutations were
+added, one per new scope. (3) The mutation test asserted only that some finding
+appeared. The reviewer's example is the exact hole: `check-before-toolchain`
+moves the topology step ahead of `install-rust-toolchain` and therefore ahead
+of nextest too, so it legitimately emits both order findings and the nextest
+clause could satisfy the test after the toolchain clause regressed. Every
+`MUTATIONS` entry now carries its expected message fragment and the test
+asserts that fragment is present. Non-vacuity was established by deleting the
+toolchain-order `_order_problems` call: the test then fails with
+`check-before-toolchain did not report its own clause`, which the previous
+assertion accepted. The `_ci_findings` shape guard that this required was
+folded into a single `if` so the message literal is not duplicated.
+Verification: `make check-fmt`, `make lint` (Clippy, whitaker, Pylint
+10.00/10), and `make test` under `LC_ALL=C` (201 nextest, 1 doctest, 3
+command-boundary) all green, plus 432 workflow-contract cases with five
+subtests; `/verify` ran the real `make topology-check` against a manifest
+reproducing the alias fixture and observed the corrected guidance.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established
