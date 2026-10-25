@@ -437,8 +437,8 @@ packages neither side asked to change — the `icu` family behind `textwrap` and
 `tokio` behind `rstest-bdd`. That is not avoidable: the branch's lock and
 main's lock describe graphs of different sizes, so no file-level merge of them
 is coherent. The rebuild is the correct route, and the churn is its cost rather
-than an accident, which is why it is attested here instead of being minimised
-by hand-picking versions. An attempt to apply only main's two named bumps with
+than an accident, which is why it is attested here instead of being reduced by
+hand-picking versions. An attempt to apply only main's two named bumps with
 `cargo update -p` was tried and rejected: it pruned the Windows-only
 `windows-sys 0.61.2` that main's chain still needs and silently re-pointed
 `cap-primitives` at an older `0.60.2`. Surgical version selection on a lockfile
