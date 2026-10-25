@@ -3,11 +3,14 @@
 Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
 published on PR #137. The implementation head is `abc3e57`; it carries the
 CodeScene repair, both assessment rounds, and the nine formal-review repairs,
-all nine review threads on it are resolved, and every hosted check on it is
-green. Documentation-only commits follow it, so the branch tip is deliberately
-not named here. Delivery remains with `pr-babysitting`, and the branch is
-currently `CONFLICTING` with `main` on `Cargo.lock`, which suppresses its
-`pull_request` workflows.
+and all nine review threads on it are resolved. The branch was rebased onto
+`main` at target `781583c` and force-pushed as `73451d9`, so the pre-rebase
+commit identities above survive only in the recovery refs recorded under
+Idempotence and recovery; the rebased equivalents are the same patches with
+different hashes. The rebase cleared the `Cargo.lock` conflict that had been
+suppressing hosted `pull_request` workflows, and `CI` and `Act Validation` now
+run. Delivery remains with `pr-babysitting`, and the branch tip is deliberately
+not named here.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -404,8 +407,42 @@ before a future change admits a macro package.
     not run, and cannot while the branch is `CONFLICTING`: GitHub documents
     that `pull_request` workflows do not run on a pull request with a merge
     conflict. The rebase is `pr-babysitting`'s.
+  - [x] (2026-10-25) Rebased onto the recorded target `781583c` and
+    force-pushed with a lease bound to the previous remote head `91c4414`.
+    `OLD_BASE` was the branch's stated baseline `7cb1267`, which is an
+    ancestor of both `main` and this branch, with no merges in
+    `7cb1267..91c4414`; the fifteen branch commits replay as `bc8233e` to
+    `21a5317` plus the lock reconciliation `73451d9`. The only conflict was
+    `Cargo.lock`, at replay 3/15, because three dependency bumps landed on
+    `main` after the base while this branch added five dev-dependencies. Main's
+    lock was taken as the base, per the review rule for packaging lock files,
+    and the graph was rebuilt with Cargo; the reconciled lock is `73451d9`.
+    `git range-diff` pairs every commit identically except the one whose
+    lockfile changed. Gates on `73451d9`: `make check-fmt`, `make test` under
+    `LC_ALL=C` (201 nextest cases, 3 skipped; the doctest; three
+    `topology_command` cases), `make typecheck`, and `make lint` (Clippy and
+    Pylint 10.00/10) all green. Logs:
+    `/tmp/check-fmt-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/test-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/typecheck-statelet-1-2-1-topology-check-placeholder.out`, and
+    `/tmp/lint-statelet-1-2-1-topology-check-placeholder.out`.
 
 ## Surprises & discoveries
+
+A lockfile conflict cannot be resolved by choosing either side, and "take
+main's copy, then rebuild" is not a merge. Taking main's lock and letting Cargo
+re-resolve does preserve every version main pinned and does add this branch's
+new dev-dependencies, but resolving the enlarged graph also upgrades thirteen
+packages neither side asked to change — the `icu` family behind `textwrap` and
+`tokio` behind `rstest-bdd`. That is not avoidable: the branch's lock and
+main's lock describe graphs of different sizes, so no file-level merge of them
+is coherent. The rebuild is the correct route, and the churn is its cost rather
+than an accident, which is why it is attested here instead of being minimised
+by hand-picking versions. An attempt to apply only main's two named bumps with
+`cargo update -p` was tried and rejected: it pruned the Windows-only
+`windows-sys 0.61.2` that main's chain still needs and silently re-pointed
+`cap-primitives` at an older `0.60.2`. Surgical version selection on a lockfile
+is not safer than a full resolve; it is only less visible.
 
 The baseline package has no runtime dependencies and already has six direct
 development dependencies. `cargo metadata --no-deps --format-version 1` returns
@@ -1389,6 +1426,12 @@ this plan using the branch ref and finish the PR body with the Lody session
 reference. Do not mark the roadmap done or start M1 before explicit approval.
 
 ## Artefacts and notes
+
+The rebase onto `main` at `781583c` preserved three recovery refs under
+`refs/recovery/1-2-1-topology-check-placeholder/20261025T014245Z-{old-head,old-base,target}`,
+recording `91c4414`, `7cb1267`, and `781583c` respectively. They are the
+durable record of the pre-rebase series, whose commit hashes all changed in the
+replay. Retain them until the pull request is accepted.
 
 Rebase validation on 2026-10-14 passed `make check-fmt`, `make test`,
 `make typecheck`, `make lint`, `make markdownlint`, and `make nixie` after the
