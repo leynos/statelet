@@ -530,6 +530,39 @@ feature-leak risk called out by the design review.
 
 ### 11.6 Dependency topology
 
+`make topology-check` is a private integration-test-backed gate for the initial
+single-package state, implemented under the
+[task 1.2.1 execution plan](execplans/1-2-1-topology-check-placeholder.md). It
+consumes `cargo metadata --no-deps --format-version 1`, requires the sole
+workspace member to be the `statelet` runtime library with a library target,
+and rejects declared `statelet-macros` dependencies — and a declared dependency
+on `statelet` itself — even when renamed, optional, build-kind, or
+target-specific. External testing proc macros remain permitted. The check is
+not a schema reader: it evaluates declarations, so a feature that would leave
+an edge inactive does not make that edge acceptable. Additional workspace
+members require a deliberate policy revision; the placeholder does not claim to
+validate a future resolved graph or feature leakage, and its success message
+says so.
+
+The check is part of routine validation rather than an optional operator step:
+`make all` runs the pinned-input `make check-topology` form after tests and
+before spelling, `make test` ends with `make test-topology-command` after the
+ordinary routes, and CI runs the same two targets in the same relative order.
+`tests/workflow_contracts/topology_wiring_test.py` holds that wiring, including
+a negative control for each clause, so a Makefile or workflow edit that
+disconnects the gate fails the workflow contracts.
+
+That future revision must reconcile the allowed directions in sections 4–5: an
+optional runtime-to-macro re-export cannot coexist with a reciprocal
+macro-to-runtime edge that creates a cycle. Resolve
+[issue 112](https://github.com/leynos/statelet/issues/112) before defining that
+later workspace policy, as roadmap 1.2.1 requires; the single-crate placeholder
+does not resolve it. Macro admission remains an evidence-led decision, never a
+command-line bypass or an inferred roadmap checkbox. The later admission change
+must also reconcile task 4.1.1's reference to 3.1.3 choosing “ship macro” with
+ADR 003's distinction between B1 at 3.1.3 and the B2 publication decision at
+4.3.1.
+
 The dependency-topology gate must fail on forbidden workspace cycles or
 unexpected edges. `rstest-bdd` showed that macro, runtime, harness, examples,
 and test-support crates can grow complex quickly. `statelet` should keep the

@@ -14,10 +14,9 @@ from pathlib import Path
 
 import pytest
 
-from suite_provisioning import (
-    load_workflows,
-)
+from mock_wiring import recipe_lines
 from suite_discovery import suite_findings
+from suite_provisioning import load_workflows
 
 ROOT = Path(__file__).resolve().parents[2]
 THREADS_FLAG = "-Zthreads=8"
@@ -71,15 +70,6 @@ def _expanded(value: str, inherited: str | None) -> list[str]:
         check=True,
     )
     return _normalized(shlex.split(result.stdout))
-
-
-def _recipe_lines(stdout: str) -> list[str]:
-    """Join Make's continued recipe lines without losing command order."""
-    return [
-        line.strip()
-        for line in stdout.replace("\\\n", " ").splitlines()
-        if line.strip()
-    ]
 
 
 def _cargo_kind(words: list[str], subcommand_index: int) -> str:
@@ -187,7 +177,7 @@ def _make_rustflags(
     overrides: tuple[str, ...] = (),
 ) -> list[list[str] | None]:
     """Return RUSTFLAGS for each Cargo compile/test route, excluding tools."""
-    lines = _recipe_lines(_make_output(target, host, inherited, overrides))
+    lines = recipe_lines(_make_output(target, host, inherited, overrides))
     commands = _compile_commands(lines, target)
     return _assigned_rustflags(commands, inherited)
 
@@ -292,7 +282,7 @@ def test_sources_differ_only_by_the_linker() -> None:
 def test_rust_formatter_uses_the_repository_toolchain() -> None:
     """Keep rustfmt aligned with the toolchain used by check-fmt and CI."""
     commands = [
-        line for line in _recipe_lines(_make_output("fmt"))
+        line for line in recipe_lines(_make_output("fmt"))
         if line.startswith("probe-cargo ")
     ]
     assert commands == ["probe-cargo fmt --all"], commands
@@ -340,21 +330,27 @@ def test_development_targets_leave_the_linker_off_a_non_linux_target() -> None:
 
 
 def test_make_test_checks_nextest_then_runs_each_test_route() -> None:
-    """Separate Nextest's version probe from both compiled test commands."""
-    commands = _cargo_commands(_recipe_lines(_make_output("test")))
+    """Separate Nextest's version probes from the three compiled test commands.
+
+    ``make test`` ends with the nested command-boundary target, which repeats
+    the runner preflight and compiles one more test binary. The outer routes
+    therefore stay first in order, and the nested pair last.
+    """
+    commands = _cargo_commands(recipe_lines(_make_output("test")))
     assert [kind for kind, _ in commands] == [
-        "nextest-version", "nextest-run", "test",
+        "nextest-version", "nextest-run", "test", "nextest-version", "nextest-run",
     ], commands
     assert all("probe-cargo" in shlex.split(line) for _, line in commands), (
         "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
     )
-    assert len(_make_rustflags("test")) == 2, (
+    assert len(_make_rustflags("test")) == 3, (
         "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
     )
-    assert "--doc" in shlex.split(commands[-1][1]), (
+    doctests = next(line for kind, line in commands if kind == "test")
+    assert "--doc" in shlex.split(doctests), (
         "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
     )
-    lines = _recipe_lines(_make_output("test"))
+    lines = recipe_lines(_make_output("test"))
     assert lines.index("scripts/check-build-tools.sh") < lines.index(commands[0][1]), (
         "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
     )
@@ -362,7 +358,7 @@ def test_make_test_checks_nextest_then_runs_each_test_route() -> None:
 
 def test_make_lint_keeps_whitaker_outside_development_rustflags() -> None:
     """Only repository-toolchain Cargo gates receive development flags."""
-    lines = _recipe_lines(_make_output("lint"))
+    lines = recipe_lines(_make_output("lint"))
     commands = _cargo_commands(lines)
     assert [kind for kind, _ in commands] == ["doc", "clippy"], commands
     whitaker = [line for line in lines if line.startswith("RUSTFLAGS= whitaker ")]

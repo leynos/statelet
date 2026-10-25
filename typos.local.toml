@@ -54,6 +54,9 @@ ignore = [
   # The historical plan records rejected tokens and exact commit IDs; its
   # bytes are evidence and must not be reformatted or edited.
   "`(?:recognise|recognised|recognises|mis-spelling|mis-addressed|mis)`",
+  # D27 quotes a review's remedy verbatim, and the quotation is evidence of
+  # what that review said; only the backticked quotation is exempt.
+  "`materialised`",
   "\\b(?:8ba3e4a|d4fb5ba)\\b",
 ]
 

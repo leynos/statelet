@@ -31,6 +31,9 @@ set.
     carries ADR 003 and the exit register that selects among them.
   - [Define the `StateName` consumption question](execplans/1-1-3-define-state-name-consumption-question.md)
     carries ADR 004 and the contract test that guards it.
+  - [Add the single-crate topology-check placeholder](execplans/1-2-1-topology-check-placeholder.md)
+    carried the metadata-based local and CI gate for roadmap task 1.2.1 from
+    proposal to implementation.
 
 ## Product and design
 

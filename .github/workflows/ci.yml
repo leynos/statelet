@@ -52,6 +52,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUSTFLAGS: ""
         run: cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
+      # The pinned-input form: it names the repository manifest on the make
+      # command line, so a fixture override in the environment cannot redirect
+      # the routine check at an isolated workspace that would pass.
+      - name: Check declared dependency topology
+        run: make check-topology
       # Dependency audits report advisories against the whole lockfile, so a
       # newly published advisory would fail every Dependabot PR regardless of
       # content and deadlock auto-merge. The scheduled audit workflow covers
@@ -103,3 +108,8 @@ jobs:
           # `make test-workflow-contracts` holds the split.
           with-ratchet: 'true'
           publish-artefact: 'false'
+      # Deliberately a separate step, not a coverage input: each case starts a
+      # nested Cargo process and must not inherit the coverage instrumentation
+      # or the clang/lld linker environment the action sets.
+      - name: Test the topology command boundary
+        run: make test-topology-command
