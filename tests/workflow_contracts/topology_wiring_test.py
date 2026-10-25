@@ -144,6 +144,21 @@ def _inherit_coverage_env(wiring: Wiring) -> Wiring:
     return replace(wiring, workflow=workflow)
 
 
+def _inherit_coverage_env_at_job(wiring: Wiring) -> Wiring:
+    """Return a workflow whose job scope exports coverage ``RUSTFLAGS``."""
+    workflow = copy.deepcopy(wiring.workflow)
+    job = reading.jobs(workflow)[0][1]
+    job["env"] = {**(job.get("env") or {}), "RUSTFLAGS": "-C link-arg=-fuse-ld=lld"}
+    return replace(wiring, workflow=workflow)
+
+
+def _inherit_coverage_env_at_workflow(wiring: Wiring) -> Wiring:
+    """Return a workflow whose own scope exports coverage ``RUSTFLAGS``."""
+    workflow = copy.deepcopy(wiring.workflow)
+    workflow["env"] = {"RUSTFLAGS": "-C link-arg=-fuse-ld=lld"}
+    return replace(wiring, workflow=workflow)
+
+
 def _drop_fail_closed(wiring: Wiring) -> Wiring:
     """Return policy-selector evidence without ``--no-tests fail``."""
     return replace(
@@ -177,23 +192,78 @@ def _drop_not_parallel(wiring: Wiring) -> Wiring:
     )
 
 
-MUTATIONS: list[tuple[str, Callable[[Wiring], Wiring]]] = [
-    ("unpinned-all", _unpin_all),
-    ("missing-ci-check", lambda wiring: _drop_ci_step(wiring, CHECK_TARGET)),
-    ("conditional-ci-check", _conditional_ci_check),
+MUTATIONS: list[tuple[str, Callable[[Wiring], Wiring], str]] = [
+    (
+        "unpinned-all",
+        _unpin_all,
+        "`make all` must run the pinned `check-topology` target",
+    ),
+    (
+        "missing-ci-check",
+        lambda wiring: _drop_ci_step(wiring, CHECK_TARGET),
+        f"ci.yml must run `make {CHECK_TARGET}` exactly once",
+    ),
+    (
+        "conditional-ci-check",
+        _conditional_ci_check,
+        f"`make {CHECK_TARGET}` must run unconditionally",
+    ),
     (
         "check-before-toolchain",
         lambda wiring: _move_ci_check(wiring, "install-rust-toolchain"),
+        f"`make {CHECK_TARGET}` must run after `make install-rust-toolchain`",
     ),
-    ("check-before-nextest", lambda wiring: _move_ci_check(wiring, "cargo-nextest")),
-    ("missing-test-gate", _drop_test_gate),
-    ("unguarded-test-gate", _unguarded_test_gate),
-    ("missing-caller-flags", _drop_caller_flags),
-    ("missing-ci-command", lambda wiring: _drop_ci_step(wiring, COMMAND_TARGET)),
-    ("inherited-coverage-env", _inherit_coverage_env),
-    ("open-policy-selector", _drop_fail_closed),
-    ("early-success-line", _early_success),
-    ("parallel-composite", _drop_not_parallel),
+    (
+        "check-before-nextest",
+        lambda wiring: _move_ci_check(wiring, "cargo-nextest"),
+        f"`make {CHECK_TARGET}` must run after the nextest installation",
+    ),
+    (
+        "missing-test-gate",
+        _drop_test_gate,
+        "`make test` must run nextest, doctests, and the topology command suite",
+    ),
+    (
+        "unguarded-test-gate",
+        _unguarded_test_gate,
+        "the topology command suite must clear the manifest override",
+    ),
+    (
+        "missing-caller-flags",
+        _drop_caller_flags,
+        "the topology command suite must hand Make the caller's RUSTFLAGS",
+    ),
+    (
+        "missing-ci-command",
+        lambda wiring: _drop_ci_step(wiring, COMMAND_TARGET),
+        f"ci.yml must run `make {COMMAND_TARGET}` exactly once",
+    ),
+    (
+        "inherited-coverage-env",
+        _inherit_coverage_env,
+        "must not inherit coverage environment",
+    ),
+    (
+        "inherited-job-coverage-env",
+        _inherit_coverage_env_at_job,
+        "must not inherit coverage environment",
+    ),
+    (
+        "inherited-workflow-coverage-env",
+        _inherit_coverage_env_at_workflow,
+        "must not inherit coverage environment",
+    ),
+    (
+        "open-policy-selector",
+        _drop_fail_closed,
+        "the policy selector must pass `--no-tests fail`",
+    ),
+    (
+        "early-success-line",
+        _early_success,
+        "the success line must print only after the guard",
+    ),
+    ("parallel-composite", _drop_not_parallel, "`.NOTPARALLEL` must name"),
 ]
 
 
@@ -209,10 +279,24 @@ def test_every_routine_wiring_clause_holds(live_wiring: Wiring) -> None:
 
 
 @pytest.mark.parametrize(
-    ("mutation", "mutate"), MUTATIONS, ids=[name for name, _ in MUTATIONS]
+    ("mutation", "mutate", "expected"), MUTATIONS, ids=[name for name, _, _ in MUTATIONS]
 )
 def test_each_removed_clause_is_reported(
-    live_wiring: Wiring, mutation: str, mutate: Callable[[Wiring], Wiring]
+    live_wiring: Wiring,
+    mutation: str,
+    mutate: Callable[[Wiring], Wiring],
+    expected: str,
 ) -> None:
-    """Removing one clause from the evidence must fail this contract."""
-    assert findings(mutate(live_wiring)), f"{mutation} was accepted"
+    """Removing one clause must report that clause's own finding.
+
+    A non-empty finding set does not prove the mutated clause was the one
+    judged: some mutations disturb more than one anchor. Moving the CI topology
+    step before the toolchain also moves it before nextest, so asserting only
+    that *something* failed would stay green if the toolchain-order clause
+    stopped working and the nextest-order clause caught the movement instead.
+    """
+    problems = findings(mutate(live_wiring))
+    assert problems, f"{mutation} was accepted"
+    assert any(expected in problem for problem in problems), (
+        f"{mutation} did not report its own clause; expected {expected!r} in {problems}"
+    )

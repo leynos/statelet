@@ -15,6 +15,7 @@ code and unrelated document contracts must not depend on it.
 """
 
 import re
+import typing as typ
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -195,7 +196,25 @@ def _findings_check_step(steps: list[reading.Step]) -> list[str]:
     return problems
 
 
-def _findings_command_step(steps: list[reading.Step]) -> list[str]:
+def _coverage_names(mapping: typ.Any) -> set[str]:
+    """Return the coverage environment names one scope declares.
+
+    GitHub layers ``env`` at workflow, job, and step scope, and a variable set
+    by any enclosing scope reaches the step even when the step's own ``env``
+    omits it. Reading only the step mapping would therefore pass a workflow
+    that exports coverage flags one level up.
+    """
+    environment = mapping.get("env")
+    return (
+        set(environment) & COVERAGE_ENVIRONMENT
+        if isinstance(environment, dict)
+        else set()
+    )
+
+
+def _findings_command_step(
+    steps: list[reading.Step], job: dict[typ.Any, typ.Any], workflow: reading.Workflow
+) -> list[str]:
     """Check the CI command suite and the coverage boundary it must follow."""
     wanted = f"make {COMMAND_TARGET}"
     index, problems = _counted_index(steps, wanted)
@@ -208,11 +227,8 @@ def _findings_command_step(steps: list[reading.Step]) -> list[str]:
         (index for index, item in enumerate(steps) if _uses_coverage(item)), None
     )
     problems += _order_problems(index, wanted, coverage, "the coverage action")
-    environment = step.get("env")
-    inherited = (
-        sorted(set(environment) & COVERAGE_ENVIRONMENT)
-        if isinstance(environment, dict)
-        else []
+    inherited = sorted(
+        _coverage_names(workflow) | _coverage_names(job) | _coverage_names(step)
     )
     if inherited:
         problems.append(f"`{wanted}` must not inherit coverage environment {inherited}")
@@ -221,10 +237,15 @@ def _findings_command_step(steps: list[reading.Step]) -> list[str]:
 
 def _ci_findings(workflow: reading.Workflow) -> list[str]:
     """Check both CI steps, or fail when the workflow shape is unreadable."""
+    jobs = reading.jobs(workflow)
     steps = ci_steps(workflow)
-    if not steps:
+    # One guard for both: ``ci_steps`` reads no steps unless there is exactly
+    # one readable job, and ``jobs[0]`` below must be that job.
+    if len(jobs) != 1 or not steps:
         return ["ci.yml must define exactly one readable job with steps"]
-    return _findings_check_step(steps) + _findings_command_step(steps)
+    return _findings_check_step(steps) + _findings_command_step(
+        steps, jobs[0][1], workflow
+    )
 
 
 def _findings_make_all(recipe: str) -> list[str]:

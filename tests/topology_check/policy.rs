@@ -117,8 +117,9 @@ pub(crate) enum TopologyViolation {
     /// A declared dependency names a forbidden package.
     #[error(
         "the {RUNTIME_PACKAGE} package declares a {kind} dependency on {package:?} as \
-         {declared:?}. Repair: remove the declaration; {FORBIDDEN_MACROS} is admitted only after \
-         the macro baseline gate and a reviewed policy change."
+         {declared:?}. Repair: remove the declaration. A {FORBIDDEN_MACROS} dependency is \
+         admitted only after the macro baseline gate and a reviewed policy change; a dependency \
+         on {RUNTIME_PACKAGE} itself is never admitted."
     )]
     ForbiddenDependency {
         declared: String,
