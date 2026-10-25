@@ -1,12 +1,14 @@
 # Add the current-crate feature matrix (1.2.2)
 
-Status: APPROVED — implementation authorized by the user on 2026-10-25.
+Status: BLOCKED — the approved command omits implicit optional-dependency
+features; a cargo-hack correction is proposed below and awaits user acceptance.
 
 This ExecPlan is a living document. Keep its constraints, tolerances, risks,
 progress, discoveries, decisions, verification evidence, and outcomes current.
 The planning pull request delivered this document and did not complete roadmap
-task 1.2.2. The user has now approved implementation within this plan's
-constraints and tolerances.
+task 1.2.2. The user approved implementation within its constraints and
+tolerances on 2026-10-25. A pinned-tool experiment then exposed a row-selection
+gap before implementation; this plan now awaits approval of the correction.
 
 ## Purpose and big picture
 
@@ -137,6 +139,13 @@ checked feature, or defaults could contaminate isolated rows. Documentation
 must distinguish availability from success, and V1/V2 use distinguishable
 feature configurations rather than empty-default fixtures alone.
 
+**Blocked correction proposal (not yet approved):** the pinned cargo-hack
+experiment showed that `--each-feature` does not select implicit optional
+dependency features unless `--optional-deps` is supplied. Add that option to
+the isolated-row command so the existing V1 obligation for implicit optional
+dependencies is met. Do not begin implementation until the user accepts this
+correction.
+
 ## Proposed command and interfaces
 
 Add `.PHONY` targets `install-cargo-hack`, `check-cargo-hack`,
@@ -152,7 +161,7 @@ as the repair command. Matrix execution must not install tools implicitly.
 The two sequential commands, shown without Make's compiler environment, are:
 
 ```sh
-cargo hack check --each-feature --exclude-all-features --lib \
+cargo hack check --each-feature --optional-deps --exclude-all-features --lib \
   --manifest-path "$PWD/Cargo.toml" -p statelet
 cargo check --all-features --lib --manifest-path "$PWD/Cargo.toml" -p statelet
 ```
@@ -360,7 +369,14 @@ planning-only document.
 - [x] (2026-10-25) Completed plan review and all publication validation gates.
 - [x] (2026-10-25) User approved implementation; the selected decisions below
       are binding for EP-M1 and EP-M2.
-- [ ] EP-M1: implement and validate the local command.
+- [x] (2026-10-25) Baseline `make check-fmt`, `make lint`, `make typecheck`,
+      `make test`, `make markdownlint`, and `make nixie` passed at approved
+      checkpoint `0582f9ed2206ceaf24be5a55bbbcbdf15523c98a`.
+- [x] (2026-10-25) Before implementation, cargo-hack 0.6.45 fixture evidence
+      exposed that implicit optional-dependency features are omitted without
+      `--optional-deps`; the plan is blocked pending approval of the proposed
+      correction.
+- [ ] EP-M1: blocked before implementation by the row-selection mismatch.
 - [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
 
 ## Surprises & discoveries
@@ -369,6 +385,10 @@ cargo-hack's all-feature pass is conditional; its documented `--no-dev-deps`
 option rewrites actual manifests while running. These findings motivated the
 explicit final row, avoidance of rewriting, and mandatory isolation experiment.
 The existing Make defaults would contaminate isolated feature checks if reused.
+The pinned 0.6.45 fixture run selected no-default, default, and each explicit
+feature row but omitted the fixture's implicit optional dependency feature. The
+tagged upstream README documents `--optional-deps` for including those
+dependencies; the correction is proposed and awaits user acceptance.
 
 ## Decision log
 
@@ -390,11 +410,21 @@ explicit all-features invocation, the library-isolation go/no-go experiment,
 and no runtime API or placeholder features. EP-M1 may begin within the listed
 tolerances; deviations still require a recorded proposal and approval.
 
+2026-10-25: Before implementation, a real cargo-hack 0.6.45 fixture run showed
+that `--each-feature --exclude-all-features` omits implicit optional dependency
+features. Firecrawl's retrieval of the [tagged cargo-hack README] confirms
+`--optional-deps` includes them. Proposed correction: add `--optional-deps` to
+the isolated-row command and retain the V1 optional dependency witness. This is
+a plan deviation, not yet accepted; status is BLOCKED and implementation has
+not begun.
+
 ## Outcomes & retrospective
 
 The plan and expert review were approved for implementation by the user on
-2026-10-25. Runtime code, manifests, workflow behaviour, and roadmap completion
-remain unchanged until their corresponding milestone evidence is recorded.
+2026-10-25. A pinned-tool experiment then showed the approved cargo-hack
+command did not enumerate implicit optional-dependency features. Runtime code,
+manifests, workflow behaviour, and roadmap completion remain unchanged while
+the proposed `--optional-deps` correction awaits explicit user acceptance.
 Implementation will be considered complete only when EP-M1/EP-M2 evidence is
 recorded and upstream documents agree with it.
 
@@ -417,6 +447,7 @@ assuming newer upstream help proves the pinned binary's contract.
 
 [hack]: https://github.com/taiki-e/cargo-hack
 [help]: https://github.com/taiki-e/cargo-hack/blob/main/tests/long-help.txt
+[tagged cargo-hack README]: https://github.com/taiki-e/cargo-hack/blob/v0.6.45/README.md
 
 Revision 1 (2026-10-25): Created the approval-gated plan from repository
 evidence, Wyvern reconnaissance, tool research, and the initial community
@@ -433,3 +464,8 @@ open.
 
 Revision 4 (2026-10-25): Recorded the user's explicit approval and selected
 implementation decisions before beginning EP-M1.
+
+Revision 5 (2026-10-25): Recorded the baseline gate results and a pinned-tool
+row-selection mismatch before implementation. Proposed `--optional-deps` to
+meet the existing implicit optional-dependency test obligation; implementation
+is blocked pending explicit user acceptance.
