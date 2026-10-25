@@ -1,6 +1,7 @@
 # Add a benchmark note template for macro cost budgets
 
-Status: APPROVED — the user approved the scope and tolerances on 2026-10-25.
+Status: COMPLETE — the user approved scope and tolerances on 2026-10-25, before
+implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -78,7 +79,7 @@ and obtain explicit approval before proceeding.
 - [x] (2026-10-25) Obtain explicit approval and record APPROVED before
   implementation; the approved scope and tolerances remain unchanged.
 - [x] EP-M1: deliver the template, gate bindings and private contract together.
-  - Implementation is in progress. The focused red run passed 18 cases and
+  - Implementation is delivered. The focused red run passed 18 cases and
     failed only on the missing live template path, as intended.
   - The focused green run now passes 22 contract cases, one doctest, 432
     workflow contract tests plus five subtests, and three topology-command
@@ -91,7 +92,37 @@ and obtain explicit approval before proceeding.
     the fifth full sequence passed without Clippy or Whitaker findings. Its
     logs are under `/tmp/*statelet-1-2-3-macro-cost-benchmark-note-template-
     ep-m1-5.out`.
-- [ ] EP-M2: validate acceptance evidence and mark roadmap task 1.2.3 done.
+- [x] EP-M2: validate acceptance evidence and mark roadmap task 1.2.3 done.
+  - Contributor and reviewer dry runs used two temporary copies under `target/`
+    and were removed after inspection. The real comparison used N = 3 and its
+    exact stress-fixture exception; the synthetic copy used N = 20. All 18
+    fields were filled with clearly illustrative values and revision-shaped
+    citations. No measurement was recorded as real evidence.
+  - Decimal checks reproduced the synthetic 0.49% pass and 0.5% failure
+    boundaries, plus the 2% size pass and 2.001% failure. Roadmap 1.2.3 is
+    marked done; the closed implementation candidate passed its full gates.
+  - The test contract now has exactly two private child modules, each below
+    400 lines. The final working diff contains 11 paths (10 excluding this
+    plan), within the approved tolerance.
+  - On 2026-10-26, PR #153's target `main` resolved to
+    `0ca827880da2dcc27e7e89340f96878999243ac9`, already the branch's exact
+    base. The explicit `zdiff3` rebase completed as a no-op with no conflicts;
+    `range-diff` matched all three branch commits unchanged. Global Git
+    attributes select Weave for Rust, so the unattended rebase disabled that
+    ambient attribute file and used Git's built-in merge driver. The saved
+    worktree patch was verified against the stash before rebase and restored
+    afterwards.
+  - Final validation passed: `make check-fmt`, `make lint`, `make test`,
+    `make typecheck`, `make markdownlint`, `make spelling`, `make nixie`, and
+    staged/unstaged diff checks. Rust tests passed 230 cases (three skipped),
+    one doctest, 432 workflow tests plus five subtests, and three topology
+    command tests. Markdown lint reported zero issues. The first Markdown-lint
+    attempt stopped in spelling-file discovery because the removed test files
+    were still tracked in the index; staging the reviewed deletions fixed that
+    discovery, and the sequential documentation gates then passed.
+  - No macro benchmark was run and no illustrative value was committed as
+    evidence. Roadmap tasks 4.2.2 and 4.3.1 remain open; no Phase 4 budget or
+    publication verdict is implied.
 
 ## Surprises & discoveries
 
@@ -137,22 +168,27 @@ the diff.
 
 ## Outcomes & retrospective
 
-The reviewed plan has been approved and implementation is under way. Approval
-validation passed: 206 Rust tests, one doctest, 432 workflow contract tests
-plus five subtests, and three topology-command tests. Approval formatting,
-linting, type checking, Markdown, spelling and diagram gates also passed. The
-focused EP-M1 green run passed 22 contract cases, one doctest, 432 workflow
-tests plus five subtests, and three topology-command tests. The first full
-attempt passed formatting before Clippy found 51 findings. The second reduced
-those to six. A third passed all gates with four Whitaker advisories; a fourth
-passed formatting before lint found two unused imports and a missing code span.
-The fifth full sequence passed without Clippy or Whitaker findings: 228 Rust
-tests (three skipped), one doctest, 432 workflow tests plus five subtests,
-three topology tests, type checking, Markdown lint, spelling, Mermaid
+The reviewed plan was approved before implementation; EP-M1 and EP-M2 are
+complete. Approval validation passed: 206 Rust tests, one doctest, 432 workflow
+contract tests plus five subtests, and three topology-command tests. Approval
+formatting, linting, type checking, Markdown, spelling and diagram gates also
+passed. The focused EP-M1 green run passed 22 contract cases, one doctest, 432
+workflow tests plus five subtests, and three topology-command tests. The first
+full attempt passed formatting before Clippy found 51 findings. The second
+reduced those to six. A third passed all gates with four Whitaker advisories; a
+fourth passed formatting before lint found two unused imports and a missing
+code span. The fifth full sequence passed without Clippy or Whitaker findings:
+228 Rust tests (three skipped), one doctest, 432 workflow tests plus five
+subtests, three topology tests, type checking, Markdown lint, spelling, Mermaid
 validation, and diff checks. Shared Cargo locks and compiler admission
-lengthened validation. EP-M2 remains: acceptance evidence and the 1.2.3 roadmap
-completion mark. The final retrospective must distinguish that task's
-completion from Phase 4 budget success and the independent G3 decision.
+lengthened validation. EP-M2 acceptance dry runs used temporary illustrative
+notes outside `docs/validation-notes`; they verified independent real and
+synthetic copies, the real comparison exception, and the calculation
+boundaries. No measurements were committed. All final local gates passed on the
+M2 implementation and roadmap candidate; the plan and contents index then
+recorded completion and passed documentation gates. Roadmap 1.2.3 is done,
+while tasks 4.2.2 and 4.3.1 remain open. Task completion does not establish
+Phase 4 budget success or settle the independent G3 decision.
 
 ## Context and orientation
 
@@ -309,17 +345,18 @@ shared dependency-download and compiler caches: a new target directory alone
 does not prove an uncached compiler run. Preserve admission wrappers and record
 their effect; if valid evidence is impossible, report that limitation.
 
-Add `tests/macro_cost_note_contract.rs` and at most two private child modules
-for schema/note handling and test fixtures. The checker accepts document text
-and supplied note collections; filesystem acquisition stays a thin boundary
-using repository capability-filesystem conventions. Enumeration and read errors
-must fail with the affected path, never masquerade as an empty note collection.
-Include a filesystem-boundary negative control for a selected missing or
-unreadable file. Use `rstest` cases with explicit repair diagnostics. The
-contract checks live template row names, unique markers, required
-non-placeholder measurement/evidence cells, allowed comparison kind, and the
-Phase 4 documentation bindings. It does not calculate performance verdicts or
-attempt to prove the truth of cited measurements.
+Add `tests/macro_cost_note_contract.rs` with two private child modules for
+contract checks and test fixtures. Keep each implementation file within the
+repository's 400-line limit. The checker accepts document text and supplied
+note collections; filesystem acquisition stays a thin boundary using repository
+capability-filesystem conventions. Enumeration and read errors must fail with
+the affected path, never masquerade as an empty note collection. Include a
+filesystem-boundary negative control for a selected missing or unreadable file.
+Use `rstest` cases with explicit repair diagnostics. The contract checks live
+template row names, unique markers, required non-placeholder
+measurement/evidence cells, allowed comparison kind, and the Phase 4
+documentation bindings. It does not calculate performance verdicts or attempt
+to prove the truth of cited measurements.
 
 Read completed checkboxes for the exact roadmap task identifiers 4.2.2 and
 4.3.1, bounded to their task lines. When neither task is complete, an empty
@@ -556,3 +593,11 @@ candidate. Clippy and Whitaker reported no findings; Python lint rated 10/10.
 tests plus five subtests, and three topology tests. Type checking, Markdown,
 spelling, Mermaid and staged/unstaged diff checks passed. EP-M1 is complete;
 EP-M2 remains before the roadmap entry can be marked done.
+
+2026-10-26: Preserved the uncommitted EP-M2 changes and rebased the branch onto
+the fetched PR target. The target SHA matched the branch's exclusive base, so
+Git reported the branch up to date; the three-commit range-diff is unchanged
+and no conflicts occurred. Restored the verified patch and reviewed its
+semantic diff. The roadmap checkbox is set, the dry-run arithmetic passed, and
+the final sequential gates passed. The plan and contents index now record
+completion; their documentation gates passed.

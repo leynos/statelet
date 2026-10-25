@@ -2,11 +2,6 @@
 
 use rstest::rstest;
 
-#[path = "fixtures/template_schema.rs"]
-mod template_schema;
-#[path = "fixtures/unrelated_state_name_notes.rs"]
-mod unrelated_state_name_notes;
-
 use super::{NoteFile, check, check_contract};
 
 const FIELDS: [&str; 18] = [
@@ -197,6 +192,12 @@ fn open_tasks_accept_empty_notes_and_both_complete_comparison_forms() {
         .expect("synthetic evidence can be recorded independently");
     let notes = [note("mdtablefix", 3), note("synthetic-20", 20)];
     check(&form, &open_roadmap(), &notes).expect("complete real and synthetic fixtures are valid");
+
+    let unrelated = NoteFile {
+        path: "docs/validation-notes/state-name.md".into(),
+        text: "<!-- state-name-note -->\nnot a macro cost register".into(),
+    };
+    check(&form, &open_roadmap(), &[unrelated]).expect("unrelated StateName notes are ignored");
 }
 
 #[rstest]
@@ -230,6 +231,30 @@ fn live_design_and_roadmap_bindings_are_required() {
             .expect_err("invalid test input must be rejected")
             .contains("synthetic macro cost note")
     );
+}
+
+#[rstest]
+#[case(
+    "| annotation-count | <value> | <repo>@<sha>:<path> |\n",
+    "",
+    "annotation-count"
+)]
+#[case(
+    "<!-- macro-cost-register:end -->",
+    "| environment | <value> | <repo>@<sha>:<path> |\n<!-- macro-cost-register:end -->",
+    "duplicate"
+)]
+#[case("<!-- macro-cost-note -->", "<!-- another-note -->", "marker")]
+#[case("<!-- macro-cost-register:end -->", "<!-- removed -->", "marker pair")]
+fn template_rejects_schema_mutations(
+    #[case] needle: &str,
+    #[case] replacement: &str,
+    #[case] expected: &str,
+) {
+    let malformed = template().replace(needle, replacement);
+    let error =
+        check(&malformed, &open_roadmap(), &[]).expect_err("invalid template must be rejected");
+    assert!(error.contains(expected), "{error}");
 }
 
 #[test]

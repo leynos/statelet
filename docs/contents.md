@@ -39,8 +39,8 @@ set.
     proposal to implementation.
 
   - [Add a benchmark note template for macro cost budgets](execplans/1-2-3-macro-cost-benchmark-note-template.md)
-    specifies the cost evidence form and Phase 4 completeness checks;
-    EP-M1 is delivered and acceptance remains in progress.
+    specifies the delivered cost evidence form and Phase 4 completeness
+    checks; EP-M1 and EP-M2 are complete.
 
 ## Product and design
 

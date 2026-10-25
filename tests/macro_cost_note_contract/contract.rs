@@ -5,19 +5,77 @@ use std::collections::BTreeMap;
 use super::{
     NoteFile,
     REQUIRED_FIELDS,
+    Task,
+    candidate_identity,
     check_fields,
-    claims::{Task, candidate_identity, linked_note_paths, task_block},
-    full_revision,
-    has_revision_citation,
-    marker_count,
-    normalize,
+    is_heading,
+    linked_note_paths,
     parse_register,
-    placeholder,
-    row,
-    section_body,
+    task_block,
 };
 
 const NOTE_MARKER: &str = "<!-- macro-cost-note -->";
+
+pub(super) fn marker_count(source: &str, marker: &str) -> usize {
+    source.lines().filter(|line| line.trim() == marker).count()
+}
+
+pub(super) fn full_revision(revision: &str) -> bool {
+    revision.len() == 40
+        && revision
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn placeholder(value: &str) -> bool {
+    let trimmed = value.trim();
+    matches!(
+        trimmed.to_ascii_lowercase().as_str(),
+        "" | "tbd" | "todo" | "pending" | "n/a"
+    ) || (trimmed.starts_with('<') && trimmed.ends_with('>'))
+}
+
+fn has_revision_citation(evidence: &str) -> bool {
+    evidence.split_whitespace().any(|token| {
+        let Some((repository, rest)) = token.split_once('@') else {
+            return false;
+        };
+        let Some((revision, path)) = rest.split_once(':') else {
+            return false;
+        };
+        !repository.is_empty() && full_revision(revision) && !path.is_empty()
+    })
+}
+
+fn row<'a>(
+    path: &str,
+    rows: &'a BTreeMap<String, super::Row>,
+    field: &str,
+) -> Result<&'a super::Row, String> {
+    rows.get(field)
+        .ok_or_else(|| format!("{path}: required field `{field}` is missing"))
+}
+
+fn section_body(source: &str, heading: &str) -> Option<String> {
+    let mut matched = false;
+    let mut body = Vec::new();
+    for line in source.lines() {
+        if !matched && line.trim() == heading {
+            matched = true;
+            continue;
+        }
+        if matched && is_heading(line) {
+            break;
+        }
+        if matched {
+            body.push(line);
+        }
+    }
+    matched.then(|| body.join("\n"))
+}
+
+fn normalize(value: &str) -> String { value.split_whitespace().collect::<Vec<_>>().join(" ") }
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Kind {
     Mdtablefix,

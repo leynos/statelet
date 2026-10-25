@@ -1,7 +1,5 @@
 //! Guard the macro cost evidence form and the roadmap claims that consume it.
 
-#[path = "macro_cost_note_contract/claims.rs"]
-mod claims;
 #[path = "macro_cost_note_contract/contract.rs"]
 mod contract;
 #[path = "macro_cost_note_contract/fixtures.rs"]
@@ -50,6 +48,100 @@ pub(crate) struct NoteFile {
     pub(crate) text: String,
 }
 
+struct Task {
+    complete: bool,
+    text: String,
+}
+
+struct Candidate {
+    macro_revision: String,
+    design_revision: String,
+}
+
+fn candidate_identity(block: &str, id: &str) -> Result<Candidate, String> {
+    const PREFIX: &str = "<!-- macro-cost-candidate:";
+    if block.matches(PREFIX).count() != 1 {
+        return Err(format!(
+            "completed task {id} needs one macro-cost-candidate comment"
+        ));
+    }
+    let tail = block
+        .split_once(PREFIX)
+        .map(|(_, tail)| tail)
+        .ok_or_else(|| format!("completed task {id} has no candidate comment"))?;
+    let content = tail
+        .split_once("-->")
+        .map(|(content, _)| content.trim())
+        .ok_or_else(|| format!("completed task {id} has an unterminated candidate comment"))?;
+    let (macro_revision_raw, design_revision_raw) = content
+        .split_once("; design-revision:")
+        .ok_or_else(|| format!("completed task {id} comment must name a design revision"))?;
+    let macro_revision = macro_revision_raw.trim();
+    let design_revision = design_revision_raw.trim();
+    if !contract::full_revision(macro_revision) || !contract::full_revision(design_revision) {
+        return Err(format!(
+            "completed task {id} comment requires full lowercase revisions"
+        ));
+    }
+    Ok(Candidate {
+        macro_revision: macro_revision.into(),
+        design_revision: design_revision.into(),
+    })
+}
+
+fn linked_note_paths(block: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut rest = block;
+    while let Some((_, tail)) = rest.split_once("](") {
+        let Some((target, remaining)) = tail.split_once(')') else {
+            break;
+        };
+        if target.starts_with("validation-notes/") {
+            found.push(target.into());
+        }
+        rest = remaining;
+    }
+    found
+}
+
+fn task_block(roadmap: &str, id: &str) -> Result<Task, String> {
+    let lines = roadmap.lines().collect::<Vec<_>>();
+    let matches = lines
+        .iter()
+        .enumerate()
+        .filter_map(|(index, line)| task_status(line, id).map(|complete| (index, complete)))
+        .collect::<Vec<_>>();
+    let [(start, complete)] = matches.as_slice() else {
+        return Err(format!(
+            "roadmap must contain exactly one checklist task {id}"
+        ));
+    };
+    let end = lines
+        .iter()
+        .enumerate()
+        .skip(start + 1)
+        .find_map(|(index, line)| (line.starts_with("- [") || is_heading(line)).then_some(index))
+        .unwrap_or(lines.len());
+    Ok(Task {
+        complete: *complete,
+        text: lines
+            .get(*start..end)
+            .ok_or_else(|| format!("roadmap task {id} has an invalid source range"))?
+            .join("\n"),
+    })
+}
+
+fn task_status(line: &str, id: &str) -> Option<bool> {
+    let (complete, rest) = if let Some(rest) = line.strip_prefix("- [x] ") {
+        (true, rest)
+    } else {
+        (false, line.strip_prefix("- [ ] ")?)
+    };
+    rest.strip_prefix(id)
+        .is_some_and(|suffix| suffix.starts_with(". "))
+        .then_some(complete)
+}
+
 struct Register {
     rows: BTreeMap<String, Row>,
     fields: Vec<String>,
@@ -58,7 +150,8 @@ struct Register {
 fn parse_register(source_name: &str, source: &str) -> Result<Register, String> {
     let begin = "<!-- macro-cost-register:begin -->";
     let end_marker = "<!-- macro-cost-register:end -->";
-    if marker_count(source, begin) != 1 || marker_count(source, end_marker) != 1 {
+    if contract::marker_count(source, begin) != 1 || contract::marker_count(source, end_marker) != 1
+    {
         return Err(format!(
             "{source_name}: register needs one ordered begin/end marker pair"
         ));
@@ -156,63 +249,7 @@ fn check_fields(source: &str, fields: &[String]) -> Result<(), String> {
     ))
 }
 
-fn row<'a>(path: &str, rows: &'a BTreeMap<String, Row>, field: &str) -> Result<&'a Row, String> {
-    rows.get(field)
-        .ok_or_else(|| format!("{path}: required field `{field}` is missing"))
-}
-
-fn marker_count(source: &str, marker: &str) -> usize {
-    source.lines().filter(|line| line.trim() == marker).count()
-}
-
-fn placeholder(value: &str) -> bool {
-    let trimmed = value.trim();
-    matches!(
-        trimmed.to_ascii_lowercase().as_str(),
-        "" | "tbd" | "todo" | "pending" | "n/a"
-    ) || (trimmed.starts_with('<') && trimmed.ends_with('>'))
-}
-
-fn has_revision_citation(evidence: &str) -> bool {
-    evidence.split_whitespace().any(|token| {
-        let Some((repository, rest)) = token.split_once('@') else {
-            return false;
-        };
-        let Some((revision, path)) = rest.split_once(':') else {
-            return false;
-        };
-        !repository.is_empty() && full_revision(revision) && !path.is_empty()
-    })
-}
-
-fn full_revision(revision: &str) -> bool {
-    revision.len() == 40
-        && revision
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-fn section_body(source: &str, heading: &str) -> Option<String> {
-    let mut matched = false;
-    let mut body = Vec::new();
-    for line in source.lines() {
-        if !matched && line.trim() == heading {
-            matched = true;
-            continue;
-        }
-        if matched && is_heading(line) {
-            break;
-        }
-        if matched {
-            body.push(line);
-        }
-    }
-    matched.then(|| body.join("\n"))
-}
-
 fn is_heading(line: &str) -> bool { line.starts_with("## ") || line.starts_with("### ") }
-
-fn normalize(value: &str) -> String { value.split_whitespace().collect::<Vec<_>>().join(" ") }
 
 fn read_document(root: &Utf8Path, path: &str) -> Result<String, String> {
     let directory = Dir::open_ambient_dir(root, ambient_authority())

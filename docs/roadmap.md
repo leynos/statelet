@@ -83,7 +83,7 @@ late clean-up task. See design.md §§5, 10, 11.5-11.7.
   - Success: no-default, default, tracing, serde, and all-feature checks have
     one documented entrypoint even before every feature exists.
   - See design.md §§10 and 11.5.
-- [ ] 1.2.3. Add a benchmark note template for macro cost budgets.
+- [x] 1.2.3. Add a benchmark note template for macro cost budgets.
   - Requires 1.1.2.
   - Use the
     [macro cost benchmark note template](macro-cost-benchmark-note-template.md)
