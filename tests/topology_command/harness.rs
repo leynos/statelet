@@ -11,11 +11,19 @@
 //! filesystem calls, so a path escaping the scratch directory is a refused
 //! capability instead of a write somewhere else. Each invocation owns a unique
 //! root and removes it on both outcomes.
+//!
+//! A fixture need not resolve under a full Cargo build: the policy reads
+//! `cargo metadata --no-deps`, so a declared `path` dependency is reported
+//! without being loaded. Both macro-edge fixtures rely on that, and each was
+//! measured to produce its documented refusal through the real Make target.
+//! Only a *workspace member* needs a manifest of its own, because membership
+//! is resolved before the document is emitted.
 
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
     process::{self, Command},
+    sync::atomic::{AtomicU64, Ordering},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -70,17 +78,37 @@ fn repository_root() -> PathBuf { PathBuf::from(env!("CARGO_MANIFEST_DIR")) }
 /// file into a later fixture, and two invocations cannot write the same paths.
 fn scratch_root() -> PathBuf { Path::new(env!("CARGO_TARGET_TMPDIR")).join("topology-command") }
 
+/// The serial number that makes two roots in one process distinct.
+///
+/// A counter rather than the clock: two calls inside one nanosecond are
+/// ordinary on a coarse timer, and a repeated root would let one case delete a
+/// sibling's tree mid-run. Every increment is a fresh number for the lifetime
+/// of the binary, so uniqueness within a process no longer depends on clock
+/// resolution at all.
+static ROOT_SERIAL: AtomicU64 = AtomicU64::new(0);
+
 /// A fixture root unique to this invocation.
 ///
-/// The process id alone would repeat across enough runs to collide, so the
-/// current time in nanoseconds joins it. The pair is unique for the lifetime
-/// of a test binary and needs no shared counter.
-pub(super) fn unique_scratch_dir(name: CaseName) -> PathBuf {
+/// Three parts, because each alone can repeat. The process id separates
+/// concurrent test binaries; the clock separates successive runs of the same
+/// binary, whose ids are reused; the serial separates calls within one process.
+///
+/// The clock is the only fallible part, and it is reported rather than
+/// defaulted: `unwrap_or_default()` would fold a pre-epoch or failing clock
+/// into `0`, silently giving every affected call the same root. The caller
+/// already returns `Result`, so the failure travels like every other fixture
+/// failure instead of being invented away here.
+pub(super) fn unique_scratch_dir(name: CaseName) -> Result<PathBuf, String> {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_nanos())
-        .unwrap_or_default();
-    scratch_root().join(format!("{}-{}-{nanos}", name.as_str(), process::id()))
+        .map_err(|error| format!("the system clock is before the Unix epoch: {error}"))?
+        .as_nanos();
+    let serial = ROOT_SERIAL.fetch_add(1, Ordering::Relaxed);
+    Ok(scratch_root().join(format!(
+        "{}-{}-{nanos}-{serial}",
+        name.as_str(),
+        process::id()
+    )))
 }
 
 /// Writes every file a fixture declares and returns its manifest path.
@@ -93,7 +121,7 @@ pub(super) fn unique_scratch_dir(name: CaseName) -> PathBuf {
 /// created before reporting what went wrong, and a cleanup refusal is appended
 /// to the original error rather than replacing it.
 pub(super) fn materialize(fixture: &Fixture) -> Result<(PathBuf, PathBuf), String> {
-    let scratch = unique_scratch_dir(fixture.name);
+    let scratch = unique_scratch_dir(fixture.name)?;
     let manifest = scratch.join("Cargo.toml");
     let outcome = write_fixture(fixture, &scratch);
     match outcome {

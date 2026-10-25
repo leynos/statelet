@@ -59,7 +59,7 @@ use manifests::{PackageName, plain_package};
 #[ignore = "run by `make test-topology-command`, which nests a Cargo invocation; routine and \
             coverage runs must not start it"]
 fn the_pin_overrides_a_healthy_fixture_override() -> Result<(), String> {
-    let root = unique_scratch_dir(CaseName("v5-pin"));
+    let root = unique_scratch_dir(CaseName("v5-pin"))?;
     let forbidden = format!(
         "{}\n[workspace]\nmembers = [\"extra\"]\n",
         plain_package(PackageName("statelet"), "")

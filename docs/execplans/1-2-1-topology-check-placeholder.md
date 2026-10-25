@@ -1056,6 +1056,77 @@ pairing are the same six inputs the six `rstest` rows supplied. Verification:
 Pylint 10.00/10), and `make test` under `LC_ALL=C` (206 nextest, 1 doctest, 432
 workflow-contract cases with five subtests, 3 command-boundary) are green.
 
+D26 (2026-10-25): CodeRabbit's pre-merge table for `fb1d00b` reported two
+errors and three warnings, submitted with no inline findings. The table is a
+single long-lived comment edited in place, so its `updated_at` — not its
+`created_at` — is what makes it current; the row text describes this head. Each
+check was judged against source and against measurement rather than repaired by
+default.
+
+The Testing (Overall) error is declined as a false positive, on two independent
+measurements. It claims both macro-edge fixtures are unloadable, so Cargo fails
+before the policy runs. First, a probe manifest declaring
+`path = "../definitely-does-not-exist"` exits 0 under
+`cargo metadata --no-deps` and 101 under the same command without the flag,
+which is the documented semantics: the policy reads declarations, not a
+resolved graph. Second, the real `make topology-check` was run against a
+scratch tree materialized exactly as `fixtures.rs` declares it — `Cargo.toml`
+and `src/lib.rs` only, with `../macros` absent. Both printed their documented
+refusal: `declares a build dependency on "statelet-macros"` and
+`declares a normal dependency on "statelet-macros" as "macros"`, each with the
+repair naming the macro gate. `make test-topology-command` independently passed
+3 with 0 skipped, which includes
+`every_fixture_produces_its_documented_verdict` over all nine fixtures. Adding
+`macros/Cargo.toml` as the check asks would add a file no fixture reads and
+would hide the fact the cases depend on; the module doc now records why an
+unresolvable `path` is legitimate here.
+
+The Unit Architecture error is accepted. `unique_scratch_dir` folded a clock
+failure into `0` with `unwrap_or_default()`, so a pre-epoch or failing clock
+gave every call in the process the same root — and one case's cleanup would
+then delete another's tree. It now returns `Result` and reports the failure;
+`materialize` and the V5 case propagate it with `?`. The resolution also asked
+for a fixed clock in tests, which is declined: the clock is already not the
+uniqueness mechanism. A process-wide `AtomicU64` serial joins the process id
+and the timestamp, so two calls in the same nanosecond still differ. The serial
+is what makes the root unique; the clock only separates successive runs, where
+a fixed value would collide across process-id reuse. Injecting a fixed clock
+would therefore make the function weaker, not more testable.
+
+The Developer Documentation warning is accepted and repaired. The
+`Idempotence and recovery` section still told a contributor to commit only the
+plan and to leave M1 and roadmap 1.2.1 untouched, long after both were done. It
+now labels that paragraph historical and states current maintenance, recovery,
+and gate-order instructions.
+
+The Testing (Compile-Time / Ui) warning is declined. It asks for `insta`
+snapshots of the diagnostics. The plan's Verification plan already records the
+decision that no multivariant report is introduced and that exact small message
+assertions suffice; the suite asserts the enum variant, the dynamic fields, and
+the `Repair:` fragment for every refusal, plus the three exact success lines. A
+snapshot would restate those assertions in a form that churns on unrelated
+edits and, for the acquisition errors, would have to redact exactly the
+run-specific path, status, and stderr that make the assertion meaningful today.
+Adding `insta` would also add a dev-dependency to a test-only boundary that has
+no multivariant output to stabilize.
+
+The Domain Architecture warning is declined for this pull request. It asks for
+`MetadataDocument`, `Package`, `Target`, and `Dependency` model types between
+the adapter and the policy. That is a real design, and it is deliberately not
+this task: the plan's Constraints bind the change to a closed three-clause
+predicate and forbid the later graph evaluator, and the policy's whole
+correctness argument is that it judges the document Cargo emits — including
+additive fields it must ignore and malformed shapes it must name with a JSON
+pointer — rather than a model that has already decided what is well-formed. A
+typed model would move the malformed-field diagnostics into a second parser and
+change where a malformed document is reported, which is a behavioural change
+beyond a review repair. Recorded as a candidate for a future task rather than
+left as an unaddressed objection.
+
+Verification for this round: `make check-fmt`, `make lint`, `make typecheck`,
+and `make test` under `LC_ALL=C`, in that order; `make test-topology-command`
+for the changed command boundary.
+
 ## Outcomes & retrospective
 
 Historical planning record (2026-10-14, before approval): planning established
@@ -1517,12 +1588,28 @@ the repository target directory or configured shared target, not in fixture
 directories beneath `/tmp`. Record failing seeds before retrying a property.
 Restore deliberate negative controls before wider gates or commits.
 
-For this planning pull request, commit only the plan, its contents-index entry,
-and the proposed design note after validation. Push the requested branch over
-verified SSH, refresh its remote-tracking ref, set the named upstream, and
-create a draft PR titled `Plan: Add a topology-check placeholder (1.2.1)`. Link
-this plan using the branch ref and finish the PR body with the Lody session
-reference. Do not mark the roadmap done or start M1 before explicit approval.
+Historical planning-only instruction (2026-10-14, superseded): this paragraph
+formerly told a contributor to commit only the plan and to leave M1 and roadmap
+task 1.2.1 untouched pending approval. Both conditions were met and the plan is
+now `IMPLEMENTED`; it is retained here only so a reader who saw the earlier
+wording can tell that it is no longer current.
+
+Running the check in this repository today: rerunning `make topology-check`
+against the real manifest is always safe, because the policy only reads the
+metadata document. The command-boundary suite writes each fixture beneath
+`CARGO_TARGET_TMPDIR/topology-command`, one uniquely named root per invocation,
+and removes it on both outcomes, so an interrupted run leaves at most one stale
+root that the next run never reuses. Cargo build output stays in the repository
+target directory or the configured shared target and never in a fixture
+directory beneath `/tmp`; never edit the real manifest to demonstrate a
+rejection. Record a failing `proptest` seed before retrying a property, and
+confirm that a deliberately reintroduced negative control still fails before
+running the wider gates or committing. To recover from a stale root or an
+aborted fixture run, delete only the named root beneath
+`CARGO_TARGET_TMPDIR/topology-command`; do not delete the shared parent or the
+target directory. Verification after any maintenance edit is the repository's
+own gate set, run in this order: `make check-fmt`, `make lint`,
+`make typecheck`, `make test` under `LC_ALL=C`, and `make markdownlint`.
 
 ## Artefacts and notes
 
