@@ -1,21 +1,24 @@
 # Add the single-crate topology-check placeholder
 
-Status: IMPLEMENTED — M1 (`5140a53`) and M2 (`902927d`) are complete and
-published on PR #137. The pre-rebase implementation head was `abc3e57`; it
-carried the CodeScene repair, both assessment rounds, and the nine
-formal-review repairs. The branch was rebased onto `main` at target `781583c`,
-so the pre-rebase commit identities above survive only in the recovery refs
-recorded under Idempotence and recovery; the rebased equivalents are the same
-patches with different hashes. The rebase cleared the `Cargo.lock` conflict
-that had been suppressing hosted `pull_request` workflows, and `CI` and
-`Act Validation` now run. A review of the rebased head raised three further
-findings, repaired in `e1a44ac` as D23, and the commit after it records that
-round here. Three later rounds follow as D24 to D26: four findings about
-target-kind classification and the optional-variable classifier, a CodeScene
-finding in the test that repair introduced, and CodeRabbit's five pre-merge
-findings, of which two were repaired and three declined with recorded grounds.
-Delivery remains with `pr-babysitting`, and the branch tip is deliberately not
-named here.
+Status: COMPLETE — M1 (`5140a53`) and M2 (`902927d`) are complete, and PR #137
+squash-merged to `main` as `0957a02` on 2026-10-25 with roadmap 1.2.1 ticked.
+Post-merge `Coverage (main)` concluded `success` on that commit. The pre-rebase
+implementation head was `abc3e57`; it carried the CodeScene repair, both
+assessment rounds, and the nine formal-review repairs. The branch was rebased
+onto `main` at target `781583c`, so the pre-rebase commit identities above
+survive only in the recovery refs recorded under Idempotence and recovery; the
+rebased equivalents are the same patches with different hashes. The rebase
+cleared the `Cargo.lock` conflict that had been suppressing hosted
+`pull_request` workflows, and `CI` and `Act Validation` now run. A review of
+the rebased head raised three further findings, repaired in `e1a44ac` as D23,
+and the commit after it records that round here. Three later rounds follow as
+D24 to D26: four findings about target-kind classification and the
+optional-variable classifier, a CodeScene finding in the test that repair
+introduced, and CodeRabbit's five pre-merge findings, of which two were
+repaired and three declined with recorded grounds. A closing audit then
+corrected one transcription in D26, and the final review round covering
+`1da5b25` is adjudicated as D27, declining all five of its rows with recorded
+grounds. The branch tip at merge was `5ad54cf`.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -514,7 +517,17 @@ before a future change admits a macro package.
     `CLEAN` with `mergeable: MERGEABLE` on this head, so `CHANGES_REQUESTED`
     remains an aggregate over the superseded `fb1d00b` submission rather than a
     merge blocker. Only this plan changed this round, so the Markdown gates are
-    the applicable set.
+    the applicable set. That commit is `5ad54cf`; the Markdown gates were green
+    on it before the push.
+  - [x] (2026-10-25 13:55Z) PR #137 squash-merged to `main` as `0957a02`
+    (`mergedAt` `2026-10-25T13:55:34Z`) from head `5ad54cf`, with roadmap 1.2.1
+    ticked at `docs/roadmap.md:68` in the merged tree. Squash is the only merge
+    method this repository permits. The branch was not up to date with `main` at
+    merge time, which the ruleset allows because
+    `strict_required_status_checks_policy` is false; the merge therefore landed
+    linearly on the target it was rebased onto. Hosted on the landed commit:
+    `Coverage (main)` `completed` / `success`, and no other workflow targets a
+    push to `main`. The remote branch was deleted by the merge configuration.
 
 ## Surprises & discoveries
 
@@ -1438,6 +1451,17 @@ compiled into the target that the target selects. Adjudicating a finding means
 following its remedy to the place it would land, because a remedy can be right
 about a seam and wrong about the command that owns it. A plan that only
 re-reads the cited lines will accept findings it should decline.
+
+A fifth lesson is about how a long review tail ends. Five consecutive rounds
+produced no defect in the delivered code: the last four repairs were one
+transcription in this plan, one CodeScene smell in a test, and two real fixes
+in a test helper. Everything else was declined, and the declining was the work
+— each refusal had to be grounded in a measurement, because a review's
+observation is usually accurate even when its remedy is not. The merge was
+never blocked by the aggregate `CHANGES_REQUESTED`, which summarized a
+submission four commits behind; `mergeStateStatus: CLEAN` and a green required
+check were the real gate. Reading the aggregate decision as a veto would have
+stalled a branch whose only outstanding findings were already adjudicated.
 
 ## Context and orientation
 
