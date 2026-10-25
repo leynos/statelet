@@ -1,11 +1,12 @@
 # Add the current-crate feature matrix (1.2.2)
 
-Status: DRAFT — implementation requires explicit approval.
+Status: APPROVED — implementation authorized by the user on 2026-10-25.
 
 This ExecPlan is a living document. Keep its constraints, tolerances, risks,
 progress, discoveries, decisions, verification evidence, and outcomes current.
-The planning pull request delivers this document only; it does not complete
-roadmap task 1.2.2 or authorize implementation.
+The planning pull request delivered this document and did not complete roadmap
+task 1.2.2. The user has now approved implementation within this plan's
+constraints and tolerances.
 
 ## Purpose and big picture
 
@@ -357,7 +358,8 @@ planning-only document.
 - [x] (2026-10-25) Incorporated six-expert findings; final review found no
   approval-blocking design defects.
 - [x] (2026-10-25) Completed plan review and all publication validation gates.
-- [ ] Obtain explicit implementation approval.
+- [x] (2026-10-25) User approved implementation; the selected decisions below
+      are binding for EP-M1 and EP-M2.
 - [ ] EP-M1: implement and validate the local command.
 - [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
 
@@ -373,8 +375,8 @@ The existing Make defaults would contaminate isolated feature checks if reused.
 2026-10-25: Propose pinned cargo-hack rather than a custom feature parser.
 Automatic discovery reduces repository-owned policy and covers future features.
 Use `--exclude-all-features` only to delegate that row to the explicit final
-command; retain both baseline modes. These are proposed decisions pending
-approval, not implementation evidence.
+command; retain both baseline modes. The user approved these decisions on
+2026-10-25; this entry records design intent, not implementation evidence.
 
 2026-10-25: The expert panel raised default contamination, conditional all-row
 coverage, development-dependency unification, tool mismatch diagnostics,
@@ -382,10 +384,17 @@ manifest pinning, and nested build isolation. V1–V4 and both milestones now
 address these concerns. The trade-off is a small external tooling dependency
 instead of a bespoke discovery implementation. No public abstraction is added.
 
+2026-10-25: The user explicitly approved implementation of this plan. The
+selected implementation is the pinned cargo-hack approach above, with the
+explicit all-features invocation, the library-isolation go/no-go experiment,
+and no runtime API or placeholder features. EP-M1 may begin within the listed
+tolerances; deviations still require a recorded proposal and approval.
+
 ## Outcomes & retrospective
 
-The plan and expert review are complete and ready for approval. Runtime code,
-manifests, workflow behaviour, and roadmap completion remain unchanged.
+The plan and expert review were approved for implementation by the user on
+2026-10-25. Runtime code, manifests, workflow behaviour, and roadmap completion
+remain unchanged until their corresponding milestone evidence is recorded.
 Implementation will be considered complete only when EP-M1/EP-M2 evidence is
 recorded and upstream documents agree with it.
 
@@ -419,4 +428,8 @@ the validation block to stop on failed pipelines. Added a path-quoting fixture.
 Implementation remains pending approval.
 
 Revision 3 (2026-10-25): Recorded successful sequential planning gates and test
-counts. Implementation approval and both implementation milestones remain open.
+counts. Implementation approval and both implementation milestones remained
+open.
+
+Revision 4 (2026-10-25): Recorded the user's explicit approval and selected
+implementation decisions before beginning EP-M1.
