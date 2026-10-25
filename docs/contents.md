@@ -35,6 +35,10 @@ set.
     carried the metadata-based local and CI gate for roadmap task 1.2.1 from
     proposal to implementation.
 
+  - [Add a benchmark note template for macro cost budgets](execplans/1-2-3-macro-cost-benchmark-note-template.md)
+    proposes the cost evidence form and Phase 4 completeness checks;
+    implementation awaits approval.
+
 ## Product and design
 
 - [Terms of reference](terms-of-reference.md) defines the problem space,
