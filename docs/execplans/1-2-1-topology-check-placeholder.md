@@ -464,6 +464,19 @@ before a future change admits a macro package.
     `/tmp/markdownlint-statelet-1-2-1-topology-check-placeholder.out`,
     `/tmp/topology-command-statelet-1-2-1-topology-check-placeholder.out`, and
     `/tmp/check-fmt2-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-25 11:35Z) `b8230e6` published with the Progress entry above.
+    Documentation only, so the gates are the Markdown ones: `make fmt`,
+    `make check-fmt` (40 files unchanged), and `make markdownlint` (40 files,
+    0 issues, spelling gate clean) green. Pushed with a fast-forward lease
+    bound to `8d64088`; local head, refreshed tracking ref, and `ls-remote` all
+    reported `b8230e6827c6e52a0d5624e26338eb00a7996f24`. Hosted on it:
+    `build-test` and `act-validation` `pass`, CodeScene Code Health Review
+    `pass` and approving, Gecko Security Review `pass`, with `Sourcery review`
+    and `automerge` skipped by configuration. CodeRabbit's commit status reads
+    `success` with the description `Review paused`, so `b8230e6` has no
+    inspection of its own, and `reviewDecision` still reports
+    `CHANGES_REQUESTED` from the submission on `fb1d00b`. Evidence:
+    `/tmp/planstate6-statelet-1-2-1-topology-check-placeholder.out`.
 
 ## Surprises & discoveries
 
