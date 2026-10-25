@@ -10,8 +10,12 @@ patches with different hashes. The rebase cleared the `Cargo.lock` conflict
 that had been suppressing hosted `pull_request` workflows, and `CI` and
 `Act Validation` now run. A review of the rebased head raised three further
 findings, repaired in `e1a44ac` as D23, and the commit after it records that
-round here. Delivery remains with `pr-babysitting`, and the branch tip is
-deliberately not named here.
+round here. Three later rounds follow as D24 to D26: four findings about
+target-kind classification and the optional-variable classifier, a CodeScene
+finding in the test that repair introduced, and CodeRabbit's five pre-merge
+findings, of which two were repaired and three declined with recorded grounds.
+Delivery remains with `pr-babysitting`, and the branch tip is deliberately not
+named here.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -427,6 +431,39 @@ before a future change admits a macro package.
     `/tmp/test-statelet-1-2-1-topology-check-placeholder.out`,
     `/tmp/typecheck-statelet-1-2-1-topology-check-placeholder.out`, and
     `/tmp/lint-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-25 10:57Z) CodeRabbit's five pre-merge findings adjudicated as
+    D26 and published as `8d64088`. The fixture-root clock failure now
+    propagates instead of folding into `0`, a process-wide serial supplies
+    uniqueness within one process, and the plan's stale planning-only
+    paragraph is labelled historical. The three declined findings carry
+    measured grounds. Testing (Overall) is a false positive, established twice
+    over: a manifest whose `path` dependency names a directory that does not
+    exist exits `0` under `cargo metadata --no-deps` and `101` without the
+    flag, and the real `make topology-check` run against scratch trees
+    materialized exactly as `fixtures.rs` declares produced both documented
+    refusals verbatim. The fixed-clock injection that finding suggested was
+    declined because the clock is not the uniqueness mechanism; a probe
+    pinning the clock to zero still produced three distinct roots from the
+    serial. Gate set on `8d64088`, run sequentially: `make fmt` then
+    `make check-fmt` (40 files unchanged), `make lint` (Clippy with
+    `-D warnings`, `whitaker`, and Pylint 10.00/10), `make typecheck`,
+    `LC_ALL=C make test` (206 nextest cases passed with 3 skipped, the
+    doctest, 432 workflow-contract cases with 5 subtests, and the command
+    boundary's 3 cases), `make markdownlint` (40 files, 0 issues, with the
+    repository-wide spelling gate clean), and a standalone
+    `make test-topology-command` (3 passed, 0 skipped) rerun after the repair.
+    `make test` already chains that target, so its log carries a boundary run
+    as well; the standalone rerun is what exercises the repaired helper
+    against every fixture. A final `make check-fmt` after the last edit again
+    reported 40 files unchanged. Evidence:
+    `/tmp/fmt-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/check-fmt-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/lint-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/typecheck-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/test-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/markdownlint-statelet-1-2-1-topology-check-placeholder.out`,
+    `/tmp/topology-command-statelet-1-2-1-topology-check-placeholder.out`, and
+    `/tmp/check-fmt2-statelet-1-2-1-topology-check-placeholder.out`.
 
 ## Surprises & discoveries
 
@@ -1211,6 +1248,24 @@ on 2026-10-25. The commit SHA each entry names is the durable record; the path
 was only ever a convenience. The conflict also suppresses hosted `pull_request`
 workflows entirely, so `abc426f` has no `CI` run to await and the rebase is
 what will produce one.
+
+The rebase onto `781583c` removed that blockage and the delivery rounds after
+it were ordinary review work rather than recovery. Four rounds followed, D23 to
+D26, and each is recorded under Decision log with its own evidence. Two
+patterns are worth carrying forward. First, a review finding's *observation*
+and its *remedy* deserve separate judgement: D26 accepted two of its five
+findings, declined one remedy inside an accepted finding, and declined three
+findings outright — and each declined item rests on a recorded measurement or a
+documented constraint, never on preference. The fixed-clock injection is the
+clearest case: the observation that a clock failure was mishandled was correct
+and is repaired, while the proposed test seam was unnecessary because a
+process-wide serial, not the clock, is what makes a root unique. Second, a
+commit that discharges every review finding and passes every local gate can
+still fail CodeScene on the code it adds: `aa3e2a3` repaired D24's four
+findings and then reported one "String Heavy Function Arguments" finding in the
+test it had just written, which `fb1d00b` resolved by deleting the string-slice
+parameter rather than reshaping it. The lesson is that the hosted health check
+judges the repair as new code, not only as a change to the code it replaced.
 
 ## Context and orientation
 
