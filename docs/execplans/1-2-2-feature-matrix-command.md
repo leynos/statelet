@@ -1,0 +1,422 @@
+# Add the current-crate feature matrix (1.2.2)
+
+Status: DRAFT — implementation requires explicit approval.
+
+This ExecPlan is a living document. Keep its constraints, tolerances, risks,
+progress, discoveries, decisions, verification evidence, and outcomes current.
+The planning pull request delivers this document only; it does not complete
+roadmap task 1.2.2 or authorize implementation.
+
+## Purpose and big picture
+
+Provide one contributor command, `make feature-matrix`, that checks the current
+Statelet library without defaults, with defaults, with each declared feature in
+isolation, and with all features. In particular, `tracing` and `serde` must be
+checked independently as soon as they exist. The command must already work on
+today's crate, which declares neither feature. Document absent features as not
+yet applicable, never as successful feature checks.
+
+This establishes the validation spine before optional functionality appears. It
+leaves the choices to ship nothing, conventions only, or a macro intact.
+Success is observable through the command's exit status, Cargo's reported
+invocations, deliberately broken fixture crates, and routine local and
+Continuous Integration (CI) wiring.
+
+## Context and orientation
+
+The baseline is commit `0ca827880da2dcc27e7e89340f96878999243ac9`. `Cargo.toml`
+defines one `statelet` library and no `[features]` table. `docs/roadmap.md`
+marks prerequisite 1.2.1 complete and 1.2.2 incomplete. `Makefile` owns
+contributor entrypoints; `all` orders its gates explicitly. `CARGO_FLAGS`
+currently includes `--all-targets --all-features` and therefore must not be
+reused to construct this matrix.
+
+`tests/topology_check.rs` checks declared dependency topology.
+`tests/topology_command.rs` and its private child modules exercise real Make
+subprocesses using isolated Cargo fixtures. Their ignored tests run through
+`make test-topology-command`, after ordinary tests and outside coverage.
+`tests/workflow_contracts/mock_wiring.py` supplies evaluated Make recipes;
+`topology_wiring_contract.py` and `topology_wiring_test.py` demonstrate wiring
+contracts with negative controls. Consult these before adding helpers.
+`.github/workflows/ci.yml` runs topology validation and a separate command
+boundary test after coverage.
+
+A feature matrix here means a set of library compilation configurations. It is
+neither an exhaustive feature powerset nor proof of resolved dependency policy.
+It complements the existing topology gate, whose future multi-crate policy
+remains subject to issue 112.
+
+## Conformance basis
+
+All repository references below use the baseline revision above. Read
+`docs/contents.md` and `docs/repository-layout.md` for orientation, then:
+
+- R1: `docs/roadmap.md` task 1.2.2 and `docs/design.md` section 11.5 require
+  one entrypoint for the five named configurations and an automated tool. EP-M1
+  supplies it; V1 and V2 establish its observable behaviour.
+- R2: `docs/design.md` sections 5 and 10 preserve the current crate boundary,
+  additive features, and the unresolved `tracing` default decision. EP-M1
+  preserves these constraints; V3 and diff review provide evidence.
+- R3: `docs/design.md` sections 11.1, 11.5–11.7 connect feature validation to
+  bet B5 and routine checks. EP-M2 wires validation; V4 guards the wiring.
+  Compile-time budgets and multi-crate policy are not changed here.
+- R4: `docs/terms-of-reference.md` and accepted ADR 002's marker-only scope,
+  ADR 003's exit register, and ADR 004's evidence gate prohibit speculative
+  runtime scope. Both milestones retain those decisions. No new product
+  contract or architectural decision record is currently needed.
+
+Use the `execplans`, `codegraph-mcp`, `hexagonal-architecture`, `rust-router`,
+and routed `arch-crate-design` skills. Use `firecrawl-mcp` for further external
+research, `logisphere-experts` for design review, and `mapsplice` if completion
+requires structural roadmap editing. For Rust test details, load the routed
+`rust-unit-testing` skill before implementation.
+
+Required reading includes `docs/rust-testing-with-rstest-fixtures.md` for
+parameterized cases,
+`docs/reliable-testing-in-rust-via-dependency-injection.md` for process-local
+inputs, `docs/rust-doctest-dry-guide.md` for executable API examples if needed,
+`docs/complexity-antipatterns-and-refactoring-strategies.md` for cohesive
+helpers, and `docs/rstest-bdd-users-guide.md` for behavioural specifications if
+the command grows beyond simple process wiring. Follow
+`docs/documentation-style-guide.md` and `docs/scripting-standards.md`.
+
+## Constraints
+
+Do not implement before approval. Record approval and set status to APPROVED
+before starting EP-M1. Do not add public features, runtime dependencies, a
+second crate, runtime APIs, or a decision about feature defaults. Preserve
+existing topology policy and its separate acceptance evidence.
+
+Keep orchestration in Make and test-only process helpers under
+`tests/feature_matrix_command/`. No new domain port, utility crate, generic
+feature planner, or custom Cargo metadata parser is justified. Hexagonal
+architecture applies here by keeping process infrastructure outside the
+library. Before extracting any helper, search for an equivalent and document
+its owner, permitted callers, and reuse policy in `docs/developers-guide.md`.
+
+Do not use cargo-hack's `--no-dev-deps`: it temporarily rewrites real
+manifests. Do not use feature-exclusion options that remove required rows, a
+powerset, `--clean-per-run`, an isolated Cargo cache, or a `/tmp` build target.
+Keep `RUSTC_WRAPPER` and `RUSTDOC` admission intact. Gates run sequentially
+with logs captured using `tee` and shell `pipefail`; a scrutineer owns full
+gates.
+
+## Tolerances (exception triggers)
+
+Stop and record a proposed deviation if a second package, production Rust
+change, new runtime dependency, manifest rewriting, custom discovery parser, or
+change to the five-row meaning becomes necessary. The proposed tool pin is
+cargo-hack 0.6.45, observed installed during planning; changing it requires
+recording compatibility evidence and the reason before proceeding.
+
+Stop if the library-only isolation experiment described in V3 fails. Do not
+silently weaken the check or add `--no-dev-deps`. Set status to BLOCKED and
+present alternatives for explicit approval. The same applies to an upstream
+design contradiction. Host disk exhaustion requires stopping and reporting;
+unhealthy compiler admission requires reporting its status, without recovery
+commands or bypasses. Healthy queueing is not a failure or time limit.
+
+## Risks
+
+High impact, medium likelihood: development dependency features could hide a
+missing normal dependency feature. V3 is a decisive go/no-go experiment before
+the approach is accepted as implemented.
+
+Medium impact, medium likelihood: cargo-hack's automatic all-feature execution
+is conditional on feature count. An explicit all-feature invocation removes
+that ambiguity; zero- and one-feature fixtures test it.
+
+Medium impact, medium likelihood: test subprocesses could inherit coverage
+flags or contend for the outer build directory. Run them serially after
+ordinary tests or coverage with separate fixture target directories under the
+worktree's `target/`, preserving compiler admission.
+
+Medium impact, low likelihood: an absent feature could be mistaken for a
+checked feature, or defaults could contaminate isolated rows. Documentation
+must distinguish availability from success, and V1/V2 use distinguishable
+feature configurations rather than empty-default fixtures alone.
+
+## Proposed command and interfaces
+
+Add `.PHONY` targets `install-cargo-hack`, `check-cargo-hack`,
+`feature-matrix`, and `test-feature-matrix-command` in `Makefile`. Use
+`CARGO_HACK_VERSION` with default `0.6.45` as the shared local/CI pin. The
+installer uses
+`$(CARGO) install --locked --version $(CARGO_HACK_VERSION) cargo-hack`; retain
+development build-tool prerequisites and admission. The check target compares
+the installed version exactly and fails before matrix work if missing or
+mismatched, naming expected and actual versions and `make install-cargo-hack`
+as the repair command. Matrix execution must not install tools implicitly.
+
+The two sequential commands, shown without Make's compiler environment, are:
+
+```sh
+cargo hack check --each-feature --exclude-all-features --lib \
+  --manifest-path "$PWD/Cargo.toml" -p statelet
+cargo check --all-features --lib --manifest-path "$PWD/Cargo.toml" -p statelet
+```
+
+Use `$(CARGO)` and `$(BUILD_JOBS)` in both recipes. Both bind the same absolute
+`$(CURDIR)/Cargo.toml` and `-p statelet`. Apply the existing warning-denying
+`RUSTFLAGS` composition and `STANDARD_RUSTFLAGS` once per subprocess,
+preserving caller flags. Do not forward `CARGO_FLAGS`, `TEST_FLAGS`, or
+arbitrary matrix feature arguments. Add the two matrix targets to
+`.NOTPARALLEL`.
+
+cargo-hack discovers declared features, including future `tracing` and `serde`,
+and supplies no-default and default checks. An explicit final command owns the
+all-feature row even when no features exist. Absent optional features have no
+invented invocation; the guide explicitly states that they are not validated
+until declared. Retain upstream command diagnostics instead of creating a
+stable output format or parsing human-readable logs in production. A success
+summary, if added, must describe only declared configurations and must never
+appear after a failing child.
+
+Fixtures run a copy of the real Makefile in isolated package roots, with the
+existing build-tool preflight inputs available there. Do not introduce a
+production manifest override merely for testing. Test process environments may
+set executable paths and target directories on each child; never mutate the
+parent process environment. Follow the topology harness's caller-flags pattern
+to avoid composing `RUSTFLAGS` twice.
+
+## Verification plan
+
+The abstract specification is a set of required configurations for package P:
+no defaults; the manifest's defaults; each declared feature alone with defaults
+disabled; and every declared feature together. `tracing` and `serde` are
+members of the isolated set exactly when declared. Compilation success means
+every selected invocation succeeded; a missing tool or any failed invocation
+makes the command fail. Duplicate semantic configurations when defaults are
+empty do not remove the requirement to exercise the corresponding modes.
+
+Preconditions are a valid current-package manifest, the pinned toolchain and
+cargo-hack, and available build tools. Postconditions concern process status,
+configuration selection, source preservation, and routine invocation. Cargo's
+feature semantics, cargo-hack's documented interface, and Make's ordinary
+failure propagation are external assumptions, not properties to prove anew. No
+new business logic, semantic lemma, or unbounded state invariant is introduced.
+Verus, Kani, and proptest are not warranted for this finite command
+integration. If implementation introduces a non-trivial selection algorithm,
+return to this specification and reconsider verification before coding it. Do
+not add speculative proof bodies, `assume`, `admit`, or trusted shortcuts.
+
+### V1: Coverage and default isolation
+
+Use `rstest` fixtures and parameterized end-to-end cases in
+`tests/feature_matrix_command.rs`, with private helpers in its sibling folder.
+Cover no features, only tracing, only serde, both, a non-empty default, and an
+implicit optional dependency feature. Include fixture-only
+`default = ["baseline"]`, `baseline = []`, `tracing = []`, and `serde = []` to
+make the five required rows distinguishable. These fixture features must never
+be added to Statelet's manifest.
+
+Include a fixture root containing spaces to test path quoting. Capture child
+invocations through a test-owned forwarding executable or use Cargo's
+diagnostic invocation records, asserting semantic argument sets rather than
+complete output snapshots. The forwarding executable must delegate to real
+Cargo for compilation; pure command doubles alone cannot discharge V1. Assert
+no-default, default, tracing-only, serde-only, and all-feature modes, including
+disabled defaults on isolated rows. Validate zero/one-feature all-feature
+execution explicitly. This finite witness set and V2's failures prevent success
+from an empty matrix. Run `make test-feature-matrix-command`; every expected
+row must be witnessed and all healthy fixtures must pass.
+
+### V2: Failure propagation and non-vacuity
+
+For the distinguishable fixture, inject one `compile_error!` predicate at a
+time, true only in each required row. For example, a default-only fault needs
+`baseline` enabled with both optional features disabled; an isolated tracing
+fault needs tracing enabled with baseline and serde disabled. Demonstrate each
+healthy fixture first, then require its poisoned variant to fail for the
+intended compiler message. A syntax error that fails every row is insufficient.
+
+Also test absent cargo-hack, a mismatched version, malformed Cargo input, and
+an all-features-only failure. Require a non-zero status, actionable
+diagnostics, and no global success message. Do not require GNU Make to preserve
+the child's numeric exit code. `googletest` assertions and `pretty_assertions`
+provide clear boolean and structured-result diagnostics; use existing
+dependencies first. These tests are executable behavioural and command-boundary
+evidence. A second `rstest-bdd` layer would duplicate the same simple cases and
+is not planned. There is no multivariant presentation contract needing `insta`
+snapshots.
+
+### V3: Library isolation and source preservation
+
+Create a real local path dependency exposing a symbol only behind a feature.
+The fixture's normal dependency does not enable that feature; its development
+dependency on the same package does. A library reference to that symbol must
+fail under the matrix's `--lib` check. First show a healthy counterpart passes,
+then require the broken counterpart's missing-symbol diagnostic. This tests the
+external assumption that development features cannot mask the defect. If it
+unexpectedly passes, block EP-M1 and revise the design with approval.
+
+Compare all fixture source manifests byte-for-byte before and after healthy and
+failing matrix runs. Keep lockfile generation separate from the manifest
+assertion. Routine repository runs must leave tracked manifests unchanged. This
+is integration evidence, not a claim to prove all future feature leakage.
+
+### V4: Routine wiring and argument integrity
+
+Add `tests/workflow_contracts/feature_matrix_wiring_contract.py` and
+`feature_matrix_wiring_test.py`, reusing the existing evaluated-recipe and
+strict workflow-reading helpers. Assert that `make all` invokes the matrix once
+after `check-topology`, CI provisions the pinned tool and invokes the same
+target, and `make test` invokes the command-boundary suite after ordinary
+routes. CI runs the latter after coverage without inherited instrumentation.
+
+Negative controls must remove each gate, alter either package/manifest binding,
+inject `--all-features` into the isolated command, remove warning/build flags,
+remove serialization, disconnect the ignored suite, or weaken version checks.
+Each control must fail for its intended clause. Preserve all topology wiring
+contracts. `make test-workflow-contracts` must pass the real configuration and
+reject every control. Include new recipe names in existing development-build
+flag checks where those checks enumerate targets.
+
+## Milestones and plan of work
+
+### EP-M1: A tested local matrix command
+
+After approval, re-read the current manifest, Makefile, and conformance
+sources. Run the baseline gates below and record their results. Sweep existing
+helpers before extraction. Add the smallest command-boundary tests first and
+observe failure because the target is absent. Keep red results as evidence, not
+as a commit. Implement the pinned installer/preflight and the two-command
+recipe, then pass V1–V3. Add a serial ignored-test entrypoint patterned on
+`test-topology-command`, using `--run-ignored only --no-tests fail` and one
+test thread. Wire it into `make test` in this same milestone so tests cannot
+remain unexecuted locally. Do not run nested command tests in ordinary nextest
+or coverage runs.
+
+Document the local command, installation, absent-feature semantics,
+library-only scope, and test-helper reuse policy in `docs/developers-guide.md`.
+Record the matrix decision and limits in design section 11.5, linking this
+plan. Update `docs/repository-layout.md` for new test ownership. The user's
+guide receives a short command/link update only where its existing public build
+instructions would otherwise be incomplete; no consumer API change is claimed.
+
+Acceptance is V1–V3 plus all milestone gates. Recheck R1/R2, unchanged feature
+defaults and library API, source preservation, and current trace links. Commit
+this coherent local capability once green. CI integration remains for EP-M2. If
+the milestone fails, keep the uncommitted evidence and fix or block within
+tolerances; no destructive cleanup or partial passing claim is permitted.
+
+### EP-M2: Routine validation and completion
+
+Write V4's failing wiring tests, then add the matrix to `all` after
+`check-topology` and before spelling. Add `make install-cargo-hack` and
+`make feature-matrix` to CI after build provisioning and topology validation.
+Add `make test-feature-matrix-command` after coverage and the existing topology
+command boundary step. Preserve all existing topology order and coverage
+boundaries. Run V4 and the full milestone gates, then reconcile design and
+operator documentation with the actual command.
+
+Only after all acceptance evidence exists, mark roadmap item 1.2.2 done by
+changing its checkbox to `[x]`, update this plan's progress and outcomes, and
+record the implementation result. Repeat affected documentation checks and
+commit the coherent completed change. R3/R4 and V4 must be discharged without
+changing product gates or claiming resolved-graph proofs. If interrupted, EP-M1
+remains a usable local command; 1.2.2 stays unchecked until EP-M2 passes.
+
+## Concrete validation and recovery
+
+Run from the candidate worktree root. A scrutineer runs gates sequentially and
+records exit statuses and logs under `/tmp`; pipeline status must be preserved:
+
+```bash
+set -eo pipefail
+make fmt 2>&1 | tee /tmp/fmt-statelet-1-2-2-feature-matrix-command.out
+make check-fmt 2>&1 | tee /tmp/check-fmt-statelet-1-2-2-feature-matrix-command.out
+make lint 2>&1 | tee /tmp/lint-statelet-1-2-2-feature-matrix-command.out
+make typecheck 2>&1 | tee /tmp/typecheck-statelet-1-2-2-feature-matrix-command.out
+make test 2>&1 | tee /tmp/test-statelet-1-2-2-feature-matrix-command.out
+make markdownlint 2>&1 | tee /tmp/markdownlint-statelet-1-2-2-feature-matrix-command.out
+make nixie 2>&1 | tee /tmp/nixie-statelet-1-2-2-feature-matrix-command.out
+```
+
+Stop the sequence on failure and inspect its log. `make markdownlint` includes
+spelling. Inspect formatter and generated spelling changes before staging;
+unrelated generated dictionary changes require a separate base change under
+repository policy. After EP-M1 and EP-M2 also run `make feature-matrix` and
+`make check-topology`, with the same logging discipline. Validate a changed
+Makefile with `mbake validate Makefile`. Gate success means completed zero exit
+statuses, never merely progress output. Tests run both before and after code
+changes; the red phase fails for the expected missing or broken behaviour.
+
+Use worktree-local fixture directories and target directories; never delete
+shared caches or another agent's files. Re-running gates is safe after fixing a
+candidate defect. A healthy compiler queue needs patience, not retries. Revert
+an owned milestone commit to roll back if needed; do not rewrite shared history
+or revert unrelated edits. No implementation rollback is required for this
+planning-only document.
+
+## Progress
+
+- [x] (2026-10-25) Renamed branch and inspected the baseline and prerequisite.
+- [x] (2026-10-25) Completed two Wyvern investigations and external tool
+      research.
+- [x] (2026-10-25) Incorporated six-expert findings; final review found no
+  approval-blocking design defects.
+- [x] (2026-10-25) Completed plan review and all publication validation gates.
+- [ ] Obtain explicit implementation approval.
+- [ ] EP-M1: implement and validate the local command.
+- [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
+
+## Surprises & discoveries
+
+cargo-hack's all-feature pass is conditional; its documented `--no-dev-deps`
+option rewrites actual manifests while running. These findings motivated the
+explicit final row, avoidance of rewriting, and mandatory isolation experiment.
+The existing Make defaults would contaminate isolated feature checks if reused.
+
+## Decision log
+
+2026-10-25: Propose pinned cargo-hack rather than a custom feature parser.
+Automatic discovery reduces repository-owned policy and covers future features.
+Use `--exclude-all-features` only to delegate that row to the explicit final
+command; retain both baseline modes. These are proposed decisions pending
+approval, not implementation evidence.
+
+2026-10-25: The expert panel raised default contamination, conditional all-row
+coverage, development-dependency unification, tool mismatch diagnostics,
+manifest pinning, and nested build isolation. V1–V4 and both milestones now
+address these concerns. The trade-off is a small external tooling dependency
+instead of a bespoke discovery implementation. No public abstraction is added.
+
+## Outcomes & retrospective
+
+The plan and expert review are complete and ready for approval. Runtime code,
+manifests, workflow behaviour, and roadmap completion remain unchanged.
+Implementation will be considered complete only when EP-M1/EP-M2 evidence is
+recorded and upstream documents agree with it.
+
+Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
+`make lint`, `make typecheck`, `make test`, `make markdownlint` (including
+spelling), and `make nixie`. Tests passed with 206 nextest cases, one doctest,
+432 workflow tests plus five subtests, and three topology command cases. Three
+command-boundary cases were intentionally skipped by the ordinary nextest run
+and executed by their dedicated gate. Logs are stored under
+`/tmp/{action}-statelet-1-2-2-feature-matrix-command.out`. These results
+validate the planning candidate and existing repository; they are not evidence
+that the proposed feature-matrix command has been implemented.
+
+## Research and revision notes
+
+Firecrawl checked the upstream [cargo-hack documentation][hack] and
+[command help][help] on 2026-10-25. The installed version reported
+`cargo-hack 0.6.45`; EP-M1 must verify its actual fixture behaviour rather than
+assuming newer upstream help proves the pinned binary's contract.
+
+[hack]: https://github.com/taiki-e/cargo-hack
+[help]: https://github.com/taiki-e/cargo-hack/blob/main/tests/long-help.txt
+
+Revision 1 (2026-10-25): Created the approval-gated plan from repository
+evidence, Wyvern reconnaissance, tool research, and the initial community
+review. The remaining work is final plan validation/publication, approval, then
+EP-M1/EP-M2.
+
+Revision 2 (2026-10-25): Final expert review confirmed the design and corrected
+the validation block to stop on failed pipelines. Added a path-quoting fixture.
+Implementation remains pending approval.
+
+Revision 3 (2026-10-25): Recorded successful sequential planning gates and test
+counts. Implementation approval and both implementation milestones remain open.
