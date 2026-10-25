@@ -477,6 +477,25 @@ before a future change admits a macro package.
     inspection of its own, and `reviewDecision` still reports
     `CHANGES_REQUESTED` from the submission on `fb1d00b`. Evidence:
     `/tmp/planstate6-statelet-1-2-1-topology-check-placeholder.out`.
+  - [x] (2026-10-25 12:20Z) `8bf533d` published, recording `b8230e6`'s own
+    publication; the Markdown gates were green on it before the push. A
+    closing audit then re-measured the two macro-edge refusals that D26
+    quotes, because the adjudication comment on the pull request and D26 gave
+    different wording for the build-kind one. The comment was right and D26 was
+    wrong: `make topology-check` run against both materialized fixture trees
+    printed `declares a build dependency on "statelet-macros" as
+    "statelet-macros"` and `declares a normal dependency on "statelet-macros" as
+    "macros"`. The diagnostic's template renders `on {package:?} as
+    {declared:?}` unconditionally, and the build-kind fixture declares no
+    rename, so the package name appears twice. D26's finding disposition is
+    unchanged — the re-run reproduced both measurements — and only its
+    transcription of the first line was wrong; the entry now carries the
+    measured text and says how it was corrected, and Surprises records the
+    lesson. The probe logs were
+    `/tmp/topology-probe-statelet-1-2-1-topology-check-placeholder.out` and
+    `/tmp/topology-probe2-statelet-1-2-1-topology-check-placeholder.out`; as
+    the Surprises entry records, a scratch path is not durable evidence, so the
+    command above is what a successor should re-run.
 
 ## Surprises & discoveries
 
@@ -685,6 +704,19 @@ row, then confirming the rule in GitHub's own event documentation rather than
 inferring it from the silence. The consequence for this plan is that a
 conflicted branch cannot be validated by hosted CI until it is rebased, so the
 rebase is a prerequisite for evidence, not merely for mergeability.
+
+A diagnostic quoted from its template is not a diagnostic that was observed.
+D26 recorded the build-kind refusal as
+`declares a build dependency on "statelet-macros"`, which reads like a captured
+line and is a truncation: the `#[error]` format string renders
+`on {package:?} as {declared:?}` unconditionally, so a fixture that declares no
+rename prints `statelet-macros` twice. Nothing in the repository could catch
+this — the fixture needles are deliberately unquoted, because the child's
+message passes through nextest's own diagnosis, and no unit test pins the full
+rendered line. The record was wrong while every gate stayed green, and it was
+found only by re-running the target and reading stderr. When a plan quotes a
+program's output, the quotation should come from a run, and a quotation already
+written from source should be re-measured rather than trusted.
 
 ## Decision log
 
@@ -1122,7 +1154,8 @@ which is the documented semantics: the policy reads declarations, not a
 resolved graph. Second, the real `make topology-check` was run against a
 scratch tree materialized exactly as `fixtures.rs` declares it — `Cargo.toml`
 and `src/lib.rs` only, with `../macros` absent. Both printed their documented
-refusal: `declares a build dependency on "statelet-macros"` and
+refusal:
+`declares a build dependency on "statelet-macros" as "statelet-macros"` and
 `declares a normal dependency on "statelet-macros" as "macros"`, each with the
 repair naming the macro gate. `make test-topology-command` independently passed
 3 with 0 skipped, which includes
@@ -1130,6 +1163,16 @@ repair naming the macro gate. `make test-topology-command` independently passed
 `macros/Cargo.toml` as the check asks would add a file no fixture reads and
 would hide the fact the cases depend on; the module doc now records why an
 unresolvable `path` is legitimate here.
+
+The first of those two quotations was written from the diagnostic's template
+rather than from a captured line, and it left a clause out. The template always
+renders both the package name and the declared name —
+`on {package:?} as {declared:?}` — and the build-kind fixture declares no
+rename, so both positions carry `statelet-macros`. The line above is now the
+measured one: `make topology-check` was re-run against both materialized trees
+on 2026-10-25 and each refusal was read from the run's stderr. The finding is
+still declined on the same two measurements, which the re-run reproduced; only
+this entry's transcription of them was wrong.
 
 The Unit Architecture error is accepted. `unique_scratch_dir` folded a clock
 failure into `0` with `unwrap_or_default()`, so a pre-epoch or failing clock
@@ -1279,6 +1322,18 @@ findings and then reported one "String Heavy Function Arguments" finding in the
 test it had just written, which `fb1d00b` resolved by deleting the string-slice
 parameter rather than reshaping it. The lesson is that the hosted health check
 judges the repair as new code, not only as a change to the code it replaced.
+
+A third lesson arrived after publication, from auditing this plan against the
+pull request rather than from any review. D26 declined the macro-edge finding
+on measurements it had run, and then transcribed one of the two refusals from
+the diagnostic's template instead of from the captured line — dropping the
+`as "statelet-macros"` clause that the template always renders. Every gate
+stayed green and no test could have objected, because the fixtures assert
+unquoted needles by design and nothing pins a full rendered message. What
+surfaced it was a second record of the same measurement disagreeing with the
+first. The lesson generalizes: a quotation in a plan is evidence and should be
+copied from a run, and when two records of one measurement disagree, neither
+may be assumed correct — the disagreement is the signal to re-measure.
 
 ## Context and orientation
 
