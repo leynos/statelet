@@ -1,6 +1,6 @@
 # Add a benchmark note template for macro cost budgets
 
-Status: DRAFT — requires explicit approval before implementation.
+Status: APPROVED — the user approved the scope and tolerances on 2026-10-25.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -75,7 +75,8 @@ and obtain explicit approval before proceeding.
   reconcile dependency, lifecycle and measurement findings.
 - [x] (2026-10-25) Validate the reviewed plan for draft publication: formatting,
   lint, tests, type checking, Markdown, spelling and diagrams passed.
-- [ ] Obtain explicit approval and record APPROVED before implementation.
+- [x] (2026-10-25) Obtain explicit approval and record APPROVED before
+  implementation; the approved scope and tolerances remain unchanged.
 - [ ] EP-M1: deliver the template, gate bindings and private contract together.
 - [ ] EP-M2: validate acceptance evidence and mark roadmap task 1.2.3 done.
 
@@ -94,26 +95,26 @@ notes used as evidence must not.
 
 ## Decision log
 
-- (2026-10-25, proposed) Use a dedicated Markdown form and a small private Rust
+- (2026-10-25, approved) Use a dedicated Markdown form and a small private Rust
   integration contract. A form alone does not enforce the roadmap's evidence
   prerequisite; a general benchmark framework would exceed the task.
-- (2026-10-25, proposed) Check synthetic evidence when task 4.2.2 is
+- (2026-10-25, approved) Check synthetic evidence when task 4.2.2 is
   marked complete, and both comparisons when task 4.3.1 is complete. This
   provides a concrete repository-owned claim boundary. Human reviewers still
   decide whether measurements support publication; tests do not parse prose
   into an E3 verdict or certify benchmark truth.
-- (2026-10-25, proposed) Record the evidence contract in design section 11.7
+- (2026-10-25, approved) Record the evidence contract in design section 11.7
   and contributor guidance. No new ADR is needed because existing budget and
   exit decisions remain unchanged. Escalate any substantive policy change.
-- (2026-10-25, proposed) No Verus milestone: this work introduces no runtime
+- (2026-10-25, approved) No Verus milestone: this work introduces no runtime
   invariant, lemma or mathematical business-policy evaluator. Finite document
   schema checks and deliberate negative controls match the obligation.
 
 ## Outcomes & retrospective
 
-The reviewed draft is ready for approval. No implementation or cost measurement
-has occurred. Local validation passed: 206 Rust tests, one doctest, 432
-workflow contract tests plus five subtests, and three topology-command tests.
+The reviewed plan has been approved. No implementation or cost measurement has
+occurred. Local validation passed: 206 Rust tests, one doctest, 432 workflow
+contract tests plus five subtests, and three topology-command tests.
 Formatting, lint, type checking, Markdown, spelling and diagram gates also
 passed. Shared Cargo locks and compiler admission lengthened validation without
 causing a failure. The implementation retrospective must distinguish task 1.2.3
@@ -462,5 +463,6 @@ experiments, bind selected evidence to the evaluated candidate, define honest
 failed measurements and clarify measurement comparability. These revisions
 change the future contract tests; implementation remains unstarted.
 
-2026-10-25: Recorded the successful plan-publication gates. The draft remains
-unapproved; the implementor must obtain approval before EP-M1.
+2026-10-25: Recorded the successful plan-publication gates and the user's
+explicit approval of this scope and its tolerances. Implementation may proceed
+through EP-M1 and EP-M2; no performance verdict is implied.

@@ -36,8 +36,8 @@ set.
     proposal to implementation.
 
   - [Add a benchmark note template for macro cost budgets](execplans/1-2-3-macro-cost-benchmark-note-template.md)
-    proposes the cost evidence form and Phase 4 completeness checks;
-    implementation awaits approval.
+    specifies the cost evidence form and Phase 4 completeness checks;
+    implementation is approved.
 
 ## Product and design
 
