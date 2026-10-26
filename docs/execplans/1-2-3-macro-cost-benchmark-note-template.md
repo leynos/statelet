@@ -11,8 +11,9 @@ five findings. Community review resolved conflicting fixture-location and
 generic-syntax recommendations. Their corrections passed the full local gate
 sequence. Commit `3be47f5` passed its local review with one minor checkbox
 spacing finding that matches the explicit V2 verification requirement; that
-correction passed the full validation sequence. A follow-up local review and PR
-closeout remain.
+correction passed the full validation sequence. The follow-up review of
+`1a3581b` found two further contract gaps. Proposed remediation is recorded
+below and awaits approval because the branch exceeds the approved path limit.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -247,7 +248,15 @@ and obtain explicit approval before proceeding.
     ignored topology-command cases passed. `make check-fmt`, `make lint`,
     `make typecheck`, `make test`, `make markdownlint`, `make spelling`,
     `make nixie`, and staged/unstaged diff checks all passed. Logs use the
-    `17e46d52` suffix under `/tmp`. A follow-up local review and commit remain.
+    `17e46d52` suffix under `/tmp`. Commit `1a3581b` records this correction.
+    Its follow-up local review found that selected note links are accepted
+    anywhere in a task block and that lowercase `unavailable:` values can
+    avoid the inconclusive-verdict requirement. Wyvern verified both gaps;
+    architecture and measurement reviewers confirmed the narrow remedies.
+    Before remediation, the branch diff contains 14 paths including this plan,
+    exceeding the approved limit of 12 implementation paths by one. A proposed
+    correction confined to already changed paths is recorded below; work is
+    paused pending approval of this variance.
 
 ## Surprises & discoveries
 
@@ -326,6 +335,12 @@ the diff.
 - (2026-10-26, review correction) Parse the roadmap checkbox marker separately
   from the task identifier and skip formatting whitespace between them. V2
   explicitly requires task lookup to tolerate changed checkbox spacing.
+- (2026-10-26, proposed deviation) Bind selected-note links to each task's
+  `Success:` criterion and recognize `Unavailable:` case-insensitively for both
+  placeholder and verdict checks. These review fixes require no new paths,
+  dependencies, public API or budget changes, but the current branch has 13
+  changed paths excluding this plan, one over the approved limit of 12. Pause
+  implementation until the user approves this path-count variance.
 
 ## Outcomes & retrospective
 
