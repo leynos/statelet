@@ -81,11 +81,15 @@ reviewer to assess their readability.
 
 Every completed copied note needs revision-bound evidence in every row. The
 `candidate-id` binds the pair of notes to one macro commit and the governing
-design commit. Empty cells, `TBD`, `TODO`, `pending`, `N/A`, and unfilled
-angle-bracket placeholders are incomplete. Only `review` may say exactly
-`Pending: G3 decision not yet recorded`. A failed measurement may use
-`Unavailable: <reason>` with a cited failure record; its `budget-verdict` must
-say `Inconclusive`. An adverse note is evidence of failure, not approval.
+design commit. Empty cells and values beginning with the case-insensitive
+marker words `TBD`, `TODO`, `pending`, or `N/A` are incomplete. Standalone
+angle-bracket placeholders are incomplete, including inside backtick spans.
+Expansion text may contain attached Rust generics such as `Option<Foo>`; do not
+use an attached form such as `Type<sha>` to represent missing evidence. Only
+`review` may say exactly `Pending: G3 decision not yet recorded`. A failed
+measurement may use `Unavailable: <reason>` with a cited failure record; its
+`budget-verdict` must say `Inconclusive`. An adverse note is evidence of
+failure, not approval.
 
 The contract checks completeness and roadmap wiring. It does not verify that a
 citation exists, that workloads are comparable, or that a measurement is true.

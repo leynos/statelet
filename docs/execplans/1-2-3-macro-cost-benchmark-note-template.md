@@ -6,7 +6,10 @@ post-publication CodeScene follow-up passed deterministic validation and expert
 review; commit `85e64a0` is published and PR #153 remains draft. A local
 CodeRabbit review of repair commit `5bad4e6` found two overlapping placeholder
 issues and one fixture-literal style issue; their corrections passed the full
-local validation sequence. A commit, fresh local review, and PR closeout remain.
+local validation sequence. Commit `05a2360` passed its fresh local review with
+five findings. Community review resolved conflicting fixture-location and
+generic-syntax recommendations. Their corrections passed the full local gate
+sequence; a commit and fresh local review remain.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -211,8 +214,21 @@ and obtain explicit approval before proceeding.
     `make markdownlint`, `make spelling`, `make nixie`, and staged/unstaged
     diff checks. Tests passed 241 cases (three skipped), one doctest, 432
     workflow cases plus five subtests, and three topology-command tests. Logs
-    use the `73d2f8d6` suffix under `/tmp`. The changes, plan update, commit,
-    and a fresh local review remain.
+    use the `73d2f8d6` suffix under `/tmp`. Commit `05a2360` contains that
+    repair and plan update.
+  - Its fresh local review found five issues involving fixture isolation and
+    cleanup, angle-bracket generics, and marker prefixes. Two community
+    reviewers confirmed that fixtures should follow the existing
+    `CARGO_TARGET_TMPDIR` harness and that a lexical path-generic heuristic
+    should keep standalone placeholders detectable. The current correction
+    uses a `Drop` guard, keeps marker boundaries, tests the review-row
+    exception, and documents the lexical ambiguity. An initial gate run found
+    seven Clippy diagnostics and one empty-unavailable test failure. The fixes
+    passed the full gate sequence: formatting, lint, typecheck, tests, Markdown
+    lint, spelling, Nixie, and staged/unstaged diff checks. Nextest passed 256
+    cases with three skipped; one doctest, 432 workflow cases plus five
+    subtests, and three topology-command tests passed. Logs use the
+    `2571631c` suffix under `/tmp`. Commit and a fresh local review remain.
 
 ## Surprises & discoveries
 
@@ -264,8 +280,9 @@ the diff.
   that unknown field names and arbitrary evidence text are needed for precise
   errors, while wrappers would add conversions without carrying new invariants.
   Retain both CodeScene String Heavy findings rather than suppressing or hiding
-  them with type-only changes. A possible `Utf8PathBuf` return from
-  `fixture_root` is an independent cleanup and is deferred.
+  them with type-only changes. At that point a `Utf8PathBuf` return from
+  `fixture_root` was deferred; a later review correction adopts it for the
+  Cargo temporary-directory guard.
 - (2026-10-26, review correction) An unavailable measurement needs a concrete
   reason even when the verdict is inconclusive. Keep the cited failure-record
   path valid, but reject an empty reason or an angle-bracket placeholder. Start
@@ -278,6 +295,15 @@ the diff.
 - (2026-10-26, review correction) Reject embedded angle-bracket placeholders
   while preserving valid inequalities in evidence values. Use `concat!()` for
   the split Markdown fixture strings to follow the repository's Rust guidance.
+- (2026-10-26, review correction) Keep filesystem fixtures under Cargo's
+  `CARGO_TARGET_TMPDIR` and own each tree with a `Drop` guard. This follows the
+  existing topology-command harness and removes stale fixture trees on panic.
+- (2026-10-26, review correction) Treat placeholder checks as a lexical
+  heuristic: reject standalone angle tokens even in backticks, but allow angle
+  pairs attached to a path identifier as generic syntax. Contributors must not
+  encode missing values as ambiguous `Type<sha>` text. Reject case-insensitive
+  placeholder marker words at the start of values while preserving the exact
+  `review`-row exception.
 
 ## Outcomes & retrospective
 
@@ -325,7 +351,13 @@ that should use `concat!()`. The new scanner distinguishes placeholder-shaped
 tokens from comparison operators and continues scanning after malformed angle
 markup. Negative and positive controls cover those boundaries, and the fixtures
 now use `concat!()`. The first lint run exposed a shadowed binding; after
-renaming it, the fresh full sequential gate set passed. The final commit and
+renaming it, the full sequential gate set passed. A local review of that commit
+then found five further issues. The revised contract handles marker prefixes,
+keeps Rust path generics distinct from standalone placeholders, moves scratch
+fixtures under Cargo's test temporary directory, and cleans them with a `Drop`
+guard. Contributor guidance documents the lexical heuristic. An initial gate
+attempt reported Clippy findings and an empty-unavailable regression; the
+corrected exact candidate passed the complete local sequence. Commit and a new
 local review remain pending.
 
 ## Context and orientation

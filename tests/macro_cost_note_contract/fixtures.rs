@@ -15,6 +15,7 @@ impl FixtureField {
     pub(super) const ANNOTATION_COUNT: Self = Self("annotation-count");
     pub(super) const CLEAN_DEBUG_BASELINE_SECONDS: Self = Self("clean-debug-baseline-seconds");
     pub(super) const STRESS_FIXTURE_RESULTS: Self = Self("stress-fixture-results");
+    pub(super) const FALLIBLE_EXPANSION: Self = Self("fallible-expansion");
     pub(super) const BUDGET_VERDICT: Self = Self("budget-verdict");
 
     const fn label(self) -> &'static str { self.0 }

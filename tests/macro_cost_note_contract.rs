@@ -7,7 +7,7 @@ mod fixtures;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 use cap_std::{ambient_authority, fs::Dir};
 use contract::check_contract;
 
@@ -224,27 +224,56 @@ fn check(template_text: &str, roadmap_text: &str, notes: &[MarkdownFile]) -> Res
     check_contract(&template_file, &design, &roadmap_file, notes)
 }
 
-fn fixture_root() -> Result<String, String> {
-    let root = Dir::open_ambient_dir(env!("CARGO_MANIFEST_DIR"), ambient_authority())
-        .map_err(|error| format!("cannot open manifest directory: {error}"))?;
-    let fixture_id = NEXT_FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
-    let relative = format!(
-        "target/macro-cost-note-contract-{}-{fixture_id}",
-        std::process::id()
-    );
-    root.create_dir_all(format!("{relative}/docs/validation-notes"))
-        .map_err(|error| format!("{relative}: cannot create fixture tree: {error}"))?;
-    Ok(format!("{}/{}", env!("CARGO_MANIFEST_DIR"), relative))
+/// Owns one isolated filesystem tree for a macro-cost contract test.
+struct FixtureRoot {
+    path: Utf8PathBuf,
 }
 
-fn remove_fixture_root(path: &str) -> Result<(), String> {
-    let root = Dir::open_ambient_dir(env!("CARGO_MANIFEST_DIR"), ambient_authority())
-        .map_err(|error| format!("cannot open manifest directory: {error}"))?;
+impl FixtureRoot {
+    fn path(&self) -> &Utf8Path { &self.path }
+}
+
+impl Drop for FixtureRoot {
+    fn drop(&mut self) {
+        if let Err(error) = remove_fixture_root(&self.path) {
+            assert!(
+                std::thread::panicking(),
+                "cannot clean up fixture tree {}: {error}",
+                self.path
+            );
+        }
+    }
+}
+
+fn fixture_root() -> Result<FixtureRoot, String> {
+    let temporary_directory = Utf8Path::new(env!("CARGO_TARGET_TMPDIR"));
+    let root = Dir::open_ambient_dir(temporary_directory, ambient_authority())
+        .map_err(|error| format!("cannot open Cargo test temporary directory: {error}"))?;
+    let fixture_id = NEXT_FIXTURE_ID.fetch_add(1, Ordering::Relaxed);
+    let relative = format!(
+        "macro-cost-note-contract-{}-{fixture_id}",
+        std::process::id()
+    );
+    let fixture = FixtureRoot {
+        path: temporary_directory.join(&relative),
+    };
+    root.create_dir_all(format!("{relative}/docs/validation-notes"))
+        .map_err(|error| format!("{relative}: cannot create fixture tree: {error}"))?;
+    Ok(fixture)
+}
+
+fn remove_fixture_root(path: &Utf8Path) -> Result<(), String> {
+    let temporary_directory = Utf8Path::new(env!("CARGO_TARGET_TMPDIR"));
+    let root = Dir::open_ambient_dir(temporary_directory, ambient_authority())
+        .map_err(|error| format!("cannot open Cargo test temporary directory: {error}"))?;
     let relative = path
-        .strip_prefix(&format!("{}/", env!("CARGO_MANIFEST_DIR")))
-        .ok_or_else(|| format!("fixture path is outside the manifest directory: {path}"))?;
-    root.remove_dir_all(relative)
-        .map_err(|error| format!("{path}: cannot remove fixture tree: {error}"))
+        .strip_prefix(temporary_directory)
+        .map_err(|_| format!("fixture path is outside Cargo test temporary directory: {path}"))?;
+    match root.remove_dir_all(relative) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(format!("{path}: cannot remove fixture tree: {error}")),
+    }
 }
 
 #[test]
@@ -257,14 +286,22 @@ fn live_template_exists_and_open_tasks_accept_no_cost_notes() {
 }
 
 #[test]
+fn fixture_root_is_removed_when_its_guard_drops() {
+    let root = fixture_root().expect("test fixture tree can be created");
+    let path = root.path().to_owned();
+    drop(root);
+
+    assert!(
+        Dir::open_ambient_dir(&path, ambient_authority()).is_err(),
+        "dropping the fixture guard removes its owned tree"
+    );
+}
+
+#[test]
 fn missing_live_template_reports_its_path() {
     let root = fixture_root().expect("test fixture tree can be created");
-    let error = read_document(
-        Utf8Path::new(&root),
-        "docs/macro-cost-benchmark-note-template.md",
-    )
-    .expect_err("missing template must be reported");
-    remove_fixture_root(&root).expect("test fixture tree can be removed");
+    let error = read_document(root.path(), "docs/macro-cost-benchmark-note-template.md")
+        .expect_err("missing template must be reported");
     assert!(
         error.contains("docs/macro-cost-benchmark-note-template.md"),
         "{error}"
@@ -274,30 +311,28 @@ fn missing_live_template_reports_its_path() {
 #[test]
 fn directory_named_like_a_note_is_a_read_error() {
     let root = fixture_root().expect("test fixture tree can be created");
-    let repository =
-        Dir::open_ambient_dir(&root, ambient_authority()).expect("test fixture root can be opened");
+    let repository = Dir::open_ambient_dir(root.path(), ambient_authority())
+        .expect("test fixture root can be opened");
     repository
         .open_dir("docs/validation-notes")
         .expect("fixture notes directory can be opened")
         .create_dir("unreadable.md")
         .expect("directory-shaped Markdown entry can be created");
-    let error = read_notes(Utf8Path::new(&root))
-        .expect_err("a directory-shaped Markdown note must be reported");
-    remove_fixture_root(&root).expect("test fixture tree can be removed");
+    let error =
+        read_notes(root.path()).expect_err("a directory-shaped Markdown note must be reported");
     assert!(error.contains("unreadable.md"), "{error}");
 }
 
 #[test]
 fn absent_notes_directory_is_an_empty_collection() {
     let root = fixture_root().expect("test fixture tree can be created");
-    let repository =
-        Dir::open_ambient_dir(&root, ambient_authority()).expect("test fixture root can be opened");
+    let repository = Dir::open_ambient_dir(root.path(), ambient_authority())
+        .expect("test fixture root can be opened");
     repository
         .open_dir("docs")
         .expect("fixture docs directory can be opened")
         .remove_dir("validation-notes")
         .expect("empty fixture notes directory can be removed");
-    let notes = read_notes(Utf8Path::new(&root)).expect("missing notes directory means no notes");
-    remove_fixture_root(&root).expect("test fixture tree can be removed");
+    let notes = read_notes(root.path()).expect("missing notes directory means no notes");
     assert_eq!(notes, Vec::<MarkdownFile>::new());
 }

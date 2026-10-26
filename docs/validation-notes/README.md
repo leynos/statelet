@@ -40,11 +40,15 @@ revision-bound evidence. Use `mdtablefix` for the real comparison and
 
 The real note may be committed before the synthetic note. Its
 `stress-fixture-results` value must be exactly
-`Not applicable: real comparison`. All other values must be complete; only the
-`review` row may say `Pending: G3 decision not yet recorded`. Record
-unavailable measurements with a cited failure record and an `Inconclusive`
-verdict. Do not use illustrative or fabricated measurements as committed
-evidence.
+`Not applicable: real comparison`. Empty cells and values beginning with the
+case-insensitive marker words `TBD`, `TODO`, `pending`, or `N/A` are
+incomplete. Standalone angle-bracket placeholders are incomplete, including
+inside backtick spans. Expansion text may use attached Rust generics such as
+`Option<Foo>`; do not use an attached form such as `Type<sha>` to represent
+missing evidence. Only the `review` row may say
+`Pending: G3 decision not yet recorded`. Record unavailable measurements with a
+cited failure record and an `Inconclusive` verdict. Do not use illustrative or
+fabricated measurements as committed evidence.
 
 The `macro-cost-note` marker opts a note into the macro cost contract. A
 completed 4.2.2 roadmap claim selects one synthetic note; the G3 claim at 4.3.1

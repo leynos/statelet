@@ -24,35 +24,79 @@ fn placeholder(value: &str) -> bool {
     let checked_value = trimmed
         .strip_prefix("Unavailable:")
         .map_or(trimmed, str::trim);
-    matches!(
-        checked_value.to_ascii_lowercase().as_str(),
-        "" | "tbd" | "todo" | "pending" | "n/a"
-    ) || contains_angle_placeholder(checked_value)
+    checked_value.is_empty()
+        || starts_with_placeholder_marker(checked_value)
+        || contains_angle_placeholder(checked_value)
+}
+
+fn starts_with_placeholder_marker(value: &str) -> bool {
+    let normalized = value.to_ascii_lowercase();
+    ["tbd", "todo", "pending", "n/a"].iter().any(|marker| {
+        normalized.strip_prefix(marker).is_some_and(|suffix| {
+            suffix.is_empty()
+                || suffix
+                    .chars()
+                    .next()
+                    .is_some_and(|character| !character.is_ascii_alphanumeric() && character != '_')
+        })
+    })
 }
 
 fn contains_angle_placeholder(value: &str) -> bool {
-    let mut remaining = value;
-    while let Some((_, after_open)) = remaining.split_once('<') {
-        if let Some((candidate, _)) = after_open.split_once('>') {
-            let trimmed_candidate = candidate.trim();
-            // Placeholder-shaped tokens are rejected while comparison text
-            // such as `cost < 0.5; threshold > 0` remains valid evidence.
-            let is_placeholder_identifier = trimmed_candidate.is_empty()
-                || trimmed_candidate.chars().all(|character| {
-                    character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '/')
-                });
-            let is_placeholder_instruction = ["fill ", "insert ", "replace ", "example ", "your "]
-                .iter()
-                .any(|prefix| trimmed_candidate.to_ascii_lowercase().starts_with(prefix));
-            if is_placeholder_identifier || is_placeholder_instruction {
+    let mut search_from = 0;
+    while let Some(open_offset) = value
+        .get(search_from..)
+        .and_then(|remaining| remaining.find('<'))
+    {
+        let open = search_from + open_offset;
+        let candidate_start = open + 1;
+        if let Some(close_offset) = value
+            .get(candidate_start..)
+            .and_then(|remaining| remaining.find('>'))
+        {
+            let close = candidate_start + close_offset;
+            let is_placeholder = match (value.get(candidate_start..close), value.get(..open)) {
+                (Some(candidate), Some(prefix)) => {
+                    !is_attached_to_path_identifier(prefix) && is_placeholder_token(candidate)
+                }
+                _ => false,
+            };
+            if is_placeholder {
                 return true;
             }
         }
-        // Advance one opening bracket at a time so malformed surrounding
-        // markup cannot hide a later placeholder token.
-        remaining = after_open;
+        // Advancing past only this opener lets malformed markup expose a
+        // later standalone placeholder instead of hiding it.
+        search_from = candidate_start;
     }
     false
+}
+
+fn is_attached_to_path_identifier(prefix: &str) -> bool {
+    // This lexical heuristic admits Rust generics. `Type<sha>` is ambiguous,
+    // so revision placeholders must remain standalone to be rejected.
+    let path = prefix.strip_suffix("::").unwrap_or(prefix);
+    path.chars()
+        .next_back()
+        .is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
+}
+
+fn is_placeholder_token(candidate: &str) -> bool {
+    let trimmed_candidate = candidate.trim();
+    is_placeholder_identifier(trimmed_candidate) || is_placeholder_instruction(trimmed_candidate)
+}
+
+fn is_placeholder_identifier(candidate: &str) -> bool {
+    candidate.is_empty()
+        || candidate.chars().all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '/')
+        })
+}
+
+fn is_placeholder_instruction(candidate: &str) -> bool {
+    ["fill ", "insert ", "replace ", "example ", "your "]
+        .iter()
+        .any(|prefix| candidate.to_ascii_lowercase().starts_with(prefix))
 }
 
 fn has_revision_citation(evidence: &str) -> bool {
