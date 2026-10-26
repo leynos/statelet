@@ -3,9 +3,9 @@
 Status: APPROVED — the user approved scope and tolerances on 2026-10-25, before
 implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26. A
 post-publication CodeScene follow-up passed deterministic validation and expert
-review; commit `85e64a0` is published and PR #153 remains draft. The local
-CodeRabbit retry completed on 2026-10-26; its five minor findings are fixed in
-the current repair diff, which passed the full sequential local gates.
+review; commit `85e64a0` is published and PR #153 remains draft. A local
+CodeRabbit review of repair commit `9efd1be` found two further minor issues;
+their fixes passed a second full sequential local gate run.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -187,6 +187,16 @@ and obtain explicit approval before proceeding.
     Markdown lint reported zero issues. Logs use the `repair2-edc2239` suffix
     under `/tmp`. The changes and plan closeout still need commit and a new
     local CodeRabbit review before they are pushed.
+  - The review of commit `9efd1be25c75cdad4dbd9fd6a7794982a0b53d59` found
+    two further issues. An `Unavailable:` measurement with an empty or
+    angle-bracket reason could satisfy completeness when the verdict was
+    inconclusive; the copied form also lacked an H1 heading. The current change
+    rejects unfinished reasons, preserves cited failure reasons, and adds a
+    title to the copied note. The second full sequence passed formatting, lint,
+    type checking, tests, Markdown lint, spelling, diagrams and diff checks.
+    It passed 238 Rust tests (three skipped), one doctest, 432 workflow cases
+    plus five subtests, and three topology-command tests. Logs use the
+    `review2fix-9efd1be` suffix under `/tmp`; commit and local review remain.
 
 ## Surprises & discoveries
 
@@ -240,6 +250,10 @@ the diff.
   Retain both CodeScene String Heavy findings rather than suppressing or hiding
   them with type-only changes. A possible `Utf8PathBuf` return from
   `fixture_root` is an independent cleanup and is deferred.
+- (2026-10-26, review correction) An unavailable measurement needs a concrete
+  reason even when the verdict is inconclusive. Keep the cited failure-record
+  path valid, but reject an empty reason or an angle-bracket placeholder. Start
+  copied notes with a level-one heading while retaining the marker contract.
 - (2026-10-26, review correction) Treat only standalone candidate-comment lines
   as declarations, reject copied template values in marked notes, and allow the
   stress-results exception only for real comparisons. The local review prompted
@@ -278,6 +292,13 @@ template, and prevents synthetic notes from using the real-comparison
 exception. Negative controls cover those failure cases. All requested local
 gates pass on the repair diff; the draft PR remains subject to hosted checks
 and maintainer disposition of the two existing CodeScene advisories.
+
+A review of the resulting commit found that the documented unavailable-value
+syntax still admitted an empty reason and copied notes lacked a title. Those
+gaps are addressed with negative controls for empty and bracketed reasons, a
+positive case for a cited failure reason, and a level-one heading in the form.
+The follow-up full sequential gate run passed; commit and a new local review
+remain pending.
 
 ## Context and orientation
 

@@ -21,10 +21,13 @@ pub(super) fn marker_count(source: &str, marker: &str) -> usize {
 
 fn placeholder(value: &str) -> bool {
     let trimmed = value.trim();
+    let checked_value = trimmed
+        .strip_prefix("Unavailable:")
+        .map_or(trimmed, str::trim);
     matches!(
-        trimmed.to_ascii_lowercase().as_str(),
+        checked_value.to_ascii_lowercase().as_str(),
         "" | "tbd" | "todo" | "pending" | "n/a"
-    ) || (trimmed.starts_with('<') && trimmed.ends_with('>'))
+    ) || (checked_value.starts_with('<') && checked_value.ends_with('>'))
 }
 
 fn has_revision_citation(evidence: &str) -> bool {

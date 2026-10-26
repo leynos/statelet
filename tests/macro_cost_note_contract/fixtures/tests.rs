@@ -56,6 +56,41 @@ fn marked_note_rejects_placeholder_values(#[case] value: &str) {
     );
 }
 
+#[rstest]
+#[case("Unavailable:")]
+#[case("Unavailable: <reason>")]
+fn marked_note_rejects_unfinished_unavailable_measurements(#[case] value: &str) {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    replace_value(
+        &mut evidence,
+        FixtureField::CLEAN_DEBUG_BASELINE_SECONDS,
+        value,
+    )
+    .expect("fixture field exists");
+
+    let error = check(&template(), &open_roadmap(), &[evidence])
+        .expect_err("unavailable measurements need a concrete reason");
+    assert!(
+        error.contains("clean-debug-baseline-seconds")
+            && error.contains("is empty or still a placeholder"),
+        "{error}"
+    );
+}
+
+#[test]
+fn marked_note_accepts_a_cited_unavailable_measurement_with_a_reason() {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    replace_value(
+        &mut evidence,
+        FixtureField::CLEAN_DEBUG_BASELINE_SECONDS,
+        "Unavailable: compiler failed before producing a sample",
+    )
+    .expect("fixture field exists");
+
+    check(&template(), &open_roadmap(), &[evidence])
+        .expect("a cited failure reason and inconclusive verdict are complete evidence");
+}
+
 #[test]
 fn marked_note_rejects_descriptive_values_copied_from_the_template() {
     let template = template().replace(

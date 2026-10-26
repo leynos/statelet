@@ -12,6 +12,8 @@ cited artefacts; summarize the results here. A note can record a failed or
 inconclusive measurement, but that result cannot pass a budget gate.
 
 ```markdown
+# Macro cost benchmark note
+
 <!-- macro-cost-note -->
 
 <!-- macro-cost-register:begin -->
