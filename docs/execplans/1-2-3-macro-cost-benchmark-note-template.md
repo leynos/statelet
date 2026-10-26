@@ -2,8 +2,9 @@
 
 Status: APPROVED — the user approved scope and tolerances on 2026-10-25, before
 implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26. A
-post-publication CodeScene follow-up has passed deterministic validation and
-expert review; the local CodeRabbit review and publication update are pending.
+post-publication CodeScene follow-up passed deterministic validation and expert
+review; commit `85e64a0` is published and PR #153 remains draft. One local
+CodeRabbit retry is pending after a rate-limit cooldown.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -154,8 +155,15 @@ and obtain explicit approval before proceeding.
     contract boundary instead of widening their visibility through a child
     module. A third attempt compiled the contract and reported four Clippy
     shadowing findings; those bindings were renamed. The fourth gate run passed.
-    Next, commit the staged remediation and run the local CodeRabbit review
-    against that commit before updating PR #153, preserving its draft state.
+- [ ] (2026-10-26) Complete local CodeRabbit review and draft PR closeout.
+  - Remediation commit `85e64a02e2557d645d5afd4c641dedebf50eb9f9` was pushed
+    over SSH; the remote-tracking branch and GitHub head matched after
+    readback. PR #153's body now records the CodeScene disposition and gate
+    results and ends with the References section. Its open draft state remains.
+  - The first local CodeRabbit request did not start because the service had
+    exhausted its 10 included reviews. The scrutineer is waiting 20 minutes
+    before its single retry; that retry will target the branch's current head.
+    Reconcile any findings, then keep the PR draft for maintainer review.
 
 ## Surprises & discoveries
 
