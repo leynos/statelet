@@ -24,7 +24,7 @@ inconclusive measurement, but that result cannot pass a budget gate.
 | clean-build-protocol | Commands; clean dirs; caches; wrappers; admission/load; order; repeats | <repo>@<sha>:<path> |
 | clean-debug-baseline-seconds | Raw baseline samples; median T0; range | <repo>@<sha>:<path> |
 | clean-debug-macro-seconds | Raw macro samples; median T1; range | <repo>@<sha>:<path> |
-| annotation-count | Count and source locations; synthetic-20 must equal 20 | <repo>@<sha>:<path> |
+| annotation-count | Positive integer only; source locations go in Evidence; synthetic-20 = 20 | <repo>@<sha>:<path> |
 | marginal-seconds | Inputs and calculated marginal seconds per annotation | <repo>@<sha>:<path> |
 | marginal-percent | Inputs and calculated marginal percentage | <repo>@<sha>:<path> |
 | release-baseline-bytes | Exact baseline executable or library path and byte count | <repo>@<sha>:<path> |

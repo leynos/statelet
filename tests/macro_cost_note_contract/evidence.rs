@@ -173,10 +173,19 @@ pub(super) fn check_fields(file: &MarkdownFile, fields: &[String]) -> Result<(),
 pub(super) fn check_required_values(
     file: &MarkdownFile,
     register: &Register,
+    template: &Register,
     kind: Kind,
 ) -> Result<(), String> {
     for field in REQUIRED_FIELDS {
-        check_required_field(file, register, kind, field)?;
+        let field_row = row(&file.path, &register.rows, field)?;
+        let template_row = row(&file.path, &template.rows, field)?;
+        if field_row.value.trim() == template_row.value.trim() {
+            return Err(format!(
+                "{}: `{field}` still matches the template value",
+                file.path
+            ));
+        }
+        check_required_field(file, kind, field, field_row)?;
     }
     if register
         .rows
@@ -196,11 +205,10 @@ pub(super) fn check_required_values(
 
 fn check_required_field(
     file: &MarkdownFile,
-    register: &Register,
     kind: Kind,
     field: &str,
+    field_row: &Row,
 ) -> Result<(), String> {
-    let field_row = row(&file.path, &register.rows, field)?;
     if required_value_is_placeholder(field, field_row, kind) {
         return Err(format!(
             "{}: `{field}` is empty or still a placeholder",
@@ -255,6 +263,15 @@ pub(super) fn check_measurement_values(
                 file.path
             ));
         }
+    } else if row(&file.path, &register.rows, "stress-fixture-results")?
+        .value
+        .trim()
+        == "Not applicable: real comparison"
+    {
+        return Err(format!(
+            "{}: synthetic-20 must record its 20-transition results",
+            file.path
+        ));
     }
     Ok(())
 }

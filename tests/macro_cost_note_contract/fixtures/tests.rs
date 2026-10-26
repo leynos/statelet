@@ -57,6 +57,46 @@ fn marked_note_rejects_placeholder_values(#[case] value: &str) {
 }
 
 #[test]
+fn marked_note_rejects_descriptive_values_copied_from_the_template() {
+    let template = template().replace(
+        "| environment | <value> |",
+        "| environment | CPU/RAM; OS; target; compiler/tools |",
+    );
+    let mut evidence = note(Kind::Synthetic20, 20);
+    replace_value(
+        &mut evidence,
+        FixtureField::ENVIRONMENT,
+        "CPU/RAM; OS; target; compiler/tools",
+    )
+    .expect("fixture field exists");
+
+    let error = check(&template, &open_roadmap(), &[evidence])
+        .expect_err("unchanged template prose must be rejected");
+    assert!(
+        error.contains("environment") && error.contains("matches the template value"),
+        "{error}"
+    );
+}
+
+#[test]
+fn synthetic_note_rejects_the_real_comparison_stress_exception() {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    replace_value(
+        &mut evidence,
+        FixtureField::STRESS_FIXTURE_RESULTS,
+        "Not applicable: real comparison",
+    )
+    .expect("fixture field exists");
+
+    let error = check(&template(), &open_roadmap(), &[evidence])
+        .expect_err("synthetic evidence must report its stress results");
+    assert!(
+        error.contains("synthetic-20 must record its 20-transition results"),
+        "{error}"
+    );
+}
+
+#[test]
 fn live_design_and_roadmap_bindings_are_required() {
     let form = template();
     let template = MarkdownFile {
@@ -102,6 +142,24 @@ fn synthetic_notes_require_exactly_twenty_annotations() {
     let error = check(&template(), &open_roadmap(), &[note(Kind::Synthetic20, 19)])
         .expect_err("invalid test input must be rejected");
     assert!(error.contains("annotation-count"), "{error}");
+}
+
+#[test]
+fn annotation_count_must_be_a_bare_positive_integer() {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    replace_value(
+        &mut evidence,
+        FixtureField::ANNOTATION_COUNT,
+        "20 at src/example.rs",
+    )
+    .expect("fixture field exists");
+
+    let error = check(&template(), &open_roadmap(), &[evidence])
+        .expect_err("annotation count must be parseable as an integer");
+    assert!(
+        error.contains("annotation-count must be a positive integer"),
+        "{error}"
+    );
 }
 
 #[test]
@@ -178,6 +236,37 @@ fn completed_synthetic_task_requires_a_selected_matching_note() {
     );
     check(&form, &roadmap, &[note(Kind::Synthetic20, 20)])
         .expect("completed synthetic claim selects its matching note");
+}
+
+#[test]
+fn inline_candidate_example_does_not_satisfy_a_completed_claim() {
+    let declaration = format!(
+        "  <!-- macro-cost-candidate: {MACRO_REVISION}; design-revision: {DESIGN_REVISION} -->\n"
+    );
+    let roadmap = roadmap_with_claims(true, false).replace(&declaration, "");
+    let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
+        .expect_err("an inline instruction is not a candidate declaration");
+    assert!(
+        error.contains("needs one macro-cost-candidate comment"),
+        "{error}"
+    );
+}
+
+#[test]
+fn completed_claim_rejects_duplicate_candidate_declarations() {
+    let declaration = format!(
+        "  <!-- macro-cost-candidate: {MACRO_REVISION}; design-revision: {DESIGN_REVISION} -->\n"
+    );
+    let roadmap = roadmap_with_claims(true, false).replace(
+        "  Evidence: [synthetic]",
+        &format!("{declaration}  Evidence: [synthetic]"),
+    );
+    let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
+        .expect_err("a completed claim has exactly one candidate declaration");
+    assert!(
+        error.contains("needs one macro-cost-candidate comment"),
+        "{error}"
+    );
 }
 
 #[test]

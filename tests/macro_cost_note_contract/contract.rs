@@ -64,7 +64,7 @@ pub(crate) fn check_contract(
     roadmap: &MarkdownFile,
     notes: &[MarkdownFile],
 ) -> Result<(), String> {
-    check_template(template)?;
+    let template_register = check_template(template)?;
     check_design(design)?;
     let tasks = check_roadmap(roadmap)?;
     let mut parsed = BTreeMap::new();
@@ -72,7 +72,7 @@ pub(crate) fn check_contract(
         if parsed.contains_key(&note.path) {
             return Err(format!("duplicate macro-cost note path `{}`", note.path));
         }
-        parsed.insert(note.path.clone(), parse_note(note)?);
+        parsed.insert(note.path.clone(), parse_note(note, &template_register)?);
     }
     check_claim("4.2.2", &[Kind::Synthetic20], &tasks, &parsed)?;
     check_claim(
@@ -83,7 +83,7 @@ pub(crate) fn check_contract(
     )
 }
 
-fn check_template(template: &MarkdownFile) -> Result<(), String> {
+fn check_template(template: &MarkdownFile) -> Result<Register, String> {
     if marker_count(&template.text, NOTE_MARKER) != 1 {
         return Err(format!(
             "{} needs exactly one `{NOTE_MARKER}` marker",
@@ -116,7 +116,7 @@ fn check_template(template: &MarkdownFile) -> Result<(), String> {
             ));
         }
     }
-    Ok(())
+    Ok(register)
 }
 
 fn check_design(design: &MarkdownFile) -> Result<(), String> {
@@ -237,7 +237,7 @@ fn resolve_selected_note(
     Ok(note.kind)
 }
 
-fn parse_note(file: &MarkdownFile) -> Result<Option<Note>, String> {
+fn parse_note(file: &MarkdownFile, template: &Register) -> Result<Option<Note>, String> {
     match marker_count(&file.text, NOTE_MARKER) {
         0 => return Ok(None),
         1 => (),
@@ -251,7 +251,7 @@ fn parse_note(file: &MarkdownFile) -> Result<Option<Note>, String> {
     let register = parse_register(file)?;
     check_fields(file, &register.fields)?;
     let kind = parse_kind(file, &register)?;
-    check_required_values(file, &register, kind)?;
+    check_required_values(file, &register, template, kind)?;
     check_measurement_values(file, &register, kind)?;
     let (macro_revision, design_revision) = candidate_id(
         &file.path,

@@ -12,6 +12,7 @@ impl FixtureField {
     pub(super) const COMPARISON_KIND: Self = Self("comparison-kind");
     pub(super) const CANDIDATE_ID: Self = Self("candidate-id");
     pub(super) const ENVIRONMENT: Self = Self("environment");
+    pub(super) const ANNOTATION_COUNT: Self = Self("annotation-count");
     pub(super) const CLEAN_DEBUG_BASELINE_SECONDS: Self = Self("clean-debug-baseline-seconds");
     pub(super) const STRESS_FIXTURE_RESULTS: Self = Self("stress-fixture-results");
     pub(super) const BUDGET_VERDICT: Self = Self("budget-verdict");
@@ -82,6 +83,10 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
          revision.\n",
     );
     if claim_422 {
+        roadmap.push_str(
+            "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; design-revision: \
+             <design-sha> -->`.\n",
+        );
         roadmap.push_str(&candidate_comment());
         roadmap
             .push_str("  Evidence: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n");
@@ -94,6 +99,10 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
          design revision.\n",
     );
     if claim_431 {
+        roadmap.push_str(
+            "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; design-revision: \
+             <design-sha> -->`.\n",
+        );
         roadmap.push_str(&candidate_comment());
         roadmap.push_str(
             "  Evidence: [real](validation-notes/4.2.1-mdtablefix-macro-cost.md) and \

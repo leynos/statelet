@@ -56,12 +56,17 @@ fn candidate_identity(task: &Task) -> Result<Candidate, String> {
     let Task {
         id, text: block, ..
     } = task;
-    if block.matches(PREFIX).count() != 1 {
+    let comments = block
+        .lines()
+        .map(str::trim)
+        .filter(|line| line.starts_with(PREFIX))
+        .collect::<Vec<_>>();
+    let [comment] = comments.as_slice() else {
         return Err(format!(
             "completed task {id} needs one macro-cost-candidate comment"
         ));
-    }
-    let tail = block
+    };
+    let tail = comment
         .split_once(PREFIX)
         .map(|(_, tail)| tail)
         .ok_or_else(|| format!("completed task {id} has no candidate comment"))?;

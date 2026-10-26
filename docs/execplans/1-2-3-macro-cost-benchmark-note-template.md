@@ -3,8 +3,9 @@
 Status: APPROVED — the user approved scope and tolerances on 2026-10-25, before
 implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26. A
 post-publication CodeScene follow-up passed deterministic validation and expert
-review; commit `85e64a0` is published and PR #153 remains draft. One local
-CodeRabbit retry is pending after a rate-limit cooldown.
+review; commit `85e64a0` is published and PR #153 remains draft. The local
+CodeRabbit retry completed on 2026-10-26; its five minor findings are fixed in
+the current repair diff, which passed the full sequential local gates.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -162,16 +163,30 @@ and obtain explicit approval before proceeding.
     and both required links. A generated Sourcery summary currently follows
     References; final section order still needs readback and correction. The PR
     remains an open draft.
-  - After the plan-only commit, the hosted CodeScene check failed its new-code
-    health and advisory gates for the same two reviewed String Heavy findings.
-    On published head `7acca7a`, `act-validation` passed and `build-test` was
-    still pending at the last readback. Hosted CodeRabbit reports that review
-    was skipped because the PR is draft. Do not suppress the findings or change
-    the requested draft state.
-  - The first local CodeRabbit request did not start because the service had
-    exhausted its 10 included reviews. The scrutineer is waiting 20 minutes
-    before its single retry; that retry will target the branch's current head.
-    Reconcile any findings, then keep the PR draft for maintainer review.
+  - On published head `edc2239cb878132f9b4cae3dca76023bdf1edf24`,
+    `act-validation` and `build-test` passed; hosted CodeScene failed its
+    new-code health and advisory gates for the two reviewed String Heavy
+    findings. Hosted CodeRabbit reports that review was skipped because the PR
+    is draft. Keep both advisories unsuppressed and retain the draft state.
+  - The local CodeRabbit retry completed with five minor findings: the
+    annotation-count wording disagreed with the integer parser; the roadmap's
+    inline comment example could be counted as a real candidate declaration;
+    descriptive template prose could pass as note content; and synthetic notes
+    could use the real-comparison stress exception. The two template-prose
+    findings overlap. Independent expert reviews confirmed the gaps and the
+    current fixes, including negative controls for the inline-only and duplicate
+    declaration cases and a prose-tainted annotation count.
+  - The first gate attempt on the repair worktree failed formatting, then lint
+    reported a five-argument helper. The worktree changed during that lint run,
+    so neither result is exact-candidate evidence. `make fmt` now passes; the
+    helper was simplified before a fresh run. That stable repair diff passed
+    `make check-fmt`, `make lint`, `make typecheck`, `make test`,
+    `make markdownlint`, `make spelling`, `make nixie`, and staged/unstaged
+    diff checks. Tests passed 235 cases (three skipped), one doctest, 432
+    workflow cases plus five subtests, and three topology-command tests.
+    Markdown lint reported zero issues. Logs use the `repair2-edc2239` suffix
+    under `/tmp`. The changes and plan closeout still need commit and a new
+    local CodeRabbit review before they are pushed.
 
 ## Surprises & discoveries
 
@@ -225,6 +240,11 @@ the diff.
   Retain both CodeScene String Heavy findings rather than suppressing or hiding
   them with type-only changes. A possible `Utf8PathBuf` return from
   `fixture_root` is an independent cleanup and is deferred.
+- (2026-10-26, review correction) Treat only standalone candidate-comment lines
+  as declarations, reject copied template values in marked notes, and allow the
+  stress-results exception only for real comparisons. The local review prompted
+  these contract corrections; the shared compile queue delayed the sequential
+  gates but remained healthy.
 
 ## Outcomes & retrospective
 
@@ -249,6 +269,15 @@ M2 implementation and roadmap candidate; the plan and contents index then
 recorded completion and passed documentation gates. Roadmap 1.2.3 is done,
 while tasks 4.2.2 and 4.3.1 remain open. Task completion does not establish
 Phase 4 budget success or settle the independent G3 decision.
+
+The later local CodeRabbit review found five minor issues in the published
+candidate, with two overlapping reports about copied template prose. The repair
+clarifies the count field, distinguishes the inline roadmap example from a
+standalone candidate declaration, rejects values copied unchanged from the
+template, and prevents synthetic notes from using the real-comparison
+exception. Negative controls cover those failure cases. All requested local
+gates pass on the repair diff; the draft PR remains subject to hosted checks
+and maintainer disposition of the two existing CodeScene advisories.
 
 ## Context and orientation
 
