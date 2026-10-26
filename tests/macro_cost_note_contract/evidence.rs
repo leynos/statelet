@@ -27,7 +27,32 @@ fn placeholder(value: &str) -> bool {
     matches!(
         checked_value.to_ascii_lowercase().as_str(),
         "" | "tbd" | "todo" | "pending" | "n/a"
-    ) || (checked_value.starts_with('<') && checked_value.ends_with('>'))
+    ) || contains_angle_placeholder(checked_value)
+}
+
+fn contains_angle_placeholder(value: &str) -> bool {
+    let mut remaining = value;
+    while let Some((_, after_open)) = remaining.split_once('<') {
+        if let Some((candidate, _)) = after_open.split_once('>') {
+            let trimmed_candidate = candidate.trim();
+            // Placeholder-shaped tokens are rejected while comparison text
+            // such as `cost < 0.5; threshold > 0` remains valid evidence.
+            let is_placeholder_identifier = trimmed_candidate.is_empty()
+                || trimmed_candidate.chars().all(|character| {
+                    character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '/')
+                });
+            let is_placeholder_instruction = ["fill ", "insert ", "replace ", "example ", "your "]
+                .iter()
+                .any(|prefix| trimmed_candidate.to_ascii_lowercase().starts_with(prefix));
+            if is_placeholder_identifier || is_placeholder_instruction {
+                return true;
+            }
+        }
+        // Advance one opening bracket at a time so malformed surrounding
+        // markup cannot hide a later placeholder token.
+        remaining = after_open;
+    }
+    false
 }
 
 fn has_revision_citation(evidence: &str) -> bool {

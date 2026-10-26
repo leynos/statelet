@@ -44,6 +44,8 @@ fn open_tasks_accept_empty_notes_and_both_complete_comparison_forms() {
 #[case("pending")]
 #[case("N/A")]
 #[case("<fill this>")]
+#[case("Measured on <target> hardware")]
+#[case("Malformed markup < remains before <target> hardware")]
 fn marked_note_rejects_placeholder_values(#[case] value: &str) {
     let form = template();
     let mut evidence = note(Kind::Synthetic20, 20);
@@ -54,6 +56,20 @@ fn marked_note_rejects_placeholder_values(#[case] value: &str) {
         error.contains("environment") && error.contains("is empty or still a placeholder"),
         "{error}"
     );
+}
+
+#[test]
+fn marked_note_accepts_budget_inequalities_with_both_angle_characters() {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    replace_value(
+        &mut evidence,
+        FixtureField::BUDGET_VERDICT,
+        "Marginal cost < 0.5%; baseline > 0",
+    )
+    .expect("fixture field exists");
+
+    check(&template(), &open_roadmap(), &[evidence])
+        .expect("budget inequalities are not angle-bracket placeholders");
 }
 
 #[rstest]

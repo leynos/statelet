@@ -4,8 +4,9 @@ Status: APPROVED — the user approved scope and tolerances on 2026-10-25, befor
 implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26. A
 post-publication CodeScene follow-up passed deterministic validation and expert
 review; commit `85e64a0` is published and PR #153 remains draft. A local
-CodeRabbit review of repair commit `9efd1be` found two further minor issues;
-their fixes passed a second full sequential local gate run.
+CodeRabbit review of repair commit `5bad4e6` found two overlapping placeholder
+issues and one fixture-literal style issue; their corrections passed the full
+local validation sequence. A commit, fresh local review, and PR closeout remain.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -197,6 +198,21 @@ and obtain explicit approval before proceeding.
     It passed 238 Rust tests (three skipped), one doctest, 432 workflow cases
     plus five subtests, and three topology-command tests. Logs use the
     `review2fix-9efd1be` suffix under `/tmp`; commit and local review remain.
+  - The review of commit `5bad4e6c7867bdd98dedbf149a3cc2f09dc65648` completed
+    with two overlapping findings that embedded angle-bracket placeholders
+    could pass, plus one finding against escaped newline continuations in
+    fixture strings. The current fix recognizes placeholder-shaped tokens
+    without treating ordinary cost inequalities as placeholders, adds both
+    negative and positive controls, handles malformed angle markup before a
+    placeholder, and switches the fixture literals to `concat!()`. The first
+    gate attempt found one Clippy `shadow_reuse` finding; renaming the trimmed
+    value resolved it. The exact corrected candidate passed all gates:
+    `make check-fmt`, `make lint`, `make typecheck`, `make test`,
+    `make markdownlint`, `make spelling`, `make nixie`, and staged/unstaged
+    diff checks. Tests passed 241 cases (three skipped), one doctest, 432
+    workflow cases plus five subtests, and three topology-command tests. Logs
+    use the `73d2f8d6` suffix under `/tmp`. The changes, plan update, commit,
+    and a fresh local review remain.
 
 ## Surprises & discoveries
 
@@ -259,6 +275,9 @@ the diff.
   stress-results exception only for real comparisons. The local review prompted
   these contract corrections; the shared compile queue delayed the sequential
   gates but remained healthy.
+- (2026-10-26, review correction) Reject embedded angle-bracket placeholders
+  while preserving valid inequalities in evidence values. Use `concat!()` for
+  the split Markdown fixture strings to follow the repository's Rust guidance.
 
 ## Outcomes & retrospective
 
@@ -299,6 +318,15 @@ gaps are addressed with negative controls for empty and bracketed reasons, a
 positive case for a cited failure reason, and a level-one heading in the form.
 The follow-up full sequential gate run passed; commit and a new local review
 remain pending.
+
+The local review of commit `5bad4e6` then found incomplete placeholder
+detection for values such as `Measured on <target>` and split fixture literals
+that should use `concat!()`. The new scanner distinguishes placeholder-shaped
+tokens from comparison operators and continues scanning after malformed angle
+markup. Negative and positive controls cover those boundaries, and the fixtures
+now use `concat!()`. The first lint run exposed a shadowed binding; after
+renaming it, the fresh full sequential gate set passed. The final commit and
+local review remain pending.
 
 ## Context and orientation
 

@@ -34,10 +34,12 @@ struct SchemaMutation {
 }
 
 pub(crate) fn template() -> String {
-    let mut text = String::from(
-        "<!-- macro-cost-note -->\n\n<!-- macro-cost-register:begin -->\n| Field | Value | \
-         Evidence |\n| --- | --- | --- |\n",
-    );
+    let mut text = String::from(concat!(
+        "# Macro cost benchmark note\n\n",
+        "<!-- macro-cost-note -->\n\n",
+        "<!-- macro-cost-register:begin -->\n| Field | Value | Evidence |\n",
+        "| --- | --- | --- |\n",
+    ));
     for field in REQUIRED_FIELDS {
         let value = if field == "comparison-kind" {
             "mdtablefix or synthetic-20"
@@ -60,17 +62,21 @@ pub(crate) fn template() -> String {
 }
 
 pub(crate) fn design() -> String {
-    "### 11.7 Compile-time and binary-size budget\n\nThe macro-cost-benchmark-note-template.md \
-     uses an evidence-completeness contract for tasks 4.2.2 and 4.3.1.\n\n### 12 Next\n"
-        .to_owned()
+    concat!(
+        "### 11.7 Compile-time and binary-size budget\n\n",
+        "The macro-cost-benchmark-note-template.md uses an evidence-",
+        "completeness contract for tasks 4.2.2 and 4.3.1.\n\n### 12 Next\n",
+    )
+    .to_owned()
 }
 
 pub(crate) fn open_roadmap() -> String {
-    String::from(
-        "- [ ] 4.2.2. Require a synthetic macro cost note and macro-cost-candidate with the \
-         design revision.\n- [ ] 4.3.1. Require both real and synthetic macro cost notes, \
-         macro-cost-candidate and the design revision.\n",
-    )
+    String::from(concat!(
+        "- [ ] 4.2.2. Require a synthetic macro cost note and ",
+        "macro-cost-candidate with the design revision.\n",
+        "- [ ] 4.3.1. Require both real and synthetic macro cost notes, ",
+        "macro-cost-candidate and the design revision.\n",
+    ))
 }
 
 pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
@@ -78,15 +84,15 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
     let status_422 = if claim_422 { "x" } else { " " };
     roadmap.push_str("- [");
     roadmap.push_str(status_422);
-    roadmap.push_str(
-        "] 4.2.2. Require a synthetic macro cost note and macro-cost-candidate with the design \
-         revision.\n",
-    );
+    roadmap.push_str(concat!(
+        "] 4.2.2. Require a synthetic macro cost note and ",
+        "macro-cost-candidate with the design revision.\n",
+    ));
     if claim_422 {
-        roadmap.push_str(
-            "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; design-revision: \
-             <design-sha> -->`.\n",
-        );
+        roadmap.push_str(concat!(
+            "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; ",
+            "design-revision: <design-sha> -->`.\n",
+        ));
         roadmap.push_str(&candidate_comment());
         roadmap
             .push_str("  Evidence: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n");
@@ -94,20 +100,20 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
     let status_431 = if claim_431 { "x" } else { " " };
     roadmap.push_str("- [");
     roadmap.push_str(status_431);
-    roadmap.push_str(
-        "] 4.3.1. Require both real and synthetic macro cost notes, macro-cost-candidate and the \
-         design revision.\n",
-    );
+    roadmap.push_str(concat!(
+        "] 4.3.1. Require both real and synthetic macro cost notes, ",
+        "macro-cost-candidate and the design revision.\n",
+    ));
     if claim_431 {
-        roadmap.push_str(
-            "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; design-revision: \
-             <design-sha> -->`.\n",
-        );
+        roadmap.push_str(concat!(
+            "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; ",
+            "design-revision: <design-sha> -->`.\n",
+        ));
         roadmap.push_str(&candidate_comment());
-        roadmap.push_str(
-            "  Evidence: [real](validation-notes/4.2.1-mdtablefix-macro-cost.md) and \
-             [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n",
-        );
+        roadmap.push_str(concat!(
+            "  Evidence: [real](validation-notes/4.2.1-mdtablefix-macro-cost.md) and ",
+            "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n",
+        ));
     }
     roadmap
 }
@@ -117,10 +123,12 @@ pub(crate) fn note(kind: Kind, count: u32) -> MarkdownFile {
         Kind::Mdtablefix => "docs/validation-notes/4.2.1-mdtablefix-macro-cost.md",
         Kind::Synthetic20 => "docs/validation-notes/4.2.2-synthetic-macro-cost.md",
     };
-    let mut text = String::from(
-        "<!-- macro-cost-note -->\n\n<!-- macro-cost-register:begin -->\n| Field | Value | \
-         Evidence |\n| --- | --- | --- |\n",
-    );
+    let mut text = String::from(concat!(
+        "# Macro cost benchmark note\n\n",
+        "<!-- macro-cost-note -->\n\n",
+        "<!-- macro-cost-register:begin -->\n| Field | Value | Evidence |\n",
+        "| --- | --- | --- |\n",
+    ));
     for field in REQUIRED_FIELDS {
         let value = match field {
             "comparison-kind" => kind.label().to_owned(),
