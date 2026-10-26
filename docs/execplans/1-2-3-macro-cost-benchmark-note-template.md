@@ -158,8 +158,16 @@ and obtain explicit approval before proceeding.
 - [ ] (2026-10-26) Complete local CodeRabbit review and draft PR closeout.
   - Remediation commit `85e64a02e2557d645d5afd4c641dedebf50eb9f9` was pushed
     over SSH; the remote-tracking branch and GitHub head matched after
-    readback. PR #153's body now records the CodeScene disposition and gate
-    results and ends with the References section. Its open draft state remains.
+    readback. PR #153's body records the CodeScene disposition, gate results
+    and both required links. A generated Sourcery summary currently follows
+    References; final section order still needs readback and correction. The PR
+    remains an open draft.
+  - After the plan-only commit, the hosted CodeScene check failed its new-code
+    health and advisory gates for the same two reviewed String Heavy findings.
+    On published head `7acca7a`, `act-validation` passed and `build-test` was
+    still pending at the last readback. Hosted CodeRabbit reports that review
+    was skipped because the PR is draft. Do not suppress the findings or change
+    the requested draft state.
   - The first local CodeRabbit request did not start because the service had
     exhausted its 10 included reviews. The scrutineer is waiting 20 minutes
     before its single retry; that retry will target the branch's current head.
