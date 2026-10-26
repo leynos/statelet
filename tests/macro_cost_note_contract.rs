@@ -5,10 +5,7 @@ mod contract;
 #[path = "macro_cost_note_contract/fixtures.rs"]
 mod fixtures;
 
-use std::{
-    collections::BTreeMap,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use camino::Utf8Path;
 use cap_std::{ambient_authority, fs::Dir};
@@ -37,18 +34,14 @@ const REQUIRED_FIELDS: [&str; 18] = [
 
 static NEXT_FIXTURE_ID: AtomicUsize = AtomicUsize::new(0);
 
-struct Row {
-    value: String,
-    evidence: String,
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct NoteFile {
+pub(crate) struct MarkdownFile {
     pub(crate) path: String,
     pub(crate) text: String,
 }
 
 struct Task {
+    id: String,
     complete: bool,
     text: String,
 }
@@ -58,8 +51,11 @@ struct Candidate {
     design_revision: String,
 }
 
-fn candidate_identity(block: &str, id: &str) -> Result<Candidate, String> {
+fn candidate_identity(task: &Task) -> Result<Candidate, String> {
     const PREFIX: &str = "<!-- macro-cost-candidate:";
+    let Task {
+        id, text: block, ..
+    } = task;
     if block.matches(PREFIX).count() != 1 {
         return Err(format!(
             "completed task {id} needs one macro-cost-candidate comment"
@@ -89,9 +85,9 @@ fn candidate_identity(block: &str, id: &str) -> Result<Candidate, String> {
     })
 }
 
-fn linked_note_paths(block: &str) -> Vec<String> {
+fn linked_note_paths(task: &Task) -> Vec<String> {
     let mut found = Vec::new();
-    let mut rest = block;
+    let mut rest = task.text.as_str();
     while let Some((_, tail)) = rest.split_once("](") {
         let Some((target, remaining)) = tail.split_once(')') else {
             break;
@@ -104,8 +100,8 @@ fn linked_note_paths(block: &str) -> Vec<String> {
     found
 }
 
-fn task_block(roadmap: &str, id: &str) -> Result<Task, String> {
-    let lines = roadmap.lines().collect::<Vec<_>>();
+fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
+    let lines = roadmap.text.lines().collect::<Vec<_>>();
     let matches = lines
         .iter()
         .enumerate()
@@ -113,7 +109,8 @@ fn task_block(roadmap: &str, id: &str) -> Result<Task, String> {
         .collect::<Vec<_>>();
     let [(start, complete)] = matches.as_slice() else {
         return Err(format!(
-            "roadmap must contain exactly one checklist task {id}"
+            "{} must contain exactly one checklist task {id}",
+            roadmap.path
         ));
     };
     let end = lines
@@ -123,10 +120,11 @@ fn task_block(roadmap: &str, id: &str) -> Result<Task, String> {
         .find_map(|(index, line)| (line.starts_with("- [") || is_heading(line)).then_some(index))
         .unwrap_or(lines.len());
     Ok(Task {
+        id: id.to_owned(),
         complete: *complete,
         text: lines
             .get(*start..end)
-            .ok_or_else(|| format!("roadmap task {id} has an invalid source range"))?
+            .ok_or_else(|| format!("{} task {id} has an invalid source range", roadmap.path))?
             .join("\n"),
     })
 }
@@ -142,113 +140,6 @@ fn task_status(line: &str, id: &str) -> Option<bool> {
         .then_some(complete)
 }
 
-struct Register {
-    rows: BTreeMap<String, Row>,
-    fields: Vec<String>,
-}
-
-fn parse_register(source_name: &str, source: &str) -> Result<Register, String> {
-    let begin = "<!-- macro-cost-register:begin -->";
-    let end_marker = "<!-- macro-cost-register:end -->";
-    if contract::marker_count(source, begin) != 1 || contract::marker_count(source, end_marker) != 1
-    {
-        return Err(format!(
-            "{source_name}: register needs one ordered begin/end marker pair"
-        ));
-    }
-    let start = source
-        .find(begin)
-        .ok_or_else(|| format!("{source_name}: register begin marker missing"))?
-        + begin.len();
-    let tail = source
-        .get(start..)
-        .ok_or_else(|| format!("{source_name}: register begin marker is invalid"))?;
-    let end = tail
-        .find(end_marker)
-        .map(|offset| start + offset)
-        .ok_or_else(|| format!("{source_name}: register end marker is missing or out of order"))?;
-    let mut rows = BTreeMap::new();
-    let mut fields = Vec::new();
-    let mut header_seen = false;
-    let register_body = source
-        .get(start..end)
-        .ok_or_else(|| format!("{source_name}: register marker range is invalid"))?;
-    for line in register_body.lines() {
-        let Some(cells) = table_cells(line) else {
-            continue;
-        };
-        if cells == ["Field", "Value", "Evidence"] {
-            if header_seen {
-                return Err(format!("{source_name}: register repeats its header"));
-            }
-            header_seen = true;
-            continue;
-        }
-        if cells
-            .iter()
-            .all(|cell| !cell.is_empty() && cell.chars().all(|ch| ch == '-' || ch == ':'))
-        {
-            continue;
-        }
-        if cells.len() != 3 || !header_seen {
-            return Err(format!("{source_name}: malformed register row"));
-        }
-        let [field_cell, value_cell, evidence_cell] = cells.as_slice() else {
-            return Err(format!("{source_name}: malformed register row"));
-        };
-        let field = (*field_cell).to_owned();
-        if rows
-            .insert(
-                field.clone(),
-                Row {
-                    value: (*value_cell).into(),
-                    evidence: (*evidence_cell).into(),
-                },
-            )
-            .is_some()
-        {
-            return Err(format!(
-                "{source_name}: duplicate macro-cost field `{field}`"
-            ));
-        }
-        fields.push(field);
-    }
-    if !header_seen {
-        return Err(format!("{source_name}: register has no table header"));
-    }
-    Ok(Register { rows, fields })
-}
-
-fn table_cells(raw_line: &str) -> Option<Vec<&str>> {
-    let line = raw_line.trim();
-    if !line.starts_with('|') || !line.ends_with('|') {
-        return None;
-    }
-    line.get(1..line.len().checked_sub(1)?)
-        .map(|cells| cells.split('|').map(str::trim).collect())
-}
-
-fn check_fields(source: &str, fields: &[String]) -> Result<(), String> {
-    if fields.iter().map(String::as_str).eq(REQUIRED_FIELDS) {
-        return Ok(());
-    }
-    if let Some(field) = REQUIRED_FIELDS
-        .iter()
-        .find(|field| !fields.iter().any(|actual| actual == **field))
-    {
-        return Err(format!("{source}: missing required field `{field}`"));
-    }
-    if let Some(field) = fields
-        .iter()
-        .find(|field| !REQUIRED_FIELDS.contains(&field.as_str()))
-    {
-        return Err(format!("{source}: unexpected field `{field}`"));
-    }
-    Err(format!(
-        "{source}: fields must appear in the template order"
-    ))
-}
-
 fn is_heading(line: &str) -> bool { line.starts_with("## ") || line.starts_with("### ") }
 
 fn read_document(root: &Utf8Path, path: &str) -> Result<String, String> {
@@ -259,7 +150,7 @@ fn read_document(root: &Utf8Path, path: &str) -> Result<String, String> {
         .map_err(|error| format!("{root}/{path}: {error}"))
 }
 
-fn read_notes(root: &Utf8Path) -> Result<Vec<NoteFile>, String> {
+fn read_notes(root: &Utf8Path) -> Result<Vec<MarkdownFile>, String> {
     let repository = Dir::open_ambient_dir(root, ambient_authority())
         .map_err(|error| format!("{root}: cannot open repository root: {error}"))?;
     let directory = match repository.open_dir("docs/validation-notes") {
@@ -286,7 +177,7 @@ fn read_notes(root: &Utf8Path) -> Result<Vec<NoteFile>, String> {
         let text = directory
             .read_to_string(&name)
             .map_err(|error| format!("{root}/docs/validation-notes/{name}: {error}"))?;
-        notes.push(NoteFile {
+        notes.push(MarkdownFile {
             path: format!("docs/validation-notes/{name}"),
             text,
         });
@@ -295,17 +186,37 @@ fn read_notes(root: &Utf8Path) -> Result<Vec<NoteFile>, String> {
     Ok(notes)
 }
 
-fn live_documents(root: &Utf8Path) -> Result<(String, String, String, Vec<NoteFile>), String> {
+fn live_documents(
+    root: &Utf8Path,
+) -> Result<(MarkdownFile, MarkdownFile, MarkdownFile, Vec<MarkdownFile>), String> {
+    let read = |path: &str| {
+        read_document(root, path).map(|text| MarkdownFile {
+            path: path.to_owned(),
+            text,
+        })
+    };
     Ok((
-        read_document(root, "docs/macro-cost-benchmark-note-template.md")?,
-        read_document(root, "docs/design.md")?,
-        read_document(root, "docs/roadmap.md")?,
+        read("docs/macro-cost-benchmark-note-template.md")?,
+        read("docs/design.md")?,
+        read("docs/roadmap.md")?,
         read_notes(root)?,
     ))
 }
 
-fn check(template: &str, roadmap: &str, notes: &[NoteFile]) -> Result<(), String> {
-    check_contract(template, &fixtures::design(), roadmap, notes)
+fn check(template_text: &str, roadmap_text: &str, notes: &[MarkdownFile]) -> Result<(), String> {
+    let template_file = MarkdownFile {
+        path: "macro-cost template fixture".into(),
+        text: template_text.into(),
+    };
+    let design = MarkdownFile {
+        path: "design fixture".into(),
+        text: fixtures::design(),
+    };
+    let roadmap_file = MarkdownFile {
+        path: "roadmap fixture".into(),
+        text: roadmap_text.into(),
+    };
+    check_contract(&template_file, &design, &roadmap_file, notes)
 }
 
 fn fixture_root() -> Result<String, String> {
@@ -383,5 +294,5 @@ fn absent_notes_directory_is_an_empty_collection() {
         .expect("empty fixture notes directory can be removed");
     let notes = read_notes(Utf8Path::new(&root)).expect("missing notes directory means no notes");
     remove_fixture_root(&root).expect("test fixture tree can be removed");
-    assert_eq!(notes, Vec::<NoteFile>::new());
+    assert_eq!(notes, Vec::<MarkdownFile>::new());
 }

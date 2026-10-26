@@ -1,24 +1,22 @@
-//! Private, marker-scoped checks for macro cost notes and roadmap claims.
+//! Checks design bindings, roadmap claims and candidate-bound cost notes.
 
 use std::collections::BTreeMap;
 
-use super::{
-    NoteFile,
-    REQUIRED_FIELDS,
-    Task,
-    candidate_identity,
+use evidence::{
+    NOTE_MARKER,
+    Register,
     check_fields,
-    is_heading,
-    linked_note_paths,
+    check_measurement_values,
+    check_required_values,
+    marker_count,
     parse_register,
-    task_block,
+    row,
 };
 
-const NOTE_MARKER: &str = "<!-- macro-cost-note -->";
+use super::{MarkdownFile, Task, candidate_identity, is_heading, linked_note_paths, task_block};
 
-pub(super) fn marker_count(source: &str, marker: &str) -> usize {
-    source.lines().filter(|line| line.trim() == marker).count()
-}
+#[path = "evidence.rs"]
+pub(super) mod evidence;
 
 pub(super) fn full_revision(revision: &str) -> bool {
     revision.len() == 40
@@ -27,57 +25,8 @@ pub(super) fn full_revision(revision: &str) -> bool {
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
-fn placeholder(value: &str) -> bool {
-    let trimmed = value.trim();
-    matches!(
-        trimmed.to_ascii_lowercase().as_str(),
-        "" | "tbd" | "todo" | "pending" | "n/a"
-    ) || (trimmed.starts_with('<') && trimmed.ends_with('>'))
-}
-
-fn has_revision_citation(evidence: &str) -> bool {
-    evidence.split_whitespace().any(|token| {
-        let Some((repository, rest)) = token.split_once('@') else {
-            return false;
-        };
-        let Some((revision, path)) = rest.split_once(':') else {
-            return false;
-        };
-        !repository.is_empty() && full_revision(revision) && !path.is_empty()
-    })
-}
-
-fn row<'a>(
-    path: &str,
-    rows: &'a BTreeMap<String, super::Row>,
-    field: &str,
-) -> Result<&'a super::Row, String> {
-    rows.get(field)
-        .ok_or_else(|| format!("{path}: required field `{field}` is missing"))
-}
-
-fn section_body(source: &str, heading: &str) -> Option<String> {
-    let mut matched = false;
-    let mut body = Vec::new();
-    for line in source.lines() {
-        if !matched && line.trim() == heading {
-            matched = true;
-            continue;
-        }
-        if matched && is_heading(line) {
-            break;
-        }
-        if matched {
-            body.push(line);
-        }
-    }
-    matched.then(|| body.join("\n"))
-}
-
-fn normalize(value: &str) -> String { value.split_whitespace().collect::<Vec<_>>().join(" ") }
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Kind {
+pub(super) enum Kind {
     Mdtablefix,
     Synthetic20,
 }
@@ -91,7 +40,7 @@ impl Kind {
         }
     }
 
-    const fn label(self) -> &'static str {
+    pub(super) const fn label(self) -> &'static str {
         match self {
             Self::Mdtablefix => "mdtablefix",
             Self::Synthetic20 => "synthetic-20",
@@ -105,12 +54,15 @@ struct Note {
     design_revision: String,
 }
 
+type RoadmapTasks = BTreeMap<String, Task>;
+type ParsedNotes = BTreeMap<String, Option<Note>>;
+
 /// Check the live template, design and roadmap bindings, and supplied notes.
 pub(crate) fn check_contract(
-    template: &str,
-    design: &str,
-    roadmap: &str,
-    notes: &[NoteFile],
+    template: &MarkdownFile,
+    design: &MarkdownFile,
+    roadmap: &MarkdownFile,
+    notes: &[MarkdownFile],
 ) -> Result<(), String> {
     check_template(template)?;
     check_design(design)?;
@@ -131,18 +83,23 @@ pub(crate) fn check_contract(
     )
 }
 
-fn check_template(template: &str) -> Result<(), String> {
-    if marker_count(template, NOTE_MARKER) != 1 {
-        return Err(format!("template needs exactly one `{NOTE_MARKER}` marker"));
+fn check_template(template: &MarkdownFile) -> Result<(), String> {
+    if marker_count(&template.text, NOTE_MARKER) != 1 {
+        return Err(format!(
+            "{} needs exactly one `{NOTE_MARKER}` marker",
+            template.path
+        ));
     }
-    let register = parse_register("macro-cost template", template)?;
-    check_fields("macro-cost template", &register.fields)?;
-    let kind_row = row("macro-cost template", &register.rows, "comparison-kind")?;
-    let kind_value = kind_row.value.as_str();
-    if !kind_value.contains("mdtablefix") || !kind_value.contains("synthetic-20") {
-        return Err("template must document both comparison kinds".into());
+    let register = parse_register(template)?;
+    check_fields(template, &register.fields)?;
+    let kind_row = row(&template.path, &register.rows, "comparison-kind")?;
+    if !kind_row.value.contains("mdtablefix") || !kind_row.value.contains("synthetic-20") {
+        return Err(format!(
+            "{}: template must document both comparison kinds",
+            template.path
+        ));
     }
-    let normalized = normalize(template);
+    let normalized = normalize(&template.text);
     for phrase in [
         "marginal seconds = (T1 - T0) / N",
         "marginal percent = 100 * (T1 - T0) / (N * T0)",
@@ -154,31 +111,35 @@ fn check_template(template: &str) -> Result<(), String> {
     ] {
         if !normalized.contains(phrase) {
             return Err(format!(
-                "template is missing calculation guidance `{phrase}`"
+                "{} is missing calculation guidance `{phrase}`",
+                template.path
             ));
         }
     }
     Ok(())
 }
 
-fn check_design(design: &str) -> Result<(), String> {
-    let section = section_body(design, "### 11.7 Compile-time and binary-size budget")
-        .ok_or_else(|| "design section 11.7 is missing".to_owned())?;
-    let normalized_section = normalize(&section);
+fn check_design(design: &MarkdownFile) -> Result<(), String> {
+    let section = section_body(&design.text, "### 11.7 Compile-time and binary-size budget")
+        .ok_or_else(|| format!("{} section 11.7 is missing", design.path))?;
+    let normalized = normalize(&section);
     for phrase in [
         "macro-cost-benchmark-note-template.md",
         "evidence-completeness contract",
         "4.2.2",
         "4.3.1",
     ] {
-        if !normalized_section.contains(phrase) {
-            return Err(format!("design section 11.7 is missing `{phrase}`"));
+        if !normalized.contains(phrase) {
+            return Err(format!(
+                "{} section 11.7 is missing `{phrase}`",
+                design.path
+            ));
         }
     }
     Ok(())
 }
 
-fn check_roadmap(roadmap: &str) -> Result<BTreeMap<String, Task>, String> {
+fn check_roadmap(roadmap: &MarkdownFile) -> Result<RoadmapTasks, String> {
     let mut tasks = BTreeMap::new();
     for (id, evidence) in [
         ("4.2.2", "synthetic macro cost note"),
@@ -188,7 +149,10 @@ fn check_roadmap(roadmap: &str) -> Result<BTreeMap<String, Task>, String> {
         let body = normalize(&task.text.to_ascii_lowercase());
         for phrase in [evidence, "macro-cost-candidate", "design revision"] {
             if !body.contains(phrase) {
-                return Err(format!("roadmap task {id} must require `{phrase}`"));
+                return Err(format!(
+                    "{} task {id} must require `{phrase}`",
+                    roadmap.path
+                ));
             }
         }
         tasks.insert(id.to_owned(), task);
@@ -199,8 +163,8 @@ fn check_roadmap(roadmap: &str) -> Result<BTreeMap<String, Task>, String> {
 fn check_claim(
     id: &str,
     expected: &[Kind],
-    tasks: &BTreeMap<String, Task>,
-    notes: &BTreeMap<String, Option<Note>>,
+    tasks: &RoadmapTasks,
+    notes: &ParsedNotes,
 ) -> Result<(), String> {
     let task = tasks
         .get(id)
@@ -208,62 +172,75 @@ fn check_claim(
     if !task.complete {
         return Ok(());
     }
-    let candidate = candidate_identity(&task.text, id)?;
-    let paths = linked_note_paths(&task.text);
+    candidate_identity(task)?;
+    let paths = linked_note_paths(task);
     if paths.len() != expected.len() {
         return Err(format!(
             "completed task {id} must link exactly {} cost note(s)",
             expected.len()
         ));
     }
-    let mut selected = Vec::new();
-    for note_path in paths {
-        let qualified_path = format!("docs/{note_path}");
-        let note = notes
-            .get(&qualified_path)
-            .ok_or_else(|| format!("completed task {id} links missing note `{qualified_path}`"))?
-            .as_ref()
-            .ok_or_else(|| {
-                format!("selected note `{qualified_path}` must declare `{NOTE_MARKER}`")
-            })?;
-        if !expected.contains(&note.kind) {
-            return Err(format!(
-                "task {id} selects unexpected `{}` note",
-                note.kind.label()
-            ));
-        }
-        if note.macro_revision != candidate.macro_revision {
-            return Err(format!(
-                "selected note `{qualified_path}` evaluates a different macro commit"
-            ));
-        }
-        if note.design_revision != candidate.design_revision {
-            return Err(format!(
-                "selected note `{qualified_path}` uses a different design revision"
-            ));
-        }
-        selected.push(note.kind);
-    }
-    for kind in expected {
-        if selected
+    let selected = paths
+        .iter()
+        .map(|path| resolve_selected_note(task, expected, path, notes))
+        .collect::<Result<Vec<_>, _>>()?;
+    if let Some(kind) = expected.iter().find(|kind| {
+        selected
             .iter()
-            .filter(|selected_kind| *selected_kind == kind)
+            .filter(|selected_kind| *selected_kind == *kind)
             .count()
             != 1
-        {
-            return Err(format!(
-                "completed task {id} needs one `{}` note",
-                kind.label()
-            ));
-        }
+    }) {
+        return Err(format!(
+            "completed task {id} needs one `{}` note",
+            kind.label()
+        ));
     }
     Ok(())
 }
 
-fn parse_note(file: &NoteFile) -> Result<Option<Note>, String> {
+fn resolve_selected_note(
+    task: &Task,
+    expected: &[Kind],
+    note_path: &str,
+    notes: &ParsedNotes,
+) -> Result<Kind, String> {
+    let candidate = candidate_identity(task)?;
+    let qualified_path = format!("docs/{note_path}");
+    let note = notes
+        .get(&qualified_path)
+        .ok_or_else(|| {
+            format!(
+                "completed task {} links missing note `{qualified_path}`",
+                task.id
+            )
+        })?
+        .as_ref()
+        .ok_or_else(|| format!("selected note `{qualified_path}` must declare `{NOTE_MARKER}`"))?;
+    if !expected.contains(&note.kind) {
+        return Err(format!(
+            "task {} selects unexpected `{}` note",
+            task.id,
+            note.kind.label()
+        ));
+    }
+    if note.macro_revision != candidate.macro_revision {
+        return Err(format!(
+            "selected note `{qualified_path}` evaluates a different macro commit"
+        ));
+    }
+    if note.design_revision != candidate.design_revision {
+        return Err(format!(
+            "selected note `{qualified_path}` uses a different design revision"
+        ));
+    }
+    Ok(note.kind)
+}
+
+fn parse_note(file: &MarkdownFile) -> Result<Option<Note>, String> {
     match marker_count(&file.text, NOTE_MARKER) {
         0 => return Ok(None),
-        1 => {}
+        1 => (),
         _ => {
             return Err(format!(
                 "{} needs exactly one `{NOTE_MARKER}` marker",
@@ -271,8 +248,8 @@ fn parse_note(file: &NoteFile) -> Result<Option<Note>, String> {
             ));
         }
     }
-    let register = parse_register(&file.path, &file.text)?;
-    check_fields(&file.path, &register.fields)?;
+    let register = parse_register(file)?;
+    check_fields(file, &register.fields)?;
     let kind = parse_kind(file, &register)?;
     check_required_values(file, &register, kind)?;
     check_measurement_values(file, &register, kind)?;
@@ -287,7 +264,7 @@ fn parse_note(file: &NoteFile) -> Result<Option<Note>, String> {
     }))
 }
 
-fn parse_kind(file: &NoteFile, register: &super::Register) -> Result<Kind, String> {
+fn parse_kind(file: &MarkdownFile, register: &Register) -> Result<Kind, String> {
     row(&file.path, &register.rows, "comparison-kind").and_then(|kind_row| {
         Kind::parse(&kind_row.value).ok_or_else(|| {
             format!(
@@ -296,79 +273,6 @@ fn parse_kind(file: &NoteFile, register: &super::Register) -> Result<Kind, Strin
             )
         })
     })
-}
-
-fn check_required_values(
-    file: &NoteFile,
-    register: &super::Register,
-    kind: Kind,
-) -> Result<(), String> {
-    for field in REQUIRED_FIELDS {
-        let field_row = row(&file.path, &register.rows, field)?;
-        let allowed = (field == "stress-fixture-results"
-            && kind == Kind::Mdtablefix
-            && field_row.value.trim() == "Not applicable: real comparison")
-            || (field == "review"
-                && field_row.value.trim() == "Pending: G3 decision not yet recorded");
-        if !allowed && placeholder(&field_row.value) {
-            return Err(format!(
-                "{}: `{field}` is empty or still a placeholder",
-                file.path
-            ));
-        }
-        if placeholder(&field_row.evidence) || !has_revision_citation(&field_row.evidence) {
-            return Err(format!(
-                "{}: `{field}` needs revision-bound evidence",
-                file.path
-            ));
-        }
-    }
-    if register
-        .rows
-        .values()
-        .any(|field_row| field_row.value.trim().starts_with("Unavailable:"))
-        && !row(&file.path, &register.rows, "budget-verdict")?
-            .value
-            .contains("Inconclusive")
-    {
-        return Err(format!(
-            "{}: unavailable evidence requires an Inconclusive verdict",
-            file.path
-        ));
-    }
-    Ok(())
-}
-
-fn check_measurement_values(
-    file: &NoteFile,
-    register: &super::Register,
-    kind: Kind,
-) -> Result<(), String> {
-    let count = row(&file.path, &register.rows, "annotation-count")?
-        .value
-        .parse::<u32>()
-        .map_err(|_| format!("{}: annotation-count must be a positive integer", file.path))?;
-    let is_valid_count = match kind {
-        Kind::Mdtablefix => count > 0,
-        Kind::Synthetic20 => count == 20,
-    };
-    if !is_valid_count {
-        return Err(format!(
-            "{}: annotation-count is invalid for {}",
-            file.path,
-            kind.label()
-        ));
-    }
-    if kind == Kind::Mdtablefix {
-        let stress_results = row(&file.path, &register.rows, "stress-fixture-results")?;
-        if stress_results.value.trim() != "Not applicable: real comparison" {
-            return Err(format!(
-                "{}: real comparison must mark stress results not applicable",
-                file.path
-            ));
-        }
-    }
-    Ok(())
 }
 
 fn candidate_id(path: &str, candidate_value: &str) -> Result<(String, String), String> {
@@ -386,3 +290,16 @@ fn candidate_id(path: &str, candidate_value: &str) -> Result<(String, String), S
     }
     Ok((macro_revision.to_owned(), design_revision.to_owned()))
 }
+
+fn section_body(source: &str, heading: &str) -> Option<String> {
+    let mut lines = source.lines();
+    lines.position(|line| line.trim() == heading)?;
+    Some(
+        lines
+            .take_while(|line| !is_heading(line))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )
+}
+
+fn normalize(value: &str) -> String { value.split_whitespace().collect::<Vec<_>>().join(" ") }

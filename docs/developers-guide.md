@@ -280,7 +280,16 @@ capability-filesystem boundary. The schema helpers stay inside this integration
 test because they encode this register and its roadmap links; do not promote
 them to a shared Markdown parser or reuse the StateName policy. The directory
 reader treats a missing notes directory as empty before Phase 4, and reports
-enumeration or file-read errors with the affected path.
+enumeration or file-read errors with the affected path. The contract's private
+`evidence.rs` child handles only the `Field | Value | Evidence` register. ADR
+003's separate five-column exit-register parser keeps its own schema and
+validation rules.
+
+The macro-cost contract keeps field names, table values and evidence prose as
+strings until validation. Unknown or duplicate fields and placeholder values
+must remain available so the contract can report the exact input that needs
+repair. Add a private type only when construction enforces an invariant that a
+later check or caller relies on; do not wrap every text cell by default.
 
 ## Dependency-topology check
 

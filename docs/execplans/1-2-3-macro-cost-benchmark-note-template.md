@@ -1,7 +1,9 @@
 # Add a benchmark note template for macro cost budgets
 
-Status: COMPLETE — the user approved scope and tolerances on 2026-10-25, before
-implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26.
+Status: APPROVED — the user approved scope and tolerances on 2026-10-25, before
+implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26. A
+post-publication CodeScene follow-up has passed deterministic validation and
+expert review; the local CodeRabbit review and publication update are pending.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -101,9 +103,10 @@ and obtain explicit approval before proceeding.
   - Decimal checks reproduced the synthetic 0.49% pass and 0.5% failure
     boundaries, plus the 2% size pass and 2.001% failure. Roadmap 1.2.3 is
     marked done; the closed implementation candidate passed its full gates.
-  - The test contract now has exactly two private child modules, each below
-    400 lines. The final working diff contains 11 paths (10 excluding this
-    plan), within the approved tolerance.
+  - At EP-M2 acceptance, the integration root had exactly two direct private
+    child modules, `contract` and `fixtures`, each below 400 lines. That
+    milestone's diff contained 11 paths (10 excluding this plan), within the
+    approved tolerance.
   - On 2026-10-26, PR #153's target `main` resolved to
     `0ca827880da2dcc27e7e89340f96878999243ac9`, already the branch's exact
     base. The explicit `zdiff3` rebase completed as a no-op with no conflicts;
@@ -123,6 +126,36 @@ and obtain explicit approval before proceeding.
   - No macro benchmark was run and no illustrative value was committed as
     evidence. Roadmap tasks 4.2.2 and 4.3.1 remain open; no Phase 4 budget or
     publication verdict is implied.
+- [x] (2026-10-26) Reconcile post-publication CodeScene feedback in PR #153.
+  - The review refactor keeps `MarkdownFile` as the path-plus-text boundary,
+    moves register syntax and field-value checks under `contract::evidence`,
+    and shares fixture-row mutation. All five Rust files remain below 400
+    lines, and the current diff has 7 paths (6 excluding this plan), within
+    the approved maximum.
+  - The final `cs delta origin/main` reports two String Heavy advisories:
+    53.3% of integration-root arguments across 15 functions and 41.4% of
+    `evidence.rs` arguments across 14 functions, against a 39% threshold.
+    Three expert reviewers found that raw Markdown, unknown field names,
+    evidence prose and diagnostics are intentional until validation. The
+    existing `MarkdownFile`, `Kind`, `Row` and `Register` types capture the
+    useful invariants. Retain both advisories without metric-only wrappers or
+    suppressions. Complexity and fixture-duplication findings are cleared.
+  - The fourth sequential gate run passed `make check-fmt`, `make lint`,
+    `make typecheck`, `make test`, `make markdownlint`, `make spelling`,
+    `make nixie` and staged/unstaged diff checks. Tests passed 230 cases with
+    three skipped, one doctest, 432 workflow cases plus five subtests, and
+    three topology-command cases. The PR remains draft pending maintainer
+    disposition of the retained advisories.
+  - The first post-publication gate pass cleared `make check-fmt`, then
+    `make lint` found nine compile errors in the extracted test modules. The
+    sequence stopped there. A second lint attempt confirmed the row ownership
+    fixes and narrowed the remaining errors to five private re-exports. The
+    final source correction puts `Kind` and `full_revision` at the private
+    contract boundary instead of widening their visibility through a child
+    module. A third attempt compiled the contract and reported four Clippy
+    shadowing findings; those bindings were renamed. The fourth gate run passed.
+    Next, commit the staged remediation and run the local CodeRabbit review
+    against that commit before updating PR #153, preserving its draft state.
 
 ## Surprises & discoveries
 
@@ -131,6 +164,10 @@ StateName contract is extensive and private to that evidence domain; copying
 its entire parser would exceed this task. `docs/validation-notes/README.md`
 currently describes machine-checked StateName notes, so it must distinguish the
 new benchmark contract explicitly.
+
+CodeGraph also found the ADR 003 exit-register parser. It consumes a distinct
+five-column verdict table, so the macro-cost `Field | Value | Evidence` parser
+remains private under the benchmark contract instead of sharing either schema.
 
 There is no macro crate or stress fixture to measure at this stage. Empty
 benchmark-note directories must therefore pass before Phase 4 claims
@@ -165,6 +202,13 @@ the diff.
 - (2026-10-25, implementation) Keep the filesystem adapter on the enabled
   `cap_std::fs::Dir` API. Enabling `fs_utf8` would alter the dependency feature
   set without adding value for the relative note scan.
+- (2026-10-26, implementation) Keep raw Markdown, table values and diagnostics
+  as strings until the private contract validates them. Expert review found
+  that unknown field names and arbitrary evidence text are needed for precise
+  errors, while wrappers would add conversions without carrying new invariants.
+  Retain both CodeScene String Heavy findings rather than suppressing or hiding
+  them with type-only changes. A possible `Utf8PathBuf` return from
+  `fixture_root` is an independent cleanup and is deferred.
 
 ## Outcomes & retrospective
 
