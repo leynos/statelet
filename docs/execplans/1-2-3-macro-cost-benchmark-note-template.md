@@ -9,7 +9,10 @@ issues and one fixture-literal style issue; their corrections passed the full
 local validation sequence. Commit `05a2360` passed its fresh local review with
 five findings. Community review resolved conflicting fixture-location and
 generic-syntax recommendations. Their corrections passed the full local gate
-sequence; a commit and fresh local review remain.
+sequence. Commit `3be47f5` passed its local review with one minor checkbox
+spacing finding that matches the explicit V2 verification requirement; that
+correction passed the full validation sequence. A follow-up local review and PR
+closeout remain.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -228,7 +231,23 @@ and obtain explicit approval before proceeding.
     lint, spelling, Nixie, and staged/unstaged diff checks. Nextest passed 256
     cases with three skipped; one doctest, 432 workflow cases plus five
     subtests, and three topology-command tests passed. Logs use the
-    `2571631c` suffix under `/tmp`. Commit and a fresh local review remain.
+    `2571631c` suffix under `/tmp`. Commit `3be47f5` contains these changes.
+    Its local review found one minor issue: `task_status` must accept spacing
+    changes after the roadmap checkbox, as required by V2. The local
+    `cs delta origin/main` reports 41.2% String Heavy arguments in the root
+    and 50.0% in `evidence.rs`, against the 39% threshold. Architecture and
+    measurement reviewers recommend retaining both advisories because inputs
+    remain raw Markdown until precise contract diagnostics are produced. They
+    distinguish this judgment from hosted-gate approval.
+  - V2 explicitly requires changed checkbox spacing to be tolerated. The
+    correction parses the marker separately, requires whitespace after it, and
+    tests one space, multiple spaces, a tab, and malformed spacing. Full gates
+    passed on the exact candidate: 261 Nextest cases passed, three skipped;
+    one doctest passed; 432 workflow cases and five subtests passed; and three
+    ignored topology-command cases passed. `make check-fmt`, `make lint`,
+    `make typecheck`, `make test`, `make markdownlint`, `make spelling`,
+    `make nixie`, and staged/unstaged diff checks all passed. Logs use the
+    `17e46d52` suffix under `/tmp`. A follow-up local review and commit remain.
 
 ## Surprises & discoveries
 
@@ -304,6 +323,9 @@ the diff.
   encode missing values as ambiguous `Type<sha>` text. Reject case-insensitive
   placeholder marker words at the start of values while preserving the exact
   `review`-row exception.
+- (2026-10-26, review correction) Parse the roadmap checkbox marker separately
+  from the task identifier and skip formatting whitespace between them. V2
+  explicitly requires task lookup to tolerate changed checkbox spacing.
 
 ## Outcomes & retrospective
 

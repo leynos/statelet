@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use camino::{Utf8Path, Utf8PathBuf};
 use cap_std::{ambient_authority, fs::Dir};
 use contract::check_contract;
+use rstest::rstest;
 
 const REQUIRED_FIELDS: [&str; 18] = [
     "comparison-kind",
@@ -135,14 +136,29 @@ fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
 }
 
 fn task_status(line: &str, id: &str) -> Option<bool> {
-    let (complete, rest) = if let Some(rest) = line.strip_prefix("- [x] ") {
-        (true, rest)
-    } else {
-        (false, line.strip_prefix("- [ ] ")?)
+    let (status, rest) = line.strip_prefix("- [")?.split_once(']')?;
+    let complete = match status {
+        "x" => true,
+        " " => false,
+        _ => return None,
     };
-    rest.strip_prefix(id)
+    if !rest.chars().next().is_some_and(char::is_whitespace) {
+        return None;
+    }
+    rest.trim_start()
+        .strip_prefix(id)
         .is_some_and(|suffix| suffix.starts_with(". "))
         .then_some(complete)
+}
+
+#[rstest]
+#[case("- [x] 4.2.2. Require a synthetic note.", Some(true))]
+#[case("- [x]  4.2.2. Require a synthetic note.", Some(true))]
+#[case("- [ ]\t4.2.2. Require a synthetic note.", Some(false))]
+#[case("- [x]4.2.2. Require a synthetic note.", None)]
+#[case("- [y] 4.2.2. Require a synthetic note.", None)]
+fn task_status_tolerates_checkbox_spacing(#[case] line: &str, #[case] expected: Option<bool>) {
+    assert_eq!(task_status(line, "4.2.2"), expected);
 }
 
 fn is_heading(line: &str) -> bool { line.starts_with("## ") || line.starts_with("### ") }
