@@ -103,7 +103,7 @@ pretty_assertions = "1.4.1"
 # properties rather than cases; measured at 45 to 75 resolved packages when
 # added. See D8 in the plan for the resulting scope.
 proptest = "1.11.0"
-rstest = "0.27.0"
+rstest = "0.28.0"
 # Behavioural scenarios for the topology policy run through the repository's
 # BDD framework rather than a second policy implementation. The 0.6.0 pair was
 # preflighted with this repository's rstest 0.27.0 on 2026-10-18.
