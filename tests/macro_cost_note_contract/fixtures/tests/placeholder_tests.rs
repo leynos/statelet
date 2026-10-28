@@ -138,6 +138,18 @@ fn publication_claim_rejects_one_note_link_outside_success() {
     assert!(error.contains("must link exactly 2 cost note"), "{error}");
 }
 
+#[test]
+fn completed_claim_rejects_outdented_link_after_success() {
+    let replacement = concat!(
+        "  - Success: complete\n\n",
+        "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)",
+    );
+    let roadmap = roadmap_with_claims(true, false).replace(SYNTHETIC_SUCCESS, replacement);
+    let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
+        .expect_err("an outdented paragraph must not select evidence");
+    assert!(error.contains("must link exactly 1 cost note"), "{error}");
+}
+
 #[rstest]
 #[case("| environment |", 2)]
 #[case("| environment | recorded | extra |", 4)]

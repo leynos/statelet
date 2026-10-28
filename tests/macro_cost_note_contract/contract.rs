@@ -219,7 +219,7 @@ fn linked_note_paths(task: &Task) -> Result<Vec<String>, String> {
         .take_while(|line| {
             let trimmed = line.trim_start();
             let line_indent = line.len() - trimmed.len();
-            !trimmed.starts_with("- ") || line_indent > indent
+            trimmed.is_empty() || line_indent > indent
         })
         .copied()
         .collect::<Vec<_>>()

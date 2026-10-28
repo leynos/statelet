@@ -291,8 +291,15 @@ and obtain explicit approval before proceeding.
     hosted-gate disposition remains separate. The refactor passed formatting,
     lint, tests, typecheck, Markdown lint, spelling, Nixie, and diff checks.
     Nextest passed 278 cases with three skipped; one doctest, 432 workflow
-    cases plus five subtests, and three topology-command cases passed. A commit
-    and fresh review remain.
+    cases plus five subtests, and three topology-command cases passed. Commit
+    `d9c3eb5` recorded the refactor. Its local review was rate-limited; the
+    planned retry was cancelled when final expert review found that an outdented
+    paragraph after a `Success:` bullet could supply a selected link. Bound
+    continuation to indented content and add a negative control. The corrected
+    candidate passed formatting, lint, tests, typecheck, Markdown lint,
+    spelling, Nixie, and diff checks. Nextest passed 279 cases with three
+    skipped; 432 workflow cases plus five subtests and three topology-command
+    cases passed. Expert verification and a fresh local review remain.
 
 ## Surprises & discoveries
 
