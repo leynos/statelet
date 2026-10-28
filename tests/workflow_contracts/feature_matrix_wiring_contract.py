@@ -203,13 +203,20 @@ def _has_suite_flags(words: list[str]) -> bool:
     )
 
 
+def _test_target(line: str) -> str | None:
+    """Return the exact Nextest test target in an evaluated recipe line."""
+    return _flag_value(shlex.split(line), "--test")
+
+
 def _test_findings(recipe: str) -> list[str]:
     """Check that the ignored boundary suite follows topology and fails closed."""
     lines = recipe_lines(recipe)
     topology = next(
-        (i for i, line in enumerate(lines) if "--test topology_command" in line), -1
+        (i for i, line in enumerate(lines) if _test_target(line) == "topology_command"), -1
     )
-    suite = [i for i, line in enumerate(lines) if "--test feature_matrix_command" in line]
+    suite = [
+        i for i, line in enumerate(lines) if _test_target(line) == "feature_matrix_command"
+    ]
     if not _suite_ordered(suite, topology):
         return ["make test must run the matrix command suite after topology"]
     words = shlex.split(lines[suite[0]])

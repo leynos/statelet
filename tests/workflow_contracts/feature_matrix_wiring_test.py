@@ -109,6 +109,26 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
         "make test must run the matrix command suite",
     ),
     (
+        "matrix-suite-near-miss",
+        lambda w: replace(
+            w,
+            test_recipe=w.test_recipe.replace(
+                "--test feature_matrix_command", "--test feature_matrix_command_extra"
+            ),
+        ),
+        "make test must run the matrix command suite",
+    ),
+    (
+        "topology-suite-near-miss",
+        lambda w: replace(
+            w,
+            test_recipe=w.test_recipe.replace(
+                "--test topology_command", "--test topology_command_extra"
+            ),
+        ),
+        "make test must run the matrix command suite",
+    ),
+    (
         "ignored-suite",
         lambda w: replace(
             w, test_recipe=w.test_recipe.replace("--run-ignored only", "--run-ignored default")

@@ -30,10 +30,7 @@ fn is_info_status(prefix: &str) -> bool {
             if characters.next() != Some('[') {
                 return false;
             }
-            if !characters
-                .by_ref()
-                .any(|value| ('@'..='~').contains(&value))
-            {
+            if !valid_colour_sequence(&mut characters) {
                 return false;
             }
         } else {
@@ -41,6 +38,18 @@ fn is_info_status(prefix: &str) -> bool {
         }
     }
     label.trim() == "info:"
+}
+
+/// Consume an ANSI SGR colour sequence, rejecting malformed parameters.
+fn valid_colour_sequence(characters: &mut std::str::Chars<'_>) -> bool {
+    for character in characters {
+        match character {
+            'm' => return true,
+            '0'..='9' | ';' | ':' => {}
+            _ => return false,
+        }
+    }
+    false
 }
 
 /// Check for a whole argument without matching substrings.
@@ -175,6 +184,8 @@ mod tests {
     #[case("notinfo: running `cargo check`")]
     #[case("infox: running `cargo check`")]
     #[case("\x1b[1minfox\x1b[1m:\x1b[0m running `cargo check`")]
+    #[case("info\x1b[1\x01m: running `cargo check`")]
+    #[case("info\x1b[1: running `cargo check`")]
     fn rejects_other_status_labels(#[case] line: &str) {
         assert_eq!(hack_rows_from_text(line), Vec::<Vec<String>>::new());
     }
