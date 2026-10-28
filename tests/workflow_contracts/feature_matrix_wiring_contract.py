@@ -103,10 +103,8 @@ def _matrix_findings(recipe: str) -> list[str]:
             or words[words.index("-p") + 1] != "statelet"
         ):
             problems.append(f"{name} row must bind repository manifest and package")
-        if any(
-            flag not in line
-            for flag in ("-D warnings", "-Zthreads=8", "-Clink-arg=-fuse-ld=mold")
-        ):
+        # build_standard_test covers platform-dependent linker selection.
+        if any(flag not in line for flag in ("-D warnings", "-Zthreads=8")):
             problems.append(f"{name} row must use warning and development flags")
         if name == "no-default" and "--no-default-features" not in words:
             problems.append("no-default row must disable default features")

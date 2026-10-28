@@ -7,7 +7,7 @@ from dataclasses import replace
 import pytest
 
 import workflow_reading as reading
-from mock_wiring import recipe_lines
+from mock_wiring import make_n, recipe_lines
 from feature_matrix_wiring_contract import (
     ROWS,
     Wiring,
@@ -250,3 +250,29 @@ def test_mutations_reject_their_own_clause(
     assert not findings(live), findings(live)
     problems = findings(mutate(live))
     assert any(expected in problem for problem in problems), f"{name}: {problems}"
+
+
+@pytest.mark.parametrize(
+    ("host", "target", "linker_expected"),
+    [
+        ("Linux", "", True),
+        ("Linux", "aarch64-unknown-linux-gnu", True),
+        ("Linux", "aarch64-apple-darwin", False),
+        ("Darwin", "", False),
+    ],
+)
+def test_matrix_accepts_platform_specific_development_flags(
+    live: Wiring, host: str, target: str, linker_expected: bool
+) -> None:
+    """Platform-specific linker flags coexist with mandatory warning checks."""
+    recipe = make_n(
+        "feature-matrix", overrides=(f"BUILD_HOST_OS={host}", f"CARGO_BUILD_TARGET={target}")
+    )
+    lines = matrix_lines(recipe)
+    assert len(lines) == 4, lines
+    assert all(("-Clink-arg=-fuse-ld=mold" in line) == linker_expected for line in lines), lines
+    platform = replace(live, matrix_recipe=recipe)
+    assert not findings(platform), findings(platform)
+    for row, tested_row in enumerate(ROWS):
+        problems = findings(_row_replace(platform, row, "-D warnings", ""))
+        assert f"{tested_row} row must use warning and development flags" in problems, problems
