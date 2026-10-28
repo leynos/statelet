@@ -135,3 +135,24 @@ fn publication_claim_rejects_one_note_link_outside_success() {
         .expect_err("both selected links must occur in the success criterion");
     assert!(error.contains("must link exactly 2 cost note"), "{error}");
 }
+
+#[rstest]
+#[case("| environment |", 2)]
+#[case("| environment | recorded | extra |", 4)]
+fn malformed_register_row_identifies_input_and_width(
+    #[case] replacement: &str,
+    #[case] count: usize,
+) {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    evidence.text = evidence
+        .text
+        .replace("| environment | recorded environment |", replacement);
+    let error = check(&template(), &open_roadmap(), &[evidence])
+        .expect_err("malformed register rows must be rejected");
+    assert!(error.contains("| environment |"), "{error}");
+    assert!(
+        error.contains(&format!("{count} cells; expected 3")),
+        "{error}"
+    );
+    assert!(error.contains("`|` inside cells is unsupported"), "{error}");
+}

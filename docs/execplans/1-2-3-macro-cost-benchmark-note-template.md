@@ -272,7 +272,15 @@ and obtain explicit approval before proceeding.
     Post-rebase formatting, lint, tests, typecheck, Markdown lint, spelling,
     Nixie, and diff checks passed. Nextest passed 272 cases with three skipped;
     one doctest, 432 workflow cases plus five subtests, and three
-    topology-command cases passed. A fresh local review remains.
+    topology-command cases passed. The local review of `0c493a0` returned five
+    findings in three groups: candidate-comment wording, maintenance guidance,
+    and malformed-row diagnostics. Wyvern confirmed the gaps. The first gate
+    attempt stopped at a Clippy implicit-clone finding in the row parser; the
+    correction moves the owned field into the register. The corrected candidate
+    passed formatting, lint, tests, typecheck, Markdown lint, spelling, Nixie,
+    and diff checks. Nextest passed 274 cases with three skipped; one doctest,
+    432 workflow cases plus five subtests, and three topology-command cases
+    passed. Commit and follow-up review remain.
 
 ## Surprises & discoveries
 

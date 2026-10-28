@@ -141,6 +141,15 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
         let Some(cells) = table_cells(line) else {
             continue;
         };
+        let [field_cell, value_cell, evidence_cell] = cells.as_slice() else {
+            return Err(format!(
+                "{}: malformed register row `{}` has {} cells; expected 3; `|` inside cells is \
+                 unsupported",
+                file.path,
+                line.trim(),
+                cells.len()
+            ));
+        };
         if cells == ["Field", "Value", "Evidence"] {
             if header_seen {
                 return Err(format!("{}: register repeats its header", file.path));
@@ -154,7 +163,11 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
         if !header_seen {
             return Err(format!("{}: malformed register row", file.path));
         }
-        insert_row(file, &cells, &mut register)?;
+        insert_row(
+            file,
+            [*field_cell, *value_cell, *evidence_cell],
+            &mut register,
+        )?;
     }
     if !header_seen {
         return Err(format!("{}: register has no table header", file.path));
@@ -192,18 +205,20 @@ fn is_separator_row(cells: &[&str]) -> bool {
         .all(|cell| !cell.is_empty() && cell.chars().all(|ch| ch == '-' || ch == ':'))
 }
 
-fn insert_row(file: &MarkdownFile, cells: &[&str], register: &mut Register) -> Result<(), String> {
-    let [field_cell, value_cell, evidence_cell] = cells else {
-        return Err(format!("{}: malformed register row", file.path));
-    };
+fn insert_row(
+    file: &MarkdownFile,
+    cells: [&str; 3],
+    register: &mut Register,
+) -> Result<(), String> {
+    let [field_cell, value_cell, evidence_cell] = cells;
     let field = field_cell.to_owned();
     if register
         .rows
         .insert(
-            (*field_cell).to_owned(),
+            field_cell.to_owned(),
             Row {
-                value: (*value_cell).to_owned(),
-                evidence: (*evidence_cell).to_owned(),
+                value: value_cell.to_owned(),
+                evidence: evidence_cell.to_owned(),
             },
         )
         .is_some()
@@ -213,7 +228,7 @@ fn insert_row(file: &MarkdownFile, cells: &[&str], register: &mut Register) -> R
             file.path
         ));
     }
-    register.fields.push(field.to_owned());
+    register.fields.push(field);
     Ok(())
 }
 

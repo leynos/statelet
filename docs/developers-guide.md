@@ -292,6 +292,11 @@ must remain available so the contract can report the exact input that needs
 repair. Add a private type only when construction enforces an invariant that a
 later check or caller relies on; do not wrap every text cell by default.
 
+The contract binds roadmap tasks 4.2.2 and 4.3.1 by number and checks required
+phrases in design section 11.7 and each task body. Renumbering or rewording
+those bindings requires updating the contract and its fixtures alongside the
+live documents.
+
 ## Dependency-topology check
 
 `make topology-check` runs `tests/topology_check.rs`, which applies a closed

@@ -9,7 +9,10 @@ both notes for the same macro and design revisions.
 Fill every value and evidence cell. Cite supporting material as
 `<repo>@<full-sha>:<path>`. Keep full command output and raw samples in the
 cited artefacts; summarize the results here. A note can record a failed or
-inconclusive measurement, but that result cannot pass a budget gate.
+inconclusive measurement, but that result cannot pass a budget gate. Use the
+three-column rows with outer pipes shown below. Do not put a literal `|` inside
+a cell, including an escaped pipe; describe piped commands in the cited
+artefact instead.
 
 ```markdown
 # Macro cost benchmark note
@@ -94,7 +97,8 @@ is evidence of failure, not approval.
 The contract checks completeness and roadmap wiring. It does not verify that a
 citation exists, that workloads are comparable, or that a measurement is true.
 Reviewers assess those claims. Completing task 4.2.2 requires the selected
-synthetic note; completing task 4.3.1 requires both selected notes and a
-candidate comment beside the roadmap claim. Place selected-note links in each
-task's `Success:` criterion. Neither a complete form nor a passing cost result
-alone selects the v0.1 exit; apply ADR 003 and all other Phase 4 gates.
+synthetic note; completing task 4.3.1 requires both selected notes. Each
+completed task needs one candidate comment beside its roadmap claim, naming the
+revisions used by its selected notes. Place selected-note links in each task's
+`Success:` criterion. Neither a complete form nor a passing cost result alone
+selects the v0.1 exit; apply ADR 003 and all other Phase 4 gates.
