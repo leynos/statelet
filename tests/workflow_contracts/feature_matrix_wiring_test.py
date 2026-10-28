@@ -80,6 +80,15 @@ def _drop_row(wiring: Wiring, row: int) -> Wiring:
     )
 
 
+def _duplicate_topology_after_matrix(wiring: Wiring) -> Wiring:
+    """Repeat topology after the matrix suite in evaluated test output."""
+    lines = recipe_lines(wiring.test_recipe)
+    topology = next(line for line in lines if "--test topology_command" in line)
+    matrix = next(i for i, line in enumerate(lines) if "--test feature_matrix_command" in line)
+    lines.insert(matrix + 1, topology)
+    return replace(wiring, test_recipe="\n".join(lines))
+
+
 def _matrix_after_spelling(wiring: Wiring) -> Wiring:
     """Move the existing matrix invocation after spelling without duplication."""
     lines = recipe_lines(wiring.all_recipe)
@@ -126,6 +135,11 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
                 "--test topology_command", "--test topology_command_extra"
             ),
         ),
+        "make test must run the matrix command suite",
+    ),
+    (
+        "duplicate-topology-suite",
+        _duplicate_topology_after_matrix,
         "make test must run the matrix command suite",
     ),
     (
@@ -185,6 +199,8 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
 ]
 for feature_selector in (
     "--features default",
+    "--features statelet/default",
+    "--features=serde,statelet/default",
     "--features=serde,default",
     '--features "serde default"',
     "-F default",

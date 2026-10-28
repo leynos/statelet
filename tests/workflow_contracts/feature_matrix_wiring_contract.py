@@ -135,7 +135,10 @@ def _activates_default(words: list[str]) -> bool:
             values.append(word.removeprefix("--features="))
         elif word.startswith("-F") and word != "-F":
             values.append(word[2:])
-    return any("default" in re.split(r"[,\s]+", value) for value in values)
+    return any(
+        {"default", "statelet/default"}.intersection(re.split(r"[,\s]+", value))
+        for value in values
+    )
 
 
 def _feature_findings(name: str, words: list[str]) -> list[str]:
@@ -189,9 +192,9 @@ def _all_findings(recipe: str) -> list[str]:
     return []
 
 
-def _suite_ordered(suite: list[int], topology: int) -> bool:
-    """Return whether the sole matrix suite follows the topology suite."""
-    return len(suite) == 1 and 0 <= topology < suite[0]
+def _suite_ordered(suite: list[int], topology: list[int]) -> bool:
+    """Return whether the sole matrix suite follows the sole topology suite."""
+    return len(suite) == len(topology) == 1 and topology[0] < suite[0]
 
 
 def _has_suite_flags(words: list[str]) -> bool:
@@ -211,9 +214,7 @@ def _test_target(line: str) -> str | None:
 def _test_findings(recipe: str) -> list[str]:
     """Check that the ignored boundary suite follows topology and fails closed."""
     lines = recipe_lines(recipe)
-    topology = next(
-        (i for i, line in enumerate(lines) if _test_target(line) == "topology_command"), -1
-    )
+    topology = [i for i, line in enumerate(lines) if _test_target(line) == "topology_command"]
     suite = [
         i for i, line in enumerate(lines) if _test_target(line) == "feature_matrix_command"
     ]
