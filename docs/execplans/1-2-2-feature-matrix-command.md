@@ -397,9 +397,11 @@ planning-only document.
 - [x] (2026-10-28) The EP-M1 reassessment reviewed all 15 paths and identified
       three maintainability refinements: share matrix recipe arguments, reuse
       Cargo subcommand dispatch, and split the row assertions into helpers.
-- [ ] Validate and reassess the EP-M1 refactoring.
-- [ ] EP-M1: implement and validate the local command.
-- [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
+- [x] (2026-10-28) The EP-M1 refactoring passed all gates and a fresh
+      CodeRabbit review of all 16 changed paths with no findings.
+- [x] (2026-10-28) EP-M1 implemented and validated the local command.
+- [x] (2026-10-28) EP-M2 integrated routine gates, passed all milestone gates,
+      and marked 1.2.2 done. Its final review covered all eight changed paths.
 
 ## Surprises & discoveries
 
@@ -471,11 +473,23 @@ unwinding when the toolchain supports it.
 
 ## Outcomes & retrospective
 
-The user approved the plan and the `--optional-deps` correction. The local
-matrix command and its command-boundary tests are implemented; review repairs
-are underway. Runtime APIs and feature defaults remain unchanged, and roadmap
-completion awaits EP-M2. Implementation will be complete only when EP-M1/EP-M2
-evidence is recorded and upstream documents agree with it.
+The user approved the plan and the `--optional-deps` correction. The matrix
+command, command-boundary tests, and routine local and CI wiring are complete.
+Runtime APIs and feature defaults remain unchanged. The final implementation
+gates passed: formatting, lint, typecheck, tests, Markdown, diagrams, spelling,
+the feature matrix, topology, and Makefile validation. The test gate included
+494 workflow-contract tests and five subtests, 17 matrix boundary cases, three
+topology cases, 208 ordinary Rust tests, and one doctest. Darwin and
+cross-target linker cases use Make overrides rather than a native Darwin run.
+
+EP-M2 review identified and prompted fixes to the ordering negative control,
+documentation, and platform-specific linker assertion. The final reassessment
+proposed replacing the pinned shared installer with `cargo-binstall`, but the
+existing exact-version installer already meets the approved contract and keeps
+local and CI provisioning consistent. Three further suggestions to split test
+helpers add indirection to bounded checks without addressing a demonstrated
+defect; the existing focused mutation controls exercise those checks. These
+advisory suggestions were therefore not adopted.
 
 Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
 `make lint`, `make typecheck`, `make test`, `make markdownlint` (including
