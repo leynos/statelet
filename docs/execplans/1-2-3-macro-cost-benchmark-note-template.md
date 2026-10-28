@@ -461,8 +461,8 @@ A review of the resulting commit found that the documented unavailable-value
 syntax still admitted an empty reason and copied notes lacked a title. Those
 gaps are addressed with negative controls for empty and bracketed reasons, a
 positive case for a cited failure reason, and a level-one heading in the form.
-The follow-up full sequential gate run passed; commit and a new local review
-remain pending.
+The follow-up full sequential gate run passed, and commit `5bad4e6` recorded
+the correction before the next review.
 
 The local review of commit `5bad4e6` then found incomplete placeholder
 detection for values such as `Measured on <target>` and split fixture literals
@@ -476,8 +476,8 @@ keeps Rust path generics distinct from standalone placeholders, moves scratch
 fixtures under Cargo's test temporary directory, and cleans them with a `Drop`
 guard. Contributor guidance documents the lexical heuristic. An initial gate
 attempt reported Clippy findings and an empty-unavailable regression; the
-corrected exact candidate passed the complete local sequence. Commit and a new
-local review remain pending.
+corrected exact candidate passed the complete local sequence and was recorded
+in commit `3be47f5`. Later findings and their validation appear in Progress.
 
 ## Context and orientation
 
