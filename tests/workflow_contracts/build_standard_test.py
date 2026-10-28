@@ -26,10 +26,14 @@ NIGHTLY = True
 RUSTFLAGS_RE = re.compile(r'RUSTFLAGS="([^"]*)"')
 INHERITED = "--cfg inherited_from_caller"
 COMPILE_COMMANDS = {
-    "build", "check", "clippy", "doc", "test", "llvm-cov", "nextest-run",
+    "build", "check", "clippy", "doc", "test", "llvm-cov", "nextest-run", "hack-check",
 }
-DEVELOPMENT_TARGETS = ["test", "typecheck", "lint", "build"]
-ASSIGNING_TARGETS = ["test", "typecheck", "lint", "build"]
+DEVELOPMENT_TARGETS = [
+    "test", "typecheck", "lint", "build", "feature-matrix", "test-feature-matrix-command",
+]
+ASSIGNING_TARGETS = [
+    "test", "typecheck", "lint", "build", "feature-matrix", "test-feature-matrix-command",
+]
 HELD_OUT_TARGETS = ["coverage", "release"]
 
 
@@ -75,6 +79,9 @@ def _expanded(value: str, inherited: str | None) -> list[str]:
 def _cargo_kind(words: list[str], subcommand_index: int) -> str:
     """Classify one Cargo subcommand, including Nextest's version probe."""
     subcommand = words[subcommand_index]
+    if subcommand == "hack":
+        following = words[subcommand_index + 1] if subcommand_index + 1 < len(words) else ""
+        return {"--version": "hack-version", "check": "hack-check"}.get(following, "hack-other")
     if subcommand == "nextest":
         following = (
             words[subcommand_index + 1]
@@ -140,7 +147,7 @@ def _compile_commands(lines: list[str], target: str) -> list[str]:
     unknown = [
         (kind, line)
         for kind, line in observed
-        if kind not in COMPILE_COMMANDS | {"nextest-version"}
+        if kind not in COMPILE_COMMANDS | {"nextest-version", "hack-version"}
     ]
     assert unknown == [], f"unclassified Cargo calls in `make {target}`: {unknown}"
     assert all("probe-cargo" in shlex.split(line) for _, line in observed), observed
@@ -330,20 +337,20 @@ def test_development_targets_leave_the_linker_off_a_non_linux_target() -> None:
 
 
 def test_make_test_checks_nextest_then_runs_each_test_route() -> None:
-    """Separate Nextest's version probes from the three compiled test commands.
+    """Separate Nextest's version probes from the four compiled test commands.
 
-    ``make test`` ends with the nested command-boundary target, which repeats
-    the runner preflight and compiles one more test binary. The outer routes
-    therefore stay first in order, and the nested pair last.
+    ``make test`` ends with both nested command-boundary targets, each of which
+    repeats the runner preflight and compiles one more test binary.
     """
     commands = _cargo_commands(recipe_lines(_make_output("test")))
     assert [kind for kind, _ in commands] == [
         "nextest-version", "nextest-run", "test", "nextest-version", "nextest-run",
+        "nextest-version", "nextest-run",
     ], commands
     assert all("probe-cargo" in shlex.split(line) for _, line in commands), (
         "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
     )
-    assert len(_make_rustflags("test")) == 3, (
+    assert len(_make_rustflags("test")) == 4, (
         "test_make_test_checks_nextest_then_runs_each_test_route contract failed"
     )
     doctests = next(line for kind, line in commands if kind == "test")

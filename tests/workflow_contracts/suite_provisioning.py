@@ -21,10 +21,11 @@ MUTATION_CALL_RE = re.compile(rf"^{re.escape(MUTATION_WORKFLOW)}@[0-9a-f]{{40}}$
 EXPECTED_COVERAGE_WORKFLOWS = {"ci.yml", "coverage-main.yml"}
 MAKE_SUITE_TARGETS = {
     "all", "build", "check-topology", "coverage", "lint", "test",
-    "test-topology-command", "typecheck",
+    "test-topology-command", "feature-matrix", "test-feature-matrix-command",
+    "install-cargo-hack", "typecheck",
 }
 MAKE_NON_SUITE_TARGETS = {
-    "audit", "check-build-tools", "check-fmt", "check-nextest", "fmt",
+    "audit", "check-build-tools", "check-cargo-hack", "check-fmt", "check-nextest", "fmt",
     "install-build-tools", "install-rust-toolchain", "install-mdtablefix", "markdownlint", "nixie",
     "rust-audit", "spelling",
     "test-workflow-contracts",

@@ -157,29 +157,30 @@ the installed version exactly and fails before matrix work if missing or
 mismatched, naming expected and actual versions and `make install-cargo-hack`
 as the repair command. Matrix execution must not install tools implicitly.
 
-The two sequential commands, shown without Make's compiler environment, are:
+The three sequential commands, shown without Make's compiler environment, are:
 
 ```sh
+cargo check --no-default-features --lib --manifest-path "$PWD/Cargo.toml" -p statelet
 cargo hack check --each-feature --optional-deps --exclude-all-features --lib \
   --manifest-path "$PWD/Cargo.toml" -p statelet
 cargo check --all-features --lib --manifest-path "$PWD/Cargo.toml" -p statelet
 ```
 
-Use `$(CARGO)` and `$(BUILD_JOBS)` in both recipes. Both bind the same absolute
-`$(CURDIR)/Cargo.toml` and `-p statelet`. Apply the existing warning-denying
-`RUSTFLAGS` composition and `STANDARD_RUSTFLAGS` once per subprocess,
-preserving caller flags. Do not forward `CARGO_FLAGS`, `TEST_FLAGS`, or
-arbitrary matrix feature arguments. Add the two matrix targets to
-`.NOTPARALLEL`.
+Use `$(CARGO)` and `$(BUILD_JOBS)` in all three recipes. Each binds the same
+absolute `$(CURDIR)/Cargo.toml` and `-p statelet`. Apply the existing
+warning-denying `RUSTFLAGS` composition and `STANDARD_RUSTFLAGS` once per
+subprocess, preserving caller flags. Do not forward `CARGO_FLAGS`,
+`TEST_FLAGS`, or arbitrary matrix feature arguments. Add the two matrix targets
+to `.NOTPARALLEL`.
 
 cargo-hack discovers declared features, including future `tracing` and `serde`,
-and supplies no-default and default checks. An explicit final command owns the
-all-feature row even when no features exist. Absent optional features have no
-invented invocation; the guide explicitly states that they are not validated
-until declared. Retain upstream command diagnostics instead of creating a
-stable output format or parsing human-readable logs in production. A success
-summary, if added, must describe only declared configurations and must never
-appear after a failing child.
+and supplies the default check. The explicit first and final commands own the
+no-default and all-feature modes even when no features exist. Absent optional
+features have no invented invocation; the guide explicitly states that they are
+not validated until declared. Retain upstream command diagnostics instead of
+creating a stable output format or parsing human-readable logs in production. A
+success summary, if added, must describe only declared configurations and must
+never appear after a failing child.
 
 Fixtures run a copy of the real Makefile in isolated package roots, with the
 existing build-tool preflight inputs available there. Do not introduce a
@@ -377,6 +378,13 @@ planning-only document.
       correction.
 - [x] (2026-10-28) User approved the `--optional-deps` correction and
       authorized implementation to resume.
+- [x] (2026-10-28) The initial command-boundary test failed because Make had no
+      `feature-matrix` target. The V3 isolation experiment passed its healthy
+      and missing-symbol controls with unchanged fixture manifests.
+- [x] (2026-10-28) The local command and 16 boundary cases passed their focused
+      run. The workflow contracts initially rejected a wrapped topology
+      `.NOTPARALLEL` declaration; preserving that declaration and adding a
+      separate matrix declaration restored all 432 cases and five subtests.
 - [ ] EP-M1: implement and validate the local command.
 - [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
 
@@ -389,7 +397,10 @@ The existing Make defaults would contaminate isolated feature checks if reused.
 The pinned 0.6.45 fixture run selected no-default, default, and each explicit
 feature row but omitted the fixture's implicit optional dependency feature. The
 tagged upstream README documents `--optional-deps` for including those
-dependencies; the user accepted the correction on 2026-10-28.
+dependencies; the user accepted the correction on 2026-10-28. The V3 healthy
+fixture also showed that cargo-hack runs `cargo check --lib` only once when no
+features are declared. An explicit no-default invocation is therefore necessary
+to exercise both requested modes on today's crate.
 
 ## Decision log
 
@@ -420,6 +431,12 @@ a plan deviation, which was blocked pending user acceptance at that time.
 
 2026-10-28: The user approved adding `--optional-deps` to the isolated-row
 command. Resume EP-M1 under the existing verification and isolation gates.
+
+2026-10-28: The feature-free V3 fixture showed that cargo-hack does not invoke
+the no-default mode separately when no features exist. Add an explicit
+no-default library check before cargo-hack, preserving the already approved
+configuration contract without a feature discovery parser. V1 must witness this
+command even for the feature-free fixture.
 
 ## Outcomes & retrospective
 
@@ -475,3 +492,10 @@ is blocked pending explicit user acceptance.
 
 Revision 6 (2026-10-28): Recorded the user's approval of `--optional-deps`
 before resuming implementation.
+
+Revision 7 (2026-10-28): Recorded the red command test and successful V3
+isolation experiment. Added the explicit no-default check required when
+cargo-hack encounters a feature-free package.
+
+Revision 8 (2026-10-28): Recorded the passing focused command cases and the
+topology serialization contract repair. Full EP-M1 gates remain pending.

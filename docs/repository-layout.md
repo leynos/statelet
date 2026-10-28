@@ -37,6 +37,8 @@ compact and omits build output such as `target/`.
 │   ├── topology_check.rs
 │   ├── topology_check/
 │   ├── topology_command.rs
+│   ├── feature_matrix_command.rs
+│   ├── feature_matrix_command/
 │   ├── workflow_contracts/
 │   └── v0_1_exit_register_contract.rs
 ├── scripts/
@@ -116,6 +118,15 @@ compact and omits build output such as `target/`.
   isolated Cargo fixtures, one make invocation per case. Its cases are ignored
   by default and run only through `make test-topology-command`, because each
   starts a nested Cargo process that routine tests and coverage must not host.
+- `tests/feature_matrix_command.rs`: Exercises `make feature-matrix` against
+  isolated Cargo package fixtures. Its ignored cases run through
+  `make test-feature-matrix-command` after ordinary tests and the topology
+  command-boundary suite.
+- `tests/feature_matrix_command/harness.rs`: Holds the private process and
+  filesystem fixture helper used only by `tests/feature_matrix_command.rs`. It
+  copies the repository Makefile into each isolated package root, records Cargo
+  invocations through a test-owned wrapper, and passes caller flags through the
+  dedicated test environment variable. It is not a shared runtime utility.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
 - `tests/workflow_contracts/topology_wiring_contract.py` and

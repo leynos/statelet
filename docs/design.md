@@ -515,18 +515,29 @@ Use pass tests for supported macro shapes:
 
 ### 11.5 Feature combinations
 
-From the first commit that introduces optional macro or tracing features, CI or
-local gates should check:
+`make feature-matrix` is the local library-check entrypoint, available before
+optional features exist, as specified in the
+[task 1.2.2 execution plan](execplans/1-2-2-feature-matrix-command.md). It
+checks no-default features, the default configuration, each declared feature in
+isolation, and all features together. The repository pins `cargo-hack` at
+0.6.45; install it with `make install-cargo-hack`. The command checks the
+installed version before running the matrix. `cargo-hack` includes declared
+optional-dependency features in its isolated rows. The named `tracing` and
+`serde` configurations are therefore checked only after those features are
+declared; an absent feature is not reported as a successful check.
 
-- no default features;
-- default features;
-- `tracing`;
-- `serde`;
-- all features.
+This is a finite set of library compilation configurations, not an exhaustive
+feature powerset or proof of resolved dependency-graph policy. The separate
+topology check continues to enforce the declared dependency boundary.
 
 Use `cargo-hack` or an equivalent from the first feature-matrix commit, not
 after the matrix becomes painful. Manual inspection is not enough for the
 feature-leak risk called out by the design review.
+
+`make test` runs the ignored `make test-feature-matrix-command` boundary suite
+after the topology command-boundary suite. The tests use isolated package
+fixtures and the real Make target to check selected configurations, failures,
+and preservation of fixture manifests.
 
 ### 11.6 Dependency topology
 

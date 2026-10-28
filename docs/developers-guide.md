@@ -38,6 +38,10 @@ cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nex
 cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-audit
 ```
 
+Install the pinned feature-matrix tool with `make install-cargo-hack`. The
+`make feature-matrix` target checks that the installed version matches the
+repository pin before running any Cargo checks.
+
 CI provisions Whitaker through the approved shared `install-whitaker` action.
 For local setup, follow the existing
 [standalone installation](whitaker-users-guide.md#standalone-installation-recommended)
@@ -49,10 +53,12 @@ Use `make all` for formatting, linting, typechecking, tests, the
 dependency-topology check, workflow contracts, and spelling. `make lint` runs
 rustdoc, Clippy, Whitaker, and the Python lint gateways. `make test` requires
 the binary-installed cargo-nextest runner and runs the Python workflow
-contracts under managed CPython 3.14, then the topology command-boundary suite.
-`make audit` derives the Rust workspace root with `cargo metadata`, extracts
-its manifests under the same managed interpreter, and runs `cargo audit` once
-from the workspace root. `make coverage` uses `cargo llvm-cov` with `lld`.
+contracts under managed CPython 3.14, then the topology and feature-matrix
+command-boundary suites. The feature-matrix boundary suite requires
+`cargo-hack`. `make audit` derives the Rust workspace root with
+`cargo metadata`, extracts its manifests under the same managed interpreter,
+and runs `cargo audit` once from the workspace root. `make coverage` uses
+`cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
@@ -64,9 +70,18 @@ The generated `Makefile` exposes these public targets:
 - `make typecheck` runs `ty` over every repository Python source and Cargo
   check over the Rust targets.
 - `make test` runs cargo-nextest, Cargo doctests, Python workflow contracts,
-  then the topology command-boundary suite in sequence, even when invoked with
-  `make -j`. The workflow contracts use pinned dependencies and managed CPython
-  3.14.
+  then the topology and feature-matrix command-boundary suites in sequence,
+  even when invoked with `make -j`. The workflow contracts use pinned
+  dependencies and managed CPython 3.14.
+- `make feature-matrix` checks the statelet library with no default features,
+  the default configuration, each declared feature separately, and all
+  features. It requires the pinned `cargo-hack`; install it with
+  `make install-cargo-hack`. Absent features such as `tracing` or `serde` are
+  not checked until they are declared.
+- `make test-feature-matrix-command` runs the ignored command-boundary cases
+  sequentially. Its private helper under `tests/feature_matrix_command/` is
+  owned by that suite alone; it invokes the real Make target against isolated
+  Cargo fixtures and preserves caller `RUSTFLAGS`.
 - `make topology-check` applies the dependency-topology policy to Cargo's
   metadata for this workspace. `make check-topology` is the same check with the
   repository manifest pinned, and `make test-topology-command` runs the

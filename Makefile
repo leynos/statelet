@@ -3,14 +3,16 @@
 	install-build-tools install-rust-toolchain check-build-tools check-nextest install-mdtablefix \
 	install-markdownlint \
 	lint-clippy lint-whitaker lint-python typecheck typecheck-python typecheck-rust \
-	topology-check check-topology test-topology-command
+	topology-check check-topology test-topology-command \
+	install-cargo-hack check-cargo-hack feature-matrix test-feature-matrix-command
 
 SHELL := bash
 
 # Compiler and Python gateways remain ordered even when callers use `make -j`.
-# The topology targets are here too: each test target owns the build directory
-# while it runs, and the command gate nests another Cargo invocation.
+# The topology and feature-matrix targets own the build directory while they
+# run; their command-boundary gates nest Cargo invocations.
 .NOTPARALLEL: all lint typecheck test topology-check check-topology test-topology-command
+.NOTPARALLEL: feature-matrix test-feature-matrix-command
 
 BUILD_TOOLS_PREFIX ?= $(HOME)/.local
 export BUILD_TOOLS_PREFIX
@@ -20,6 +22,7 @@ export PATH := $(BUILD_TOOLS_PREFIX)/bin:$(PATH)
 TARGET ?= libstatelet.rlib
 
 CARGO ?= cargo
+CARGO_HACK_VERSION ?= 0.6.45
 BUILD_JOBS ?=
 RUST_FLAGS ?=
 RUST_FLAGS := -D warnings $(RUST_FLAGS)
@@ -137,6 +140,9 @@ install-rust-toolchain: ## Install repository Rust components without reinstalli
 install-mdtablefix: check-build-tools ## Install the pinned Markdown table formatter
 	$(CARGO) install --locked --version $(MDTABLEFIX_VERSION) mdtablefix
 
+install-cargo-hack: check-build-tools ## Install the pinned cargo-hack feature-matrix tool
+	$(CARGO) install --locked --version $(CARGO_HACK_VERSION) cargo-hack
+
 install-markdownlint: ## Install the pinned Markdown linter in BUILD_TOOLS_PREFIX
 	npm install --global --prefix "$(BUILD_TOOLS_PREFIX)" "markdownlint-cli2@$(MARKDOWNLINT_VERSION)"
 
@@ -152,6 +158,15 @@ check-nextest: check-build-tools ## Check the binary-installed test runner
 		exit 1; \
 	fi
 
+check-cargo-hack: check-build-tools ## Check the pinned cargo-hack version
+	@actual="$$($(CARGO) hack --version 2>/dev/null)" || actual=missing; \
+	expected="cargo-hack $(CARGO_HACK_VERSION)"; \
+	if [ "$$actual" != "$$expected" ]; then \
+		printf '%s\n' "cargo-hack version mismatch: expected $$expected; found $${actual:-missing}." \
+			'Install the required version with: make install-cargo-hack' >&2; \
+		exit 1; \
+	fi
+
 clean: ## Remove build artefacts
 	$(CARGO) clean
 
@@ -161,6 +176,7 @@ test: check-nextest ## Run tests with warnings treated as errors
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) test --workspace --doc --all-features $(BUILD_JOBS)
 	+$(MAKE) test-workflow-contracts
 	+$(MAKE) test-topology-command
+	+$(MAKE) test-feature-matrix-command
 
 test-workflow-contracts: ## Validate the workflow contracts (mutation testing, CodeScene coverage)
 	$(CV005_CONTRACTS) check --repository .
@@ -196,6 +212,26 @@ test-topology-command: check-nextest ## Run the topology command boundary cases 
 	STATELET_TOPOLOGY_CALLER_FLAGS="$${RUSTFLAGS-}" \
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
 		$(CARGO) nextest run --test topology_command --run-ignored only \
+		--no-tests fail --test-threads=1
+
+feature-matrix: check-cargo-hack ## Check the library with each supported feature configuration
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) check --no-default-features --lib \
+		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) hack check --each-feature --optional-deps --exclude-all-features --lib \
+		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) check --all-features --lib \
+		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
+
+# These boundary cases nest the real feature-matrix command. Pass the caller's
+# original flags separately so the nested Make target composes repository flags
+# once, and run them serially after ordinary tests and coverage.
+test-feature-matrix-command: check-nextest ## Run the feature-matrix command boundary cases sequentially
+	STATELET_FEATURE_MATRIX_CALLER_FLAGS="$${RUSTFLAGS-}" \
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) nextest run --test feature_matrix_command --run-ignored only \
 		--no-tests fail --test-threads=1
 
 target/%/$(TARGET): ## Build binary in debug or release mode

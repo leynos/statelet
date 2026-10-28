@@ -57,6 +57,7 @@ Then run the public validation entrypoint from a fresh checkout:
 git clone https://github.com/leynos/statelet.git
 cd statelet
 make install-build-tools
+make install-cargo-hack
 make install-mdtablefix
 make install-markdownlint
 make all
@@ -67,7 +68,9 @@ The most useful public commands are:
 - `make all` runs formatting checks, linting, typechecking, Rust and Python
   tests, shared workflow contracts, and spelling.
 - `make lint` runs the repository lint suite.
-- `make test` runs the repository test suite.
+- `make test` runs the repository test suite, including the feature-matrix
+  command-boundary checks. It requires the pinned `cargo-hack`; install it with
+  `make install-cargo-hack` before running the validation entrypoint.
 
 ## What to read first
 

@@ -35,7 +35,7 @@ set.
     carried the metadata-based local and CI gate for roadmap task 1.2.1 from
     proposal to implementation.
   - [Add the current-crate feature matrix](execplans/1-2-2-feature-matrix-command.md)
-    proposes the approval-gated command and validation for roadmap task 1.2.2.
+    is the approved design-and-delivery plan for roadmap task 1.2.2.
 
 ## Product and design
 
