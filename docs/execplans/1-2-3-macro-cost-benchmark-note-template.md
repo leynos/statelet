@@ -313,8 +313,15 @@ and obtain explicit approval before proceeding.
     guidance and both distinct stress assertions. Formatting, lint, tests,
     typecheck, Markdown lint, spelling, Nixie, and diff checks passed. Nextest
     passed 282 cases with three skipped; one doctest, 432 workflow cases plus
-    five subtests, and three topology-command cases passed. A commit and fresh
-    local review remain.
+    five subtests, and three topology-command cases passed. Commit `b6cec8f`
+    recorded those corrections. Its local review requested stronger candidate
+    and note-kind controls, a shared stress-exception constant, and another
+    synthetic fixture wrapper. Wyvern confirmed the missing controls; the
+    measurement reviewer recommended a single protocol constant but found the
+    existing note factory sufficient. The new revision-shape, unexpected-kind,
+    and duplicate-kind controls passed all gates: Nextest passed 286 cases with
+    three skipped; one doctest, 432 workflow cases plus five subtests, and three
+    topology-command cases passed. A separate stress-rule refactor remains.
 
 ## Surprises & discoveries
 

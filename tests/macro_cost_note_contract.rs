@@ -91,6 +91,26 @@ fn candidate_identity(task: &Task) -> Result<Candidate, String> {
     })
 }
 
+#[rstest]
+#[case::short_macro(fixtures::MACRO_REVISION, "abc123")]
+#[case::uppercase_design(fixtures::DESIGN_REVISION, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")]
+fn completed_claim_rejects_invalid_comment_revision(
+    #[case] original: &str,
+    #[case] replacement: &str,
+) {
+    let roadmap = fixtures::roadmap_with_claims(true, false).replacen(original, replacement, 1);
+    let error = check(
+        &fixtures::template(),
+        &roadmap,
+        &[fixtures::note(contract::Kind::Synthetic20, 20)],
+    )
+    .expect_err("candidate comments require full lowercase revisions");
+    assert!(
+        error.contains("requires full lowercase revisions"),
+        "{error}"
+    );
+}
+
 fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
     let lines = roadmap.text.lines().collect::<Vec<_>>();
     let matches = lines

@@ -141,6 +141,31 @@ fn publication_claim_rejects_one_note_link_outside_success() {
     assert!(error.contains("must link exactly 2 cost note"), "{error}");
 }
 
+#[test]
+fn synthetic_claim_rejects_a_real_comparison_note() {
+    let roadmap = roadmap_with_claims(true, false).replace(
+        "validation-notes/4.2.2-synthetic-macro-cost.md",
+        "validation-notes/4.2.1-mdtablefix-macro-cost.md",
+    );
+    let error = check(&template(), &roadmap, &[note(Kind::Mdtablefix, 3)])
+        .expect_err("a synthetic claim must not select a real comparison");
+    assert!(
+        error.contains("selects unexpected `mdtablefix` note"),
+        "{error}"
+    );
+}
+
+#[test]
+fn publication_claim_rejects_two_notes_of_the_same_kind() {
+    let roadmap = roadmap_with_claims(false, true).replace(
+        "validation-notes/4.2.1-mdtablefix-macro-cost.md",
+        "validation-notes/4.2.2-synthetic-macro-cost.md",
+    );
+    let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
+        .expect_err("publication evidence needs both comparison kinds");
+    assert!(error.contains("needs one `mdtablefix` note"), "{error}");
+}
+
 #[rstest]
 #[case("| environment |", 2)]
 #[case("| environment | recorded | extra |", 4)]
