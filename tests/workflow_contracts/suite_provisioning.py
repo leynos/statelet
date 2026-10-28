@@ -22,11 +22,12 @@ EXPECTED_COVERAGE_WORKFLOWS = {"ci.yml", "coverage-main.yml"}
 MAKE_SUITE_TARGETS = {
     "all", "build", "check-topology", "coverage", "lint", "test",
     "test-topology-command", "feature-matrix", "test-feature-matrix-command",
-    "install-cargo-hack", "typecheck",
+    "typecheck",
 }
 MAKE_NON_SUITE_TARGETS = {
     "audit", "check-build-tools", "check-cargo-hack", "check-fmt", "check-nextest", "fmt",
-    "install-build-tools", "install-rust-toolchain", "install-mdtablefix", "markdownlint", "nixie",
+    "install-build-tools", "install-cargo-hack", "install-rust-toolchain", "install-mdtablefix",
+    "markdownlint", "nixie",
     "rust-audit", "spelling",
     "test-workflow-contracts",
 }

@@ -385,6 +385,11 @@ planning-only document.
       run. The workflow contracts initially rejected a wrapped topology
       `.NOTPARALLEL` declaration; preserving that declaration and adding a
       separate matrix declaration restored all 432 cases and five subtests.
+- [x] (2026-10-28) The full EP-M1 gates passed at the tree committed as
+      `bf5545c`. CodeRabbit reviewed all 11 changed files and found Act
+      provisioning, fixture cleanup and path-convention gaps. The direct
+      `make all` matrix gate is already scheduled for EP-M2.
+- [ ] Validate and reassess the EP-M1 review repairs.
 - [ ] EP-M1: implement and validate the local command.
 - [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
 
@@ -438,15 +443,26 @@ no-default library check before cargo-hack, preserving the already approved
 configuration contract without a feature discovery parser. V1 must witness this
 command even for the feature-free fixture.
 
+2026-10-28: The milestone review identified that Act CI reaches `make test` and
+therefore needs cargo-hack before that gate. Provision it there and guard the
+order with negative controls. Classify the installer as provisioning rather
+than a suite, clean up owned test roots, and use `camino` paths with capability
+directories. The review's two direct `make all` gate findings describe the
+already scheduled EP-M2 wiring and are not an EP-M1 regression.
+
+2026-10-28: A cleanup test that caught a deliberate unwind failed under the
+repository's test build; a joined-thread variant aborted. Fixture tests now
+capture results, drop the owned root, and then assert, so expected assertion
+failures occur after cleanup. The harness also attempts cleanup on drop during
+unwinding when the toolchain supports it.
+
 ## Outcomes & retrospective
 
-The plan and expert review were approved for implementation by the user on
-2026-10-25. A pinned-tool experiment then showed the approved cargo-hack
-command did not enumerate implicit optional-dependency features. Runtime code,
-manifests, workflow behaviour, and roadmap completion remain unchanged. The
-user accepted the `--optional-deps` correction on 2026-10-28. Implementation
-will be considered complete only when EP-M1/EP-M2 evidence is recorded and
-upstream documents agree with it.
+The user approved the plan and the `--optional-deps` correction. The local
+matrix command and its command-boundary tests are implemented; review repairs
+are underway. Runtime APIs and feature defaults remain unchanged, and roadmap
+completion awaits EP-M2. Implementation will be complete only when EP-M1/EP-M2
+evidence is recorded and upstream documents agree with it.
 
 Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
 `make lint`, `make typecheck`, `make test`, `make markdownlint` (including
@@ -499,3 +515,7 @@ cargo-hack encounters a feature-free package.
 
 Revision 8 (2026-10-28): Recorded the passing focused command cases and the
 topology serialization contract repair. Full EP-M1 gates remain pending.
+
+Revision 9 (2026-10-28): Recorded the passing EP-M1 gates, milestone review,
+and the in-scope Act provisioning and fixture-harness repairs. Their validation
+and review remain pending.

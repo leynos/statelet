@@ -6,12 +6,13 @@
 //! directory so supplied paths cannot escape that root.
 
 use std::{
-    path::{Component, Path, PathBuf},
+    ffi::OsString,
     process::{self, Command},
     sync::atomic::{AtomicU64, Ordering},
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use cap_std::{ambient_authority, fs::Dir};
 
 const PACKAGE_DIRECTORY: &str = "fixture with spaces";
@@ -24,12 +25,11 @@ static ROOT_SERIAL: AtomicU64 = AtomicU64::new(0);
 
 /// A feature-matrix fixture and the paths it owns.
 pub(super) struct Fixture {
-    root: PathBuf,
     root_dir: Dir,
-    package: PathBuf,
+    package: Utf8PathBuf,
     package_dir: Dir,
-    source: PathBuf,
-    wrapper: PathBuf,
+    source: Utf8PathBuf,
+    root: OwnedRoot,
 }
 
 impl Fixture {
@@ -37,19 +37,19 @@ impl Fixture {
     pub(super) fn new(label: &str, files: &[(&str, &str)]) -> Result<Self, String> {
         let source = repository_root();
         let root = unique_root(label)?;
-        let root_dir = Dir::open_ambient_dir(&root, ambient_authority())
-            .map_err(|error| format!("cannot open fixture root {}: {error}", root.display()))?;
-        let package = root.join(PACKAGE_DIRECTORY);
+        let root_dir = Dir::open_ambient_dir(&root.path, ambient_authority())
+            .map_err(|error| format!("cannot open fixture root {}: {error}", root.path.as_str()))?;
+        let package = root.path.join(PACKAGE_DIRECTORY);
         root_dir.create_dir(PACKAGE_DIRECTORY).map_err(|error| {
             format!(
                 "cannot create package directory {}: {error}",
-                package.display()
+                package.as_str()
             )
         })?;
         let package_dir = root_dir.open_dir(PACKAGE_DIRECTORY).map_err(|error| {
             format!(
                 "cannot open package directory {}: {error}",
-                package.display()
+                package.as_str()
             )
         })?;
 
@@ -58,27 +58,18 @@ impl Fixture {
             write_fixture_file(&package_dir, relative, contents)?;
         }
 
-        let wrapper = root.join(WRAPPER_NAME);
-        if wrapper.to_string_lossy().contains(' ') {
-            return Err(format!(
-                "Cargo wrapper path must not contain spaces: {}",
-                wrapper.display()
-            ));
-        }
+        let wrapper = root.path.join(WRAPPER_NAME);
         root_dir
             .write(WRAPPER_NAME, CARGO_WRAPPER)
-            .map_err(|error| {
-                format!("cannot write Cargo wrapper {}: {error}", wrapper.display())
-            })?;
+            .map_err(|error| format!("cannot write Cargo wrapper {}: {error}", wrapper.as_str()))?;
         set_executable(&root_dir, WRAPPER_NAME)?;
 
         Ok(Self {
-            root: root.clone(),
             root_dir,
             package,
             package_dir,
             source,
-            wrapper,
+            root,
         })
     }
 
@@ -92,14 +83,23 @@ impl Fixture {
     pub(super) fn run(&self, version_override: Option<&str>) -> Result<process::Output, String> {
         let rustflags = std::env::var_os("STATELET_FEATURE_MATRIX_CALLER_FLAGS")
             .or_else(|| std::env::var_os("RUSTFLAGS"));
+        let inherited_path = std::env::var_os("PATH").unwrap_or_default();
+        let mut paths = vec![OsString::from(self.root.path.as_str())];
+        paths.extend(std::env::split_paths(&inherited_path).map(OsString::from));
+        let path = std::env::join_paths(paths)
+            .map_err(|error| format!("cannot construct fixture PATH: {error}"))?;
         let mut command = Command::new("make");
         command
             .arg("feature-matrix")
             .current_dir(&self.package)
-            .env("CARGO", &self.wrapper)
+            .env("CARGO", WRAPPER_NAME)
+            .env("PATH", path)
             .env("REAL_CARGO", env!("CARGO"))
-            .env("CARGO_INVOCATION_LOG", self.root.join(INVOCATION_LOG_NAME))
-            .env("CARGO_TARGET_DIR", self.root.join("cargo-target"))
+            .env(
+                "CARGO_INVOCATION_LOG",
+                self.root.path.join(INVOCATION_LOG_NAME),
+            )
+            .env("CARGO_TARGET_DIR", self.root.path.join("cargo-target"))
             .env("MOLD_VERSION_FILE", self.source.join("tools/mold/VERSION"))
             .env(
                 "MOLD_SHA256SUMS_FILE",
@@ -141,6 +141,9 @@ impl Fixture {
         parse_invocations(&contents)
     }
 
+    /// Returns the owned root for cleanup assertions.
+    pub(super) fn root(&self) -> &Utf8Path { &self.root.path }
+
     /// Reads a fixture file relative to the package directory.
     pub(super) fn read(&self, relative: &str) -> Result<Vec<u8>, String> {
         let relative_path = checked_relative_path(relative)?;
@@ -150,23 +153,49 @@ impl Fixture {
     }
 }
 
+/// A unique fixture root that is removed even if fixture setup or a test fails.
+struct OwnedRoot {
+    path: Utf8PathBuf,
+}
+
+impl Drop for OwnedRoot {
+    fn drop(&mut self) {
+        if let Err(error) = remove_owned_root(&self.path) {
+            assert!(std::thread::panicking(), "{error}");
+        }
+    }
+}
+
+/// Remove only this fixture's root, reporting a cleanup error on normal exit.
+fn remove_owned_root(root: &Utf8Path) -> Result<(), String> {
+    let parent = root
+        .parent()
+        .ok_or_else(|| format!("{root} has no parent"))?;
+    let name = root
+        .file_name()
+        .ok_or_else(|| format!("{root} has no name"))?;
+    Dir::open_ambient_dir(parent, ambient_authority())
+        .and_then(|directory| directory.remove_dir_all(name))
+        .map_err(|error| format!("cannot remove fixture root {root}: {error}"))
+}
+
 /// The repository root whose Makefile and tool pins the fixture uses.
-fn repository_root() -> PathBuf { PathBuf::from(env!("CARGO_MANIFEST_DIR")) }
+fn repository_root() -> Utf8PathBuf { Utf8PathBuf::from(env!("CARGO_MANIFEST_DIR")) }
 
 /// Creates a unique fixture root below Cargo's test temporary directory.
-fn unique_root(label: &str) -> Result<PathBuf, String> {
-    let temp_root = PathBuf::from(env!("CARGO_TARGET_TMPDIR"));
+fn unique_root(label: &str) -> Result<OwnedRoot, String> {
+    let temp_root = Utf8PathBuf::from(env!("CARGO_TARGET_TMPDIR"));
     Dir::create_ambient_dir_all(&temp_root, ambient_authority()).map_err(|error| {
         format!(
             "cannot create test temporary directory {}: {error}",
-            temp_root.display()
+            temp_root.as_str()
         )
     })?;
     let fixture_parent = temp_root.join("feature-matrix-command");
     Dir::create_ambient_dir_all(&fixture_parent, ambient_authority()).map_err(|error| {
         format!(
             "cannot create fixture parent {}: {error}",
-            fixture_parent.display()
+            fixture_parent.as_str()
         )
     })?;
 
@@ -193,13 +222,15 @@ fn unique_root(label: &str) -> Result<PathBuf, String> {
     let parent = Dir::open_ambient_dir(&fixture_parent, ambient_authority()).map_err(|error| {
         format!(
             "cannot open fixture parent {}: {error}",
-            fixture_parent.display()
+            fixture_parent.as_str()
         )
     })?;
     parent
         .create_dir(&name)
         .map_err(|error| format!("cannot create unique fixture root {name:?}: {error}"))?;
-    Ok(fixture_parent.join(name))
+    Ok(OwnedRoot {
+        path: fixture_parent.join(name),
+    })
 }
 
 /// Keeps an empty or punctuation-only label useful in the fixture path.
@@ -212,25 +243,21 @@ fn nonempty_label(label: &str) -> &str {
 }
 
 /// Copies the live Makefile and tool-check scripts, preserving script permissions.
-fn copy_repository_inputs(source: &Path, package: &Dir) -> Result<(), String> {
+fn copy_repository_inputs(source: &Utf8Path, package: &Dir) -> Result<(), String> {
     package
         .create_dir_all("scripts")
         .map_err(|error| format!("cannot create fixture scripts directory: {error}"))?;
-    let source_dir = Dir::open_ambient_dir(source, ambient_authority()).map_err(|error| {
-        format!(
-            "cannot open source repository {}: {error}",
-            source.display()
-        )
-    })?;
+    let source_dir = Dir::open_ambient_dir(source, ambient_authority())
+        .map_err(|error| format!("cannot open source repository {}: {error}", source.as_str()))?;
     source_dir
         .copy("Makefile", package, "Makefile")
         .map_err(|error| format!("cannot copy repository Makefile: {error}"))?;
     for script in ["check-build-tools.sh", "build-tools-common.sh"] {
         source_dir
             .copy(
-                Path::new("scripts").join(script),
+                Utf8Path::new("scripts").join(script),
                 package,
-                Path::new("scripts").join(script),
+                Utf8Path::new("scripts").join(script),
             )
             .map_err(|error| format!("cannot copy repository script {script}: {error}"))?;
     }
@@ -240,10 +267,7 @@ fn copy_repository_inputs(source: &Path, package: &Dir) -> Result<(), String> {
 /// Writes one supplied UTF-8 file using the package capability directory.
 fn write_fixture_file(package: &Dir, relative: &str, contents: &str) -> Result<(), String> {
     let path = checked_relative_path(relative)?;
-    if let Some(parent) = path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-    {
+    if let Some(parent) = path.parent().filter(|parent| !parent.as_str().is_empty()) {
         package
             .create_dir_all(parent)
             .map_err(|error| format!("cannot create parent directory for {relative:?}: {error}"))?;
@@ -254,12 +278,12 @@ fn write_fixture_file(package: &Dir, relative: &str, contents: &str) -> Result<(
 }
 
 /// Rejects absolute paths and traversal before passing a fixture path to cap-std.
-fn checked_relative_path(relative: &str) -> Result<&Path, String> {
-    let path = Path::new(relative);
-    if path.as_os_str().is_empty()
+fn checked_relative_path(relative: &str) -> Result<&Utf8Path, String> {
+    let path = Utf8Path::new(relative);
+    if path.as_str().is_empty()
         || path
             .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
+            .any(|component| !matches!(component, Utf8Component::Normal(_)))
     {
         return Err(format!(
             "fixture path must be a non-empty relative path: {relative:?}"

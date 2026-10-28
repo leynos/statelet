@@ -125,8 +125,9 @@ compact and omits build output such as `target/`.
 - `tests/feature_matrix_command/harness.rs`: Holds the private process and
   filesystem fixture helper used only by `tests/feature_matrix_command.rs`. It
   copies the repository Makefile into each isolated package root, records Cargo
-  invocations through a test-owned wrapper, and passes caller flags through the
-  dedicated test environment variable. It is not a shared runtime utility.
+  invocations through a test-owned wrapper, passes caller flags through the
+  dedicated test environment variable, and removes owned roots on exit. It is
+  not a shared runtime utility.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
 - `tests/workflow_contracts/topology_wiring_contract.py` and

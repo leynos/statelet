@@ -8,6 +8,8 @@ mod harness;
 
 use std::process::{Command, Output};
 
+use camino::Utf8Path;
+use cap_std::{ambient_authority, fs::Dir};
 use googletest::prelude::*;
 use harness::Fixture;
 use pretty_assertions::assert_eq;
@@ -72,6 +74,43 @@ fn has_feature(command: &[String], feature: &str) -> bool {
         .any(|pair| matches!(pair, [flag, value] if flag == "--features" && value == feature))
 }
 
+/// Inspect a fixture's parent after the fixture has been dropped.
+fn root_exists(root: &Utf8Path) -> Result<bool, String> {
+    let parent = root
+        .parent()
+        .ok_or_else(|| format!("{root} has no parent"))?;
+    let name = root
+        .file_name()
+        .ok_or_else(|| format!("{root} has no name"))?;
+    let directory = Dir::open_ambient_dir(parent, ambient_authority())
+        .map_err(|error| format!("cannot inspect fixture parent {parent}: {error}"))?;
+    Ok(directory.exists(name))
+}
+
+/// Fixture-owned directories are removed on normal return.
+#[rstest]
+fn fixture_cleanup_removes_the_owned_root() -> Result<(), String> {
+    let fixture = fixture("cleanup", "", EMPTY_LIB)?;
+    let root = fixture.root().to_owned();
+    drop(fixture);
+    assert_that!(root_exists(&root)?, eq(false));
+    Ok(())
+}
+
+/// Assertion failures happen after the fixture has already been removed.
+#[rstest]
+#[should_panic(expected = "post-cleanup assertion")]
+fn fixture_cleanup_precedes_a_failing_assertion() {
+    let fixture = fixture("cleanup-failure", "", EMPTY_LIB).expect("fixture setup should succeed");
+    let root = fixture.root().to_owned();
+    drop(fixture);
+    assert_that!(
+        root_exists(&root).expect("fixture parent should be readable"),
+        eq(false)
+    );
+    assert_that!(true, eq(false), "post-cleanup assertion");
+}
+
 /// Required rows are witnessed by real Cargo and cargo-hack invocations.
 #[rstest]
 #[case::no_features("none", "", &[])]
@@ -102,15 +141,14 @@ fn required_rows_run(
         fixture.read("optional/Cargo.toml")?,
     ];
     let output = fixture.run(None)?;
-    assert_verdict(&output, true, "healthy fixture should pass");
-    assert_eq!(
-        [
-            fixture.read("Cargo.toml")?,
-            fixture.read("optional/Cargo.toml")?
-        ],
-        before
-    );
+    let after = [
+        fixture.read("Cargo.toml")?,
+        fixture.read("optional/Cargo.toml")?,
+    ];
     let invocations = fixture.invocations()?;
+    drop(fixture);
+    assert_verdict(&output, true, "healthy fixture should pass");
+    assert_eq!(after, before);
     let matrix_commands: Vec<_> = invocations
         .iter()
         .filter(|args| {
@@ -201,14 +239,14 @@ fn each_configuration_propagates_its_own_failure(
         healthy.read("Cargo.toml")?,
         healthy.read("optional/Cargo.toml")?,
     ];
-    assert_verdict(&healthy.run(None)?, true, "healthy counterpart should pass");
-    assert_eq!(
-        [
-            healthy.read("Cargo.toml")?,
-            healthy.read("optional/Cargo.toml")?
-        ],
-        healthy_manifest
-    );
+    let healthy_output = healthy.run(None)?;
+    let healthy_after = [
+        healthy.read("Cargo.toml")?,
+        healthy.read("optional/Cargo.toml")?,
+    ];
+    drop(healthy);
+    assert_verdict(&healthy_output, true, "healthy counterpart should pass");
+    assert_eq!(healthy_after, healthy_manifest);
     let message = format!("matrix poison {label}");
     let source =
         format!("//! Poison fixture.\n#[cfg({condition})]\ncompile_error!(\"{message}\");\n");
@@ -217,14 +255,14 @@ fn each_configuration_propagates_its_own_failure(
         poisoned.read("Cargo.toml")?,
         poisoned.read("optional/Cargo.toml")?,
     ];
-    assert_verdict(&poisoned.run(None)?, false, &message);
-    assert_eq!(
-        [
-            poisoned.read("Cargo.toml")?,
-            poisoned.read("optional/Cargo.toml")?
-        ],
-        before
-    );
+    let output = poisoned.run(None)?;
+    let after = [
+        poisoned.read("Cargo.toml")?,
+        poisoned.read("optional/Cargo.toml")?,
+    ];
+    drop(poisoned);
+    assert_verdict(&output, false, &message);
+    assert_eq!(after, before);
     Ok(())
 }
 
@@ -239,13 +277,14 @@ fn tool_preflight_is_actionable(
 ) -> Result<(), String> {
     let fixture = fixture("tool-preflight", "", EMPTY_LIB)?;
     let output = fixture.run(Some(supplied))?;
+    let invocations = fixture.invocations()?;
+    drop(fixture);
     assert_verdict(&output, false, observed);
     let text = output_text(&output);
     assert_that!(text.as_str(), contains_substring("cargo-hack 0.6.45"));
     assert_that!(text.as_str(), contains_substring("make install-cargo-hack"));
     assert_that!(
-        fixture
-            .invocations()?
+        invocations
             .iter()
             .any(|args| args.first().is_some_and(|x| x == "check")),
         eq(false)
@@ -262,8 +301,11 @@ fn malformed_manifest_fails() -> Result<(), String> {
         &[("Cargo.toml", "[package\n"), ("src/lib.rs", EMPTY_LIB)],
     )?;
     let before = fixture.read("Cargo.toml")?;
-    assert_verdict(&fixture.run(None)?, false, "error");
-    assert_eq!(fixture.read("Cargo.toml")?, before);
+    let output = fixture.run(None)?;
+    let after = fixture.read("Cargo.toml")?;
+    drop(fixture);
+    assert_verdict(&output, false, "error");
+    assert_eq!(after, before);
     Ok(())
 }
 
@@ -302,6 +344,11 @@ fn development_features_do_not_mask_missing_normal_features() -> Result<(), Stri
             fixture.read("dependency/Cargo.toml")?,
         ];
         let output = fixture.run(None)?;
+        let after = [
+            fixture.read("Cargo.toml")?,
+            fixture.read("dependency/Cargo.toml")?,
+        ];
+        drop(fixture);
         assert_verdict(
             &output,
             success,
@@ -311,13 +358,7 @@ fn development_features_do_not_mask_missing_normal_features() -> Result<(), Stri
                 "cannot find function `gated`"
             },
         );
-        assert_eq!(
-            [
-                fixture.read("Cargo.toml")?,
-                fixture.read("dependency/Cargo.toml")?
-            ],
-            before
-        );
+        assert_eq!(after, before);
     }
     Ok(())
 }

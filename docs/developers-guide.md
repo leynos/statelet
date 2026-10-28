@@ -81,7 +81,8 @@ The generated `Makefile` exposes these public targets:
 - `make test-feature-matrix-command` runs the ignored command-boundary cases
   sequentially. Its private helper under `tests/feature_matrix_command/` is
   owned by that suite alone; it invokes the real Make target against isolated
-  Cargo fixtures and preserves caller `RUSTFLAGS`.
+  Cargo fixtures, preserves caller `RUSTFLAGS`, and removes each owned fixture
+  root before asserting the captured results.
 - `make topology-check` applies the dependency-topology policy to Cargo's
   metadata for this workspace. `make check-topology` is the same check with the
   repository manifest pinned, and `make test-topology-command` runs the
