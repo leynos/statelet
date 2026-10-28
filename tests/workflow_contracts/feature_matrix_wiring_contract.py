@@ -125,6 +125,19 @@ def _binding_findings(name: str, words: list[str]) -> list[str]:
     return problems
 
 
+def _activates_default(words: list[str]) -> bool:
+    """Detect explicit Cargo default selection in repeated or combined lists."""
+    values = []
+    for index, word in enumerate(words):
+        if word in {"--features", "-F"} and index + 1 < len(words):
+            values.append(words[index + 1])
+        elif word.startswith("--features="):
+            values.append(word.removeprefix("--features="))
+        elif word.startswith("-F") and word != "-F":
+            values.append(word[2:])
+    return any("default" in re.split(r"[,\s]+", value) for value in values)
+
+
 def _feature_findings(name: str, words: list[str]) -> list[str]:
     """Check required and forbidden feature selectors for one matrix row."""
     policies = {
@@ -147,6 +160,8 @@ def _feature_findings(name: str, words: list[str]) -> list[str]:
     }
     required, forbidden, message = policies[name]
     present = set(words)
+    if name == "no-default" and _activates_default(words):
+        return [message]
     return [] if required <= present and not forbidden.intersection(present) else [message]
 
 

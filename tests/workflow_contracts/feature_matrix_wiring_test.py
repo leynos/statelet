@@ -163,6 +163,23 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
     ),
     ("all-features", lambda w: _row_replace(w, 3, "--all-features", ""), "all row must enable"),
 ]
+for feature_selector in (
+    "--features default",
+    "--features=serde,default",
+    '--features "serde default"',
+    "-F default",
+    "-Fdefault",
+    "--features serde --features default",
+):
+    MUTATIONS.append(
+        (
+            f"no-default-selector-{feature_selector}",
+            lambda w, selector=feature_selector: _row_replace(
+                w, 0, "--no-default-features", f"--no-default-features {selector}"
+            ),
+            "no-default row must disable",
+        )
+    )
 for row_index, row_name in enumerate(ROWS):
     MUTATIONS.extend(
         [
