@@ -406,6 +406,9 @@ planning-only document.
       that the test parser did not recognize. Reproduced the failure, corrected
       parsing, strengthened wiring controls, and passed all local gates and a
       fresh review of the three repair paths with no findings.
+- [x] (2026-10-28) A second hosted run exposed cargo-hack's distinct GitHub
+      Actions group output. Reproduced it with child-only CI variables, added
+      a real fixture regression, and passed all gates and repair reassessment.
 
 ## Surprises & discoveries
 
@@ -482,8 +485,8 @@ command, command-boundary tests, and routine local and CI wiring are complete.
 Runtime APIs and feature defaults remain unchanged. The final implementation
 gates passed: formatting, lint, typecheck, tests, Markdown, diagrams, spelling,
 the feature matrix, topology, and Makefile validation. The test gate included
-515 workflow-contract tests and five subtests, 17 matrix boundary cases, three
-topology cases, 208 ordinary Rust tests, and one doctest. Darwin and
+515 workflow-contract tests and five subtests, 18 matrix boundary cases, three
+topology cases, 218 ordinary Rust tests, and one doctest. Darwin and
 cross-target linker cases use Make overrides rather than a native Darwin run.
 
 EP-M2 review identified and prompted fixes to the ordering negative control,
@@ -495,13 +498,15 @@ helpers add indirection to bounded checks without addressing a demonstrated
 defect; the existing focused mutation controls exercise those checks. These
 advisory suggestions were therefore not adopted.
 
-The first hosted CI and Act runs failed because their forced-colour environment
-changed cargo-hack status output. A focused forced-colour reproduction failed
-before the parser repair and passed afterwards. CodeScene also identified
-complexity in the Python contract; extraction reduced its local score to 10.0
-without suppressions. Its string-heavy findings on Rust command fixtures refer
-to textual arguments intrinsic to those tests; introducing wrappers solely to
-change that metric would obscure their purpose.
+The first hosted CI and Act runs failed because the parser did not recognize
+the cargo-hack output. Forced colour exposed one parsing gap, but a second
+hosted failure showed that `GITHUB_ACTIONS` also changes the status format to
+group markers. Focused reproductions failed before each repair and passed
+afterwards, including a real fixture requiring a group-form feature row.
+CodeScene also identified complexity in the Python contract; extraction reduced
+its local score to 10.0 without suppressions. Its string-heavy findings on Rust
+command fixtures refer to textual arguments intrinsic to those tests;
+introducing wrappers solely to change that metric would obscure their purpose.
 
 Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
 `make lint`, `make typecheck`, `make test`, `make markdownlint` (including
