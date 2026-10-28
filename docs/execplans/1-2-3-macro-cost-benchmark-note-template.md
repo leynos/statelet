@@ -13,7 +13,8 @@ sequence. Commit `3be47f5` passed its local review with one minor checkbox
 spacing finding that matches the explicit V2 verification requirement; that
 correction passed the full validation sequence. The follow-up review of
 `1a3581b` found two further contract gaps. Proposed remediation is recorded
-below and awaits approval because the branch exceeds the approved path limit.
+below. The user approved the one-path variance on 2026-10-28, before the review
+corrections resumed.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -255,8 +256,8 @@ and obtain explicit approval before proceeding.
     architecture and measurement reviewers confirmed the narrow remedies.
     Before remediation, the branch diff contains 14 paths including this plan,
     exceeding the approved limit of 12 implementation paths by one. A proposed
-    correction confined to already changed paths is recorded below; work is
-    paused pending approval of this variance.
+    correction confined to already changed paths is recorded below. The user
+    approved this variance on 2026-10-28; review corrections may proceed.
 
 ## Surprises & discoveries
 
@@ -335,12 +336,12 @@ the diff.
 - (2026-10-26, review correction) Parse the roadmap checkbox marker separately
   from the task identifier and skip formatting whitespace between them. V2
   explicitly requires task lookup to tolerate changed checkbox spacing.
-- (2026-10-26, proposed deviation) Bind selected-note links to each task's
+- (2026-10-28, approved deviation) Bind selected-note links to each task's
   `Success:` criterion and recognize `Unavailable:` case-insensitively for both
   placeholder and verdict checks. These review fixes require no new paths,
   dependencies, public API or budget changes, but the current branch has 13
-  changed paths excluding this plan, one over the approved limit of 12. Pause
-  implementation until the user approves this path-count variance.
+  changed paths excluding this plan, one over the approved limit of 12. The
+  user approved this one-path variance before these corrections resumed.
 
 ## Outcomes & retrospective
 
