@@ -14,7 +14,8 @@ spacing finding that matches the explicit V2 verification requirement; that
 correction passed the full validation sequence. The follow-up review of
 `1a3581b` found two further contract gaps. Proposed remediation is recorded
 below. The user approved the one-path variance on 2026-10-28, before the review
-corrections resumed. Post-rebase validation passed; a fresh review remains.
+corrections resumed. Post-rebase validation passed and the final code received
+independent review; hosted-gate disposition remains.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -298,7 +299,7 @@ and obtain explicit approval before proceeding.
     candidate passed formatting, lint, tests, typecheck, Markdown lint,
     spelling, Nixie, and diff checks. Nextest passed 279 cases with three
     skipped; 432 workflow cases plus five subtests and three topology-command
-    cases passed. Expert verification confirmed that fix, then identified a
+    cases passed. Expert verification confirmed that fix, then identified
     related list-boundary cases: a non-checkbox sibling could extend the task
     block, and a nested `Success:` could impersonate the task criterion. Bound
     the task to the next top-level dash item and select only its direct-child
@@ -329,8 +330,15 @@ and obtain explicit approval before proceeding.
     cases plus five subtests, and three topology-command cases. The current
     local CodeScene delta retains String Heavy advisories of 50.0% across 19
     root functions and 45.0% across 22 evidence functions against 39%; expert
-    review supports retaining the raw text inputs. A commit and fresh local
-    review remain.
+    review supports retaining the raw text inputs. Commit `e5d9f21` records
+    the refactor. Wyvern verified that the new controls reach the intended
+    rejection branches, and the measurement reviewer confirmed unchanged
+    validation order and independent literal test oracles. The additional
+    synthetic-note wrapper suggested by the local review was declined: the
+    existing note factory and field replacement already own that setup without
+    adding another invariant. The local CodeRabbit review covered `b6cec8f`;
+    the later changes received the independent reviews above. Hosted CodeScene
+    disposition remains separate.
 
 ## Surprises & discoveries
 
