@@ -564,8 +564,8 @@ validate a future resolved graph or feature leakage, and its success message
 says so.
 
 The check is part of routine validation rather than an optional operator step:
-`make all` runs the pinned-input `make check-topology` form after tests and
-before spelling, then runs the feature matrix; `make test` ends with
+`make all` runs the pinned-input `make check-topology` form after tests, then
+runs the feature matrix and spelling; `make test` ends with
 `make test-topology-command` followed by `make test-feature-matrix-command`
 after the ordinary routes. CI runs topology validation followed by the feature
 matrix, and runs both command-boundary targets after coverage.

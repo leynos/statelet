@@ -2,6 +2,8 @@
 
 This test-only module owns no production interface. Its companion tests exercise
 individual clauses with mutations as well as the live repository configuration.
+Run them via ``make test-workflow-contracts``; they pass captured evidence to
+``findings`` and check its reported clauses.
 """
 
 import re
@@ -27,7 +29,17 @@ ROWS = ("no-default", "default", "individual", "all")
 
 @dataclass(frozen=True, slots=True)
 class Wiring:
-    """Evidence captured from evaluated recipes and the strict workflow parser."""
+    """Evidence captured from evaluated recipes and the strict workflow parser.
+
+    Attributes
+    ----------
+    matrix_recipe, version_recipe, all_recipe, test_recipe : str
+        Evaluated Make recipes for the named targets.
+    workflow : reading.Workflow
+        Strictly parsed CI workflow.
+    makefile : str
+        Source text used to check serialization declarations.
+    """
 
     matrix_recipe: str
     version_recipe: str
@@ -38,7 +50,13 @@ class Wiring:
 
 
 def evaluate_live_wiring() -> Wiring:
-    """Capture the repository's recipes, Makefile, and CI workflow."""
+    """Capture the repository's recipes, Makefile, and CI workflow.
+
+    Returns
+    -------
+    Wiring
+        Evaluated commands and workflow evidence.
+    """
     return Wiring(
         make_n("feature-matrix"),
         make_n("check-cargo-hack"),
@@ -50,7 +68,18 @@ def evaluate_live_wiring() -> Wiring:
 
 
 def matrix_lines(recipe: str) -> list[str]:
-    """Return the four Cargo library checks in their evaluated order."""
+    """Return the four Cargo library checks in their evaluated order.
+
+    Parameters
+    ----------
+    recipe : str
+        Evaluated Make recipe.
+
+    Returns
+    -------
+    list[str]
+        Library check command lines in order.
+    """
     return [
         line
         for line in recipe_lines(recipe)
@@ -59,6 +88,7 @@ def matrix_lines(recipe: str) -> list[str]:
 
 
 def _matrix_findings(recipe: str) -> list[str]:
+    """Judge feature-matrix rows and their bindings."""
     lines = matrix_lines(recipe)
     if len(lines) != len(ROWS):
         return ["matrix must run four Cargo checks"]
@@ -101,14 +131,14 @@ def _matrix_findings(recipe: str) -> list[str]:
 
 
 def _make_findings(wiring: Wiring) -> list[str]:
+    """Judge the evaluated Make gates and their ordering."""
     problems = _matrix_findings(wiring.matrix_recipe)
     lines = recipe_lines(wiring.all_recipe)
     gates = ["make check-topology", "make feature-matrix", "make spelling"]
-    if any(lines.count(gate) != 1 for gate in gates) or not (
-        all(gate in lines for gate in gates)
-        and lines.index(gates[0]) < lines.index(gates[1]) < lines.index(gates[2])
-    ):
-        problems.append("make all must run matrix once after topology and before spelling")
+    if any(lines.count(gate) != 1 for gate in gates):
+        problems.append("make all must run matrix exactly once")
+    elif not lines.index(gates[0]) < lines.index(gates[1]) < lines.index(gates[2]):
+        problems.append("make all must order matrix after topology and before spelling")
     test_lines = recipe_lines(wiring.test_recipe)
     topology = next(
         (i for i, line in enumerate(test_lines) if "--test topology_command" in line), -1
@@ -139,7 +169,18 @@ def _make_findings(wiring: Wiring) -> list[str]:
 
 
 def ci_steps(workflow: reading.Workflow) -> list[reading.Step]:
-    """Return the sole CI job's steps, or an empty list for invalid structure."""
+    """Return the sole CI job's steps, or an empty list for invalid structure.
+
+    Parameters
+    ----------
+    workflow : reading.Workflow
+        Strictly parsed CI workflow.
+
+    Returns
+    -------
+    list[reading.Step]
+        The job's steps, or an empty list when unreadable.
+    """
     jobs = reading.jobs(workflow)
     if len(jobs) != 1:
         return []
@@ -148,6 +189,7 @@ def ci_steps(workflow: reading.Workflow) -> list[reading.Step]:
 
 
 def _ci_findings(workflow: reading.Workflow) -> list[str]:
+    """Judge CI step presence, ordering, and the coverage boundary."""
     steps = ci_steps(workflow)
     jobs = reading.jobs(workflow)
     if not steps or len(jobs) != 1:
@@ -176,32 +218,53 @@ def _ci_findings(workflow: reading.Workflow) -> list[str]:
         and not positions[chain[0]] < positions[chain[1]] < positions[chain[2]]
     ):
         problems.append("CI must install and run the matrix after topology")
-    boundary = commands[-1]
-    if boundary in positions:
-        index = positions[boundary]
-        coverage = next(
-            (
-                i
-                for i, step in enumerate(steps)
-                if reading.uses(step).split("@", maxsplit=1)[0]
-                == "leynos/shared-actions/.github/actions/generate-coverage"
-            ),
-            -1,
-        )
-        if (
-            coverage < 0
-            or index <= coverage
-            or (commands[-2] in positions and index <= positions[commands[-2]])
-        ):
-            problems.append("CI matrix boundary must follow coverage and topology boundary")
-        for scope in (workflow, jobs[0][1], steps[index]):
-            env = scope.get("env")
-            if isinstance(env, dict) and COVERAGE_ENV.intersection(env):
-                problems.append("CI matrix boundary must not inherit coverage environment")
-                break
+    return problems + _boundary_findings(workflow, steps, positions)
+
+
+def _boundary_findings(
+    workflow: reading.Workflow, steps: list[reading.Step], positions: dict[str, int]
+) -> list[str]:
+    """Judge ordering and inherited environment for the CI boundary suite."""
+    boundary = "make test-feature-matrix-command"
+    topology = "make test-topology-command"
+    if boundary not in positions:
+        return []
+    problems: list[str] = []
+    index = positions[boundary]
+    coverage = next(
+        (
+            i
+            for i, step in enumerate(steps)
+            if reading.uses(step).split("@", maxsplit=1)[0]
+            == "leynos/shared-actions/.github/actions/generate-coverage"
+        ),
+        -1,
+    )
+    if (
+        coverage < 0
+        or index <= coverage
+        or (topology in positions and index <= positions[topology])
+    ):
+        problems.append("CI matrix boundary must follow coverage and topology boundary")
+    for scope in (workflow, reading.jobs(workflow)[0][1], steps[index]):
+        env = scope.get("env")
+        if isinstance(env, dict) and COVERAGE_ENV.intersection(env):
+            problems.append("CI matrix boundary must not inherit coverage environment")
+            break
     return problems
 
 
 def findings(wiring: Wiring) -> list[str]:
-    """Return failed matrix and CI clauses for the supplied evidence."""
+    """Return failed matrix and CI clauses for the supplied evidence.
+
+    Parameters
+    ----------
+    wiring : Wiring
+        Captured Make and workflow evidence.
+
+    Returns
+    -------
+    list[str]
+        Failed clauses, or an empty list when every clause holds.
+    """
     return _make_findings(wiring) + _ci_findings(wiring.workflow)

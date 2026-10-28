@@ -18,27 +18,8 @@ from feature_matrix_wiring_contract import (
 )
 
 
-def _complete(wiring: Wiring) -> Wiring:
-    """Supply planned EP-M2 steps so controls are independent of implementation."""
-    workflow = copy.deepcopy(wiring.workflow)
-    steps = ci_steps(workflow)
-    topology = next(
-        i for i, step in enumerate(steps) if step.get("run") == "make check-topology"
-    )
-    for offset, command in enumerate(("make install-cargo-hack", "make feature-matrix"), 1):
-        if not any(step.get("run") == command for step in steps):
-            steps.insert(topology + offset, {"run": command})
-    if not any(step.get("run") == "make test-feature-matrix-command" for step in steps):
-        steps.append({"run": "make test-feature-matrix-command"})
-    all_recipe = wiring.all_recipe
-    if "make feature-matrix\n" not in all_recipe:
-        all_recipe = all_recipe.replace(
-            "make check-topology\n", "make check-topology\nmake feature-matrix\n", 1
-        )
-    return replace(wiring, workflow=workflow, all_recipe=all_recipe)
-
-
 def _drop_step(wiring: Wiring, command: str) -> Wiring:
+    """Remove one CI command from copied evidence."""
     workflow = copy.deepcopy(wiring.workflow)
     steps = ci_steps(workflow)
     steps[:] = [step for step in steps if step.get("run") != command]
@@ -46,18 +27,21 @@ def _drop_step(wiring: Wiring, command: str) -> Wiring:
 
 
 def _step(wiring: Wiring, command: str) -> tuple[reading.Workflow, reading.Step]:
+    """Find one CI command in copied evidence."""
     workflow = copy.deepcopy(wiring.workflow)
     step = next(step for step in ci_steps(workflow) if step.get("run") == command)
     return workflow, step
 
 
 def _conditional(wiring: Wiring, command: str) -> Wiring:
+    """Make one CI command conditional."""
     workflow, step = _step(wiring, command)
     step["if"] = "false"
     return replace(wiring, workflow=workflow)
 
 
 def _move_before(wiring: Wiring, command: str, anchor: str) -> Wiring:
+    """Move one CI command before its anchor."""
     workflow, step = _step(wiring, command)
     steps = ci_steps(workflow)
     steps.remove(step)
@@ -67,6 +51,7 @@ def _move_before(wiring: Wiring, command: str, anchor: str) -> Wiring:
 
 
 def _leak(wiring: Wiring, scope: str) -> Wiring:
+    """Add coverage flags at one CI environment scope."""
     workflow, step = _step(wiring, "make test-feature-matrix-command")
     destination = {"step": step, "job": reading.jobs(workflow)[0][1], "workflow": workflow}[
         scope
@@ -76,6 +61,7 @@ def _leak(wiring: Wiring, scope: str) -> Wiring:
 
 
 def _row_replace(wiring: Wiring, row: int, old: str, new: str) -> Wiring:
+    """Replace text in one evaluated matrix row."""
     line = matrix_lines(wiring.matrix_recipe)[row]
     assert old in line, f"Missing {old!r} in row {row}: {line}"
     return replace(
@@ -87,10 +73,19 @@ def _row_replace(wiring: Wiring, row: int, old: str, new: str) -> Wiring:
 
 
 def _drop_row(wiring: Wiring, row: int) -> Wiring:
+    """Remove one evaluated matrix row."""
     line = matrix_lines(wiring.matrix_recipe)[row]
     return replace(
         wiring, matrix_recipe="\n".join(recipe_lines(wiring.matrix_recipe)).replace(line, "", 1)
     )
+
+
+def _matrix_after_spelling(wiring: Wiring) -> Wiring:
+    """Move the existing matrix invocation after spelling without duplication."""
+    lines = recipe_lines(wiring.all_recipe)
+    lines.remove("make feature-matrix")
+    lines.insert(lines.index("make spelling") + 1, "make feature-matrix")
+    return replace(wiring, all_recipe="\n".join(lines))
 
 
 type Mutator = Callable[[Wiring], Wiring]
@@ -98,17 +93,12 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
     (
         "all-matrix",
         lambda w: replace(w, all_recipe=w.all_recipe.replace("make feature-matrix\n", "")),
-        "make all must run matrix",
+        "make all must run matrix exactly once",
     ),
     (
         "all-order",
-        lambda w: replace(
-            w,
-            all_recipe=w.all_recipe.replace(
-                "make check-topology\n", "make feature-matrix\nmake check-topology\n", 1
-            ).replace("make feature-matrix\nmake spelling", "make spelling", 1),
-        ),
-        "make all must run matrix",
+        _matrix_after_spelling,
+        "make all must order matrix after topology and before spelling",
     ),
     (
         "test-suite",
@@ -126,7 +116,7 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
         "matrix command suite must run ignored",
     ),
     (
-        "serialisation",
+        "serialization",
         lambda w: replace(
             w, makefile=w.makefile.replace("feature-matrix test-feature-matrix-command", "")
         ),
@@ -229,18 +219,19 @@ MUTATIONS.extend(
         ),
     ]
 )
-for env_scope in ("step", "job", "workflow"):
-    MUTATIONS.append(
-        (
-            f"coverage-{env_scope}",
-            lambda w, s=env_scope: _leak(w, s),
-            "CI matrix boundary must not inherit coverage",
-        )
+MUTATIONS.extend(
+    (
+        f"coverage-{env_scope}",
+        lambda w, s=env_scope: _leak(w, s),
+        "CI matrix boundary must not inherit coverage",
     )
+    for env_scope in ("step", "job", "workflow")
+)
 
 
 @pytest.fixture(scope="module", name="live")
 def _live() -> Wiring:
+    """Evaluate the live wiring once for the test module."""
     return evaluate_live_wiring()
 
 
@@ -256,7 +247,6 @@ def test_mutations_reject_their_own_clause(
     live: Wiring, name: str, mutate: Mutator, expected: str
 ) -> None:
     """Each negative control must fail for its intended reason."""
-    baseline = _complete(live)
-    assert not findings(baseline), findings(baseline)
-    problems = findings(mutate(baseline))
+    assert not findings(live), findings(live)
+    problems = findings(mutate(live))
     assert any(expected in problem for problem in problems), f"{name}: {problems}"
