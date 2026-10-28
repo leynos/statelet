@@ -96,7 +96,7 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
         ));
         roadmap.push_str(&candidate_comment());
         roadmap
-            .push_str("  Evidence: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n");
+            .push_str("  - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n");
     }
     let status_431 = if claim_431 { "x" } else { " " };
     roadmap.push_str("- [");
@@ -112,7 +112,7 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
         ));
         roadmap.push_str(&candidate_comment());
         roadmap.push_str(concat!(
-            "  Evidence: [real](validation-notes/4.2.1-mdtablefix-macro-cost.md) and ",
+            "  - Success: [real](validation-notes/4.2.1-mdtablefix-macro-cost.md) and ",
             "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n",
         ));
     }

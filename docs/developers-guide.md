@@ -273,7 +273,8 @@ to a task-named file in `docs/validation-notes/`. The benchmark contract uses
 `<!-- macro-cost-note -->`, separate from ADR 004's StateName marker. Record
 the real `mdtablefix` and synthetic 20-transition comparisons as independent
 notes; the G3 roadmap task selects both notes for the same macro and design
-revisions.
+revisions. Put selected-note links in each completed task's `Success:`
+criterion.
 
 `tests/macro_cost_note_contract.rs` owns the private benchmark schema and its
 capability-filesystem boundary. The schema helpers stay inside this integration

@@ -21,12 +21,17 @@ pub(super) fn marker_count(source: &str, marker: &str) -> usize {
 
 fn placeholder(value: &str) -> bool {
     let trimmed = value.trim();
-    let checked_value = trimmed
-        .strip_prefix("Unavailable:")
-        .map_or(trimmed, str::trim);
+    let checked_value = unavailable_reason(trimmed).unwrap_or(trimmed);
     checked_value.is_empty()
         || starts_with_placeholder_marker(checked_value)
         || contains_angle_placeholder(checked_value)
+}
+
+fn unavailable_reason(value: &str) -> Option<&str> {
+    let (label, reason) = value.trim().split_once(':')?;
+    label
+        .eq_ignore_ascii_case("unavailable")
+        .then_some(reason.trim())
 }
 
 fn starts_with_placeholder_marker(value: &str) -> bool {
@@ -262,7 +267,7 @@ pub(super) fn check_required_values(
     if register
         .rows
         .values()
-        .any(|field_row| field_row.value.trim().starts_with("Unavailable:"))
+        .any(|field_row| unavailable_reason(&field_row.value).is_some())
         && !row(&file.path, &register.rows, "budget-verdict")?
             .value
             .contains("Inconclusive")

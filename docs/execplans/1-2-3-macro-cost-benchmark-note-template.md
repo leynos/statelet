@@ -257,7 +257,14 @@ and obtain explicit approval before proceeding.
     Before remediation, the branch diff contains 14 paths including this plan,
     exceeding the approved limit of 12 implementation paths by one. A proposed
     correction confined to already changed paths is recorded below. The user
-    approved this variance on 2026-10-28; review corrections may proceed.
+    approved this variance on 2026-10-28. The correction confines selected
+    links to a single `Success:` criterion, handles case variants of
+    `Unavailable:`, and adds negative and positive controls. The exact staged
+    candidate passed `make check-fmt`, `make lint`, `make typecheck`,
+    `make test`, `make markdownlint`, `make spelling`, `make nixie`, and diff
+    checks. Nextest passed 272 cases with three skipped; one doctest, 432
+    workflow cases plus five subtests, and three topology-command cases passed.
+    A commit and fresh local review remain.
 
 ## Surprises & discoveries
 

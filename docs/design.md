@@ -604,10 +604,11 @@ stated cost budget.
 
 Record the real and synthetic comparisons with the
 [macro cost benchmark note template](macro-cost-benchmark-note-template.md).
-Its evidence-completeness contract binds the selected notes to roadmap tasks
-4.2.2 and 4.3.1 and to the evaluated macro and design revisions. A complete
-note supplies evidence; it does not certify measurement validity or choose a
-v0.1 exit. Reviewers retain the G3 decision under ADR 003.
+Its evidence-completeness contract reads selected-note links from each task's
+`Success:` criterion and binds them to roadmap tasks 4.2.2 and 4.3.1 and to the
+evaluated macro and design revisions. A complete note supplies evidence; it
+does not certify measurement validity or choose a v0.1 exit. Reviewers retain
+the G3 decision under ADR 003.
 
 ## 12. `mdtablefix` validation spike
 

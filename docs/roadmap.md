@@ -294,16 +294,17 @@ design.md §§11.2-11.7 and 12.
   - Use a 20-transition synthetic downstream crate to record clean-debug
     build time, per-annotation marginal cost, release artefact size, and the
     stress fixture results.
-  - Record a complete
-    [synthetic macro cost note](validation-notes/4.2.2-synthetic-macro-cost.md)
-    using the benchmark template. Cite the fixture, raw samples, commands,
-    outputs, and the macro and governing design revisions.
+  - Record a complete synthetic macro cost note using the benchmark template.
+    Cite the fixture, raw samples, commands, outputs, and the macro and
+    governing design revisions.
   - On completion, add one adjacent candidate comment in the form
     `<!-- macro-cost-candidate: <macro-sha>; design-revision: <design-sha> -->`.
     The selected note must name the same revisions.
-  - Success: the selected note is complete and reports the measurements and
-    their budget verdict. Record failed or inconclusive results as such; this
-    task records evidence and does not approve macro publication.
+  - Success: the selected
+    [synthetic macro cost note](validation-notes/4.2.2-synthetic-macro-cost.md)
+    is complete and reports the measurements and their budget verdict. Record
+    failed or inconclusive results as such; this task records evidence and does
+    not approve macro publication.
   - See design.md §11.7 and
     [the macro cost benchmark note template](macro-cost-benchmark-note-template.md).
 - [ ] 4.2.3. Add feature-matrix and topology coverage for the macro crate.
@@ -325,18 +326,18 @@ design.md §§13-14.
     Handwritten evidence does not certify generated-code preservation.
   - Require both real and synthetic macro cost notes, complete and bound to the
     evaluated macro and design revisions.
-  - Select the
-    [real macro cost note](validation-notes/4.2.1-mdtablefix-macro-cost.md)
-    and [synthetic macro cost note](validation-notes/4.2.2-synthetic-macro-cost.md).
-    The selected evidence is the basis for the cost portion of G3.
+  - Select both notes in the success criterion. The selected evidence is the
+    basis for the cost portion of G3.
   - Include compile-time budget, binary-size budget, topology results, and the
     baseline comparison alongside the cost notes.
   - On completion, add one adjacent candidate comment in the form
     `<!-- macro-cost-candidate: <macro-sha>; design-revision: <design-sha> -->`.
   - Success: one recorded decision either publishes the macro, defers it, or
-    removes it from v0.1 scope, with both selected notes and the other required
-    evidence. A complete form or passing cost result alone does not decide the
-    v0.1 exit.
+    removes it from v0.1 scope, with the selected
+    [real macro cost note](validation-notes/4.2.1-mdtablefix-macro-cost.md),
+    [synthetic macro cost note](validation-notes/4.2.2-synthetic-macro-cost.md),
+    and the other required evidence. A complete form or passing cost result
+    alone does not decide the v0.1 exit.
   - See design.md §§11.7 and 13 and
     [ADR 003](adr-003-v0-1-exit-register.md).
 - [ ] 4.3.2. Update user and developer documentation for the chosen boundary.

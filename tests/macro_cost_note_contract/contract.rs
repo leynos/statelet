@@ -13,7 +13,7 @@ use evidence::{
     row,
 };
 
-use super::{MarkdownFile, Task, candidate_identity, is_heading, linked_note_paths, task_block};
+use super::{MarkdownFile, Task, candidate_identity, is_heading, task_block};
 
 #[path = "evidence.rs"]
 pub(super) mod evidence;
@@ -173,7 +173,7 @@ fn check_claim(
         return Ok(());
     }
     candidate_identity(task)?;
-    let paths = linked_note_paths(task);
+    let paths = linked_note_paths(task)?;
     if paths.len() != expected.len() {
         return Err(format!(
             "completed task {id} must link exactly {} cost note(s)",
@@ -197,6 +197,46 @@ fn check_claim(
         ));
     }
     Ok(())
+}
+
+fn linked_note_paths(task: &Task) -> Result<Vec<String>, String> {
+    let lines = task.text.lines().collect::<Vec<_>>();
+    let criteria = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, line)| line.trim_start().starts_with("- Success:"))
+        .collect::<Vec<_>>();
+    let [(start, criterion)] = criteria.as_slice() else {
+        return Err(format!(
+            "completed task {} must contain exactly one Success criterion",
+            task.id
+        ));
+    };
+    let indent = criterion.len() - criterion.trim_start().len();
+    let continuation = lines
+        .iter()
+        .skip(*start + 1)
+        .take_while(|line| {
+            let trimmed = line.trim_start();
+            let line_indent = line.len() - trimmed.len();
+            !trimmed.starts_with("- ") || line_indent > indent
+        })
+        .copied()
+        .collect::<Vec<_>>()
+        .join("\n");
+    let body = format!("{criterion}\n{continuation}");
+    let mut found = Vec::new();
+    let mut rest = body.as_str();
+    while let Some((_, tail)) = rest.split_once("](") {
+        let Some((target, remaining)) = tail.split_once(')') else {
+            break;
+        };
+        if target.starts_with("validation-notes/") {
+            found.push(target.into());
+        }
+        rest = remaining;
+    }
+    Ok(found)
 }
 
 fn resolve_selected_note(

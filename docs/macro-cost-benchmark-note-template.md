@@ -87,14 +87,14 @@ angle-bracket placeholders are incomplete, including inside backtick spans.
 Expansion text may contain attached Rust generics such as `Option<Foo>`; do not
 use an attached form such as `Type<sha>` to represent missing evidence. Only
 `review` may say exactly `Pending: G3 decision not yet recorded`. A failed
-measurement may use `Unavailable: <reason>` with a cited failure record; its
-`budget-verdict` must say `Inconclusive`. An adverse note is evidence of
-failure, not approval.
+measurement may use `Unavailable: <reason>` (case-insensitive) with a cited
+failure record; its `budget-verdict` must say `Inconclusive`. An adverse note
+is evidence of failure, not approval.
 
 The contract checks completeness and roadmap wiring. It does not verify that a
 citation exists, that workloads are comparable, or that a measurement is true.
 Reviewers assess those claims. Completing task 4.2.2 requires the selected
 synthetic note; completing task 4.3.1 requires both selected notes and a
-candidate comment beside the roadmap claim. Neither a complete form nor a
-passing cost result alone selects the v0.1 exit; apply ADR 003 and all other
-Phase 4 gates.
+candidate comment beside the roadmap claim. Place selected-note links in each
+task's `Success:` criterion. Neither a complete form nor a passing cost result
+alone selects the v0.1 exit; apply ADR 003 and all other Phase 4 gates.

@@ -44,6 +44,8 @@ fn open_tasks_accept_empty_notes_and_both_complete_comparison_forms() {
 #[rstest]
 #[case("Unavailable:")]
 #[case("Unavailable: <reason>")]
+#[case("unavailable:")]
+#[case("unavailable: TODO later")]
 fn marked_note_rejects_unfinished_unavailable_measurements(#[case] value: &str) {
     let mut evidence = note(Kind::Synthetic20, 20);
     replace_value(
@@ -62,13 +64,15 @@ fn marked_note_rejects_unfinished_unavailable_measurements(#[case] value: &str) 
     );
 }
 
-#[test]
-fn marked_note_accepts_a_cited_unavailable_measurement_with_a_reason() {
+#[rstest]
+#[case("Unavailable: compiler failed before producing a sample")]
+#[case("unavailable: compiler failed before producing a sample")]
+fn marked_note_accepts_a_cited_unavailable_measurement_with_a_reason(#[case] value: &str) {
     let mut evidence = note(Kind::Synthetic20, 20);
     replace_value(
         &mut evidence,
         FixtureField::CLEAN_DEBUG_BASELINE_SECONDS,
-        "Unavailable: compiler failed before producing a sample",
+        value,
     )
     .expect("fixture field exists");
 
@@ -223,13 +227,16 @@ fn real_comparison_requires_the_exact_stress_fixture_exception() {
     );
 }
 
-#[test]
-fn unavailable_measurements_require_an_inconclusive_verdict() {
+#[rstest]
+#[case("Unavailable: compiler failed")]
+#[case("unavailable: compiler failed")]
+#[case("UNAVAILABLE: compiler failed")]
+fn unavailable_measurements_require_an_inconclusive_verdict(#[case] value: &str) {
     let mut evidence = note(Kind::Synthetic20, 20);
     replace_value(
         &mut evidence,
         FixtureField::CLEAN_DEBUG_BASELINE_SECONDS,
-        "Unavailable: compiler failed",
+        value,
     )
     .expect("fixture field exists");
     replace_value(
@@ -278,8 +285,8 @@ fn completed_claim_rejects_duplicate_candidate_declarations() {
         "  <!-- macro-cost-candidate: {MACRO_REVISION}; design-revision: {DESIGN_REVISION} -->\n"
     );
     let roadmap = roadmap_with_claims(true, false).replace(
-        "  Evidence: [synthetic]",
-        &format!("{declaration}  Evidence: [synthetic]"),
+        "  - Success: [synthetic]",
+        &format!("{declaration}  - Success: [synthetic]"),
     );
     let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
         .expect_err("a completed claim has exactly one candidate declaration");

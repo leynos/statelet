@@ -91,21 +91,6 @@ fn candidate_identity(task: &Task) -> Result<Candidate, String> {
     })
 }
 
-fn linked_note_paths(task: &Task) -> Vec<String> {
-    let mut found = Vec::new();
-    let mut rest = task.text.as_str();
-    while let Some((_, tail)) = rest.split_once("](") {
-        let Some((target, remaining)) = tail.split_once(')') else {
-            break;
-        };
-        if target.starts_with("validation-notes/") {
-            found.push(target.into());
-        }
-        rest = remaining;
-    }
-    found
-}
-
 fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
     let lines = roadmap.text.lines().collect::<Vec<_>>();
     let matches = lines
