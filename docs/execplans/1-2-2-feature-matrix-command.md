@@ -1,14 +1,14 @@
 # Add the current-crate feature matrix (1.2.2)
 
-Status: BLOCKED — the approved command omits implicit optional-dependency
-features; a cargo-hack correction is proposed below and awaits user acceptance.
+Status: APPROVED — implementation and the `--optional-deps` correction were
+authorized by the user on 2026-10-28.
 
 This ExecPlan is a living document. Keep its constraints, tolerances, risks,
 progress, discoveries, decisions, verification evidence, and outcomes current.
 The planning pull request delivered this document and did not complete roadmap
 task 1.2.2. The user approved implementation within its constraints and
 tolerances on 2026-10-25. A pinned-tool experiment then exposed a row-selection
-gap before implementation; this plan now awaits approval of the correction.
+gap before implementation; the user approved the correction on 2026-10-28.
 
 ## Purpose and big picture
 
@@ -139,12 +139,11 @@ checked feature, or defaults could contaminate isolated rows. Documentation
 must distinguish availability from success, and V1/V2 use distinguishable
 feature configurations rather than empty-default fixtures alone.
 
-**Blocked correction proposal (not yet approved):** the pinned cargo-hack
-experiment showed that `--each-feature` does not select implicit optional
-dependency features unless `--optional-deps` is supplied. Add that option to
-the isolated-row command so the existing V1 obligation for implicit optional
-dependencies is met. Do not begin implementation until the user accepts this
-correction.
+**Approved correction:** the pinned cargo-hack experiment showed that
+`--each-feature` does not select implicit optional dependency features unless
+`--optional-deps` is supplied. Add that option to the isolated-row command so
+the existing V1 obligation for implicit optional dependencies is met. The user
+approved this correction on 2026-10-28.
 
 ## Proposed command and interfaces
 
@@ -376,7 +375,9 @@ planning-only document.
       exposed that implicit optional-dependency features are omitted without
       `--optional-deps`; the plan is blocked pending approval of the proposed
       correction.
-- [ ] EP-M1: blocked before implementation by the row-selection mismatch.
+- [x] (2026-10-28) User approved the `--optional-deps` correction and
+      authorized implementation to resume.
+- [ ] EP-M1: implement and validate the local command.
 - [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
 
 ## Surprises & discoveries
@@ -388,7 +389,7 @@ The existing Make defaults would contaminate isolated feature checks if reused.
 The pinned 0.6.45 fixture run selected no-default, default, and each explicit
 feature row but omitted the fixture's implicit optional dependency feature. The
 tagged upstream README documents `--optional-deps` for including those
-dependencies; the correction is proposed and awaits user acceptance.
+dependencies; the user accepted the correction on 2026-10-28.
 
 ## Decision log
 
@@ -415,18 +416,20 @@ that `--each-feature --exclude-all-features` omits implicit optional dependency
 features. Firecrawl's retrieval of the [tagged cargo-hack README] confirms
 `--optional-deps` includes them. Proposed correction: add `--optional-deps` to
 the isolated-row command and retain the V1 optional dependency witness. This is
-a plan deviation, not yet accepted; status is BLOCKED and implementation has
-not begun.
+a plan deviation, which was blocked pending user acceptance at that time.
+
+2026-10-28: The user approved adding `--optional-deps` to the isolated-row
+command. Resume EP-M1 under the existing verification and isolation gates.
 
 ## Outcomes & retrospective
 
 The plan and expert review were approved for implementation by the user on
 2026-10-25. A pinned-tool experiment then showed the approved cargo-hack
 command did not enumerate implicit optional-dependency features. Runtime code,
-manifests, workflow behaviour, and roadmap completion remain unchanged while
-the proposed `--optional-deps` correction awaits explicit user acceptance.
-Implementation will be considered complete only when EP-M1/EP-M2 evidence is
-recorded and upstream documents agree with it.
+manifests, workflow behaviour, and roadmap completion remain unchanged. The
+user accepted the `--optional-deps` correction on 2026-10-28. Implementation
+will be considered complete only when EP-M1/EP-M2 evidence is recorded and
+upstream documents agree with it.
 
 Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
 `make lint`, `make typecheck`, `make test`, `make markdownlint` (including
@@ -469,3 +472,6 @@ Revision 5 (2026-10-25): Recorded the baseline gate results and a pinned-tool
 row-selection mismatch before implementation. Proposed `--optional-deps` to
 meet the existing implicit optional-dependency test obligation; implementation
 is blocked pending explicit user acceptance.
+
+Revision 6 (2026-10-28): Recorded the user's approval of `--optional-deps`
+before resuming implementation.
