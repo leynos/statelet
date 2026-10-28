@@ -12,7 +12,7 @@ pub(super) fn hack_rows(output: &Output) -> Vec<Vec<String>> {
 }
 
 /// Interpret cargo-hack status lines regardless of status-label colouring.
-fn hack_rows_from_text(text: &str) -> Vec<Vec<String>> {
+pub(super) fn hack_rows_from_text(text: &str) -> Vec<Vec<String>> {
     text.lines()
         .filter_map(|line| line.split_once("running `"))
         .filter(|(prefix, _)| *prefix == "::group::" || is_info_status(prefix))

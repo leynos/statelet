@@ -4,7 +4,15 @@ use googletest::prelude::*;
 use pretty_assertions::assert_eq;
 use rstest::rstest;
 
-use super::{assert_verdict, fixture, hack_rows, has_arg, has_feature, output_text};
+use super::{
+    assert_verdict,
+    assertions::hack_rows_from_text,
+    fixture,
+    hack_rows,
+    has_arg,
+    has_feature,
+    output_text,
+};
 
 /// A suppressed implicit feature must not be invented as a matrix row.
 #[rstest]
@@ -59,13 +67,19 @@ fn github_actions_group_output_identifies_feature_rows() -> Result<(), String> {
     let output = fixture.run_with_ci_output(None, true)?;
     drop(fixture);
     assert_verdict(&output, true, "GitHub Actions fixture should pass");
-    let rows = hack_rows(&output);
+    let text = output_text(&output);
+    let groups = text
+        .lines()
+        .filter(|line| line.starts_with("::group::running `"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let rows = hack_rows_from_text(&groups);
     assert_that!(
         rows.iter()
             .any(|row| has_arg(row, "--no-default-features") && has_feature(row, "renamed")),
         eq(true),
         "missing GitHub Actions feature row: {}",
-        output_text(&output)
+        text
     );
     Ok(())
 }
