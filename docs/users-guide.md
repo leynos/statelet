@@ -66,11 +66,17 @@ make all
 The most useful public commands are:
 
 - `make all` runs formatting checks, linting, typechecking, Rust and Python
-  tests, shared workflow contracts, and spelling.
+  tests (including shared workflow contracts), the dependency-topology check,
+  feature matrix, and spelling.
 - `make lint` runs the repository lint suite.
 - `make test` runs the repository test suite, including the feature-matrix
   command-boundary checks. It requires the pinned `cargo-hack`; install it with
   `make install-cargo-hack` before running the validation entrypoint.
+
+Continuous integration installs the pinned `cargo-hack` and runs the feature
+matrix after the dependency-topology check. It runs the feature-matrix
+command-boundary checks after coverage, separately from the instrumented
+coverage run.
 
 ## What to read first
 

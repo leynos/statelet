@@ -539,6 +539,14 @@ after the topology command-boundary suite. The tests use isolated package
 fixtures and the real Make target to check selected configurations, failures,
 and preservation of fixture manifests.
 
+Routine validation also runs the matrix directly: `make all` invokes
+`make feature-matrix` after `make check-topology` and before spelling. CI
+installs the pinned `cargo-hack` tool and runs the same matrix after topology
+validation. CI runs `make test-feature-matrix-command` after coverage and the
+topology command-boundary step, without coverage instrumentation. Workflow
+contracts guard the Make and CI wiring, matrix arguments, and serialization so
+the finite checks remain part of routine validation.
+
 ### 11.6 Dependency topology
 
 `make topology-check` is a private integration-test-backed gate for the initial
@@ -557,8 +565,10 @@ says so.
 
 The check is part of routine validation rather than an optional operator step:
 `make all` runs the pinned-input `make check-topology` form after tests and
-before spelling, `make test` ends with `make test-topology-command` after the
-ordinary routes, and CI runs the same two targets in the same relative order.
+before spelling, then runs the feature matrix; `make test` ends with
+`make test-topology-command` followed by `make test-feature-matrix-command`
+after the ordinary routes. CI runs topology validation followed by the feature
+matrix, and runs both command-boundary targets after coverage.
 `tests/workflow_contracts/topology_wiring_test.py` holds that wiring, including
 a negative control for each clause, so a Makefile or workflow edit that
 disconnects the gate fails the workflow contracts.

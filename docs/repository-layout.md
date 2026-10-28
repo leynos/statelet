@@ -143,6 +143,12 @@ compact and omits build output such as `target/`.
   policy selector, and both `.NOTPARALLEL` entries. The test module supplies
   the live evidence and fifteen negative controls, one per clause and one per
   `env` scope the coverage boundary reads.
+- `tests/workflow_contracts/feature_matrix_wiring_contract.py` and
+  `feature_matrix_wiring_test.py`: Guard the feature-matrix recipe and CI
+  wiring. They evaluate `make -n` output and read `ci.yml` with the strict
+  workflow reader; negative controls cover command bindings, build flags,
+  serialization, tool provisioning, test-suite inclusion, and the coverage
+  boundary.
 - `tests/workflow_contracts/mock_wiring.py`: The single test-only boundary for
   evaluating Make recipes without running them, shared by the workflow
   contracts that assert on `make -n` output.

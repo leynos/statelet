@@ -129,6 +129,7 @@ all: ## Perform a comprehensive check of code
 	+$(MAKE) typecheck
 	+$(MAKE) test
 	+$(MAKE) check-topology
+	+$(MAKE) feature-matrix
 	+$(MAKE) spelling
 
 install-build-tools: ## Install the pinned development build tools

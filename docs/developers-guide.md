@@ -50,12 +50,12 @@ guide, including its `cargo-dylint` and `dylint-link` prerequisites. Local
 installer-managed toolchain is separate from Statelet's development toolchain.
 
 Use `make all` for formatting, linting, typechecking, tests, the
-dependency-topology check, workflow contracts, and spelling. `make lint` runs
-rustdoc, Clippy, Whitaker, and the Python lint gateways. `make test` requires
-the binary-installed cargo-nextest runner and runs the Python workflow
-contracts under managed CPython 3.14, then the topology and feature-matrix
-command-boundary suites. The feature-matrix boundary suite requires
-`cargo-hack`. `make audit` derives the Rust workspace root with
+dependency-topology check, feature matrix, workflow contracts, and spelling.
+`make lint` runs rustdoc, Clippy, Whitaker, and the Python lint gateways.
+`make test` requires the binary-installed cargo-nextest runner and runs the
+Python workflow contracts under managed CPython 3.14, then the topology and
+feature-matrix command-boundary suites. The feature-matrix boundary suite
+requires `cargo-hack`. `make audit` derives the Rust workspace root with
 `cargo metadata`, extracts its manifests under the same managed interpreter,
 and runs `cargo audit` once from the workspace root. `make coverage` uses
 `cargo llvm-cov` with `lld`.
@@ -63,7 +63,7 @@ and runs `cargo audit` once from the workspace root. `make coverage` uses
 The generated `Makefile` exposes these public targets:
 
 - `make all` runs formatting checks, linting, typechecking, tests, the
-  pinned-input topology check, and spelling, in that order.
+  pinned-input topology check, the feature matrix, and spelling, in that order.
 - `make check-fmt` verifies Rust formatting and Markdown formatting.
 - `make lint` runs rustdoc, Clippy, Whitaker, Pylint, and the pinned df12
   Python lints. Rust warnings are denied.
@@ -78,6 +78,10 @@ The generated `Makefile` exposes these public targets:
   features. It requires the pinned `cargo-hack`; install it with
   `make install-cargo-hack`. Absent features such as `tracing` or `serde` are
   not checked until they are declared.
+- CI installs the pinned `cargo-hack` tool and runs `make feature-matrix` after
+  the topology check. It runs `make test-feature-matrix-command` after coverage
+  and the topology command-boundary suite, without inheriting coverage
+  instrumentation.
 - The Makefile's `_FEATURE_MATRIX_RUSTFLAGS` and `_FEATURE_MATRIX_CARGO_ARGS`
   are private to the matrix recipe. Other targets retain their own flag and
   package selection rather than depending on these variables.
