@@ -279,12 +279,13 @@ criterion.
 `tests/macro_cost_note_contract.rs` owns the private benchmark schema and its
 capability-filesystem boundary. The schema helpers stay inside this integration
 test because they encode this register and its roadmap links; do not promote
-them to a shared Markdown parser or reuse the StateName policy. The directory
-reader treats a missing notes directory as empty before Phase 4, and reports
-enumeration or file-read errors with the affected path. The contract's private
-`evidence.rs` child handles only the `Field | Value | Evidence` register. ADR
-003's separate five-column exit-register parser keeps its own schema and
-validation rules.
+them to a shared Markdown parser or reuse the StateName policy. The per-opener
+placeholder check belongs only to this contract's lexical policy; it is not a
+general Rust or Markdown parser. The directory reader treats a missing notes
+directory as empty before Phase 4, and reports enumeration or file-read errors
+with the affected path. The contract's private `evidence.rs` child handles only
+the `Field | Value | Evidence` register. ADR 003's separate five-column
+exit-register parser keeps its own schema and validation rules.
 
 The macro-cost contract keeps field names, table values and evidence prose as
 strings until validation. Unknown or duplicate fields and placeholder values

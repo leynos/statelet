@@ -27,6 +27,8 @@ const SYNTHETIC_SUCCESS: &str =
 #[case("Unavailable: TODO later")]
 #[case("Measured on <target> hardware")]
 #[case("Malformed markup < remains before <target> hardware")]
+#[case("Vec<<sha>>")]
+#[case("é<sha>")]
 #[case("repo@<sha>:path")]
 #[case("revision: <sha>")]
 #[case("macro=<sha>")]
@@ -155,4 +157,23 @@ fn malformed_register_row_identifies_input_and_width(
         "{error}"
     );
     assert!(error.contains("`|` inside cells is unsupported"), "{error}");
+}
+
+#[rstest]
+#[case("| Field | Value | Evidence |", "| Field | Value |", 2)]
+#[case("| --- | --- | --- |", "| --- | --- | --- | --- |", 4)]
+fn malformed_header_or_separator_reports_width(
+    #[case] original: &str,
+    #[case] replacement: &str,
+    #[case] count: usize,
+) {
+    let mut evidence = note(Kind::Synthetic20, 20);
+    evidence.text = evidence.text.replacen(original, replacement, 1);
+    let error = check(&template(), &open_roadmap(), &[evidence])
+        .expect_err("malformed table rows must be rejected");
+    assert!(error.contains(replacement), "{error}");
+    assert!(
+        error.contains(&format!("{count} cells; expected 3")),
+        "{error}"
+    );
 }

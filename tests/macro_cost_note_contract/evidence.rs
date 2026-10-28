@@ -48,33 +48,23 @@ fn starts_with_placeholder_marker(value: &str) -> bool {
 }
 
 fn contains_angle_placeholder(value: &str) -> bool {
-    let mut search_from = 0;
-    while let Some(open_offset) = value
-        .get(search_from..)
-        .and_then(|remaining| remaining.find('<'))
-    {
-        let open = search_from + open_offset;
-        let candidate_start = open + 1;
-        if let Some(close_offset) = value
-            .get(candidate_start..)
-            .and_then(|remaining| remaining.find('>'))
-        {
-            let close = candidate_start + close_offset;
-            let is_placeholder = match (value.get(candidate_start..close), value.get(..open)) {
-                (Some(candidate), Some(prefix)) => {
-                    !is_attached_to_path_identifier(prefix) && is_placeholder_token(candidate)
-                }
-                _ => false,
-            };
-            if is_placeholder {
-                return true;
-            }
-        }
-        // Advancing past only this opener lets malformed markup expose a
-        // later standalone placeholder instead of hiding it.
-        search_from = candidate_start;
-    }
-    false
+    // Test each opener independently so malformed markup cannot hide a later
+    // standalone placeholder.
+    value
+        .match_indices('<')
+        .any(|(open, _)| placeholder_opening_at(value, open))
+}
+
+fn placeholder_opening_at(value: &str, open: usize) -> bool {
+    let candidate_start = open + 1;
+    let Some(close_offset) = value.get(candidate_start..).and_then(|tail| tail.find('>')) else {
+        return false;
+    };
+    matches!(
+        (value.get(candidate_start..candidate_start + close_offset), value.get(..open)),
+        (Some(candidate), Some(prefix))
+            if !is_attached_to_path_identifier(prefix) && is_placeholder_token(candidate)
+    )
 }
 
 fn is_attached_to_path_identifier(prefix: &str) -> bool {
@@ -138,17 +128,8 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
     };
     let mut header_seen = false;
     for line in register_body(file)?.lines() {
-        let Some(cells) = table_cells(line) else {
+        let Some(cells) = table_cells(file, line)? else {
             continue;
-        };
-        let [field_cell, value_cell, evidence_cell] = cells.as_slice() else {
-            return Err(format!(
-                "{}: malformed register row `{}` has {} cells; expected 3; `|` inside cells is \
-                 unsupported",
-                file.path,
-                line.trim(),
-                cells.len()
-            ));
         };
         if cells == ["Field", "Value", "Evidence"] {
             if header_seen {
@@ -163,11 +144,7 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
         if !header_seen {
             return Err(format!("{}: malformed register row", file.path));
         }
-        insert_row(
-            file,
-            [*field_cell, *value_cell, *evidence_cell],
-            &mut register,
-        )?;
+        insert_row(file, cells, &mut register)?;
     }
     if !header_seen {
         return Err(format!("{}: register has no table header", file.path));
@@ -232,13 +209,27 @@ fn insert_row(
     Ok(())
 }
 
-fn table_cells(raw_line: &str) -> Option<Vec<&str>> {
+fn table_cells<'a>(file: &MarkdownFile, raw_line: &'a str) -> Result<Option<[&'a str; 3]>, String> {
     let line = raw_line.trim();
     if !line.starts_with('|') || !line.ends_with('|') {
-        return None;
+        return Ok(None);
     }
-    line.get(1..line.len().checked_sub(1)?)
-        .map(|cells| cells.split('|').map(str::trim).collect())
+    let Some(inner) = line.get(1..line.len().saturating_sub(1)) else {
+        return Ok(None);
+    };
+    let cells = inner.split('|').map(str::trim).collect::<Vec<_>>();
+    let [field, value, evidence] = cells.as_slice() else {
+        return Err(format!(
+            concat!(
+                "{}: malformed register row `{}` has {} cells; expected 3; ",
+                "`|` inside cells is unsupported"
+            ),
+            file.path,
+            line,
+            cells.len()
+        ));
+    };
+    Ok(Some([*field, *value, *evidence]))
 }
 
 pub(super) fn check_fields(file: &MarkdownFile, fields: &[String]) -> Result<(), String> {

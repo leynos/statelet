@@ -280,7 +280,19 @@ and obtain explicit approval before proceeding.
     passed formatting, lint, tests, typecheck, Markdown lint, spelling, Nixie,
     and diff checks. Nextest passed 274 cases with three skipped; one doctest,
     432 workflow cases plus five subtests, and three topology-command cases
-    passed. Commit and follow-up review remain.
+    passed. Commit `5eb889f` recorded these fixes. Its local review suggested a
+    simpler per-opener placeholder scan; Wyvern and architecture reviewers
+    confirmed equivalent traversal. CodeScene also flagged `parse_register`
+    at complexity nine; the existing cell-decoding helper now validates row
+    width before register sequencing. The local CodeScene delta clears the
+    complexity finding and retains String Heavy advisories: 44.4% across 18
+    root functions and 45.0% across 22 evidence functions against 39%. Expert
+    review retains those string inputs for the private Markdown boundary;
+    hosted-gate disposition remains separate. The refactor passed formatting,
+    lint, tests, typecheck, Markdown lint, spelling, Nixie, and diff checks.
+    Nextest passed 278 cases with three skipped; one doctest, 432 workflow
+    cases plus five subtests, and three topology-command cases passed. A commit
+    and fresh review remain.
 
 ## Surprises & discoveries
 
