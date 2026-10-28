@@ -28,6 +28,10 @@ INHERITED = "--cfg inherited_from_caller"
 COMPILE_COMMANDS = {
     "build", "check", "clippy", "doc", "test", "llvm-cov", "nextest-run", "hack-check",
 }
+NESTED_CARGO_COMMANDS = {
+    "hack": {"--version": "hack-version", "check": "hack-check"},
+    "nextest": {"--version": "nextest-version", "run": "nextest-run"},
+}
 DEVELOPMENT_TARGETS = [
     "test", "typecheck", "lint", "build", "feature-matrix", "test-feature-matrix-command",
 ]
@@ -79,19 +83,10 @@ def _expanded(value: str, inherited: str | None) -> list[str]:
 def _cargo_kind(words: list[str], subcommand_index: int) -> str:
     """Classify one Cargo subcommand, including Nextest's version probe."""
     subcommand = words[subcommand_index]
-    if subcommand == "hack":
+    nested_commands = NESTED_CARGO_COMMANDS.get(subcommand)
+    if nested_commands is not None:
         following = words[subcommand_index + 1] if subcommand_index + 1 < len(words) else ""
-        return {"--version": "hack-version", "check": "hack-check"}.get(following, "hack-other")
-    if subcommand == "nextest":
-        following = (
-            words[subcommand_index + 1]
-            if subcommand_index + 1 < len(words)
-            else ""
-        )
-        return {
-            "--version": "nextest-version",
-            "run": "nextest-run",
-        }.get(following, "nextest-other")
+        return nested_commands.get(following, f"{subcommand}-other")
     return subcommand if subcommand in COMPILE_COMMANDS else f"cargo-{subcommand}"
 
 

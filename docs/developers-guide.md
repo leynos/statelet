@@ -78,6 +78,9 @@ The generated `Makefile` exposes these public targets:
   features. It requires the pinned `cargo-hack`; install it with
   `make install-cargo-hack`. Absent features such as `tracing` or `serde` are
   not checked until they are declared.
+- The Makefile's `_FEATURE_MATRIX_RUSTFLAGS` and `_FEATURE_MATRIX_CARGO_ARGS`
+  are private to the matrix recipe. Other targets retain their own flag and
+  package selection rather than depending on these variables.
 - `make test-feature-matrix-command` runs the ignored command-boundary cases
   sequentially. Its private helper under `tests/feature_matrix_command/` is
   owned by that suite alone; it invokes the real Make target against isolated

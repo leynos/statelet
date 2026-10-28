@@ -12,7 +12,7 @@ mod optional;
 
 use std::process::{Command, Output};
 
-use assertions::{assert_direct_modes, hack_rows, has_arg, has_feature};
+use assertions::{assert_invocation_contract, hack_rows, has_arg, has_feature};
 use camino::Utf8Path;
 use cap_std::{ambient_authority, fs::Dir};
 use googletest::prelude::*;
@@ -136,49 +136,7 @@ fn required_rows_run(
     drop(fixture);
     assert_verdict(&output, true, "healthy fixture should pass");
     assert_eq!(after, before);
-    let matrix_commands: Vec<_> = invocations
-        .iter()
-        .filter(|args| {
-            args.first().is_some_and(|arg| arg == "check")
-                || (args.first().is_some_and(|arg| arg == "hack")
-                    && args.get(1).is_some_and(|arg| arg == "check"))
-        })
-        .collect();
-    assert_that!(matrix_commands.len(), eq(4));
-    for command in matrix_commands {
-        assert_that!(has_arg(command, "--lib"), eq(true));
-        assert_that!(
-            command
-                .windows(2)
-                .any(|pair| matches!(pair, [flag, value] if flag == "-p" && value == "statelet")),
-            eq(true)
-        );
-        assert_that!(
-            command.windows(2).any(|pair| matches!(pair, [flag, value]
-                if flag == "--manifest-path" && value.ends_with("fixture with spaces/Cargo.toml"))),
-            eq(true)
-        );
-    }
-    assert_direct_modes(&invocations);
-    let rows = hack_rows(&output);
-    assert_that!(rows.is_empty(), eq(false), "{}", output_text(&output));
-    for feature in features {
-        assert_that!(
-            rows.iter()
-                .any(|row| has_arg(row, "--no-default-features") && has_feature(row, feature)),
-            eq(true),
-            "missing isolated {feature} row: {rows:?}"
-        );
-    }
-    if label == "default" {
-        assert_that!(rows.iter().any(|row| has_feature(row, "default")), eq(true));
-    } else if features.is_empty() {
-        assert_that!(
-            rows.iter()
-                .any(|row| !has_arg(row, "--no-default-features")),
-            eq(true)
-        );
-    }
+    assert_invocation_contract(&invocations, &output, label, features);
     Ok(())
 }
 

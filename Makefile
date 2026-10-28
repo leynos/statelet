@@ -214,19 +214,15 @@ test-topology-command: check-nextest ## Run the topology command boundary cases 
 		$(CARGO) nextest run --test topology_command --run-ignored only \
 		--no-tests fail --test-threads=1
 
+_FEATURE_MATRIX_RUSTFLAGS = RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)"
+_FEATURE_MATRIX_CARGO_ARGS = --manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
+
 feature-matrix: check-cargo-hack ## Check the library with each supported feature configuration
-	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
-		$(CARGO) check --no-default-features --lib \
-		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
-	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
-		$(CARGO) check --lib \
-		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
-	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
-		$(CARGO) hack check --each-feature --optional-deps --exclude-all-features --lib \
-		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
-	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
-		$(CARGO) check --all-features --lib \
-		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
+	$(_FEATURE_MATRIX_RUSTFLAGS) $(CARGO) check --no-default-features --lib $(_FEATURE_MATRIX_CARGO_ARGS)
+	$(_FEATURE_MATRIX_RUSTFLAGS) $(CARGO) check --lib $(_FEATURE_MATRIX_CARGO_ARGS)
+	$(_FEATURE_MATRIX_RUSTFLAGS) $(CARGO) hack check --each-feature --optional-deps \
+		--exclude-all-features --lib $(_FEATURE_MATRIX_CARGO_ARGS)
+	$(_FEATURE_MATRIX_RUSTFLAGS) $(CARGO) check --all-features --lib $(_FEATURE_MATRIX_CARGO_ARGS)
 
 # These boundary cases nest the real feature-matrix command. Pass the caller's
 # original flags separately so the nested Make target composes repository flags

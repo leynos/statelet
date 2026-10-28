@@ -59,3 +59,68 @@ pub(super) fn assert_direct_modes(invocations: &[Vec<String>]) {
         eq(1)
     );
 }
+
+/// Assert the selected modes, package binding, and isolated feature rows.
+pub(super) fn assert_invocation_contract(
+    invocations: &[Vec<String>],
+    output: &Output,
+    label: &str,
+    features: &[&str],
+) {
+    let commands: Vec<_> = invocations
+        .iter()
+        .filter(|args| is_matrix_command(args))
+        .collect();
+    assert_that!(commands.len(), eq(4));
+    for command in commands {
+        assert_command_binding(command);
+    }
+    assert_direct_modes(invocations);
+    assert_isolated_rows(output, label, features);
+}
+
+/// Identify the direct Cargo commands used by the matrix recipe.
+fn is_matrix_command(args: &[String]) -> bool {
+    args.first().is_some_and(|arg| arg == "check")
+        || (args.first().is_some_and(|arg| arg == "hack")
+            && args.get(1).is_some_and(|arg| arg == "check"))
+}
+
+/// Every matrix command names the fixture library and its pinned manifest.
+fn assert_command_binding(command: &[String]) {
+    assert_that!(has_arg(command, "--lib"), eq(true));
+    assert_that!(
+        command
+            .windows(2)
+            .any(|pair| matches!(pair, [flag, value] if flag == "-p" && value == "statelet")),
+        eq(true)
+    );
+    assert_that!(
+        command.windows(2).any(|pair| matches!(pair, [flag, value]
+            if flag == "--manifest-path" && value.ends_with("fixture with spaces/Cargo.toml"))),
+        eq(true)
+    );
+}
+
+/// Check independently selected features and the relevant default row.
+fn assert_isolated_rows(output: &Output, label: &str, features: &[&str]) {
+    let rows = hack_rows(output);
+    assert_that!(rows.is_empty(), eq(false), "{}", output_text(output));
+    for feature in features {
+        assert_that!(
+            rows.iter()
+                .any(|row| has_arg(row, "--no-default-features") && has_feature(row, feature)),
+            eq(true),
+            "missing isolated {feature} row: {rows:?}"
+        );
+    }
+    if label == "default" {
+        assert_that!(rows.iter().any(|row| has_feature(row, "default")), eq(true));
+    } else if features.is_empty() {
+        assert_that!(
+            rows.iter()
+                .any(|row| !has_arg(row, "--no-default-features")),
+            eq(true)
+        );
+    }
+}

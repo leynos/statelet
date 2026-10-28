@@ -392,7 +392,12 @@ planning-only document.
       `bf5545c`. CodeRabbit reviewed all 11 changed files and found Act
       provisioning, fixture cleanup and path-convention gaps. The direct
       `make all` matrix gate is already scheduled for EP-M2.
-- [ ] Validate and reassess the EP-M1 review repairs.
+- [x] (2026-10-28) The EP-M1 review repairs and subsequent feature-mode
+      corrections passed the full gate sequence before reassessment.
+- [x] (2026-10-28) The EP-M1 reassessment reviewed all 15 paths and identified
+      three maintainability refinements: share matrix recipe arguments, reuse
+      Cargo subcommand dispatch, and split the row assertions into helpers.
+- [ ] Validate and reassess the EP-M1 refactoring.
 - [ ] EP-M1: implement and validate the local command.
 - [ ] EP-M2: integrate routine gates and mark 1.2.2 done.
 
@@ -527,3 +532,6 @@ topology serialization contract repair. Full EP-M1 gates remain pending.
 Revision 9 (2026-10-28): Recorded the passing EP-M1 gates, milestone review,
 and the in-scope Act provisioning and fixture-harness repairs. Their validation
 and review remain pending.
+
+Revision 10 (2026-10-28): Recorded the reassessment and its three bounded
+refactoring findings. The refactored candidate requires fresh validation.
