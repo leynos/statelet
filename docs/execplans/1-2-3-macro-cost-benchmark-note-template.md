@@ -14,7 +14,7 @@ spacing finding that matches the explicit V2 verification requirement; that
 correction passed the full validation sequence. The follow-up review of
 `1a3581b` found two further contract gaps. Proposed remediation is recorded
 below. The user approved the one-path variance on 2026-10-28, before the review
-corrections resumed.
+corrections resumed. Post-rebase validation passed; a fresh review remains.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -264,7 +264,15 @@ and obtain explicit approval before proceeding.
     `make test`, `make markdownlint`, `make spelling`, `make nixie`, and diff
     checks. Nextest passed 272 cases with three skipped; one doctest, 432
     workflow cases plus five subtests, and three topology-command cases passed.
-    A commit and fresh local review remain.
+    Commit `d414986` recorded the correction before rebase.
+  - On 2026-10-28, rebase onto `origin/main` at
+    `7f5a3f0dd7614902dadc4f89a915d6a0edf6d403` replayed all 15 branch commits
+    without conflicts. Range-diff matched every patch; the tree difference from
+    the saved branch contains only the target's `rstest` and lockfile updates.
+    Post-rebase formatting, lint, tests, typecheck, Markdown lint, spelling,
+    Nixie, and diff checks passed. Nextest passed 272 cases with three skipped;
+    one doctest, 432 workflow cases plus five subtests, and three
+    topology-command cases passed. A fresh local review remains.
 
 ## Surprises & discoveries
 
