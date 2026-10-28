@@ -15,7 +15,7 @@ pub(super) fn hack_rows(output: &Output) -> Vec<Vec<String>> {
 fn hack_rows_from_text(text: &str) -> Vec<Vec<String>> {
     text.lines()
         .filter_map(|line| line.split_once("running `"))
-        .filter(|(prefix, _)| is_info_status(prefix))
+        .filter(|(prefix, _)| *prefix == "::group::" || is_info_status(prefix))
         .filter_map(|(_, rest)| rest.split_once('`'))
         .map(|(command, _)| command.split_whitespace().map(str::to_owned).collect())
         .collect()
@@ -173,6 +173,7 @@ mod tests {
     #[rstest]
     #[case("info: running `cargo check --features renamed`")]
     #[case("\x1b[1minfo\x1b[1m:\x1b[0m running `cargo check --features renamed`")]
+    #[case("::group::running `cargo check --features renamed`")]
     fn parses_uncoloured_and_coloured_status(#[case] line: &str) {
         assert_eq!(
             hack_rows_from_text(line),
@@ -186,6 +187,8 @@ mod tests {
     #[case("\x1b[1minfox\x1b[1m:\x1b[0m running `cargo check`")]
     #[case("info\x1b[1\x01m: running `cargo check`")]
     #[case("info\x1b[1: running `cargo check`")]
+    #[case("::group::not running `cargo check`")]
+    #[case("::groupx::running `cargo check`")]
     fn rejects_other_status_labels(#[case] line: &str) {
         assert_eq!(hack_rows_from_text(line), Vec::<Vec<String>>::new());
     }

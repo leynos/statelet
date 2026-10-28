@@ -75,12 +75,20 @@ impl Fixture {
 
     /// Runs the real Make target with Cargo redirected through the recording
     /// wrapper.
+    pub(super) fn run(&self, version_override: Option<&str>) -> Result<process::Output, String> {
+        self.run_with_ci_output(version_override, false)
+    }
+
+    /// Runs the fixture with GitHub Actions grouping and forced colour.
     #[expect(
         clippy::disallowed_methods,
-        reason = "The command boundary must preserve caller RUSTFLAGS from the test process \
-                  without mutating global state."
+        reason = "The command boundary must preserve caller RUSTFLAGS without global mutation."
     )]
-    pub(super) fn run(&self, version_override: Option<&str>) -> Result<process::Output, String> {
+    pub(super) fn run_with_ci_output(
+        &self,
+        version_override: Option<&str>,
+        ci_output: bool,
+    ) -> Result<process::Output, String> {
         let rustflags = std::env::var_os("STATELET_FEATURE_MATRIX_CALLER_FLAGS")
             .or_else(|| std::env::var_os("RUSTFLAGS"));
         let inherited_path = std::env::var_os("PATH").unwrap_or_default();
@@ -89,6 +97,10 @@ impl Fixture {
         let path = std::env::join_paths(paths)
             .map_err(|error| format!("cannot construct fixture PATH: {error}"))?;
         let mut command = Command::new("make");
+        if ci_output {
+            command.env("GITHUB_ACTIONS", "true");
+            command.env("CARGO_TERM_COLOR", "always");
+        }
         command
             .arg("feature-matrix")
             .current_dir(&self.package)
