@@ -508,6 +508,14 @@ its local score to 10.0 without suppressions. Its string-heavy findings on Rust
 command fixtures refer to textual arguments intrinsic to those tests;
 introducing wrappers solely to change that metric would obscure their purpose.
 
+The user subsequently authorized CodeScene suppression. The remaining
+module-level string-argument findings are disabled only for the two affected
+test files in `.codescene/code-health-rules.json`; the rule remains active
+elsewhere. These tests intentionally inspect textual Cargo arguments and
+output. Local CodeScene 1.0.52 reports both files at 10.0 with no findings
+under the scoped configuration. Hosted validation remains the authoritative
+check.
+
 Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
 `make lint`, `make typecheck`, `make test`, `make markdownlint` (including
 spelling), and `make nixie`. Tests passed with 206 nextest cases, one doctest,
