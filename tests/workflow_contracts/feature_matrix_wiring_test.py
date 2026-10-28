@@ -116,6 +116,20 @@ MUTATIONS: list[tuple[str, Mutator, str]] = [
         "matrix command suite must run ignored",
     ),
     (
+        "threads-near-miss",
+        lambda w: replace(
+            w, test_recipe=w.test_recipe.replace("--test-threads=1", "--test-threads=10")
+        ),
+        "matrix command suite must run ignored",
+    ),
+    (
+        "no-default-all",
+        lambda w: _row_replace(
+            w, 0, "--no-default-features", "--no-default-features --all-features"
+        ),
+        "no-default row must disable",
+    ),
+    (
         "serialization",
         lambda w: replace(
             w, makefile=w.makefile.replace("feature-matrix test-feature-matrix-command", "")
@@ -170,6 +184,16 @@ for row_index, row_name in enumerate(ROWS):
             (
                 f"warnings-{row_name}",
                 lambda w, i=row_index: _row_replace(w, i, "-D warnings", ""),
+                f"{row_name} row must use warning",
+            ),
+            (
+                f"warnings-near-miss-{row_name}",
+                lambda w, i=row_index: _row_replace(w, i, "-D warnings", "-D warnings_extra"),
+                f"{row_name} row must use warning",
+            ),
+            (
+                f"threads-near-miss-{row_name}",
+                lambda w, i=row_index: _row_replace(w, i, "-Zthreads=8", "-Zthreads=80"),
                 f"{row_name} row must use warning",
             ),
             (

@@ -104,13 +104,23 @@ def _has_repository_binding(words: list[str]) -> bool:
     )
 
 
-def _binding_findings(name: str, words: list[str], line: str) -> list[str]:
+def _has_development_flags(words: list[str]) -> bool:
+    """Read the assigned flags as arguments, ignoring inherited shell expansion."""
+    assignment = next((word for word in words if word.startswith("RUSTFLAGS=")), "")
+    value = re.sub(r"\$\{[^}]*\}", "", assignment.removeprefix("RUSTFLAGS="))
+    flags = shlex.split(value)
+    return "-Zthreads=8" in flags and any(
+        left == "-D" and right == "warnings" for left, right in zip(flags, flags[1:])
+    )
+
+
+def _binding_findings(name: str, words: list[str]) -> list[str]:
     """Check one row's package, manifest, library, and development flags."""
     problems = []
     if not _has_repository_binding(words):
         problems.append(f"{name} row must bind repository manifest and package")
     # build_standard_test covers platform-dependent linker selection.
-    if any(flag not in line for flag in ("-D warnings", "-Zthreads=8")):
+    if not _has_development_flags(words):
         problems.append(f"{name} row must use warning and development flags")
     return problems
 
@@ -120,7 +130,7 @@ def _feature_findings(name: str, words: list[str]) -> list[str]:
     policies = {
         "no-default": (
             {"--no-default-features"},
-            set(),
+            {"--all-features"},
             "no-default row must disable default features",
         ),
         "default": (
@@ -148,7 +158,7 @@ def _matrix_findings(recipe: str) -> list[str]:
     problems: list[str] = []
     for name, line in zip(ROWS, lines, strict=True):
         words = shlex.split(line)
-        problems.extend(_binding_findings(name, words, line))
+        problems.extend(_binding_findings(name, words))
         problems.extend(_feature_findings(name, words))
     return problems
 
@@ -169,6 +179,15 @@ def _suite_ordered(suite: list[int], topology: int) -> bool:
     return len(suite) == 1 and 0 <= topology < suite[0]
 
 
+def _has_suite_flags(words: list[str]) -> bool:
+    """Return whether Nextest selects ignored tests, fails closed, and serializes."""
+    return (
+        _flag_value(words, "--run-ignored") == "only"
+        and _flag_value(words, "--no-tests") == "fail"
+        and "--test-threads=1" in words
+    )
+
+
 def _test_findings(recipe: str) -> list[str]:
     """Check that the ignored boundary suite follows topology and fails closed."""
     lines = recipe_lines(recipe)
@@ -178,10 +197,8 @@ def _test_findings(recipe: str) -> list[str]:
     suite = [i for i, line in enumerate(lines) if "--test feature_matrix_command" in line]
     if not _suite_ordered(suite, topology):
         return ["make test must run the matrix command suite after topology"]
-    if any(
-        flag not in lines[suite[0]]
-        for flag in ("--run-ignored only", "--no-tests fail", "--test-threads=1")
-    ):
+    words = shlex.split(lines[suite[0]])
+    if not _has_suite_flags(words):
         return ["matrix command suite must run ignored tests serially and fail closed"]
     return []
 

@@ -15,10 +15,32 @@ pub(super) fn hack_rows(output: &Output) -> Vec<Vec<String>> {
 fn hack_rows_from_text(text: &str) -> Vec<Vec<String>> {
     text.lines()
         .filter_map(|line| line.split_once("running `"))
-        .filter(|(prefix, _)| prefix.contains("info"))
+        .filter(|(prefix, _)| is_info_status(prefix))
         .filter_map(|(_, rest)| rest.split_once('`'))
         .map(|(command, _)| command.split_whitespace().map(str::to_owned).collect())
         .collect()
+}
+
+/// Accept the complete cargo-hack status label, including ANSI colour codes.
+fn is_info_status(prefix: &str) -> bool {
+    let mut characters = prefix.chars();
+    let mut label = String::new();
+    while let Some(character) = characters.next() {
+        if character == '\x1b' {
+            if characters.next() != Some('[') {
+                return false;
+            }
+            if !characters
+                .by_ref()
+                .any(|value| ('@'..='~').contains(&value))
+            {
+                return false;
+            }
+        } else {
+            label.push(character);
+        }
+    }
+    label.trim() == "info:"
 }
 
 /// Check for a whole argument without matching substrings.
@@ -147,5 +169,13 @@ mod tests {
             hack_rows_from_text(line),
             vec![vec!["cargo", "check", "--features", "renamed"]]
         );
+    }
+
+    #[rstest]
+    #[case("notinfo: running `cargo check`")]
+    #[case("infox: running `cargo check`")]
+    #[case("\x1b[1minfox\x1b[1m:\x1b[0m running `cargo check`")]
+    fn rejects_other_status_labels(#[case] line: &str) {
+        assert_eq!(hack_rows_from_text(line), Vec::<Vec<String>>::new());
     }
 }
