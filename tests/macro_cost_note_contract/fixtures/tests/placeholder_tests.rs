@@ -89,14 +89,12 @@ fn marked_note_accepts_budget_inequalities_with_both_angle_characters() {
 }
 
 #[rstest]
-#[case(
-    "  - Selection: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n  - Success: \
-     complete"
-)]
-#[case(
-    "  - Success: complete\n  - Related: \
-     [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"
-)]
+#[case(concat!("  - Selection: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)",
+    "\n  - Success: complete"))]
+#[case(concat!("  - Success: complete\n  - Related: ",
+    "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"))]
+#[case(concat!("  - Success: complete\n\n",
+    "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"))]
 fn completed_claim_rejects_links_in_sibling_bullets(#[case] replacement: &str) {
     let roadmap = roadmap_with_claims(true, false).replace(SYNTHETIC_SUCCESS, replacement);
     let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
@@ -108,6 +106,10 @@ fn completed_claim_rejects_links_in_sibling_bullets(#[case] replacement: &str) {
 #[case("  - Selection: complete")]
 #[case(concat!("  - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)",
     "\n  - Success: duplicate"))]
+#[case(concat!("  - Evidence is still pending.\n- Unrelated context\n",
+    "  - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"))]
+#[case(concat!("  - Related example:\n",
+    "    - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"))]
 fn completed_claim_requires_one_success_criterion(#[case] replacement: &str) {
     let roadmap = roadmap_with_claims(true, false).replace(SYNTHETIC_SUCCESS, replacement);
     let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
@@ -115,16 +117,17 @@ fn completed_claim_requires_one_success_criterion(#[case] replacement: &str) {
     assert!(error.contains("exactly one Success criterion"), "{error}");
 }
 
-#[test]
-fn completed_claim_accepts_wrapped_success_link_and_ignores_other_links() {
-    let replacement = concat!(
-        "  - Context: [other](validation-notes/other.md)\n",
-        "  - Success: selected\n",
-        "    [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)",
-    );
+#[rstest]
+#[case(concat!("  - Context: [other](validation-notes/other.md)\n",
+    "  - Success: selected\n",
+    "    [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"))]
+#[case(concat!("  - Related example:\n",
+    "    - Success: [other](validation-notes/other.md)\n",
+    "  - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)"))]
+fn completed_claim_accepts_direct_success_and_ignores_other_links(#[case] replacement: &str) {
     let roadmap = roadmap_with_claims(true, false).replace(SYNTHETIC_SUCCESS, replacement);
     check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
-        .expect("only the wrapped success criterion selects evidence");
+        .expect("only the direct success criterion selects evidence");
 }
 
 #[test]
@@ -136,18 +139,6 @@ fn publication_claim_rejects_one_note_link_outside_success() {
     let error = check(&template(), &roadmap, &notes)
         .expect_err("both selected links must occur in the success criterion");
     assert!(error.contains("must link exactly 2 cost note"), "{error}");
-}
-
-#[test]
-fn completed_claim_rejects_outdented_link_after_success() {
-    let replacement = concat!(
-        "  - Success: complete\n\n",
-        "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)",
-    );
-    let roadmap = roadmap_with_claims(true, false).replace(SYNTHETIC_SUCCESS, replacement);
-    let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
-        .expect_err("an outdented paragraph must not select evidence");
-    assert!(error.contains("must link exactly 1 cost note"), "{error}");
 }
 
 #[rstest]

@@ -299,7 +299,16 @@ and obtain explicit approval before proceeding.
     candidate passed formatting, lint, tests, typecheck, Markdown lint,
     spelling, Nixie, and diff checks. Nextest passed 279 cases with three
     skipped; 432 workflow cases plus five subtests and three topology-command
-    cases passed. Expert verification and a fresh local review remain.
+    cases passed. Expert verification confirmed that fix, then identified a
+    related list-boundary cases: a non-checkbox sibling could extend the task
+    block, and a nested `Success:` could impersonate the task criterion. Bound
+    the task to the next top-level dash item and select only its direct-child
+    criterion; add negative and positive controls. The architecture reviewer
+    confirmed both boundaries, including wrapped direct-child text. Formatting,
+    lint, tests, typecheck, Markdown lint, spelling, Nixie, and diff checks all
+    passed. Nextest passed 282 cases with three skipped; one doctest, 432
+    workflow cases plus five subtests, and three topology-command cases passed.
+    A commit and a fresh local review remain.
 
 ## Surprises & discoveries
 

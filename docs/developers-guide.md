@@ -274,7 +274,8 @@ to a task-named file in `docs/validation-notes/`. The benchmark contract uses
 the real `mdtablefix` and synthetic 20-transition comparisons as independent
 notes; the G3 roadmap task selects both notes for the same macro and design
 revisions. Put selected-note links in each completed task's `Success:`
-criterion.
+criterion. The private roadmap parser treats the least-indented child dash
+bullets as direct task items; a nested `Success:` does not select evidence.
 
 `tests/macro_cost_note_contract.rs` owns the private benchmark schema and its
 capability-filesystem boundary. The schema helpers stay inside this integration

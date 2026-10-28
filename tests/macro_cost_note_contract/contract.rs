@@ -201,10 +201,23 @@ fn check_claim(
 
 fn linked_note_paths(task: &Task) -> Result<Vec<String>, String> {
     let lines = task.text.lines().collect::<Vec<_>>();
+    let child_indent = lines
+        .iter()
+        .skip(1)
+        .filter_map(|line| {
+            let trimmed = line.trim_start();
+            trimmed
+                .starts_with("- ")
+                .then_some(line.len() - trimmed.len())
+        })
+        .min();
     let criteria = lines
         .iter()
         .enumerate()
-        .filter(|(_, line)| line.trim_start().starts_with("- Success:"))
+        .filter(|(_, line)| {
+            let trimmed = line.trim_start();
+            Some(line.len() - trimmed.len()) == child_indent && trimmed.starts_with("- Success:")
+        })
         .collect::<Vec<_>>();
     let [(start, criterion)] = criteria.as_slice() else {
         return Err(format!(

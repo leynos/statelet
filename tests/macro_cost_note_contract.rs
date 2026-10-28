@@ -108,7 +108,7 @@ fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
         .iter()
         .enumerate()
         .skip(start + 1)
-        .find_map(|(index, line)| (line.starts_with("- [") || is_heading(line)).then_some(index))
+        .find_map(|(index, line)| (line.starts_with("- ") || is_heading(line)).then_some(index))
         .unwrap_or(lines.len());
     Ok(Task {
         id: id.to_owned(),
