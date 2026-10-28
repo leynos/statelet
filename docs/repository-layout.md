@@ -128,6 +128,8 @@ compact and omits build output such as `target/`.
   invocations through a test-owned wrapper, passes caller flags through the
   dedicated test environment variable, and removes owned roots on exit. It is
   not a shared runtime utility.
+- `tests/feature_matrix_command/optional.rs`: Checks the matrix behaviour when
+  Cargo's `dep:` feature syntax suppresses an implicit dependency feature.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
 - `tests/workflow_contracts/topology_wiring_contract.py` and

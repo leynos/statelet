@@ -5,6 +5,8 @@
 
 #[path = "feature_matrix_command/harness.rs"]
 mod harness;
+#[path = "feature_matrix_command/optional.rs"]
+mod optional;
 
 use std::process::{Command, Output};
 

@@ -215,7 +215,8 @@ not add speculative proof bodies, `assume`, `admit`, or trusted shortcuts.
 Use `rstest` fixtures and parameterized end-to-end cases in
 `tests/feature_matrix_command.rs`, with private helpers in its sibling folder.
 Cover no features, only tracing, only serde, both, a non-empty default, and an
-implicit optional dependency feature. Include fixture-only
+implicit optional dependency feature. Also cover an explicit `dep:` feature,
+which suppresses the dependency's implicit feature. Include fixture-only
 `default = ["baseline"]`, `baseline = []`, `tracing = []`, and `serde = []` to
 make the five required rows distinguishable. These fixture features must never
 be added to Statelet's manifest.
