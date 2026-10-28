@@ -130,6 +130,8 @@ compact and omits build output such as `target/`.
   not a shared runtime utility.
 - `tests/feature_matrix_command/optional.rs`: Checks the matrix behaviour when
   Cargo's `dep:` feature syntax suppresses an implicit dependency feature.
+- `tests/feature_matrix_command/assertions.rs`: Interprets recorded Cargo
+  invocations for the command-boundary suite's configuration assertions.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
 - `tests/workflow_contracts/topology_wiring_contract.py` and

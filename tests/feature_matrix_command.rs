@@ -3,6 +3,8 @@
 //! These ignored cases run the real Make target against isolated packages.
 //! The dedicated target runs them serially after ordinary tests and coverage.
 
+#[path = "feature_matrix_command/assertions.rs"]
+mod assertions;
 #[path = "feature_matrix_command/harness.rs"]
 mod harness;
 #[path = "feature_matrix_command/optional.rs"]
@@ -10,6 +12,7 @@ mod optional;
 
 use std::process::{Command, Output};
 
+use assertions::{assert_direct_modes, hack_rows, has_arg, has_feature};
 use camino::Utf8Path;
 use cap_std::{ambient_authority, fs::Dir};
 use googletest::prelude::*;
@@ -56,24 +59,6 @@ fn assert_verdict(output: &Output, success: bool, message: &str) {
         assert_that!(text.as_str(), contains_substring(message));
         assert_that!(text.contains("feature matrix passed"), eq(false));
     }
-}
-
-/// Return the individual Cargo commands reported by cargo-hack.
-fn hack_rows(output: &Output) -> Vec<Vec<String>> {
-    output_text(output)
-        .lines()
-        .filter_map(|line| line.split_once("info: running `"))
-        .filter_map(|(_, rest)| rest.split_once('`'))
-        .map(|(command, _)| command.split_whitespace().map(str::to_owned).collect())
-        .collect()
-}
-
-fn has_arg(command: &[String], arg: &str) -> bool { command.iter().any(|word| word == arg) }
-
-fn has_feature(command: &[String], feature: &str) -> bool {
-    command
-        .windows(2)
-        .any(|pair| matches!(pair, [flag, value] if flag == "--features" && value == feature))
 }
 
 /// Inspect a fixture's parent after the fixture has been dropped.
@@ -159,7 +144,7 @@ fn required_rows_run(
                     && args.get(1).is_some_and(|arg| arg == "check"))
         })
         .collect();
-    assert_that!(matrix_commands.len(), eq(3));
+    assert_that!(matrix_commands.len(), eq(4));
     for command in matrix_commands {
         assert_that!(has_arg(command, "--lib"), eq(true));
         assert_that!(
@@ -174,14 +159,7 @@ fn required_rows_run(
             eq(true)
         );
     }
-    let no_default = invocations.iter().filter(|args| {
-        args.first().is_some_and(|arg| arg == "check") && has_arg(args, "--no-default-features")
-    });
-    assert_that!(no_default.count(), eq(1));
-    let all = invocations.iter().filter(|args| {
-        args.first().is_some_and(|arg| arg == "check") && has_arg(args, "--all-features")
-    });
-    assert_that!(all.count(), eq(1));
+    assert_direct_modes(&invocations);
     let rows = hack_rows(&output);
     assert_that!(rows.is_empty(), eq(false), "{}", output_text(&output));
     for feature in features {

@@ -157,30 +157,31 @@ the installed version exactly and fails before matrix work if missing or
 mismatched, naming expected and actual versions and `make install-cargo-hack`
 as the repair command. Matrix execution must not install tools implicitly.
 
-The three sequential commands, shown without Make's compiler environment, are:
+The four sequential commands, shown without Make's compiler environment, are:
 
 ```sh
 cargo check --no-default-features --lib --manifest-path "$PWD/Cargo.toml" -p statelet
+cargo check --lib --manifest-path "$PWD/Cargo.toml" -p statelet
 cargo hack check --each-feature --optional-deps --exclude-all-features --lib \
   --manifest-path "$PWD/Cargo.toml" -p statelet
 cargo check --all-features --lib --manifest-path "$PWD/Cargo.toml" -p statelet
 ```
 
-Use `$(CARGO)` and `$(BUILD_JOBS)` in all three recipes. Each binds the same
+Use `$(CARGO)` and `$(BUILD_JOBS)` in all four recipes. Each binds the same
 absolute `$(CURDIR)/Cargo.toml` and `-p statelet`. Apply the existing
 warning-denying `RUSTFLAGS` composition and `STANDARD_RUSTFLAGS` once per
 subprocess, preserving caller flags. Do not forward `CARGO_FLAGS`,
 `TEST_FLAGS`, or arbitrary matrix feature arguments. Add the two matrix targets
 to `.NOTPARALLEL`.
 
-cargo-hack discovers declared features, including future `tracing` and `serde`,
-and supplies the default check. The explicit first and final commands own the
-no-default and all-feature modes even when no features exist. Absent optional
-features have no invented invocation; the guide explicitly states that they are
-not validated until declared. Retain upstream command diagnostics instead of
-creating a stable output format or parsing human-readable logs in production. A
-success summary, if added, must describe only declared configurations and must
-never appear after a failing child.
+cargo-hack discovers declared features, including future `tracing` and `serde`.
+The explicit Cargo commands own the no-default, default, and all-feature modes
+even when default features are absent. Absent optional features have no
+invented invocation; the guide explicitly states that they are not validated
+until declared. Retain upstream command diagnostics instead of creating a
+stable output format or parsing human-readable logs in production. A success
+summary, if added, must describe only declared configurations and must never
+appear after a failing child.
 
 Fixtures run a copy of the real Makefile in isolated package roots, with the
 existing build-tool preflight inputs available there. Do not introduce a
@@ -227,10 +228,11 @@ diagnostic invocation records, asserting semantic argument sets rather than
 complete output snapshots. The forwarding executable must delegate to real
 Cargo for compilation; pure command doubles alone cannot discharge V1. Assert
 no-default, default, tracing-only, serde-only, and all-feature modes, including
-disabled defaults on isolated rows. Validate zero/one-feature all-feature
-execution explicitly. This finite witness set and V2's failures prevent success
-from an empty matrix. Run `make test-feature-matrix-command`; every expected
-row must be witnessed and all healthy fixtures must pass.
+disabled defaults on isolated rows. Witness explicit no-default and default
+commands for each fixture and validate zero/one-feature all-feature execution
+explicitly. This finite witness set and V2's failures prevent success from an
+empty matrix. Run `make test-feature-matrix-command`; every expected row must
+be witnessed and all healthy fixtures must pass.
 
 ### V2: Failure propagation and non-vacuity
 
@@ -291,7 +293,7 @@ After approval, re-read the current manifest, Makefile, and conformance
 sources. Run the baseline gates below and record their results. Sweep existing
 helpers before extraction. Add the smallest command-boundary tests first and
 observe failure because the target is absent. Keep red results as evidence, not
-as a commit. Implement the pinned installer/preflight and the two-command
+as a commit. Implement the pinned installer/preflight and the four-command
 recipe, then pass V1–V3. Add a serial ignored-test entrypoint patterned on
 `test-topology-command`, using `--run-ignored only --no-tests fail` and one
 test thread. Wire it into `make test` in this same milestone so tests cannot
@@ -443,6 +445,11 @@ the no-default mode separately when no features exist. Add an explicit
 no-default library check before cargo-hack, preserving the already approved
 configuration contract without a feature discovery parser. V1 must witness this
 command even for the feature-free fixture.
+
+2026-10-28: The pinned cargo-hack source also shows that a package with
+features but no declared `default` feature receives no separate default-mode
+invocation. Add an explicit default library check to satisfy the same approved
+mode contract for every fixture, without introducing a feature discovery parser.
 
 2026-10-28: The milestone review identified that Act CI reaches `make test` and
 therefore needs cargo-hack before that gate. Provision it there and guard the

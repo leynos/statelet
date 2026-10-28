@@ -219,6 +219,9 @@ feature-matrix: check-cargo-hack ## Check the library with each supported featur
 		$(CARGO) check --no-default-features --lib \
 		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
+		$(CARGO) check --lib \
+		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
+	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
 		$(CARGO) hack check --each-feature --optional-deps --exclude-all-features --lib \
 		--manifest-path "$(CURDIR)/Cargo.toml" -p statelet $(BUILD_JOBS)
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" \
