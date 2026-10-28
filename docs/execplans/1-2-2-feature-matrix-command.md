@@ -402,6 +402,10 @@ planning-only document.
 - [x] (2026-10-28) EP-M1 implemented and validated the local command.
 - [x] (2026-10-28) EP-M2 integrated routine gates, passed all milestone gates,
       and marked 1.2.2 done. Its final review covered all eight changed paths.
+- [x] (2026-10-28) Hosted CI and Act exposed forced-colour cargo-hack output
+      that the test parser did not recognize. Reproduced the failure, corrected
+      parsing, strengthened wiring controls, and passed all local gates and a
+      fresh review of the three repair paths with no findings.
 
 ## Surprises & discoveries
 
@@ -478,7 +482,7 @@ command, command-boundary tests, and routine local and CI wiring are complete.
 Runtime APIs and feature defaults remain unchanged. The final implementation
 gates passed: formatting, lint, typecheck, tests, Markdown, diagrams, spelling,
 the feature matrix, topology, and Makefile validation. The test gate included
-494 workflow-contract tests and five subtests, 17 matrix boundary cases, three
+515 workflow-contract tests and five subtests, 17 matrix boundary cases, three
 topology cases, 208 ordinary Rust tests, and one doctest. Darwin and
 cross-target linker cases use Make overrides rather than a native Darwin run.
 
@@ -490,6 +494,14 @@ local and CI provisioning consistent. Three further suggestions to split test
 helpers add indirection to bounded checks without addressing a demonstrated
 defect; the existing focused mutation controls exercise those checks. These
 advisory suggestions were therefore not adopted.
+
+The first hosted CI and Act runs failed because their forced-colour environment
+changed cargo-hack status output. A focused forced-colour reproduction failed
+before the parser repair and passed afterwards. CodeScene also identified
+complexity in the Python contract; extraction reduced its local score to 10.0
+without suppressions. Its string-heavy findings on Rust command fixtures refer
+to textual arguments intrinsic to those tests; introducing wrappers solely to
+change that metric would obscure their purpose.
 
 Planning validation passed on 2026-10-25: `make fmt`, `make check-fmt`,
 `make lint`, `make typecheck`, `make test`, `make markdownlint` (including
