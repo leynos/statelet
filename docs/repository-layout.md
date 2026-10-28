@@ -153,8 +153,8 @@ compact and omits build output such as `target/`.
   `claim_properties.rs` is not a scenario module: it holds the property suite
   over the evidence predicates — generated properties, not named scenarios.
 - `docs/validation-notes/`: Holds the filled validation notes, one per task,
-  named `<task>-<subject>.md`. Shared by several Phase 2 and Phase 3 decisions;
-  a note declares which contract reads it with a marker comment.
+  named `<task>-<subject>.md`. Shared by decisions in Phases 2, 3, and 4; a
+  note declares which contract reads it with a marker comment.
 - `docs/phase-2-validation-note-template.md`: The blank form a validation note
   is instantiated from. It is the schema ADR 004's rule reads, not design
   material, and it is never edited to record an observation.

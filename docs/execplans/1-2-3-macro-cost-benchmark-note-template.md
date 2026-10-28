@@ -102,9 +102,8 @@ and obtain explicit approval before proceeding.
     A third run passed all gates but reported two module-size and two branch
     count advisories. A fourth run found two unused imports and one missing
     documentation code span after the module split. Those issues were fixed;
-    the fifth full sequence passed without Clippy or Whitaker findings. Its
-    logs are under `/tmp/*statelet-1-2-3-macro-cost-benchmark-note-template-
-    ep-m1-5.out`.
+    the fifth full sequence passed without Clippy or Whitaker findings. Logs
+    use the `ep-m1-5` suffix under `/tmp`.
 - [x] EP-M2: validate acceptance evidence and mark roadmap task 1.2.3 done.
   - Contributor and reviewer dry runs used two temporary copies under `target/`
     and were removed after inspection. The real comparison used N = 3 and its
@@ -308,7 +307,14 @@ and obtain explicit approval before proceeding.
     lint, tests, typecheck, Markdown lint, spelling, Nixie, and diff checks all
     passed. Nextest passed 282 cases with three skipped; one doctest, 432
     workflow cases plus five subtests, and three topology-command cases passed.
-    A commit and a fresh local review remain.
+    Commit `fc4ef3f` recorded the fix. Its local review found a wrapped log
+    reference, stale validation-note scope, and duplicated stress-exception
+    tests. Wyvern confirmed the corrections while preserving Phase 2 and 3
+    guidance and both distinct stress assertions. Formatting, lint, tests,
+    typecheck, Markdown lint, spelling, Nixie, and diff checks passed. Nextest
+    passed 282 cases with three skipped; one doctest, 432 workflow cases plus
+    five subtests, and three topology-command cases passed. A commit and fresh
+    local review remain.
 
 ## Surprises & discoveries
 

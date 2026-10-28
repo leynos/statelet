@@ -6,10 +6,9 @@ produces: the observations that task made, written down in a shape a later
 decision can read.
 
 Notes live here, one file per task, named `<task>-<subject>.md` — for example
-`2.2.1-mdtablefix-processbuffer.md`. The directory is shared by more than one
-Phase 2 and Phase 3 decision; a note declares which contract it belongs to with
-a marker comment, so a note written for one decision is not read as evidence
-for another.
+`2.2.1-mdtablefix-processbuffer.md`. The directory is shared by decisions in
+Phases 2, 3, and 4; a note declares which contract it belongs to with a marker
+comment, so a note written for one decision is not read as evidence for another.
 
 ## Writing a note
 
@@ -31,12 +30,14 @@ contract that checks the form against the register it instantiates.
 
 ## Macro cost benchmark notes
 
-For roadmap task 1.2.3, copy the fenced register from
+For the Phase 4 macro cost comparisons associated with tasks 4.2.1 and 4.2.2,
+copy the fenced register from
 [`docs/macro-cost-benchmark-note-template.md`](../macro-cost-benchmark-note-template.md)
 to `4.2.1-mdtablefix-macro-cost.md` or `4.2.2-synthetic-macro-cost.md`. Keep
 the `<!-- macro-cost-note -->` marker and fill every row with a value and
 revision-bound evidence. Use `mdtablefix` for the real comparison and
-`synthetic-20` for the fixture with exactly 20 annotated transitions.
+`synthetic-20` for the fixture with exactly 20 annotated transitions. The 4.2.1
+usefulness validation note is separate from its macro cost note.
 
 The real note may be committed before the synthetic note. Its
 `stress-fixture-results` value must be exactly

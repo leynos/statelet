@@ -102,22 +102,32 @@ fn marked_note_rejects_descriptive_values_copied_from_the_template() {
     );
 }
 
-#[test]
-fn synthetic_note_rejects_the_real_comparison_stress_exception() {
-    let mut evidence = note(Kind::Synthetic20, 20);
-    replace_value(
-        &mut evidence,
-        FixtureField::STRESS_FIXTURE_RESULTS,
-        "Not applicable: real comparison",
-    )
-    .expect("fixture field exists");
+#[rstest]
+#[case::synthetic(
+    Kind::Synthetic20,
+    20,
+    "Not applicable: real comparison",
+    "synthetic-20 must record its 20-transition results"
+)]
+#[case::real(
+    Kind::Mdtablefix,
+    3,
+    "not applicable",
+    "real comparison must mark stress results"
+)]
+fn stress_fixture_exception_is_exact(
+    #[case] kind: Kind,
+    #[case] count: u32,
+    #[case] value: &str,
+    #[case] expected: &str,
+) {
+    let mut evidence = note(kind, count);
+    replace_value(&mut evidence, FixtureField::STRESS_FIXTURE_RESULTS, value)
+        .expect("fixture field exists");
 
     let error = check(&template(), &open_roadmap(), &[evidence])
-        .expect_err("synthetic evidence must report its stress results");
-    assert!(
-        error.contains("synthetic-20 must record its 20-transition results"),
-        "{error}"
-    );
+        .expect_err("invalid stress results must be rejected");
+    assert!(error.contains(expected), "{error}");
 }
 
 #[test]
@@ -208,22 +218,6 @@ fn marked_notes_require_a_supported_kind_and_revision_bound_evidence() {
         check(&template(), &open_roadmap(), &[uncited])
             .expect_err("invalid test input must be rejected")
             .contains("revision-bound evidence")
-    );
-}
-
-#[test]
-fn real_comparison_requires_the_exact_stress_fixture_exception() {
-    let mut evidence = note(Kind::Mdtablefix, 3);
-    replace_value(
-        &mut evidence,
-        FixtureField::STRESS_FIXTURE_RESULTS,
-        "not applicable",
-    )
-    .expect("fixture field exists");
-    assert!(
-        check(&template(), &open_roadmap(), &[evidence])
-            .expect_err("invalid test input must be rejected")
-            .contains("real comparison must mark stress results")
     );
 }
 
