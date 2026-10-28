@@ -321,7 +321,16 @@ and obtain explicit approval before proceeding.
     existing note factory sufficient. The new revision-shape, unexpected-kind,
     and duplicate-kind controls passed all gates: Nextest passed 286 cases with
     three skipped; one doctest, 432 workflow cases plus five subtests, and three
-    topology-command cases passed. A separate stress-rule refactor remains.
+    topology-command cases passed. Commit `d47188a` records those controls.
+    The separate stress-rule refactor centralizes the exact exception while
+    retaining literal test values as independent oracles. Formatting, lint,
+    tests, typecheck, Markdown lint, spelling, Nixie, and diff checks passed;
+    Nextest passed 286 cases with three skipped, one doctest, 432 workflow
+    cases plus five subtests, and three topology-command cases. The current
+    local CodeScene delta retains String Heavy advisories of 50.0% across 19
+    root functions and 45.0% across 22 evidence functions against 39%; expert
+    review supports retaining the raw text inputs. A commit and fresh local
+    review remain.
 
 ## Surprises & discoveries
 

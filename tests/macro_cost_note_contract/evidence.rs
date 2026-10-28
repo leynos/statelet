@@ -14,6 +14,7 @@ use super::{
 pub(super) type RegisterRows = BTreeMap<String, Row>;
 
 pub(super) const NOTE_MARKER: &str = "<!-- macro-cost-note -->";
+const REAL_STRESS_EXCEPTION: &str = "Not applicable: real comparison";
 
 pub(super) fn marker_count(source: &str, marker: &str) -> usize {
     source.lines().filter(|line| line.trim() == marker).count()
@@ -311,7 +312,7 @@ fn required_value_is_placeholder(field: &str, row: &Row, kind: Kind) -> bool {
     let value = row.value.trim();
     match field {
         "stress-fixture-results" if kind == Kind::Mdtablefix => {
-            value != "Not applicable: real comparison" && placeholder(value)
+            value != REAL_STRESS_EXCEPTION && placeholder(value)
         }
         "review" => value != "Pending: G3 decision not yet recorded" && placeholder(value),
         _ => placeholder(value),
@@ -338,23 +339,16 @@ pub(super) fn check_measurement_values(
             kind.label()
         ));
     }
-    if kind == Kind::Mdtablefix {
-        let stress_results = row(&file.path, &register.rows, "stress-fixture-results")?;
-        if stress_results.value.trim() != "Not applicable: real comparison" {
-            return Err(format!(
-                "{}: real comparison must mark stress results not applicable",
-                file.path
-            ));
-        }
-    } else if row(&file.path, &register.rows, "stress-fixture-results")?
-        .value
-        .trim()
-        == "Not applicable: real comparison"
-    {
-        return Err(format!(
+    let stress_results = row(&file.path, &register.rows, "stress-fixture-results")?;
+    match (kind, stress_results.value.trim() == REAL_STRESS_EXCEPTION) {
+        (Kind::Mdtablefix, false) => Err(format!(
+            "{}: real comparison must mark stress results not applicable",
+            file.path
+        )),
+        (Kind::Synthetic20, true) => Err(format!(
             "{}: synthetic-20 must record its 20-transition results",
             file.path
-        ));
+        )),
+        _ => Ok(()),
     }
-    Ok(())
 }
