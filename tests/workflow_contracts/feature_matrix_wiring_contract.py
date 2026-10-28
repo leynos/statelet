@@ -87,6 +87,59 @@ def matrix_lines(recipe: str) -> list[str]:
     ]
 
 
+def _flag_value(words: list[str], flag: str) -> str | None:
+    """Return the value following a flag when both operands are present."""
+    try:
+        return words[words.index(flag) + 1]
+    except (ValueError, IndexError):
+        return None
+
+
+def _has_repository_binding(words: list[str]) -> bool:
+    """Return whether the library check pins this repository and package."""
+    return (
+        "--lib" in words
+        and _flag_value(words, "--manifest-path") == str(ROOT / "Cargo.toml")
+        and _flag_value(words, "-p") == "statelet"
+    )
+
+
+def _binding_findings(name: str, words: list[str], line: str) -> list[str]:
+    """Check one row's package, manifest, library, and development flags."""
+    problems = []
+    if not _has_repository_binding(words):
+        problems.append(f"{name} row must bind repository manifest and package")
+    # build_standard_test covers platform-dependent linker selection.
+    if any(flag not in line for flag in ("-D warnings", "-Zthreads=8")):
+        problems.append(f"{name} row must use warning and development flags")
+    return problems
+
+
+def _feature_findings(name: str, words: list[str]) -> list[str]:
+    """Check required and forbidden feature selectors for one matrix row."""
+    policies = {
+        "no-default": (
+            {"--no-default-features"},
+            set(),
+            "no-default row must disable default features",
+        ),
+        "default": (
+            set(),
+            {"--no-default-features", "--all-features", "--each-feature"},
+            "default row must use default features",
+        ),
+        "individual": (
+            {"hack", "--each-feature", "--optional-deps", "--exclude-all-features"},
+            {"--all-features"},
+            "individual row must isolate each feature and optional dependency",
+        ),
+        "all": ({"--all-features"}, set(), "all row must enable all features"),
+    }
+    required, forbidden, message = policies[name]
+    present = set(words)
+    return [] if required <= present and not forbidden.intersection(present) else [message]
+
+
 def _matrix_findings(recipe: str) -> list[str]:
     """Judge feature-matrix rows and their bindings."""
     lines = matrix_lines(recipe)
@@ -95,60 +148,47 @@ def _matrix_findings(recipe: str) -> list[str]:
     problems: list[str] = []
     for name, line in zip(ROWS, lines, strict=True):
         words = shlex.split(line)
-        required = ["--lib", "--manifest-path", str(ROOT / "Cargo.toml"), "-p", "statelet"]
-        if any(word not in words for word in required) or (
-            words.index("--manifest-path") + 1 >= len(words)
-            or words[words.index("--manifest-path") + 1] != str(ROOT / "Cargo.toml")
-            or words.index("-p") + 1 >= len(words)
-            or words[words.index("-p") + 1] != "statelet"
-        ):
-            problems.append(f"{name} row must bind repository manifest and package")
-        # build_standard_test covers platform-dependent linker selection.
-        if any(flag not in line for flag in ("-D warnings", "-Zthreads=8")):
-            problems.append(f"{name} row must use warning and development flags")
-        if name == "no-default" and "--no-default-features" not in words:
-            problems.append("no-default row must disable default features")
-        if name == "default" and any(
-            flag in words
-            for flag in ("--no-default-features", "--all-features", "--each-feature")
-        ):
-            problems.append("default row must use default features")
-        if name == "individual" and (
-            not {
-                "hack",
-                "--each-feature",
-                "--optional-deps",
-                "--exclude-all-features",
-            }.issubset(words)
-            or "--all-features" in words
-        ):
-            problems.append("individual row must isolate each feature and optional dependency")
-        if name == "all" and "--all-features" not in words:
-            problems.append("all row must enable all features")
+        problems.extend(_binding_findings(name, words, line))
+        problems.extend(_feature_findings(name, words))
     return problems
 
 
-def _make_findings(wiring: Wiring) -> list[str]:
-    """Judge the evaluated Make gates and their ordering."""
-    problems = _matrix_findings(wiring.matrix_recipe)
-    lines = recipe_lines(wiring.all_recipe)
+def _all_findings(recipe: str) -> list[str]:
+    """Check the order and uniqueness of the direct composite gates."""
+    lines = recipe_lines(recipe)
     gates = ["make check-topology", "make feature-matrix", "make spelling"]
     if any(lines.count(gate) != 1 for gate in gates):
-        problems.append("make all must run matrix exactly once")
-    elif not lines.index(gates[0]) < lines.index(gates[1]) < lines.index(gates[2]):
-        problems.append("make all must order matrix after topology and before spelling")
-    test_lines = recipe_lines(wiring.test_recipe)
+        return ["make all must run matrix exactly once"]
+    if not lines.index(gates[0]) < lines.index(gates[1]) < lines.index(gates[2]):
+        return ["make all must order matrix after topology and before spelling"]
+    return []
+
+
+def _suite_ordered(suite: list[int], topology: int) -> bool:
+    """Return whether the sole matrix suite follows the topology suite."""
+    return len(suite) == 1 and 0 <= topology < suite[0]
+
+
+def _test_findings(recipe: str) -> list[str]:
+    """Check that the ignored boundary suite follows topology and fails closed."""
+    lines = recipe_lines(recipe)
     topology = next(
-        (i for i, line in enumerate(test_lines) if "--test topology_command" in line), -1
+        (i for i, line in enumerate(lines) if "--test topology_command" in line), -1
     )
-    suite = [i for i, line in enumerate(test_lines) if "--test feature_matrix_command" in line]
-    if len(suite) != 1 or suite[0] <= topology or topology < 0:
-        problems.append("make test must run the matrix command suite after topology")
-    elif any(
-        flag not in test_lines[suite[0]]
+    suite = [i for i, line in enumerate(lines) if "--test feature_matrix_command" in line]
+    if not _suite_ordered(suite, topology):
+        return ["make test must run the matrix command suite after topology"]
+    if any(
+        flag not in lines[suite[0]]
         for flag in ("--run-ignored only", "--no-tests fail", "--test-threads=1")
     ):
-        problems.append("matrix command suite must run ignored tests serially and fail closed")
+        return ["matrix command suite must run ignored tests serially and fail closed"]
+    return []
+
+
+def _preflight_findings(wiring: Wiring) -> list[str]:
+    """Check serialization declarations and the exact cargo-hack version."""
+    problems = []
     declarations = re.findall(r"^\.NOTPARALLEL:(.*)$", wiring.makefile, re.MULTILINE)
     named = set(" ".join(declarations).split())
     if not {"feature-matrix", "test-feature-matrix-command"}.issubset(named):
@@ -164,6 +204,16 @@ def _make_findings(wiring: Wiring) -> list[str]:
     ):
         problems.append("cargo-hack preflight must enforce the exact pinned version")
     return problems
+
+
+def _make_findings(wiring: Wiring) -> list[str]:
+    """Judge the evaluated Make gates and their ordering."""
+    return (
+        _matrix_findings(wiring.matrix_recipe)
+        + _all_findings(wiring.all_recipe)
+        + _test_findings(wiring.test_recipe)
+        + _preflight_findings(wiring)
+    )
 
 
 def ci_steps(workflow: reading.Workflow) -> list[reading.Step]:
@@ -200,7 +250,20 @@ def _ci_findings(workflow: reading.Workflow) -> list[str]:
         "make test-topology-command",
         "make test-feature-matrix-command",
     ]
+    positions, problems = _ci_positions(steps, commands)
+    chain = commands[:3]
+    if all(c in positions for c in chain):
+        if not positions[chain[0]] < positions[chain[1]] < positions[chain[2]]:
+            problems.append("CI must install and run the matrix after topology")
+    return problems + _boundary_findings(workflow, steps, positions)
+
+
+def _ci_positions(
+    steps: list[reading.Step], commands: list[str]
+) -> tuple[dict[str, int], list[str]]:
+    """Collect unique step positions and report conditional or missing gates."""
     positions: dict[str, int] = {}
+    problems = []
     for command in commands:
         matches = [i for i, step in enumerate(steps) if step.get("run") == command]
         if len(matches) != 1:
@@ -210,13 +273,12 @@ def _ci_findings(workflow: reading.Workflow) -> list[str]:
         step = steps[matches[0]]
         if "if" in step or step.get("continue-on-error") not in (None, False, "false"):
             problems.append(f"CI must run {command} unconditionally")
-    chain = commands[:3]
-    if (
-        all(c in positions for c in chain)
-        and not positions[chain[0]] < positions[chain[1]] < positions[chain[2]]
-    ):
-        problems.append("CI must install and run the matrix after topology")
-    return problems + _boundary_findings(workflow, steps, positions)
+    return positions, problems
+
+
+def _boundary_ordered(index: int, coverage: int, topology: int | None) -> bool:
+    """Return whether the boundary follows coverage and the topology suite."""
+    return 0 <= coverage < index and (topology is None or index > topology)
 
 
 def _boundary_findings(
@@ -238,11 +300,7 @@ def _boundary_findings(
         ),
         -1,
     )
-    if (
-        coverage < 0
-        or index <= coverage
-        or (topology in positions and index <= positions[topology])
-    ):
+    if not _boundary_ordered(index, coverage, positions.get(topology)):
         problems.append("CI matrix boundary must follow coverage and topology boundary")
     for scope in (workflow, reading.jobs(workflow)[0][1], steps[index]):
         env = scope.get("env")

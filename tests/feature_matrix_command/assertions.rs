@@ -8,9 +8,14 @@ use super::output_text;
 
 /// Return the individual Cargo commands reported by cargo-hack.
 pub(super) fn hack_rows(output: &Output) -> Vec<Vec<String>> {
-    output_text(output)
-        .lines()
-        .filter_map(|line| line.split_once("info: running `"))
+    hack_rows_from_text(&output_text(output))
+}
+
+/// Interpret cargo-hack status lines regardless of status-label colouring.
+fn hack_rows_from_text(text: &str) -> Vec<Vec<String>> {
+    text.lines()
+        .filter_map(|line| line.split_once("running `"))
+        .filter(|(prefix, _)| prefix.contains("info"))
         .filter_map(|(_, rest)| rest.split_once('`'))
         .map(|(command, _)| command.split_whitespace().map(str::to_owned).collect())
         .collect()
@@ -121,6 +126,26 @@ fn assert_isolated_rows(output: &Output, label: &str, features: &[&str]) {
             rows.iter()
                 .any(|row| !has_arg(row, "--no-default-features")),
             eq(true)
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! Cover the status formats emitted by cargo-hack.
+
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
+
+    use super::hack_rows_from_text;
+
+    #[rstest]
+    #[case("info: running `cargo check --features renamed`")]
+    #[case("\x1b[1minfo\x1b[1m:\x1b[0m running `cargo check --features renamed`")]
+    fn parses_uncoloured_and_coloured_status(#[case] line: &str) {
+        assert_eq!(
+            hack_rows_from_text(line),
+            vec![vec!["cargo", "check", "--features", "renamed"]]
         );
     }
 }
