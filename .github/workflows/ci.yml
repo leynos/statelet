@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Setup Rust
-        uses: leynos/shared-actions/.github/actions/setup-rust@b804b69fa7f978cf9091b9d9bd5481d8ce58c2ea
+        uses: leynos/shared-actions/.github/actions/setup-rust@6e99f225cb06684f9e6f89b63a7ca4a04095c067
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
@@ -32,7 +32,7 @@ jobs:
       - name: Install mdtablefix
         # `make check-fmt` runs `mdtablefix --check --git`; 0.6.0 is the
         # first release with `--check` and `--git`.
-        uses: leynos/shared-actions/.github/actions/install-mdtablefix@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        uses: leynos/shared-actions/.github/actions/install-mdtablefix@6e99f225cb06684f9e6f89b63a7ca4a04095c067
         with:
           version: "0.6.1"
       - name: Format
@@ -73,7 +73,7 @@ jobs:
         with:
           python-version: '3.14'
       - name: Install Whitaker
-        uses: leynos/shared-actions/.github/actions/install-whitaker@5a99aed78ce68dcebd3052b75c31e6f173162b1e # shared-actions 5a99aed7 (whitaker-installer 0.2.11)
+        uses: leynos/shared-actions/.github/actions/install-whitaker@6e99f225cb06684f9e6f89b63a7ca4a04095c067 # shared-actions 5a99aed7 (whitaker-installer 0.2.11)
         with:
           cranelift: true
       - name: Audit dependencies
@@ -92,7 +92,7 @@ jobs:
           echo "Coverage CFLAGS: -fuse-ld=lld"
           echo "Coverage LDFLAGS: -fuse-ld=lld"
       - name: Test and Measure Coverage
-        uses: leynos/shared-actions/.github/actions/generate-coverage@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        uses: leynos/shared-actions/.github/actions/generate-coverage@6e99f225cb06684f9e6f89b63a7ca4a04095c067
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang
           RUSTFLAGS: -C link-arg=-fuse-ld=lld
