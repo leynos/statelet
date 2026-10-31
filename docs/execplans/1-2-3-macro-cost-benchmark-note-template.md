@@ -15,7 +15,8 @@ correction passed the full validation sequence. The follow-up review of
 `1a3581b` found two further contract gaps. Proposed remediation is recorded
 below. The user approved the one-path variance on 2026-10-28, before the review
 corrections resumed. Post-rebase validation passed and the final code received
-independent review; hosted-gate disposition remains.
+independent review; documentation gates were revalidated on the published head
+on 2026-10-31. Hosted-gate disposition remains.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -339,6 +340,19 @@ and obtain explicit approval before proceeding.
     adding another invariant. The local CodeRabbit review covered `b6cec8f`;
     the later changes received the independent reviews above. Hosted CodeScene
     disposition remains separate.
+- [x] (2026-10-31) Revalidate the final tracked edits on the published head.
+  - The exact head `258b5087f5371c53001f94387ccc97560bfed99a` passed
+    `make check-fmt`, `make markdownlint`, `make nixie`, `git diff --check`
+    and a clean-tree status check. A range `git diff --check` against base
+    `7f5a3f0dd7614902dadc4f89a915d6a0edf6d403` reported no whitespace
+    errors. Logs use the `pr153-docs-258b508` suffix under `/tmp`.
+  - `make markdownlint` reached the spelling gate, which regenerated
+    `typos.toml` from the shared dictionary. That drift is unrelated to this
+    branch and belongs in a separate base change, so the generated file was
+    captured to `/tmp` and restored rather than committed. Spelling still
+    passed against the stricter regenerated file.
+  - Draft closeout, hosted CodeScene disposition and merge remain with
+    `pr-babysitting`; the PR is an open draft at this head.
 
 ## Surprises & discoveries
 
