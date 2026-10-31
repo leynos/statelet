@@ -55,13 +55,9 @@ const MAX_EXTRAS: usize = 8;
 /// the fixture rather than a property violation. Asserting it here keeps it out
 /// of every generator: threading a `Result` through the property bodies would
 /// either reject every case or need the fallible construction `proptest!`'s
-/// infallible body cannot express. The scoped expectation is visible beside the
-/// failure it guards instead of silencing the lint repository-wide.
-#[expect(
-    clippy::expect_used,
-    reason = "The accepted fixture is constant text; failing loudly here is how a broken fixture \
-              is told apart from a policy verdict."
-)]
+/// infallible body cannot express. Clippy's `allow-expect-in-tests` setting
+/// permits the `expect` in this test-only helper, so failing loudly here is how
+/// a broken fixture is told apart from a policy verdict.
 fn accepted_document() -> Value {
     parse(&accepted_metadata()).expect("the accepted metadata fixture is valid JSON")
 }
