@@ -662,3 +662,19 @@ stacked on that base. Post-rebase gates on the new head: `check-fmt`, `test`
 subtests, three topology cases, and 18 boundary cases), `typecheck`, and `lint`
 (Pylint 10.00/10) all pass. Retargeting this pull request onto the base branch
 still needs maintainer authorization.
+
+Revision 13 (2026-10-31): Corrected the replay boundary chosen in Revision 12.
+That replay used the pre-stack base (`0ca8278`) as its exclusive boundary, so
+the base branch's `typos.toml` commit was replayed as a feature-branch commit
+and the branch's merge base with
+[#164](https://github.com/leynos/statelet/pull/164) fell back to `9825bf7`.
+Retargeting alone would then still have shown `typos.toml` in the pull request
+diff, because the two copies were distinct commits. The series was replayed
+again onto the base branch head (`5163ed4`), with `3cb49c6` — the duplicated
+copy — as the exclusive boundary. The two copies carry the same patch
+(`git patch-id` matches), all 28 feature commits replayed unchanged
+(`git range-diff` shows `=` throughout), and the new head's tree is identical to
+`58b2c7d` apart from this revision. The merge base with the base branch is now
+`5163ed4`, so the stacked diff is feature-only once the retarget is authorized.
+The code gates were not rerun because the only delta over the gated tree is
+this Markdown revision; `check-fmt` and `markdownlint` were rerun to cover it.
