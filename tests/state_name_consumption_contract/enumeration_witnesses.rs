@@ -147,8 +147,7 @@ fn the_verb_is_read_in_any_case() {
             "`BufferMode` {}{} `Text`",
             verb.chars()
                 .next()
-                .map(|first| first.to_ascii_uppercase())
-                .unwrap_or_default(),
+                .map_or('\0', |first| first.to_ascii_uppercase()),
             verb.get(1..).unwrap_or_default()
         );
         for cell in [&lower, &upper, &sentence] {

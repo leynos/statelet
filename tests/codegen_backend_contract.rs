@@ -57,14 +57,13 @@ fn rustflags(target: &Value) -> String {
     target
         .get("rustflags")
         .and_then(Value::as_array)
-        .map(|values| {
+        .map_or_else(String::new, |values| {
             values
                 .iter()
                 .filter_map(Value::as_str)
                 .collect::<Vec<_>>()
                 .join(" ")
         })
-        .unwrap_or_default()
 }
 
 /// Whether a target table chooses a linker, by driver or by `-fuse-ld` flag.
@@ -119,14 +118,13 @@ fn linux_links_with_linker_through_clang() {
     let flags = target
         .get("rustflags")
         .and_then(Value::as_array)
-        .map(|values| {
+        .map_or_else(String::new, |values| {
             values
                 .iter()
                 .filter_map(Value::as_str)
                 .collect::<Vec<_>>()
                 .join(" ")
-        })
-        .unwrap_or_default();
+        });
     assert!(
         flags.contains("-fuse-ld=mold"),
         "the Linux target must select the pinned linker, got {flags:?}"
