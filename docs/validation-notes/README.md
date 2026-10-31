@@ -6,10 +6,9 @@ produces: the observations that task made, written down in a shape a later
 decision can read.
 
 Notes live here, one file per task, named `<task>-<subject>.md` — for example
-`2.2.1-mdtablefix-processbuffer.md`. The directory is shared by more than one
-Phase 2 and Phase 3 decision; a note declares which contract it belongs to with
-a marker comment, so a note written for one decision is not read as evidence
-for another.
+`2.2.1-mdtablefix-processbuffer.md`. The directory is shared by decisions in
+Phases 2, 3, and 4; a note declares which contract it belongs to with a marker
+comment, so a note written for one decision is not read as evidence for another.
 
 ## Writing a note
 
@@ -29,6 +28,34 @@ Never edit the template to record an observation. The template is the blank
 form; editing it changes the schema for every future note and breaks the
 contract that checks the form against the register it instantiates.
 
+## Macro cost benchmark notes
+
+For the Phase 4 macro cost comparisons associated with tasks 4.2.1 and 4.2.2,
+copy the fenced register from
+[`docs/macro-cost-benchmark-note-template.md`](../macro-cost-benchmark-note-template.md)
+to `4.2.1-mdtablefix-macro-cost.md` or `4.2.2-synthetic-macro-cost.md`. Keep
+the `<!-- macro-cost-note -->` marker and fill every row with a value and
+revision-bound evidence. Use `mdtablefix` for the real comparison and
+`synthetic-20` for the fixture with exactly 20 annotated transitions. The 4.2.1
+usefulness validation note is separate from its macro cost note.
+
+The real note may be committed before the synthetic note. Its
+`stress-fixture-results` value must be exactly
+`Not applicable: real comparison`. Empty cells and values beginning with the
+case-insensitive marker words `TBD`, `TODO`, `pending`, or `N/A` are
+incomplete. Standalone angle-bracket placeholders are incomplete, including
+inside backtick spans. Expansion text may use attached Rust generics such as
+`Option<Foo>`; do not use an attached form such as `Type<sha>` to represent
+missing evidence. Only the `review` row may say
+`Pending: G3 decision not yet recorded`. Record unavailable measurements with a
+cited failure record and an `Inconclusive` verdict. Do not use illustrative or
+fabricated measurements as committed evidence.
+
+The `macro-cost-note` marker opts a note into the macro cost contract. A
+completed 4.2.2 roadmap claim selects one synthetic note; the G3 claim at 4.3.1
+selects one real and one synthetic note bound to the same macro and design
+revisions. Other contracts ignore these notes.
+
 ## Which contracts read this directory
 
 - `tests/state_name_consumption_contract.rs` reads notes carrying the
@@ -36,6 +63,9 @@ contract that checks the form against the register it instantiates.
   1.1.3's instrument and its `StateName` return-shape decision at task 3.2.1.
   The rule those notes are read under is
   `docs/adr-004-state-name-consumption-evidence.md`.
+- `tests/macro_cost_note_contract.rs` reads notes carrying the
+  `<!-- macro-cost-note -->` marker. It checks required values, revision-bound
+  citations, the synthetic annotation count and the selected roadmap evidence.
 
 Further contracts will read notes carrying their own markers. A note is ignored
 by every contract whose marker it does not declare.

@@ -102,6 +102,14 @@ compact and omits build output such as `target/`.
   template, and the source clauses it quotes. It also reads
   `docs/validation-notes/` to check any committed note carrying the
   `<!-- state-name-note -->` marker.
+- `tests/macro_cost_note_contract.rs`: Checks the macro cost note template,
+  its design and roadmap bindings, complete marked notes, and candidate-bound
+  evidence selected by roadmap tasks 4.2.2 and 4.3.1. Its capability-filesystem
+  adapter treats a missing notes directory as empty and reports read failures
+  with the affected path.
+- `tests/macro_cost_note_contract/`: Holds the private contract checker and
+  in-memory forms and named cases. The schema stays within this integration
+  test; it is not a general Markdown parser or shared runtime utility.
 - `tests/topology_check.rs`: Guards the pre-macro workspace boundary named in
   design section 11.6. It applies a closed policy to Cargo's own metadata for
   this workspace, and it names the guard `make topology-check` selects.
@@ -145,11 +153,13 @@ compact and omits build output such as `target/`.
   `claim_properties.rs` is not a scenario module: it holds the property suite
   over the evidence predicates — generated properties, not named scenarios.
 - `docs/validation-notes/`: Holds the filled validation notes, one per task,
-  named `<task>-<subject>.md`. Shared by several Phase 2 and Phase 3 decisions;
-  a note declares which contract reads it with a marker comment.
+  named `<task>-<subject>.md`. Shared by decisions in Phases 2, 3, and 4; a
+  note declares which contract reads it with a marker comment.
 - `docs/phase-2-validation-note-template.md`: The blank form a validation note
   is instantiated from. It is the schema ADR 004's rule reads, not design
   material, and it is never edited to record an observation.
+- `docs/macro-cost-benchmark-note-template.md`: The blank real and synthetic
+  macro cost evidence form, checked by `tests/macro_cost_note_contract.rs`.
 - `dylint.toml`: Configures Whitaker lint behaviour not expressible in Rust
   source. It exempts one module — `state_name_consumption_contract::notes` —
   from `no_std_fs_operations`, which denies `std::fs` in integration-test
