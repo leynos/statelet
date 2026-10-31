@@ -158,7 +158,7 @@ def test_python_discovery_prunes_generated_and_vendor_trees() -> None:
     )
     discovery = _make_variable("PYTHON_DISCOVERY_COMMAND")
     assert "-type f -name '*.py' -print" in discovery and re.search(
-        r"\|\s+LC_COLLATE=C\s+sort\b", discovery
+        r"\|\s+LC_ALL=C\s+sort\b", discovery
     ), (
         "test_python_discovery_prunes_generated_and_vendor_trees contract failed"
     )

@@ -1,14 +1,15 @@
 # Add the current-crate feature matrix (1.2.2)
 
-Status: APPROVED — implementation and the `--optional-deps` correction were
-authorized by the user on 2026-10-28.
+Status: COMPLETE
 
 This ExecPlan is a living document. Keep its constraints, tolerances, risks,
 progress, discoveries, decisions, verification evidence, and outcomes current.
-The planning pull request delivered this document and did not complete roadmap
-task 1.2.2. The user approved implementation within its constraints and
-tolerances on 2026-10-25. A pinned-tool experiment then exposed a row-selection
-gap before implementation; the user approved the correction on 2026-10-28.
+The planning pull request delivered this document without completing roadmap
+task 1.2.2; the implementation described below completed it, and the Progress
+and Outcomes sections record the delivered evidence. The user approved
+implementation within its constraints and tolerances on 2026-10-25. A
+pinned-tool experiment then exposed a row-selection gap before implementation;
+the user approved the correction on 2026-10-28.
 
 ## Purpose and big picture
 
@@ -359,8 +360,9 @@ Use worktree-local fixture directories and target directories; never delete
 shared caches or another agent's files. Re-running gates is safe after fixing a
 candidate defect. A healthy compiler queue needs patience, not retries. Revert
 an owned milestone commit to roll back if needed; do not rewrite shared history
-or revert unrelated edits. No implementation rollback is required for this
-planning-only document.
+or revert unrelated edits. Rolling back an implemented milestone means
+reverting its commit on a branch, never rewriting the published history of the
+pull request.
 
 ## Progress
 
@@ -413,7 +415,7 @@ planning-only document.
       locale dependency in the shared Python discovery recipe. `find | sort`
       under `en_US.UTF-8` orders `.github` differently from the code-point
       order the workflow contract expects, failing two contract cases on
-      every branch. Pinned `LC_COLLATE=C` for the inventory; the module passed
+      every branch. Pinned `LC_ALL=C` for the inventory; the module passed
       under C collation before the change. Recorded as a separate
       prerequisite repair, updated the discovery contract assertion that
       matched the literal `| sort` text, then re-ran the gates.
@@ -430,6 +432,16 @@ planning-only document.
       committed tree; all 18 cases passed (5781.7 s, exit 0), so every local
       gate is green on the published head. Log
       `/tmp/test-statelet-1-2-2-feature-matrix-command-5.out`.
+- [x] (2026-10-31) CodeRabbit's first formal review of PR #152 raised three
+      actionable findings: the layout document omitted the `.codescene/`
+      directory this branch adds; the discovery recipe pinned `LC_COLLATE=C`,
+      which is void whenever a caller exports `LC_ALL`; and the README's
+      `make all` examples did not provision `cargo-hack`. Repaired all three,
+      restated the plan header status as `COMPLETE`, and re-ran the affected
+      gates. The review's two additional (unverified) comments were
+      dispositioned: the compound-assertion split was declined because the
+      repository configures no Ruff gate and the other contracts in that file
+      use the same single-message form.
 
 ## Surprises & discoveries
 
@@ -506,12 +518,15 @@ punctuation, placing `.github` after the benchmark roots. The test compares
 against Python's `sorted`, which uses code-point order. Neither the recipe nor
 the test is changed by this branch, and the failing module passed with
 `LC_ALL=C`, so this is a pre-existing host-locale defect rather than a feature
-matrix regression. Pin `LC_COLLATE=C` on the discovery sort. The repair is a
-separate atomic commit because it is outside the feature-matrix product scope;
-it makes the existing gate reproducible on non-C locales and does not change
-any matrix row, feature default, or runtime API. The discovery contract test
-matched the literal `| sort` text, so it now requires the collation-pinned
-form; a bare sort is the locale-dependent shape the behavioural test rejects.
+matrix regression. Pin `LC_ALL=C` on the discovery sort. `LC_ALL` rather than
+`LC_COLLATE` is deliberate: `LC_ALL` outranks every `LC_*` category, so a
+`LC_COLLATE`-only pin is void whenever the caller exports `LC_ALL`, which
+containers and CI images commonly do. The repair is a separate atomic commit
+because it is outside the feature-matrix product scope; it makes the existing
+gate reproducible on non-C locales and does not change any matrix row, feature
+default, or runtime API. The discovery contract test matched the literal
+`| sort` text, so it now requires the locale-pinned form; a bare sort is the
+locale-dependent shape the behavioural test rejects.
 
 ## Outcomes & retrospective
 
@@ -558,8 +573,9 @@ spelling), and `make nixie`. Tests passed with 206 nextest cases, one doctest,
 command-boundary cases were intentionally skipped by the ordinary nextest run
 and executed by their dedicated gate. Logs are stored under
 `/tmp/{action}-statelet-1-2-2-feature-matrix-command.out`. These results
-validate the planning candidate and existing repository; they are not evidence
-that the proposed feature-matrix command has been implemented.
+validated the planning candidate and the pre-existing repository, and the final
+validation recorded below superseded them once the feature matrix was
+implemented.
 
 Final validation on the published candidate passed every applicable gate.
 `make fmt`, `make check-fmt`, `make lint`, `make typecheck`,
@@ -620,3 +636,15 @@ and review remain pending.
 
 Revision 10 (2026-10-28): Recorded the reassessment and its three bounded
 refactoring findings. The refactored candidate requires fresh validation.
+
+Revision 11 (2026-10-31): Recorded EP-M1 and EP-M2 completion, the final
+validation evidence, and the review repairs. The plan status is now `COMPLETE`.
+`make feature-matrix` and its 18-case command-boundary suite pass, the routine
+wiring is in `make all`, CI, and Act validation, and roadmap item 1.2.2 is
+ticked. The final gate set passed on the published candidate: `fmt`,
+`check-fmt`, `lint`, `typecheck`, `test` (218 nextest cases, one doctest, 515
+workflow-contract tests plus five subtests, three topology cases, and 18
+boundary cases), `markdownlint` including spelling, `nixie`, `feature-matrix`,
+`check-topology`, `mbake validate Makefile`, and `git diff --check`. Review
+repairs then covered the `.codescene/` layout entry, the `LC_ALL=C` discovery
+pin, the README `cargo-hack` provisioning step, and the status restatement.

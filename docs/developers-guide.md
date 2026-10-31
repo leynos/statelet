@@ -78,6 +78,10 @@ The generated `Makefile` exposes these public targets:
   features. It requires the pinned `cargo-hack`; install it with
   `make install-cargo-hack`. Absent features such as `tracing` or `serde` are
   not checked until they are declared.
+- `make install-cargo-hack` installs the pinned `cargo-hack` release, and
+  `make check-cargo-hack` fails unless the installed version matches the pin.
+  `make feature-matrix` runs that preflight before any Cargo check, so a stale
+  or missing tool is reported instead of silently changing the matrix.
 - CI installs the pinned `cargo-hack` tool and runs `make feature-matrix` after
   the topology check. It runs `make test-feature-matrix-command` after coverage
   and the topology command-boundary suite, without inheriting coverage

@@ -13,6 +13,8 @@ compact and omits build output such as `target/`.
 .
 ├── .cargo/
 │   └── config.toml
+├── .codescene/
+│   └── code-health-rules.json
 ├── .github/
 │   ├── dependabot.yml
 │   └── workflows/
@@ -65,6 +67,10 @@ compact and omits build output such as `target/`.
 
 - `.cargo/config.toml`: Configures Cargo defaults for local development,
   including Linux linker and code-generation settings.
+- `.codescene/code-health-rules.json`: Holds the scoped CodeScene code-health
+  rule overrides. The feature-matrix command-boundary tests pass textual Cargo
+  arguments and inspect textual output, so they disable the string-heavy
+  argument rule for those two files only.
 - `.python-version`: Selects managed CPython 3.14 for direct `uv` runs.
 - `.github/dependabot.yml`: Configures automated dependency update checks.
 - `.github/workflows/act-validation.yml`: Runs the generated workflow
