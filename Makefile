@@ -104,8 +104,11 @@ PYTHON_PRUNED_DIRECTORIES = \
 	-name target -prune -o -name vendor -prune -o -name node_modules -prune -o \
 	-name __pycache__ -prune -o -name .pytest_cache -prune -o \
 	-name .mypy_cache -prune -o -name .ruff_cache -prune -o
+# Pin C collation so the inventory order is reproducible: the workflow
+# contract compares it with Python's code-point ordering, whereas a language
+# collation ignores leading punctuation and moves `.github` later.
 PYTHON_DISCOVERY_COMMAND = find $(PYTHON_EXISTING_SOURCE_ROOTS) \
-	$(PYTHON_PRUNED_DIRECTORIES) -type f -name '*.py' -print | sort
+	$(PYTHON_PRUNED_DIRECTORIES) -type f -name '*.py' -print | LC_COLLATE=C sort
 # Capture discovery in the recipe shell: Make's $(shell ...) discards failures.
 # pipefail rejects partial find output before either checker receives filenames.
 PYTHON_DISCOVERY = set -eo pipefail; \

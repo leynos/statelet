@@ -409,6 +409,14 @@ planning-only document.
 - [x] (2026-10-28) A second hosted run exposed cargo-hack's distinct GitHub
       Actions group output. Reproduced it with child-only CI variables, added
       a real fixture regression, and passed all gates and repair reassessment.
+- [x] (2026-10-30) A final gate run on this host exposed a pre-existing
+      locale dependency in the shared Python discovery recipe. `find | sort`
+      under `en_US.UTF-8` orders `.github` differently from the code-point
+      order the workflow contract expects, failing two contract cases on
+      every branch. Pinned `LC_COLLATE=C` for the inventory; the module passed
+      under C collation before the change. Recorded as a separate
+      prerequisite repair, updated the discovery contract assertion that
+      matched the literal `| sort` text, then re-ran the gates.
 
 ## Surprises & discoveries
 
@@ -477,6 +485,20 @@ repository's test build; a joined-thread variant aborted. Fixture tests now
 capture results, drop the owned root, and then assert, so expected assertion
 failures occur after cleanup. The harness also attempts cleanup on drop during
 unwinding when the toolchain supports it.
+
+2026-10-30: The final gate run failed two workflow-contract cases that assert
+the Python discovery inventory is sorted. The shared recipe used `find | sort`
+without pinning collation, and GNU `sort` under `en_US.UTF-8` ignores leading
+punctuation, placing `.github` after the benchmark roots. The test compares
+against Python's `sorted`, which uses code-point order. Neither the recipe nor
+the test is changed by this branch, and the failing module passed with
+`LC_ALL=C`, so this is a pre-existing host-locale defect rather than a feature
+matrix regression. Pin `LC_COLLATE=C` on the discovery sort. The repair is a
+separate atomic commit because it is outside the feature-matrix product scope;
+it makes the existing gate reproducible on non-C locales and does not change
+any matrix row, feature default, or runtime API. The discovery contract test
+matched the literal `| sort` text, so it now requires the collation-pinned
+form; a bare sort is the locale-dependent shape the behavioural test rejects.
 
 ## Outcomes & retrospective
 
