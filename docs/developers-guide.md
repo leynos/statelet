@@ -380,6 +380,14 @@ host. A cross-compilation to another Linux target would also match the selector
 and needs an explicit target compiler and sysroot; Statelet does not configure
 cross-compilation today.
 
+The development profile also follows the dev-build footprint standard: it sets
+`incremental = false` and `debug = 0` in `Cargo.toml`, and `.cargo/config.toml`
+sets the native Cargo key `[unstable] embed-metadata = false`, which
+`nightly-2026-07-31` and later pins use to avoid duplicated metadata in `.rlib`
+files; Cargo still produces the corresponding `.rmeta` metadata. Do not replace
+it with a raw `rustc` metadata flag; those broke build scripts.
+`tests/dev_build_footprint.rs` holds the three settings.
+
 Release builds use Cargo's LLVM release profile. Coverage uses LLVM code
 generation and `lld` because coverage instrumentation is LLVM-specific; the
 local target and shared CI action provide that override. Without it, Cranelift
