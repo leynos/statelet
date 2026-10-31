@@ -426,8 +426,9 @@ planning-only document.
       The ignored command-boundary suite is the only outstanding gate: each of
       its 18 serial cases cold-builds a private Cargo fixture, and shared-host
       admission made a single `make test` invocation exceed the harness's
-      two-hour cap after three passes. Re-running that one target detached on
-      the committed tree; log
+      two-hour cap after three passes. Re-ran that one target detached on the
+      committed tree; all 18 cases passed (5781.7 s, exit 0), so every local
+      gate is green on the published head. Log
       `/tmp/test-statelet-1-2-2-feature-matrix-command-5.out`.
 
 ## Surprises & discoveries
@@ -559,6 +560,17 @@ and executed by their dedicated gate. Logs are stored under
 `/tmp/{action}-statelet-1-2-2-feature-matrix-command.out`. These results
 validate the planning candidate and existing repository; they are not evidence
 that the proposed feature-matrix command has been implemented.
+
+Final validation on the published candidate passed every applicable gate.
+`make fmt`, `make check-fmt`, `make lint`, `make typecheck`,
+`make markdownlint` (including spelling), `make nixie`, `make feature-matrix`,
+`make check-topology`, `mbake validate Makefile`, and `git diff --check` were
+clean. `make test` passed 218 nextest cases, one doctest, 515 workflow-contract
+tests plus five subtests, and three topology cases; its ignored
+command-boundary suite was re-run on its own and all 18 cases passed. The run
+also exposed and repaired a pre-existing host-locale dependency in the shared
+Python discovery recipe, committed separately as `f930e22` because it is
+outside the feature-matrix product scope.
 
 ## Research and revision notes
 
