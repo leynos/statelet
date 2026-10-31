@@ -300,20 +300,24 @@ form that pins the repository manifest and ignores any fixture override, and
 `make test-topology-command` runs the command-boundary cases after the ordinary
 tests.
 
-Routine validation reaches both forms. `make all` ends with
-`make check-topology` after tests and before spelling, so the pinned form runs
+Routine validation reaches both forms. `make all` runs `make check-topology`
+after tests and before the feature matrix and spelling, so the pinned form runs
 without an operator remembering it. `make test` ends with
-`make test-topology-command`, after nextest, the doctests, and the workflow
-contracts. CI mirrors that split: a `Check declared dependency topology` step
-runs `make check-topology` once between the nextest installation and the audit,
-and a `Test the topology command boundary` step runs
-`make test-topology-command` after the coverage action. The second step is
-deliberately separate from coverage: each boundary case starts a nested Cargo
-process, and the step therefore avoids the coverage action's environment — its
-instrumentation, its `RUSTFLAGS`, and its clang/lld linker settings. The
-avoidance is scoped to that environment, not to flags generally: the recipe
-still composes any `RUSTFLAGS` it inherits, and the harness hands Make the
-caller's original value so the nested recipe composes them only once.
+`make test-topology-command` and `make test-feature-matrix-command`, after
+nextest, the doctests, and the workflow contracts. CI mirrors that split: a
+`Check declared dependency topology` step runs `make check-topology` once
+between the nextest installation and the audit, a
+`Test the topology command boundary` step runs `make test-topology-command`
+after the coverage action, and a `Test the feature matrix command boundary`
+step runs `make test-feature-matrix-command` after the topology
+command-boundary step. CI also runs `make feature-matrix` after the topology
+check. The command-boundary steps are deliberately separate from coverage: each
+boundary case starts a nested Cargo process, and the steps therefore avoid the
+coverage action's environment — its instrumentation, its `RUSTFLAGS`, and its
+clang/lld linker settings. The avoidance is scoped to that environment, not to
+flags generally: the recipe still composes any `RUSTFLAGS` it inherits, and the
+harness hands Make the caller's original value so the nested recipe composes
+them only once.
 
 `tests/workflow_contracts/topology_wiring_test.py` holds that wiring contract,
 with the evaluation and finding functions in the sibling

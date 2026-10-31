@@ -39,7 +39,7 @@ reused to construct this matrix.
 `tests/topology_command.rs` and its private child modules exercise real Make
 subprocesses using isolated Cargo fixtures. Their ignored tests run through
 `make test-topology-command`, after ordinary tests and outside coverage.
-`tests/workflow_contracts/mock_wiring.py` supplies evaluated Make recipes;
+`tests/workflow_contracts/mock_wiring.py` supplies evaluated Make recipes.
 `topology_wiring_contract.py` and `topology_wiring_test.py` demonstrate wiring
 contracts with negative controls. Consult these before adding helpers.
 `.github/workflows/ci.yml` runs topology validation and a separate command
@@ -350,8 +350,8 @@ make nixie 2>&1 | tee /tmp/nixie-statelet-1-2-2-feature-matrix-command.out
 Stop the sequence on failure and inspect its log. `make markdownlint` includes
 spelling. Inspect formatter and generated spelling changes before staging;
 unrelated generated dictionary changes require a separate base change under
-repository policy. After EP-M1 and EP-M2 also run `make feature-matrix` and
-`make check-topology`, with the same logging discipline. Validate a changed
+repository policy. After EP-M1 and EP-M2, also run `make feature-matrix` and
+`make check-topology` with the same logging discipline. Validate a changed
 Makefile with `mbake validate Makefile`. Gate success means completed zero exit
 statuses, never merely progress output. Tests run both before and after code
 changes; the red phase fails for the expected missing or broken behaviour.
@@ -519,7 +519,7 @@ against Python's `sorted`, which uses code-point order. Neither the recipe nor
 the test is changed by this branch, and the failing module passed with
 `LC_ALL=C`, so this is a pre-existing host-locale defect rather than a feature
 matrix regression. Pin `LC_ALL=C` on the discovery sort. `LC_ALL` rather than
-`LC_COLLATE` is deliberate: `LC_ALL` outranks every `LC_*` category, so a
+`LC_COLLATE` is deliberate: `LC_ALL` outranks every `LC_*` category, so an
 `LC_COLLATE`-only pin is void whenever the caller exports `LC_ALL`, which
 containers and CI images commonly do. The repair is a separate atomic commit
 because it is outside the feature-matrix product scope; it makes the existing
@@ -669,7 +669,7 @@ the base branch's `typos.toml` commit was replayed as a feature-branch commit
 and the branch's merge base with
 [#164](https://github.com/leynos/statelet/pull/164) fell back to `9825bf7`.
 Retargeting alone would then still have shown `typos.toml` in the pull request
-diff, because the two copies were distinct commits. The series was replayed
+diff because the two copies were distinct commits. The series was replayed
 again onto the base branch head (`5163ed4`), with `3cb49c6` — the duplicated
 copy — as the exclusive boundary. The two copies carry the same patch
 (`git patch-id` matches), all 28 feature commits replayed unchanged
@@ -677,4 +677,4 @@ copy — as the exclusive boundary. The two copies carry the same patch
 `58b2c7d` apart from this revision. The merge base with the base branch is now
 `5163ed4`, so the stacked diff is feature-only once the retarget is authorized.
 The code gates were not rerun because the only delta over the gated tree is
-this Markdown revision; `check-fmt` and `markdownlint` were rerun to cover it.
+this Markdown revision. `check-fmt` and `markdownlint` were rerun to cover it.
