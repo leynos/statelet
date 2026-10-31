@@ -57,6 +57,10 @@ jobs:
       # the routine check at an isolated workspace that would pass.
       - name: Check declared dependency topology
         run: make check-topology
+      - name: Install cargo-hack
+        run: make install-cargo-hack
+      - name: Check the feature matrix
+        run: make feature-matrix
       # Dependency audits report advisories against the whole lockfile, so a
       # newly published advisory would fail every Dependabot PR regardless of
       # content and deadlock auto-merge. The scheduled audit workflow covers
@@ -113,3 +117,5 @@ jobs:
       # or the clang/lld linker environment the action sets.
       - name: Test the topology command boundary
         run: make test-topology-command
+      - name: Test the feature matrix command boundary
+        run: make test-feature-matrix-command

@@ -13,6 +13,8 @@ compact and omits build output such as `target/`.
 .
 ├── .cargo/
 │   └── config.toml
+├── .codescene/
+│   └── code-health-rules.json
 ├── .github/
 │   ├── dependabot.yml
 │   └── workflows/
@@ -37,6 +39,8 @@ compact and omits build output such as `target/`.
 │   ├── topology_check.rs
 │   ├── topology_check/
 │   ├── topology_command.rs
+│   ├── feature_matrix_command.rs
+│   ├── feature_matrix_command/
 │   ├── workflow_contracts/
 │   └── v0_1_exit_register_contract.rs
 ├── scripts/
@@ -63,6 +67,10 @@ compact and omits build output such as `target/`.
 
 - `.cargo/config.toml`: Configures Cargo defaults for local development,
   including Linux linker and code-generation settings.
+- `.codescene/code-health-rules.json`: Holds the scoped CodeScene code-health
+  rule overrides. The feature-matrix command-boundary tests pass textual Cargo
+  arguments and inspect textual output, so they disable the string-heavy
+  argument rule for those two files only.
 - `.python-version`: Selects managed CPython 3.14 for direct `uv` runs.
 - `.github/dependabot.yml`: Configures automated dependency update checks.
 - `.github/workflows/act-validation.yml`: Runs the generated workflow
@@ -116,6 +124,20 @@ compact and omits build output such as `target/`.
   isolated Cargo fixtures, one make invocation per case. Its cases are ignored
   by default and run only through `make test-topology-command`, because each
   starts a nested Cargo process that routine tests and coverage must not host.
+- `tests/feature_matrix_command.rs`: Exercises `make feature-matrix` against
+  isolated Cargo package fixtures. Its ignored cases run through
+  `make test-feature-matrix-command` after ordinary tests and the topology
+  command-boundary suite.
+- `tests/feature_matrix_command/harness.rs`: Holds the private process and
+  filesystem fixture helper used only by `tests/feature_matrix_command.rs`. It
+  copies the repository Makefile into each isolated package root, records Cargo
+  invocations through a test-owned wrapper, passes caller flags through the
+  dedicated test environment variable, and removes owned roots on exit. It is
+  not a shared runtime utility.
+- `tests/feature_matrix_command/optional.rs`: Checks the matrix behaviour when
+  Cargo's `dep:` feature syntax suppresses an implicit dependency feature.
+- `tests/feature_matrix_command/assertions.rs`: Interprets recorded Cargo
+  invocations for the command-boundary suite's configuration assertions.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
 - `tests/workflow_contracts/topology_wiring_contract.py` and
@@ -127,6 +149,12 @@ compact and omits build output such as `target/`.
   policy selector, and both `.NOTPARALLEL` entries. The test module supplies
   the live evidence and fifteen negative controls, one per clause and one per
   `env` scope the coverage boundary reads.
+- `tests/workflow_contracts/feature_matrix_wiring_contract.py` and
+  `feature_matrix_wiring_test.py`: Guard the feature-matrix recipe and CI
+  wiring. They evaluate `make -n` output and read `ci.yml` with the strict
+  workflow reader; negative controls cover command bindings, build flags,
+  serialization, tool provisioning, test-suite inclusion, and the coverage
+  boundary.
 - `tests/workflow_contracts/mock_wiring.py`: The single test-only boundary for
   evaluating Make recipes without running them, shared by the workflow
   contracts that assert on `make -n` output.

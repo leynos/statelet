@@ -515,18 +515,37 @@ Use pass tests for supported macro shapes:
 
 ### 11.5 Feature combinations
 
-From the first commit that introduces optional macro or tracing features, CI or
-local gates should check:
+`make feature-matrix` is the local library-check entrypoint, available before
+optional features exist, as specified in the
+[task 1.2.2 execution plan](execplans/1-2-2-feature-matrix-command.md). It
+checks no-default features, the default configuration, each declared feature in
+isolation, and all features together. The repository pins `cargo-hack` at
+0.6.45; install it with `make install-cargo-hack`. The command checks the
+installed version before running the matrix. `cargo-hack` includes declared
+optional-dependency features in its isolated rows. The named `tracing` and
+`serde` configurations are therefore checked only after those features are
+declared; an absent feature is not reported as a successful check.
 
-- no default features;
-- default features;
-- `tracing`;
-- `serde`;
-- all features.
+This is a finite set of library compilation configurations, not an exhaustive
+feature powerset or proof of resolved dependency-graph policy. The separate
+topology check continues to enforce the declared dependency boundary.
 
 Use `cargo-hack` or an equivalent from the first feature-matrix commit, not
 after the matrix becomes painful. Manual inspection is not enough for the
 feature-leak risk called out by the design review.
+
+`make test` runs the ignored `make test-feature-matrix-command` boundary suite
+after the topology command-boundary suite. The tests use isolated package
+fixtures and the real Make target to check selected configurations, failures,
+and preservation of fixture manifests.
+
+Routine validation also runs the matrix directly: `make all` invokes
+`make feature-matrix` after `make check-topology` and before spelling. CI
+installs the pinned `cargo-hack` tool and runs the same matrix after topology
+validation. CI runs `make test-feature-matrix-command` after coverage and the
+topology command-boundary step, without coverage instrumentation. Workflow
+contracts guard the Make and CI wiring, matrix arguments, and serialization so
+the finite checks remain part of routine validation.
 
 ### 11.6 Dependency topology
 
@@ -545,9 +564,11 @@ validate a future resolved graph or feature leakage, and its success message
 says so.
 
 The check is part of routine validation rather than an optional operator step:
-`make all` runs the pinned-input `make check-topology` form after tests and
-before spelling, `make test` ends with `make test-topology-command` after the
-ordinary routes, and CI runs the same two targets in the same relative order.
+`make all` runs the pinned-input `make check-topology` form after tests, then
+runs the feature matrix and spelling; `make test` ends with
+`make test-topology-command` followed by `make test-feature-matrix-command`
+after the ordinary routes. CI runs topology validation followed by the feature
+matrix, and runs both command-boundary targets after coverage.
 `tests/workflow_contracts/topology_wiring_test.py` holds that wiring, including
 a negative control for each clause, so a Makefile or workflow edit that
 disconnects the gate fails the workflow contracts.

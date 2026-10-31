@@ -76,7 +76,7 @@ late clean-up task. See design.md §§5, 10, 11.5-11.7.
     runtime/proc-macro edges tracked in
     [issue 112](https://github.com/leynos/statelet/issues/112) before defining
     the later workspace policy. This roadmap update does not fix that issue.
-- [ ] 1.2.2. Add a feature-matrix command for the current crate.
+- [x] 1.2.2. Add a feature-matrix command for the current crate.
   - Requires 1.2.1.
   - Use `cargo-hack` or an equivalent command from the first optional-feature
     commit.

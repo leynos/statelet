@@ -1,0 +1,24 @@
+{
+  "rule_sets": [
+    {
+      "matching_content_path": "tests/feature_matrix_command.rs",
+      "rules": [
+        {
+          "name": "String Heavy Function Arguments",
+          "weight": 0.0
+        }
+      ],
+      "matching_content_path_doc": "Command-boundary fixtures use textual Cargo arguments and diagnostics."
+    },
+    {
+      "matching_content_path": "tests/feature_matrix_command/assertions.rs",
+      "matching_content_path_doc": "Assertions inspect textual Cargo arguments and output.",
+      "rules": [
+        {
+          "name": "String Heavy Function Arguments",
+          "weight": 0.0
+        }
+      ]
+    }
+  ]
+}
