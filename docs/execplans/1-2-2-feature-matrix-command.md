@@ -417,6 +417,18 @@ planning-only document.
       under C collation before the change. Recorded as a separate
       prerequisite repair, updated the discovery contract assertion that
       matched the literal `| sort` text, then re-ran the gates.
+- [x] (2026-10-31) Committed the prerequisite repair as `f930e22` and pushed
+      it (`git@github.com:leynos/statelet.git`), confirming the remote head
+      matches. Gate run 4 on this content passed `fmt`, `check-fmt`, `lint`,
+      `typecheck`, workflow contracts (515 tests plus 5 subtests), nextest
+      (218), doctests (1), topology command (3/3), `markdownlint`, `nixie`,
+      `feature-matrix`, `check-topology`, `mbake`, and `git diff --check`.
+      The ignored command-boundary suite is the only outstanding gate: each of
+      its 18 serial cases cold-builds a private Cargo fixture, and shared-host
+      admission made a single `make test` invocation exceed the harness's
+      two-hour cap after three passes. Re-running that one target detached on
+      the committed tree; log
+      `/tmp/test-statelet-1-2-2-feature-matrix-command-5.out`.
 
 ## Surprises & discoveries
 
