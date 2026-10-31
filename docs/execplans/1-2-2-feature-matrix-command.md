@@ -648,3 +648,17 @@ boundary cases), `markdownlint` including spelling, `nixie`, `feature-matrix`,
 `check-topology`, `mbake validate Makefile`, and `git diff --check`. Review
 repairs then covered the `.codescene/` layout entry, the `LC_ALL=C` discovery
 pin, the README `cargo-hack` provisioning step, and the status restatement.
+
+Revision 12 (2026-10-31): Rebased the branch onto `origin/main` (`9825bf7`) so
+the pull request carries main's `rstest` 0.28.0, `actions/setup-python`, and
+Whitaker installer updates. The replay was patch-identical to the previous
+series (`git range-diff` reported no changed commit) and raised no conflict, so
+the matrix rows, wiring, and contracts needed no adaptation, and `rstest` 0.28
+compiles against the existing tests unchanged. The regenerated `typos.toml` is
+shared-dictionary drift unrelated to this feature, so it moved to the base pull
+request [#164](https://github.com/leynos/statelet/pull/164) and this branch is
+stacked on that base. Post-rebase gates on the new head: `check-fmt`, `test`
+(218 nextest cases, one doctest, 515 workflow-contract tests plus five
+subtests, three topology cases, and 18 boundary cases), `typecheck`, and `lint`
+(Pylint 10.00/10) all pass. Retargeting this pull request onto the base branch
+still needs maintainer authorization.
