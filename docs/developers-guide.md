@@ -289,10 +289,15 @@ the `Field | Value | Evidence` register. ADR 003's separate five-column
 exit-register parser keeps its own schema and validation rules.
 
 The macro-cost contract keeps field names, table values and evidence prose as
-strings until validation. Unknown or duplicate fields and placeholder values
-must remain available so the contract can report the exact input that needs
-repair. Add a private type only when construction enforces an invariant that a
-later check or caller relies on; do not wrap every text cell by default.
+borrowed text until validation. Unknown or duplicate fields and placeholder
+values must remain available so the contract can report the exact input that
+needs repair. Its `types.rs` child names the roles that cross function
+boundaries — task identifier, document path, revision, source line, field name
+and table cell — as copyable `&str` wrappers. Construct them with a tuple
+literal at the point where text is read. The wrappers assert no invariant and
+keep the raw value reachable, so they are role names rather than validating
+types; do not add fallible constructors or turn them into a general text
+library.
 
 The contract binds roadmap tasks 4.2.2 and 4.3.1 by number and checks required
 phrases in design section 11.7 and each task body. Renumbering or rewording

@@ -13,12 +13,21 @@ use evidence::{
     row,
 };
 
-use super::{MarkdownFile, Task, candidate_identity, is_heading, task_block};
+use super::{
+    MarkdownFile,
+    Task,
+    candidate_identity,
+    is_heading,
+    task_block,
+    types::{DocumentPath, FieldName, Revision, SourceLine, TaskId},
+};
 
 #[path = "evidence.rs"]
 pub(super) mod evidence;
+#[path = "placeholders.rs"]
+mod placeholders;
 
-pub(super) fn full_revision(revision: &str) -> bool {
+pub(super) fn full_revision(revision: Revision<'_>) -> bool {
     revision.len() == 40
         && revision
             .bytes()
@@ -92,7 +101,11 @@ fn check_template(template: &MarkdownFile) -> Result<Register, String> {
     }
     let register = parse_register(template)?;
     check_fields(template, &register.fields)?;
-    let kind_row = row(&template.path, &register.rows, "comparison-kind")?;
+    let kind_row = row(
+        DocumentPath(template.path.as_str()),
+        &register.rows,
+        FieldName("comparison-kind"),
+    )?;
     if !kind_row.value.contains("mdtablefix") || !kind_row.value.contains("synthetic-20") {
         return Err(format!(
             "{}: template must document both comparison kinds",
@@ -145,7 +158,7 @@ fn check_roadmap(roadmap: &MarkdownFile) -> Result<RoadmapTasks, String> {
         ("4.2.2", "synthetic macro cost note"),
         ("4.3.1", "both real and synthetic macro cost notes"),
     ] {
-        let task = task_block(roadmap, id)?;
+        let task = task_block(roadmap, TaskId(id))?;
         let body = normalize(&task.text.to_ascii_lowercase());
         for phrase in [evidence, "macro-cost-candidate", "design revision"] {
             if !body.contains(phrase) {
@@ -308,7 +321,12 @@ fn parse_note(file: &MarkdownFile, template: &Register) -> Result<Option<Note>, 
     check_measurement_values(file, &register, kind)?;
     let (macro_revision, design_revision) = candidate_id(
         &file.path,
-        &row(&file.path, &register.rows, "candidate-id")?.value,
+        &row(
+            DocumentPath(file.path.as_str()),
+            &register.rows,
+            FieldName("candidate-id"),
+        )?
+        .value,
     )?;
     Ok(Some(Note {
         kind,
@@ -318,7 +336,12 @@ fn parse_note(file: &MarkdownFile, template: &Register) -> Result<Option<Note>, 
 }
 
 fn parse_kind(file: &MarkdownFile, register: &Register) -> Result<Kind, String> {
-    row(&file.path, &register.rows, "comparison-kind").and_then(|kind_row| {
+    row(
+        DocumentPath(file.path.as_str()),
+        &register.rows,
+        FieldName("comparison-kind"),
+    )
+    .and_then(|kind_row| {
         Kind::parse(&kind_row.value).ok_or_else(|| {
             format!(
                 "{}: comparison-kind must be mdtablefix or synthetic-20",
@@ -336,7 +359,7 @@ fn candidate_id(path: &str, candidate_value: &str) -> Result<(String, String), S
     let (macro_revision, design_revision) = value
         .split_once("; design=")
         .ok_or_else(|| format!("{path}: candidate-id must name macro and design revisions"))?;
-    if !full_revision(macro_revision) || !full_revision(design_revision) {
+    if !full_revision(Revision(macro_revision)) || !full_revision(Revision(design_revision)) {
         return Err(format!(
             "{path}: candidate-id requires full lowercase 40-character revisions"
         ));
@@ -349,7 +372,7 @@ fn section_body(source: &str, heading: &str) -> Option<String> {
     lines.position(|line| line.trim() == heading)?;
     Some(
         lines
-            .take_while(|line| !is_heading(line))
+            .take_while(|line| !is_heading(SourceLine(line)))
             .collect::<Vec<_>>()
             .join("\n"),
     )

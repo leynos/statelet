@@ -107,9 +107,10 @@ compact and omits build output such as `target/`.
   evidence selected by roadmap tasks 4.2.2 and 4.3.1. Its capability-filesystem
   adapter treats a missing notes directory as empty and reports read failures
   with the affected path.
-- `tests/macro_cost_note_contract/`: Holds the private contract checker and
-  in-memory forms and named cases. The schema stays within this integration
-  test; it is not a general Markdown parser or shared runtime utility.
+- `tests/macro_cost_note_contract/`: Holds the private contract checker,
+  in-memory forms, named cases, and the borrowed text-role wrappers. The schema
+  stays within this integration test; it is not a general Markdown parser or
+  shared runtime utility.
 - `tests/topology_check.rs`: Guards the pre-macro workspace boundary named in
   design section 11.6. It applies a closed policy to Cargo's own metadata for
   this workspace, and it names the guard `make topology-check` selects.

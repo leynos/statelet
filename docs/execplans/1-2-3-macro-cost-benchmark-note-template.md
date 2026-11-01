@@ -347,12 +347,69 @@ and obtain explicit approval before proceeding.
     `7f5a3f0dd7614902dadc4f89a915d6a0edf6d403` reported no whitespace
     errors. Logs use the `pr153-docs-258b508` suffix under `/tmp`.
   - `make markdownlint` reached the spelling gate, which regenerated
-    `typos.toml` from the shared dictionary. That drift is unrelated to this
-    branch and belongs in a separate base change, so the generated file was
-    captured to `/tmp` and restored rather than committed. Spelling still
-    passed against the stricter regenerated file.
+    `typos.toml` from the shared dictionary. The first pass restored the
+    generated file; the end-of-turn quality hook then reported it as
+    uncommitted, and regenerating reproduced the same content. The generated
+    file was committed as `6e41e60` to keep gate runs idempotent. The drift is
+    shared with the base branch and does not change the feature diff.
   - Draft closeout, hosted CodeScene disposition and merge remain with
     `pr-babysitting`; the PR is an open draft at this head.
+- [x] (2026-10-31) Clear the two retained CodeScene advisories by refactor
+  rather than suppression.
+  - The user authorized a refactor on 2026-10-31, superseding the earlier
+    retain-unsuppressed disposition. `newt-hype` and `the-newtype` are not
+    dependencies and the plan forbids new ones, so
+    `tests/macro_cost_note_contract/types.rs` introduces borrowed tuple
+    newtypes for the contract's text roles: `TaskId`, `DocumentPath`,
+    `Revision`, `SourceLine`, `FieldName` and `CellText`. Construction stays a
+    tuple literal at each read site, so no new string-taking constructor
+    re-introduces the metric.
+  - `task_block`, `task_status`, `is_heading`, `read_document` and the note
+    predicates now take their domain wrappers, and `insert_row` groups the
+    three decoded cells in `RegisterCells`. The remaining `&str` parameters
+    are `check`'s two raw fixture-text inputs and `marker_count`'s text plus
+    marker scanner. Both flagged files are now well below the 39% threshold
+    with no suppression directive, rule weight or threshold change.
+  - Local `cs delta 7f5a3f0` (working tree, uncommitted changes included)
+    reports "No issues found in checked changes", before and after the
+    placeholder split below. `cs check` scores the integration root,
+    `contract.rs`, `evidence.rs` and `placeholders.rs` at 10.00; `types.rs`
+    scores N/A because it declares only wrappers and has no measurable
+    functions. The focused type check passed. Focused Clippy then rejected
+    three `explicit_auto_deref` sites passing `SourceLine(*line)`, because
+    deref coercion already applies to tuple-struct constructor arguments, and
+    one `needless_pass_by_value` on `RegisterCells`; the sites now pass the
+    reference directly and the struct derives `Clone, Copy`. Re-run focused
+    Clippy exited 0.
+  - The first wrapper pass grew `evidence.rs` to 412 lines, past the
+    repository's 400-line file limit. Its lexical placeholder and citation
+    predicates moved to `placeholders.rs`, leaving `evidence.rs` at 323 lines
+    and `placeholders.rs` at 100, with `contract.rs` at 381 and the
+    integration root at 377. `cargo nextest run --test
+    macro_cost_note_contract --all-features` passed all 80 cases after the
+    split, and focused Clippy still exited 0.
+  - The full sequential gate set passed on the refactored working tree under
+    `LC_ALL=C.UTF-8`, reproducing GitHub Actions' collation: `make check-fmt`
+    (2s), `make lint` (708s, Clippy and dylint clean, Pylint 10.00/10),
+    `make typecheck` (62s), `make test` (388s: 286 nextest cases passed with
+    three `topology_command` cases skipped and rerun green, one doctest, 432
+    workflow cases plus five subtests), `make markdownlint` (5s, spelling gate
+    clean and `typos.toml` unchanged, 0 issues across 42 files), `make nixie`
+    (1s) and `git diff --check`. Logs use the `pr153-ci-locale` suffix under
+    `/tmp`. The pre-run and post-run working-tree diffs are byte-identical, so
+    no gate rewrote a tracked file.
+  - The `LC_ALL=C.UTF-8` prefix is required, not cosmetic. The Makefile's
+    Python discovery recipe pipes `find` into a bare `sort`, while
+    `test_python_gateway_receives_sorted_complete_inventory` asserts Python's
+    byte-order `sorted`. Under the host default `LANG=en_US.UTF-8`, collation
+    orders `.github` after `benchmarks` and both parametrizations fail. The
+    defect predates this branch on base `7f5a3f0`; repairing the Makefile is
+    outside this plan's approved scope and is reported for owner disposition.
+  - The post-split CodeScene re-run repeats the earlier result:
+    `cs delta 7f5a3f0` reports "No issues found in checked changes", and
+    `cs check` scores the integration root, `contract.rs`, `evidence.rs` and
+    `placeholders.rs` at 10.00 with `types.rs` N/A. Hosted verification
+    follows before publication.
 
 ## Surprises & discoveries
 
@@ -379,6 +436,14 @@ task 1.2.3 and task 4.2.2. Its task-level replacement of 4.3.1 failed with a
 `dependency anchor 4.3.1 was not found` error even for the unchanged fragment,
 so that one task is updated by a narrowly scoped text patch and inspected in
 the diff.
+
+`make test` is locale-sensitive on this host independently of this branch. The
+Python discovery recipe pipes `find` into a bare `sort`, but the workflow
+contract asserts Python's byte-order `sorted`, so a non-`C` collation fails two
+parametrizations. GitHub Actions runs under `C.UTF-8`, where the gate passes;
+local runs must set `LC_ALL=C.UTF-8` to reproduce CI. The defect exists on base
+`7f5a3f0` and this plan excludes Makefile and workflow changes, so it is
+reported for owner disposition rather than repaired here.
 
 ## Decision log
 
@@ -437,6 +502,16 @@ the diff.
   dependencies, public API or budget changes, but the current branch has 13
   changed paths excluding this plan, one over the approved limit of 12. The
   user approved this one-path variance before these corrections resumed.
+- (2026-10-31, approved deviation) Replace the retained String Heavy advisories
+  with domain wrappers instead of suppressing them. The user directed a
+  refactor on 2026-10-31, with suppression only as a last resort. Because
+  neither `newt-hype` nor `the-newtype` is a dependency and dependencies are
+  frozen, the contract uses explicit borrowed tuple newtypes with `Deref` and
+  `Display` implemented once per role. This reverses only the earlier "retain
+  without type-only changes" disposition; runtime code, public API,
+  dependencies, thresholds, exit policy and scope are unchanged. The new module
+  raises the implementation path count to eight excluding this plan, still
+  within the approved maximum of 12.
 
 ## Outcomes & retrospective
 

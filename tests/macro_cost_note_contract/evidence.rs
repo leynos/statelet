@@ -6,9 +6,13 @@
 use std::collections::BTreeMap;
 
 use super::{
-    super::{MarkdownFile, REQUIRED_FIELDS},
+    super::{
+        MarkdownFile,
+        REQUIRED_FIELDS,
+        types::{CellText, DocumentPath, FieldName, SourceLine},
+    },
     Kind,
-    full_revision,
+    placeholders::{has_revision_citation, placeholder, unavailable_reason},
 };
 
 pub(super) type RegisterRows = BTreeMap<String, Row>;
@@ -20,101 +24,26 @@ pub(super) fn marker_count(source: &str, marker: &str) -> usize {
     source.lines().filter(|line| line.trim() == marker).count()
 }
 
-fn placeholder(value: &str) -> bool {
-    let trimmed = value.trim();
-    let checked_value = unavailable_reason(trimmed).unwrap_or(trimmed);
-    checked_value.is_empty()
-        || starts_with_placeholder_marker(checked_value)
-        || contains_angle_placeholder(checked_value)
-}
-
-fn unavailable_reason(value: &str) -> Option<&str> {
-    let (label, reason) = value.trim().split_once(':')?;
-    label
-        .eq_ignore_ascii_case("unavailable")
-        .then_some(reason.trim())
-}
-
-fn starts_with_placeholder_marker(value: &str) -> bool {
-    let normalized = value.to_ascii_lowercase();
-    ["tbd", "todo", "pending", "n/a"].iter().any(|marker| {
-        normalized.strip_prefix(marker).is_some_and(|suffix| {
-            suffix.is_empty()
-                || suffix
-                    .chars()
-                    .next()
-                    .is_some_and(|character| !character.is_ascii_alphanumeric() && character != '_')
-        })
-    })
-}
-
-fn contains_angle_placeholder(value: &str) -> bool {
-    // Test each opener independently so malformed markup cannot hide a later
-    // standalone placeholder.
-    value
-        .match_indices('<')
-        .any(|(open, _)| placeholder_opening_at(value, open))
-}
-
-fn placeholder_opening_at(value: &str, open: usize) -> bool {
-    let candidate_start = open + 1;
-    let Some(close_offset) = value.get(candidate_start..).and_then(|tail| tail.find('>')) else {
-        return false;
-    };
-    matches!(
-        (value.get(candidate_start..candidate_start + close_offset), value.get(..open)),
-        (Some(candidate), Some(prefix))
-            if !is_attached_to_path_identifier(prefix) && is_placeholder_token(candidate)
-    )
-}
-
-fn is_attached_to_path_identifier(prefix: &str) -> bool {
-    // This lexical heuristic admits Rust generics. `Type<sha>` is ambiguous,
-    // so revision placeholders must remain standalone to be rejected.
-    let path = prefix.strip_suffix("::").unwrap_or(prefix);
-    path.chars()
-        .next_back()
-        .is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
-}
-
-fn is_placeholder_token(candidate: &str) -> bool {
-    let trimmed_candidate = candidate.trim();
-    is_placeholder_identifier(trimmed_candidate) || is_placeholder_instruction(trimmed_candidate)
-}
-
-fn is_placeholder_identifier(candidate: &str) -> bool {
-    candidate.is_empty()
-        || candidate.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '/')
-        })
-}
-
-fn is_placeholder_instruction(candidate: &str) -> bool {
-    ["fill ", "insert ", "replace ", "example ", "your "]
-        .iter()
-        .any(|prefix| candidate.to_ascii_lowercase().starts_with(prefix))
-}
-
-fn has_revision_citation(evidence: &str) -> bool {
-    evidence.split_whitespace().any(|token| {
-        let Some((repository, rest)) = token.split_once('@') else {
-            return false;
-        };
-        let Some((revision, path)) = rest.split_once(':') else {
-            return false;
-        };
-        !repository.is_empty() && full_revision(revision) && !path.is_empty()
-    })
-}
-
-pub(super) fn row<'a>(path: &str, rows: &'a RegisterRows, field: &str) -> Result<&'a Row, String> {
-    rows.get(field)
+pub(super) fn row<'a>(
+    path: DocumentPath<'_>,
+    rows: &'a RegisterRows,
+    field: FieldName<'_>,
+) -> Result<&'a Row, String> {
+    rows.get(field.0)
         .ok_or_else(|| format!("{path}: required field `{field}` is missing"))
 }
 
 pub(super) struct Row {
     pub(super) value: String,
     pub(super) evidence: String,
+}
+
+/// One parsed `Field | Value | Evidence` register row, still borrowed.
+#[derive(Clone, Copy)]
+struct RegisterCells<'a> {
+    field: CellText<'a>,
+    value: CellText<'a>,
+    evidence: CellText<'a>,
 }
 
 pub(super) struct Register {
@@ -129,7 +58,7 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
     };
     let mut header_seen = false;
     for line in register_body(file)?.lines() {
-        let Some(cells) = table_cells(file, line)? else {
+        let Some(cells) = table_cells(file, SourceLine(line))? else {
             continue;
         };
         if cells == ["Field", "Value", "Evidence"] {
@@ -145,7 +74,16 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
         if !header_seen {
             return Err(format!("{}: malformed register row", file.path));
         }
-        insert_row(file, cells, &mut register)?;
+        let [field, value, evidence] = cells;
+        insert_row(
+            file,
+            RegisterCells {
+                field: CellText(field),
+                value: CellText(value),
+                evidence: CellText(evidence),
+            },
+            &mut register,
+        )?;
     }
     if !header_seen {
         return Err(format!("{}: register has no table header", file.path));
@@ -185,33 +123,40 @@ fn is_separator_row(cells: &[&str]) -> bool {
 
 fn insert_row(
     file: &MarkdownFile,
-    cells: [&str; 3],
+    cells: RegisterCells<'_>,
     register: &mut Register,
 ) -> Result<(), String> {
-    let [field_cell, value_cell, evidence_cell] = cells;
-    let field = field_cell.to_owned();
+    let RegisterCells {
+        field,
+        value,
+        evidence,
+    } = cells;
+    let field_name = field.0.to_owned();
     if register
         .rows
         .insert(
-            field_cell.to_owned(),
+            field.0.to_owned(),
             Row {
-                value: value_cell.to_owned(),
-                evidence: evidence_cell.to_owned(),
+                value: value.0.to_owned(),
+                evidence: evidence.0.to_owned(),
             },
         )
         .is_some()
     {
         return Err(format!(
-            "{}: duplicate macro-cost field `{field}`",
+            "{}: duplicate macro-cost field `{field_name}`",
             file.path
         ));
     }
-    register.fields.push(field);
+    register.fields.push(field_name);
     Ok(())
 }
 
-fn table_cells<'a>(file: &MarkdownFile, raw_line: &'a str) -> Result<Option<[&'a str; 3]>, String> {
-    let line = raw_line.trim();
+fn table_cells<'a>(
+    file: &MarkdownFile,
+    raw_line: SourceLine<'a>,
+) -> Result<Option<[&'a str; 3]>, String> {
+    let line = raw_line.0.trim();
     if !line.starts_with('|') || !line.ends_with('|') {
         return Ok(None);
     }
@@ -261,23 +206,35 @@ pub(super) fn check_required_values(
     kind: Kind,
 ) -> Result<(), String> {
     for field in REQUIRED_FIELDS {
-        let field_row = row(&file.path, &register.rows, field)?;
-        let template_row = row(&file.path, &template.rows, field)?;
+        let field_row = row(
+            DocumentPath(file.path.as_str()),
+            &register.rows,
+            FieldName(field),
+        )?;
+        let template_row = row(
+            DocumentPath(file.path.as_str()),
+            &template.rows,
+            FieldName(field),
+        )?;
         if field_row.value.trim() == template_row.value.trim() {
             return Err(format!(
                 "{}: `{field}` still matches the template value",
                 file.path
             ));
         }
-        check_required_field(file, kind, field, field_row)?;
+        check_required_field(file, kind, FieldName(field), field_row)?;
     }
     if register
         .rows
         .values()
-        .any(|field_row| unavailable_reason(&field_row.value).is_some())
-        && !row(&file.path, &register.rows, "budget-verdict")?
-            .value
-            .contains("Inconclusive")
+        .any(|field_row| unavailable_reason(CellText(field_row.value.as_str())).is_some())
+        && !row(
+            DocumentPath(file.path.as_str()),
+            &register.rows,
+            FieldName("budget-verdict"),
+        )?
+        .value
+        .contains("Inconclusive")
     {
         return Err(format!(
             "{}: unavailable evidence requires an Inconclusive verdict",
@@ -290,7 +247,7 @@ pub(super) fn check_required_values(
 fn check_required_field(
     file: &MarkdownFile,
     kind: Kind,
-    field: &str,
+    field: FieldName<'_>,
     field_row: &Row,
 ) -> Result<(), String> {
     if required_value_is_placeholder(field, field_row, kind) {
@@ -299,7 +256,9 @@ fn check_required_field(
             file.path
         ));
     }
-    if placeholder(&field_row.evidence) || !has_revision_citation(&field_row.evidence) {
+    if placeholder(CellText(field_row.evidence.as_str()))
+        || !has_revision_citation(CellText(field_row.evidence.as_str()))
+    {
         return Err(format!(
             "{}: `{field}` needs revision-bound evidence",
             file.path
@@ -308,14 +267,16 @@ fn check_required_field(
     Ok(())
 }
 
-fn required_value_is_placeholder(field: &str, row: &Row, kind: Kind) -> bool {
+fn required_value_is_placeholder(field: FieldName<'_>, row: &Row, kind: Kind) -> bool {
     let value = row.value.trim();
-    match field {
+    match field.0 {
         "stress-fixture-results" if kind == Kind::Mdtablefix => {
-            value != REAL_STRESS_EXCEPTION && placeholder(value)
+            value != REAL_STRESS_EXCEPTION && placeholder(CellText(value))
         }
-        "review" => value != "Pending: G3 decision not yet recorded" && placeholder(value),
-        _ => placeholder(value),
+        "review" => {
+            value != "Pending: G3 decision not yet recorded" && placeholder(CellText(value))
+        }
+        _ => placeholder(CellText(value)),
     }
 }
 
@@ -324,10 +285,14 @@ pub(super) fn check_measurement_values(
     register: &Register,
     kind: Kind,
 ) -> Result<(), String> {
-    let count = row(&file.path, &register.rows, "annotation-count")?
-        .value
-        .parse::<u32>()
-        .map_err(|_| format!("{}: annotation-count must be a positive integer", file.path))?;
+    let count = row(
+        DocumentPath(file.path.as_str()),
+        &register.rows,
+        FieldName("annotation-count"),
+    )?
+    .value
+    .parse::<u32>()
+    .map_err(|_| format!("{}: annotation-count must be a positive integer", file.path))?;
     let is_valid_count = match kind {
         Kind::Mdtablefix => count > 0,
         Kind::Synthetic20 => count == 20,
@@ -339,7 +304,11 @@ pub(super) fn check_measurement_values(
             kind.label()
         ));
     }
-    let stress_results = row(&file.path, &register.rows, "stress-fixture-results")?;
+    let stress_results = row(
+        DocumentPath(file.path.as_str()),
+        &register.rows,
+        FieldName("stress-fixture-results"),
+    )?;
     match (kind, stress_results.value.trim() == REAL_STRESS_EXCEPTION) {
         (Kind::Mdtablefix, false) => Err(format!(
             "{}: real comparison must mark stress results not applicable",

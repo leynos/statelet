@@ -4,6 +4,8 @@
 mod contract;
 #[path = "macro_cost_note_contract/fixtures.rs"]
 mod fixtures;
+#[path = "macro_cost_note_contract/types.rs"]
+mod types;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -11,6 +13,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use cap_std::{ambient_authority, fs::Dir};
 use contract::check_contract;
 use rstest::rstest;
+use types::{DocumentPath, Revision, SourceLine, TaskId};
 
 const REQUIRED_FIELDS: [&str; 18] = [
     "comparison-kind",
@@ -80,7 +83,9 @@ fn candidate_identity(task: &Task) -> Result<Candidate, String> {
         .ok_or_else(|| format!("completed task {id} comment must name a design revision"))?;
     let macro_revision = macro_revision_raw.trim();
     let design_revision = design_revision_raw.trim();
-    if !contract::full_revision(macro_revision) || !contract::full_revision(design_revision) {
+    if !contract::full_revision(Revision(macro_revision))
+        || !contract::full_revision(Revision(design_revision))
+    {
         return Err(format!(
             "completed task {id} comment requires full lowercase revisions"
         ));
@@ -92,13 +97,16 @@ fn candidate_identity(task: &Task) -> Result<Candidate, String> {
 }
 
 #[rstest]
-#[case::short_macro(fixtures::MACRO_REVISION, "abc123")]
-#[case::uppercase_design(fixtures::DESIGN_REVISION, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")]
+#[case::short_macro(Revision(fixtures::MACRO_REVISION), Revision("abc123"))]
+#[case::uppercase_design(
+    Revision(fixtures::DESIGN_REVISION),
+    Revision("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
+)]
 fn completed_claim_rejects_invalid_comment_revision(
-    #[case] original: &str,
-    #[case] replacement: &str,
+    #[case] original: Revision<'_>,
+    #[case] replacement: Revision<'_>,
 ) {
-    let roadmap = fixtures::roadmap_with_claims(true, false).replacen(original, replacement, 1);
+    let roadmap = fixtures::roadmap_with_claims(true, false).replacen(original.0, replacement.0, 1);
     let error = check(
         &fixtures::template(),
         &roadmap,
@@ -111,12 +119,14 @@ fn completed_claim_rejects_invalid_comment_revision(
     );
 }
 
-fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
+fn task_block(roadmap: &MarkdownFile, id: TaskId<'_>) -> Result<Task, String> {
     let lines = roadmap.text.lines().collect::<Vec<_>>();
     let matches = lines
         .iter()
         .enumerate()
-        .filter_map(|(index, line)| task_status(line, id).map(|complete| (index, complete)))
+        .filter_map(|(index, line)| {
+            task_status(SourceLine(line), id).map(|complete| (index, complete))
+        })
         .collect::<Vec<_>>();
     let [(start, complete)] = matches.as_slice() else {
         return Err(format!(
@@ -128,10 +138,12 @@ fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
         .iter()
         .enumerate()
         .skip(start + 1)
-        .find_map(|(index, line)| (line.starts_with("- ") || is_heading(line)).then_some(index))
+        .find_map(|(index, line)| {
+            (line.starts_with("- ") || is_heading(SourceLine(line))).then_some(index)
+        })
         .unwrap_or(lines.len());
     Ok(Task {
-        id: id.to_owned(),
+        id: id.0.to_owned(),
         complete: *complete,
         text: lines
             .get(*start..end)
@@ -140,7 +152,7 @@ fn task_block(roadmap: &MarkdownFile, id: &str) -> Result<Task, String> {
     })
 }
 
-fn task_status(line: &str, id: &str) -> Option<bool> {
+fn task_status(line: SourceLine<'_>, id: TaskId<'_>) -> Option<bool> {
     let (status, rest) = line.strip_prefix("- [")?.split_once(']')?;
     let complete = match status {
         "x" => true,
@@ -151,28 +163,31 @@ fn task_status(line: &str, id: &str) -> Option<bool> {
         return None;
     }
     rest.trim_start()
-        .strip_prefix(id)
+        .strip_prefix(id.0)
         .is_some_and(|suffix| suffix.starts_with(". "))
         .then_some(complete)
 }
 
 #[rstest]
-#[case("- [x] 4.2.2. Require a synthetic note.", Some(true))]
-#[case("- [x]  4.2.2. Require a synthetic note.", Some(true))]
-#[case("- [ ]\t4.2.2. Require a synthetic note.", Some(false))]
-#[case("- [x]4.2.2. Require a synthetic note.", None)]
-#[case("- [y] 4.2.2. Require a synthetic note.", None)]
-fn task_status_tolerates_checkbox_spacing(#[case] line: &str, #[case] expected: Option<bool>) {
-    assert_eq!(task_status(line, "4.2.2"), expected);
+#[case(SourceLine("- [x] 4.2.2. Require a synthetic note."), Some(true))]
+#[case(SourceLine("- [x]  4.2.2. Require a synthetic note."), Some(true))]
+#[case(SourceLine("- [ ]\t4.2.2. Require a synthetic note."), Some(false))]
+#[case(SourceLine("- [x]4.2.2. Require a synthetic note."), None)]
+#[case(SourceLine("- [y] 4.2.2. Require a synthetic note."), None)]
+fn task_status_tolerates_checkbox_spacing(
+    #[case] line: SourceLine<'_>,
+    #[case] expected: Option<bool>,
+) {
+    assert_eq!(task_status(line, TaskId("4.2.2")), expected);
 }
 
-fn is_heading(line: &str) -> bool { line.starts_with("## ") || line.starts_with("### ") }
+fn is_heading(line: SourceLine<'_>) -> bool { line.starts_with("## ") || line.starts_with("### ") }
 
-fn read_document(root: &Utf8Path, path: &str) -> Result<String, String> {
+fn read_document(root: &Utf8Path, path: DocumentPath<'_>) -> Result<String, String> {
     let directory = Dir::open_ambient_dir(root, ambient_authority())
         .map_err(|error| format!("{root}: cannot open repository root: {error}"))?;
     directory
-        .read_to_string(path)
+        .read_to_string(path.0)
         .map_err(|error| format!("{root}/{path}: {error}"))
 }
 
@@ -215,16 +230,16 @@ fn read_notes(root: &Utf8Path) -> Result<Vec<MarkdownFile>, String> {
 fn live_documents(
     root: &Utf8Path,
 ) -> Result<(MarkdownFile, MarkdownFile, MarkdownFile, Vec<MarkdownFile>), String> {
-    let read = |path: &str| {
+    let read = |path: DocumentPath<'_>| {
         read_document(root, path).map(|text| MarkdownFile {
-            path: path.to_owned(),
+            path: path.0.to_owned(),
             text,
         })
     };
     Ok((
-        read("docs/macro-cost-benchmark-note-template.md")?,
-        read("docs/design.md")?,
-        read("docs/roadmap.md")?,
+        read(DocumentPath("docs/macro-cost-benchmark-note-template.md"))?,
+        read(DocumentPath("docs/design.md"))?,
+        read(DocumentPath("docs/roadmap.md"))?,
         read_notes(root)?,
     ))
 }
@@ -321,8 +336,11 @@ fn fixture_root_is_removed_when_its_guard_drops() {
 #[test]
 fn missing_live_template_reports_its_path() {
     let root = fixture_root().expect("test fixture tree can be created");
-    let error = read_document(root.path(), "docs/macro-cost-benchmark-note-template.md")
-        .expect_err("missing template must be reported");
+    let error = read_document(
+        root.path(),
+        DocumentPath("docs/macro-cost-benchmark-note-template.md"),
+    )
+    .expect_err("missing template must be reported");
     assert!(
         error.contains("docs/macro-cost-benchmark-note-template.md"),
         "{error}"
