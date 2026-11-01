@@ -3,24 +3,29 @@
 Status: APPROVED — the user approved scope and tolerances on 2026-10-25, before
 implementation; EP-M1 and EP-M2 acceptance completed on 2026-10-26. A
 post-publication CodeScene follow-up passed deterministic validation and expert
-review; commit `85e64a0` is published and PR #153 remains draft. A local
-CodeRabbit review of repair commit `5bad4e6` found two overlapping placeholder
-issues and one fixture-literal style issue; their corrections passed the full
-local validation sequence. Commit `05a2360` passed its fresh local review with
-five findings. Community review resolved conflicting fixture-location and
-generic-syntax recommendations. Their corrections passed the full local gate
-sequence. Commit `3be47f5` passed its local review with one minor checkbox
-spacing finding that matches the explicit V2 verification requirement; that
-correction passed the full validation sequence. The follow-up review of
-`1a3581b` found two further contract gaps. Proposed remediation is recorded
-below. The user approved the one-path variance on 2026-10-28, before the review
-corrections resumed. Post-rebase validation passed and the final code received
-independent review; documentation gates were revalidated on the published head
-on 2026-10-31. The hosted completeness assessment then reported three in-scope
-items; the claim-matrix module, the expanded environment instructions and the
-corrected scope arithmetic address all three, and the full local gate set
-re-passed on the repaired candidate. Hosted-gate disposition for the repaired
-head remains.
+review; commit `85e64a0` is published and PR #153 was draft at that point. A
+local CodeRabbit review of repair commit `5bad4e6` found two overlapping
+placeholder issues and one fixture-literal style issue; their corrections
+passed the full local validation sequence. Commit `05a2360` passed its fresh
+local review with five findings. Community review resolved conflicting
+fixture-location and generic-syntax recommendations. Their corrections passed
+the full local gate sequence. Commit `3be47f5` passed its local review with one
+minor checkbox spacing finding that matches the explicit V2 verification
+requirement; that correction passed the full validation sequence. The follow-up
+review of `1a3581b` found two further contract gaps. Proposed remediation is
+recorded below. The user approved the one-path variance on 2026-10-28, before
+the review corrections resumed. Post-rebase validation passed and the final
+code received independent review; documentation gates were revalidated on the
+published head on 2026-10-31. The hosted completeness assessment then reported
+three in-scope items; the claim-matrix module, the expanded environment
+instructions and the corrected scope arithmetic address all three, and the full
+local gate set re-passed on the repaired candidate. Commit `18a7a3d` is
+published with every hosted check green and the assessment cleared in full, and
+PR #153 is ready for review. The formal CodeRabbit review of that head raised
+two actionable comments: a stale plan status and a bare `Unavailable` value
+that escaped the incomplete-value and `Inconclusive` checks. Both are repaired
+here; the corrections pass the full local gate sequence. Confirmation from the
+formal review and any merge remain outstanding, and merging is not authorized.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -170,7 +175,7 @@ and obtain explicit approval before proceeding.
     contract boundary instead of widening their visibility through a child
     module. A third attempt compiled the contract and reported four Clippy
     shadowing findings; those bindings were renamed. The fourth gate run passed.
-- [ ] (2026-10-26) Complete local CodeRabbit review and draft PR closeout.
+- [x] (2026-10-26) Complete local CodeRabbit review and draft PR closeout.
   - Remediation commit `85e64a02e2557d645d5afd4c641dedebf50eb9f9` was pushed
     over SSH; the remote-tracking branch and GitHub head matched after
     readback. PR #153's body records the CodeScene disposition, gate results
@@ -442,6 +447,30 @@ and obtain explicit approval before proceeding.
     `make nixie` (2s), and `git diff --check` in both staged and unstaged form.
     No gate dirtied the worktree. The focused contract target also passed 104 of
     104 cases, including all 24 claim-matrix cases.
+  - Hosted checks for `18a7a3d` are green: required `build-test` (8m41s),
+    `act-validation` (2m30s), `CodeScene Code Health Review (main)` (26s, no
+    outstanding issue) and Gecko Security. The ExecPlan
+    completeness/correctness assessment returned "clear in full" for this head.
+    PR #153 was marked ready for review with its base and head unchanged, and
+    the formal CodeRabbit review then raised two actionable comments: the plan
+    status and closeout were stale, and a bare `Unavailable` value escaped the
+    incomplete-value and `Inconclusive` checks. Both were verified against the
+    source and are repaired with a bare-marker case in the negative controls.
+    Remaining work is the formal review's confirmation of those repairs and any
+    merge, which is not authorized.
+  - The repair candidate passed the full sequential gate set under
+    `LC_ALL=C.UTF-8`: `make check-fmt` (2s), `make lint` (584s; Clippy and
+    dylint clean, Pylint 10.00/10), `make typecheck` (332s), `make test` (425s;
+    312 nextest cases passed with three `topology_command` cases skipped and
+    re-run green, one doctest, 432 workflow cases plus five subtests),
+    `make markdownlint` (7s; 0 issues across 42 files, `typos.toml` unchanged),
+    `make nixie` (2s), and `git diff --check` in both staged and unstaged form.
+    The combined working-tree diff hash was identical before and after, so no
+    gate rewrote a tracked file. The first attempt stopped at `make check-fmt`,
+    which wanted to rewrap this plan; `make fmt` applied it, a second
+    `mdtablefix --check` reported the tree unchanged, and the full sequence then
+    ran green. The focused contract target passed 106 of 106 cases, the two new
+    cases being the bare `Unavailable` and `unavailable` markers.
 
 ## Surprises & discoveries
 
@@ -560,6 +589,14 @@ reported for owner disposition rather than repaired here.
   publication-only authority, and merges are not authorized. The exception is
   recorded here and in the PR description, and hosted review is asked to
   confirm it rather than have the instruction silently ignored.
+- (2026-11-01, review correction) Treat a bare `Unavailable` marker, with no
+  colon and no reason, as an unavailable measurement whose reason is empty.
+  Previously only `Unavailable:` reached the incomplete-value and
+  `Inconclusive` checks, so a note could record a measurement as unavailable
+  without the verdict the template requires. The lexical predicate now splits
+  the label from an optional reason, so the bare form, the empty-reason form
+  and the ordinary form share one code path. Negative controls cover both cases
+  of the bare marker. No path, dependency, API or scope change results.
 
 ## Outcomes & retrospective
 

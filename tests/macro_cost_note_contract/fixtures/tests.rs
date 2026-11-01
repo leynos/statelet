@@ -44,6 +44,8 @@ fn open_tasks_accept_empty_notes_and_both_complete_comparison_forms() {
 }
 
 #[rstest]
+#[case("Unavailable")]
+#[case("unavailable")]
 #[case("Unavailable:")]
 #[case("Unavailable: <reason>")]
 #[case("unavailable:")]

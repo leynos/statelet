@@ -19,8 +19,13 @@ pub(super) fn placeholder(value: CellText<'_>) -> bool {
 }
 
 pub(super) fn unavailable_reason(value: CellText<'_>) -> Option<&str> {
-    let (label, reason) = value.0.trim().split_once(':')?;
+    // A bare marker is a documented unavailable form with an empty reason, so
+    // it reaches the same incomplete-value and `Inconclusive` checks as
+    // `Unavailable:` rather than passing as ordinary text.
+    let trimmed = value.0.trim();
+    let (label, reason) = trimmed.split_once(':').unwrap_or((trimmed, ""));
     label
+        .trim()
         .eq_ignore_ascii_case("unavailable")
         .then_some(reason.trim())
 }
