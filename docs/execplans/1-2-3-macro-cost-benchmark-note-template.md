@@ -21,11 +21,14 @@ three in-scope items; the claim-matrix module, the expanded environment
 instructions and the corrected scope arithmetic address all three, and the full
 local gate set re-passed on the repaired candidate. Commit `18a7a3d` is
 published with every hosted check green and the assessment cleared in full, and
-PR #153 is ready for review. The formal CodeRabbit review of that head raised
+PR #153 is ready for review. The formal CodeRabbit review of `18a7a3d` raised
 two actionable comments: a stale plan status and a bare `Unavailable` value
-that escaped the incomplete-value and `Inconclusive` checks. Both are repaired
-here; the corrections pass the full local gate sequence. Confirmation from the
-formal review and any merge remain outstanding, and merging is not authorized.
+that escaped the incomplete-value and `Inconclusive` checks. Both were repaired
+in `253fde3`, and the formal review of that head approved the PR while raising
+one minor functional-correctness finding: a candidate comment was accepted
+anywhere in a completed task block rather than beside the claim. That adjacency
+check is added here. Confirmation of the repair on the new head and any merge
+remain outstanding, and merging is not authorized.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -471,6 +474,21 @@ and obtain explicit approval before proceeding.
     `mdtablefix --check` reported the tree unchanged, and the full sequence then
     ran green. The focused contract target passed 106 of 106 cases, the two new
     cases being the bare `Unavailable` and `unavailable` markers.
+  - The formal CodeRabbit review of `253fde3` (completed 07:47Z) approved
+    PR #153 and left one minor functional-correctness follow-up: candidate
+    comments were accepted anywhere in a completed task block, although the
+    roadmap and the template ask for the comment beside the claim. The repaired
+    candidate adds the positional check, moves the roadmap fixtures'
+    declarations directly after each claim, and adds a negative control that
+    places the declaration in the evidence bullets. The focused contract target
+    passed 107 of 107 cases, and the full sequential gate set passed under
+    `LC_ALL=C.UTF-8`: `make check-fmt` (3s), `make lint` (315s; Clippy and
+    dylint clean, Pylint 10.00/10), `make typecheck` (137s), `make test` (368s;
+    313 nextest cases with three `topology_command` cases skipped and re-run
+    green, one doctest, 432 workflow cases plus five subtests),
+    `make markdownlint` (7s), `make nixie` (2s), and `git diff --check` in both
+    forms. No gate rewrote a tracked file. Remaining work is confirmation of
+    this repair on the new head and any merge, which is not authorized.
 
 ## Surprises & discoveries
 
@@ -597,6 +615,15 @@ reported for owner disposition rather than repaired here.
   the label from an optional reason, so the bare form, the empty-reason form
   and the ordinary form share one code path. Negative controls cover both cases
   of the bare marker. No path, dependency, API or scope change results.
+- (2026-11-01, review correction) Require a completed task's candidate comment
+  to be the first line after its claim. The roadmap and the template both ask
+  for the comment "beside" the claim, but `candidate_identity` scanned every
+  line of the task block, so a declaration moved into the block's later bullets
+  still satisfied a completed claim. The single-comment and revision checks are
+  unchanged; a negative control moves the declaration into the evidence bullets
+  and expects the adjacency diagnostic. The roadmap fixtures now place the
+  declaration immediately after each claim. No path, dependency, API or scope
+  change results.
 
 ## Outcomes & retrospective
 

@@ -90,11 +90,11 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
         "macro-cost-candidate with the design revision.\n",
     ));
     if claim_422 {
+        roadmap.push_str(&candidate_comment());
         roadmap.push_str(concat!(
             "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; ",
             "design-revision: <design-sha> -->`.\n",
         ));
-        roadmap.push_str(&candidate_comment());
         roadmap
             .push_str("  - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n");
     }
@@ -106,11 +106,11 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
         "macro-cost-candidate and the design revision.\n",
     ));
     if claim_431 {
+        roadmap.push_str(&candidate_comment());
         roadmap.push_str(concat!(
             "  - Use the form `<!-- macro-cost-candidate: <macro-sha>; ",
             "design-revision: <design-sha> -->`.\n",
         ));
-        roadmap.push_str(&candidate_comment());
         roadmap.push_str(concat!(
             "  - Success: [real](validation-notes/4.2.1-mdtablefix-macro-cost.md) and ",
             "[synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)\n",

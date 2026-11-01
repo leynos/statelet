@@ -63,13 +63,21 @@ fn candidate_identity(task: &Task) -> Result<Candidate, String> {
     let comments = block
         .lines()
         .map(str::trim)
-        .filter(|line| line.starts_with(PREFIX))
+        .enumerate()
+        .filter(|(_, line)| line.starts_with(PREFIX))
         .collect::<Vec<_>>();
-    let [comment] = comments.as_slice() else {
+    let [(line_index, comment)] = comments.as_slice() else {
         return Err(format!(
             "completed task {id} needs one macro-cost-candidate comment"
         ));
     };
+    // The roadmap asks for the comment beside the completed claim, so a
+    // declaration anywhere else in the block must not satisfy it.
+    if *line_index != 1 {
+        return Err(format!(
+            "completed task {id} candidate comment must sit beside the task claim"
+        ));
+    }
     let tail = comment
         .split_once(PREFIX)
         .map(|(_, tail)| tail)

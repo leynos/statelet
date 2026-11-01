@@ -301,6 +301,22 @@ fn completed_claim_rejects_duplicate_candidate_declarations() {
 }
 
 #[test]
+fn completed_claim_rejects_a_misplaced_candidate_declaration() {
+    let declaration = format!(
+        "  <!-- macro-cost-candidate: {MACRO_REVISION}; design-revision: {DESIGN_REVISION} -->\n"
+    );
+    let roadmap = roadmap_with_claims(true, false)
+        .replacen(&declaration, "", 1)
+        .replace(
+            "  - Success: [synthetic]",
+            &format!("{declaration}  - Success: [synthetic]"),
+        );
+    let error = check(&template(), &roadmap, &[note(Kind::Synthetic20, 20)])
+        .expect_err("a candidate comment must sit beside the claim");
+    assert!(error.contains("beside the task claim"), "{error}");
+}
+
+#[test]
 fn publication_claim_requires_both_selected_note_kinds() {
     let form = template();
     let roadmap = roadmap_with_claims(false, true);
