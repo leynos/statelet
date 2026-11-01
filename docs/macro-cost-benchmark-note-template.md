@@ -25,7 +25,7 @@ artefact instead.
 | comparison-kind | <mdtablefix or synthetic-20> | <repo>@<sha>:<path> |
 | candidate-id | macro=<macro-sha>; design=<design-sha> | <repo>@<sha>:<path> |
 | revisions | Baseline/macro commits; fixture paths; lockfile; annotation diff | <repo>@<sha>:<path> |
-| environment | CPU/RAM; OS; target; compiler/tools; features; linker; flags/jobs | <repo>@<sha>:<path> |
+| environment | CPU/RAM; OS; target; rustc/Cargo versions; profiles; compiler backend; features | <repo>@<sha>:<path> |
 | clean-build-protocol | Commands; clean dirs; caches; wrappers; admission/load; order; repeats | <repo>@<sha>:<path> |
 | clean-debug-baseline-seconds | Raw baseline samples; median T0; range | <repo>@<sha>:<path> |
 | clean-debug-macro-seconds | Raw macro samples; median T1; range | <repo>@<sha>:<path> |
@@ -42,6 +42,10 @@ artefact instead.
 | review | Author; reviewer; date; limitations; related Phase 4 evidence | <repo>@<sha>:<path> |
 <!-- macro-cost-register:end -->
 ```
+
+Record the exact `rustc` and Cargo versions, the selected build profiles and
+compiler backend, the enabled features, the linker, and the compiler flags and
+job concurrency actually used.
 
 Use positive baseline time `T0`, macro time `T1`, annotation count `N`,
 baseline artefact size `S0 > 0`, and macro artefact size `S1`:

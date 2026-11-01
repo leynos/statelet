@@ -1,5 +1,7 @@
 //! Exercises the macro-cost validation contract through realistic fixtures.
 
+#[path = "tests/claim_matrix_tests.rs"]
+mod claim_matrix_tests;
 #[path = "tests/placeholder_tests.rs"]
 mod placeholder_tests;
 
@@ -84,13 +86,19 @@ fn marked_note_accepts_a_cited_unavailable_measurement_with_a_reason(#[case] val
 fn marked_note_rejects_descriptive_values_copied_from_the_template() {
     let template = template().replace(
         "| environment | <value> |",
-        "| environment | CPU/RAM; OS; target; compiler/tools |",
+        concat!(
+            "| environment | CPU/RAM; OS; target; rustc/Cargo versions; ",
+            "profiles; compiler backend; features |",
+        ),
     );
     let mut evidence = note(Kind::Synthetic20, 20);
     replace_value(
         &mut evidence,
         FixtureField::ENVIRONMENT,
-        "CPU/RAM; OS; target; compiler/tools",
+        concat!(
+            "CPU/RAM; OS; target; rustc/Cargo versions; ",
+            "profiles; compiler backend; features",
+        ),
     )
     .expect("fixture field exists");
 

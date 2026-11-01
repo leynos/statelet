@@ -16,7 +16,11 @@ correction passed the full validation sequence. The follow-up review of
 below. The user approved the one-path variance on 2026-10-28, before the review
 corrections resumed. Post-rebase validation passed and the final code received
 independent review; documentation gates were revalidated on the published head
-on 2026-10-31. Hosted-gate disposition remains.
+on 2026-10-31. The hosted completeness assessment then reported three in-scope
+items; the claim-matrix module, the expanded environment instructions and the
+corrected scope arithmetic address all three, and the full local gate set
+re-passed on the repaired candidate. Hosted-gate disposition for the repaired
+head remains.
 
 This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
@@ -415,7 +419,29 @@ and obtain explicit approval before proceeding.
     the developers' guide. The observation was verified and the heading
     promoted to level two, which is where the next sibling section already
     sits. `make markdownlint`, `make nixie` and `make check-fmt` re-passed
-    afterwards. Hosted verification follows before publication.
+    afterwards.
+  - Hosted CI for `7eb8d45` is green: required `build-test` (8m29s),
+    `act-validation` (2m44s), `CodeScene Code Health Review (main)` (42s,
+    6 gates passed, 0 annotations, review APPROVED on the head), and Gecko
+    Security. `CodeScene`'s earlier String Heavy advisories no longer appear;
+    their stale inline discussions now return 404.
+  - The hosted ExecPlan completeness/correctness assessment replied with three
+    items. The V2 matrix did not exercise both completed claims together or an
+    unselected historical note; the template's `environment` row did not name
+    Cargo, profiles or the compiler backend; and the recorded path arithmetic
+    did not match the delivered diff. All three were verified against the
+    current source and are addressed by the claim-matrix module, the expanded
+    environment row, and the corrected decision log above. The `typos.toml`
+    scope discrepancy is recorded as an explicit exception.
+  - The repaired candidate passed the full sequential local gate set under
+    `LC_ALL=C.UTF-8`: `make check-fmt` (1s), `make lint` (503s; Clippy and
+    dylint clean, Pylint 10.00/10), `make typecheck` (167s), `make test` (230s;
+    310 nextest cases passed with three skipped, one doctest, 432 workflow cases
+    plus five subtests, and the three ignored topology cases re-run green),
+    `make markdownlint` (9s; 0 issues across 42 files, `typos.toml` unchanged),
+    `make nixie` (2s), and `git diff --check` in both staged and unstaged form.
+    No gate dirtied the worktree. The focused contract target also passed 104 of
+    104 cases, including all 24 claim-matrix cases.
 
 ## Surprises & discoveries
 
@@ -505,9 +531,10 @@ reported for owner disposition rather than repaired here.
 - (2026-10-28, approved deviation) Bind selected-note links to each task's
   `Success:` criterion and recognize `Unavailable:` case-insensitively for both
   placeholder and verdict checks. These review fixes require no new paths,
-  dependencies, public API or budget changes, but the current branch has 13
-  changed paths excluding this plan, one over the approved limit of 12. The
-  user approved this one-path variance before these corrections resumed.
+  dependencies, public API or budget changes. The count recorded on 2026-10-28
+  was 13 changed paths excluding this plan, one over the approved limit of 12;
+  the user approved that one-path variance before these corrections resumed.
+  Later additions raised the count, and the current figure is recorded below.
 - (2026-10-31, approved deviation) Replace the retained String Heavy advisories
   with domain wrappers instead of suppressing them. The user directed a
   refactor on 2026-10-31, with suppression only as a last resort. Because
@@ -516,8 +543,23 @@ reported for owner disposition rather than repaired here.
   `Display` implemented once per role. This reverses only the earlier "retain
   without type-only changes" disposition; runtime code, public API,
   dependencies, thresholds, exit policy and scope are unchanged. The new module
-  raises the implementation path count to eight excluding this plan, still
-  within the approved maximum of 12.
+  raises the implementation path count. The `origin/main` comparison after the
+  assessment repairs contains 17 paths excluding this plan, or 16 excluding
+  this plan and the generated `typos.toml`, against the approved maximum of 12.
+  That count exceeds the 13-path variance approved on 2026-10-28, because the
+  mandatory 400-line file limit forced the placeholder predicates and then the
+  claim matrix into their own modules. The refactor instruction of 2026-10-31
+  authorized this work; the count is recorded here as an explicit variance
+  rather than described as conforming.
+- (2026-11-01, recorded exception) The generated `typos.toml` regeneration
+  remains on this branch although `AGENTS.md` prefers unrelated spelling drift
+  to arrive through a separate base change. The regeneration is identical on
+  the base branch and is produced by the spelling gate on every run, so
+  removing it makes every gate run leave the worktree dirty without removing
+  the drift. A separate base pull request cannot land under this assignment's
+  publication-only authority, and merges are not authorized. The exception is
+  recorded here and in the PR description, and hosted review is asked to
+  confirm it rather than have the instruction silently ignored.
 
 ## Outcomes & retrospective
 
@@ -549,8 +591,9 @@ clarifies the count field, distinguishes the inline roadmap example from a
 standalone candidate declaration, rejects values copied unchanged from the
 template, and prevents synthetic notes from using the real-comparison
 exception. Negative controls cover those failure cases. All requested local
-gates pass on the repair diff; the draft PR remains subject to hosted checks
-and maintainer disposition of the two existing CodeScene advisories.
+gates passed on the repair diff. A later refactor cleared both hosted CodeScene
+String Heavy advisories without any suppression directive, weight change or
+threshold change; hosted checks are recorded in Progress.
 
 A review of the resulting commit found that the documented unavailable-value
 syntax still admitted an empty reason and copied notes lacked a title. Those
