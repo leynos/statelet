@@ -408,8 +408,14 @@ and obtain explicit approval before proceeding.
   - The post-split CodeScene re-run repeats the earlier result:
     `cs delta 7f5a3f0` reports "No issues found in checked changes", and
     `cs check` scores the integration root, `contract.rs`, `evidence.rs` and
-    `placeholders.rs` at 10.00 with `types.rs` N/A. Hosted verification
-    follows before publication.
+    `placeholders.rs` at 10.00 with `types.rs` N/A.
+  - The local `coderabbit review --agent` milestone review covered
+    `7f5a3f0..eb38ead` across 17 files and reported one low finding: the new
+    macro cost section was nested under the StateName consumption contract in
+    the developers' guide. The observation was verified and the heading
+    promoted to level two, which is where the next sibling section already
+    sits. `make markdownlint`, `make nixie` and `make check-fmt` re-passed
+    afterwards. Hosted verification follows before publication.
 
 ## Surprises & discoveries
 

@@ -265,7 +265,7 @@ status, and contributes nothing to the verdict. Such a note is never deleted to
 make the suite pass: a blocked note that names its blocker is a finding, and
 the finding is the point.
 
-### Macro cost benchmark notes
+## Macro cost benchmark notes
 
 Copy the fenced register from
 [`docs/macro-cost-benchmark-note-template.md`](macro-cost-benchmark-note-template.md)
