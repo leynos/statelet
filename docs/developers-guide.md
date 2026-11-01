@@ -38,6 +38,10 @@ cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nex
 cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-audit
 ```
 
+Install the pinned feature-matrix tool with `make install-cargo-hack`. The
+`make feature-matrix` target checks that the installed version matches the
+repository pin before running any Cargo checks.
+
 CI provisions Whitaker through the approved shared `install-whitaker` action.
 For local setup, follow the existing
 [standalone installation](whitaker-users-guide.md#standalone-installation-recommended)
@@ -46,27 +50,50 @@ guide, including its `cargo-dylint` and `dylint-link` prerequisites. Local
 installer-managed toolchain is separate from Statelet's development toolchain.
 
 Use `make all` for formatting, linting, typechecking, tests, the
-dependency-topology check, workflow contracts, and spelling. `make lint` runs
-rustdoc, Clippy, Whitaker, and the Python lint gateways. `make test` requires
-the binary-installed cargo-nextest runner and runs the Python workflow
-contracts under managed CPython 3.14, then the topology command-boundary suite.
-`make audit` derives the Rust workspace root with `cargo metadata`, extracts
-its manifests under the same managed interpreter, and runs `cargo audit` once
-from the workspace root. `make coverage` uses `cargo llvm-cov` with `lld`.
+dependency-topology check, feature matrix, workflow contracts, and spelling.
+`make lint` runs rustdoc, Clippy, Whitaker, and the Python lint gateways.
+`make test` requires the binary-installed cargo-nextest runner and runs the
+Python workflow contracts under managed CPython 3.14, then the topology and
+feature-matrix command-boundary suites. The feature-matrix boundary suite
+requires `cargo-hack`. `make audit` derives the Rust workspace root with
+`cargo metadata`, extracts its manifests under the same managed interpreter,
+and runs `cargo audit` once from the workspace root. `make coverage` uses
+`cargo llvm-cov` with `lld`.
 
 The generated `Makefile` exposes these public targets:
 
 - `make all` runs formatting checks, linting, typechecking, tests, the
-  pinned-input topology check, and spelling, in that order.
+  pinned-input topology check, the feature matrix, and spelling, in that order.
 - `make check-fmt` verifies Rust formatting and Markdown formatting.
 - `make lint` runs rustdoc, Clippy, Whitaker, Pylint, and the pinned df12
   Python lints. Rust warnings are denied.
 - `make typecheck` runs `ty` over every repository Python source and Cargo
   check over the Rust targets.
 - `make test` runs cargo-nextest, Cargo doctests, Python workflow contracts,
-  then the topology command-boundary suite in sequence, even when invoked with
-  `make -j`. The workflow contracts use pinned dependencies and managed CPython
-  3.14.
+  then the topology and feature-matrix command-boundary suites in sequence,
+  even when invoked with `make -j`. The workflow contracts use pinned
+  dependencies and managed CPython 3.14.
+- `make feature-matrix` checks the statelet library with no default features,
+  the default configuration, each declared feature separately, and all
+  features. It requires the pinned `cargo-hack`; install it with
+  `make install-cargo-hack`. Absent features such as `tracing` or `serde` are
+  not checked until they are declared.
+- `make install-cargo-hack` installs the pinned `cargo-hack` release, and
+  `make check-cargo-hack` fails unless the installed version matches the pin.
+  `make feature-matrix` runs that preflight before any Cargo check, so a stale
+  or missing tool is reported instead of silently changing the matrix.
+- CI installs the pinned `cargo-hack` tool and runs `make feature-matrix` after
+  the topology check. It runs `make test-feature-matrix-command` after coverage
+  and the topology command-boundary suite, without inheriting coverage
+  instrumentation.
+- The Makefile's `_FEATURE_MATRIX_RUSTFLAGS` and `_FEATURE_MATRIX_CARGO_ARGS`
+  are private to the matrix recipe. Other targets retain their own flag and
+  package selection rather than depending on these variables.
+- `make test-feature-matrix-command` runs the ignored command-boundary cases
+  sequentially. Its private helper under `tests/feature_matrix_command/` is
+  owned by that suite alone; it invokes the real Make target against isolated
+  Cargo fixtures, preserves caller `RUSTFLAGS`, and removes each owned fixture
+  root before asserting the captured results.
 - `make topology-check` applies the dependency-topology policy to Cargo's
   metadata for this workspace. `make check-topology` is the same check with the
   repository manifest pinned, and `make test-topology-command` runs the
@@ -273,20 +300,24 @@ form that pins the repository manifest and ignores any fixture override, and
 `make test-topology-command` runs the command-boundary cases after the ordinary
 tests.
 
-Routine validation reaches both forms. `make all` ends with
-`make check-topology` after tests and before spelling, so the pinned form runs
+Routine validation reaches both forms. `make all` runs `make check-topology`
+after tests and before the feature matrix and spelling, so the pinned form runs
 without an operator remembering it. `make test` ends with
-`make test-topology-command`, after nextest, the doctests, and the workflow
-contracts. CI mirrors that split: a `Check declared dependency topology` step
-runs `make check-topology` once between the nextest installation and the audit,
-and a `Test the topology command boundary` step runs
-`make test-topology-command` after the coverage action. The second step is
-deliberately separate from coverage: each boundary case starts a nested Cargo
-process, and the step therefore avoids the coverage action's environment — its
-instrumentation, its `RUSTFLAGS`, and its clang/lld linker settings. The
-avoidance is scoped to that environment, not to flags generally: the recipe
-still composes any `RUSTFLAGS` it inherits, and the harness hands Make the
-caller's original value so the nested recipe composes them only once.
+`make test-topology-command` and `make test-feature-matrix-command`, after
+nextest, the doctests, and the workflow contracts. CI mirrors that split: a
+`Check declared dependency topology` step runs `make check-topology` once
+between the nextest installation and the audit, a
+`Test the topology command boundary` step runs `make test-topology-command`
+after the coverage action, and a `Test the feature matrix command boundary`
+step runs `make test-feature-matrix-command` after the topology
+command-boundary step. CI also runs `make feature-matrix` after the topology
+check. The command-boundary steps are deliberately separate from coverage: each
+boundary case starts a nested Cargo process, and the steps therefore avoid the
+coverage action's environment — its instrumentation, its `RUSTFLAGS`, and its
+clang/lld linker settings. The avoidance is scoped to that environment, not to
+flags generally: the recipe still composes any `RUSTFLAGS` it inherits, and the
+harness hands Make the caller's original value so the nested recipe composes
+them only once.
 
 `tests/workflow_contracts/topology_wiring_test.py` holds that wiring contract,
 with the evaluation and finding functions in the sibling

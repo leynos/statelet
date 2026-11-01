@@ -28,6 +28,8 @@ jobs:
           install-clang-lld: 'true'
       - name: Install repository Rust components
         run: make install-rust-toolchain
+      - name: Install cargo-hack
+        run: make install-cargo-hack
       - name: Install mdtablefix
         uses: leynos/shared-actions/.github/actions/install-mdtablefix@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
         with:
