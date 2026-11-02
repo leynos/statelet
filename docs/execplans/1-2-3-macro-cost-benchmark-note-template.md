@@ -514,6 +514,27 @@ and obtain explicit approval before proceeding.
     Compile admission was saturated by another worktree's trybuild jobs, so
     the lint gate needed two harness-capped attempts before a detached third
     attempt completed; that is queueing, not a finding.
+- [x] (2026-11-02) Publish the property-test repair and reconcile the new head.
+  - `9dbcc81` is pushed. Local `HEAD` and the remote branch both resolve to
+    `9dbcc81bb1357750f033282259351cb9f2a01324`.
+  - Hosted checks on `9dbcc81` are green: `build-test`, `act-validation`,
+    `CodeScene Code Health Review (main)` and Gecko Security. Sourcery skipped
+    because the diff exceeds its 150,000-character limit, and the CodeRabbit
+    check-run is `skipped` pending a managed review.
+  - The pre-merge reconciliation comment is posted as issue comment
+    `6585956497` on head `9dbcc81`. It repairs the Testing (Property / Proof)
+    warning and rebuts Docstring Coverage with the no-public-API evidence.
+  - A managed review request is queued through `comenq` as `614cd4da`, with an
+    estimated post time of about seven hours forty minutes. The queue cooldown
+    is a wait, not an impasse, so the request stays queued.
+  - `main` has advanced from `7f5a3f0` to `9a0104a` (seven commits). The
+    `main-required-checks` ruleset sets `strict_required_status_checks_policy`
+    to `false`, and the pull request reports `mergeable: true`, so no rebase is
+    required. Hosted CI still evaluates the pull-request merge ref, which
+    includes the current `main`.
+  - The pull-request description is refreshed for `9dbcc81`. The changed-path
+    count against `origin/main` is now 19, or 18 excluding the ExecPlan and 17
+    excluding the generated `typos.toml`.
 
 ## Surprises & discoveries
 
