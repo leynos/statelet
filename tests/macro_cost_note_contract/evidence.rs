@@ -152,7 +152,7 @@ fn insert_row(
     Ok(())
 }
 
-fn table_cells<'a>(
+pub(super) fn table_cells<'a>(
     file: &MarkdownFile,
     raw_line: SourceLine<'a>,
 ) -> Result<Option<[&'a str; 3]>, String> {

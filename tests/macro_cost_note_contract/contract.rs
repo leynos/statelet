@@ -26,6 +26,9 @@ use super::{
 pub(super) mod evidence;
 #[path = "placeholders.rs"]
 mod placeholders;
+#[cfg(test)]
+#[path = "property_tests.rs"]
+mod property_tests;
 
 pub(super) fn full_revision(revision: Revision<'_>) -> bool {
     revision.len() == 40

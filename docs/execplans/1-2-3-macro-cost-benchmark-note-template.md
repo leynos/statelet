@@ -489,6 +489,31 @@ and obtain explicit approval before proceeding.
     `make markdownlint` (7s), `make nixie` (2s), and `git diff --check` in both
     forms. No gate rewrote a tracked file. Remaining work is confirmation of
     this repair on the new head and any merge, which is not authorized.
+- [x] (2026-11-02) Reconcile the hosted pre-merge checks for `7f3e18b`.
+  - The managed formal review of `7f3e18b` completed at 13:36Z and approved
+    the pull request. Both review threads are resolved and the CodeRabbit
+    check-run reads `Result: Success - Review completed`.
+  - Its Pre-merge checks report two warnings. Testing (Property / Proof) is
+    valid: the lexical predicates read arbitrary cell text, and `AGENTS.md`
+    asks for `proptest` when a change introduces an invariant over a range of
+    inputs. The new `tests/macro_cost_note_contract/property_tests.rs` adds ten
+    properties at 128 cases each. Docstring Coverage is rebutted in the
+    reconciliation comment: this diff adds no public API, every module carries
+    its required `//!` documentation, the touched functions are private test
+    helpers, and the 400-line file limit leaves no room for per-function
+    docstrings on 45 helpers without artificial file splitting.
+  - The focused contract target passed 117 of 117 cases. The full sequential
+    gate set passed under `LC_ALL=C.UTF-8`: `make check-fmt` (5s),
+    `make lint` (2777s; Clippy and dylint clean, Pylint 10.00/10),
+    `make typecheck` (248s), `make test` (1123s; 323 nextest cases with three
+    `topology_command` cases skipped and re-run green, one doctest, 432
+    workflow cases plus five subtests), `make markdownlint` (20s; 0 issues
+    across 42 files, `typos.toml` unchanged), `make nixie` (3s), and
+    `git diff --check` in both forms. A sha256 snapshot of all 148 tracked
+    files is identical before and after, so no gate rewrote a tracked file.
+    Compile admission was saturated by another worktree's trybuild jobs, so
+    the lint gate needed two harness-capped attempts before a detached third
+    attempt completed; that is queueing, not a finding.
 
 ## Surprises & discoveries
 
@@ -624,6 +649,19 @@ reported for owner disposition rather than repaired here.
   and expects the adjacency diagnostic. The roadmap fixtures now place the
   declaration immediately after each claim. No path, dependency, API or scope
   change results.
+- (2026-11-02, pre-merge warning) Add property tests for the lexical
+  predicates. The hosted Testing (Property / Proof) pre-merge check retained a
+  failure because the placeholder and citation predicates read arbitrary cell
+  text, and `AGENTS.md` asks for `proptest` when a change introduces an
+  invariant over a range of inputs. The new
+  `tests/macro_cost_note_contract/property_tests.rs` states the marker-word
+  boundary, standalone rejection after any non-identifier prefix, the attached
+  Rust path generic exemption, malformed-opener independence, the unavailable
+  reason, full lowercase revision citations and three-cell row splitting. Each
+  property draws its surrounding text independently so no property can pass
+  vacuously. `proptest` was already a development dependency, so no manifest
+  change results; `table_cells` widens from private to `pub(super)` so the
+  splitting property can address it directly.
 
 ## Outcomes & retrospective
 
