@@ -582,6 +582,16 @@ and obtain explicit approval before proceeding.
     `clippy::indexing-slicing` on `cells[..width]` in the new malformed-row
     property. The row is now built with `cells.iter().take(width)`, which
     cannot panic, and the gate set was re-run from the start.
+  - The re-run passed every gate on `df99928` under `LC_ALL=C.UTF-8`:
+    `make check-fmt` (2s), `make lint` (241s; Clippy and dylint clean, Pylint
+    10.00/10), `make typecheck` (221s), `make test` (289s; 330 nextest cases
+    with three skipped, one doctest, three `topology_command` cases, and the
+    workflow contracts), `make markdownlint` (7s; 0 issues across 42 files,
+    including the spelling gate), `make nixie` (1s), and `git diff --check` in
+    both forms. No gate rewrote a tracked file. The head was published over
+    SSH and the remote head matched `git rev-parse HEAD`; the hosted checks
+    and the managed re-review are the delivery step that follows, and their
+    results are recorded in the PR description rather than assumed here.
 
 ## Surprises & discoveries
 
