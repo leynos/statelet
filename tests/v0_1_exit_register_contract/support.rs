@@ -39,23 +39,24 @@ impl Display for ParseError {
         match self {
             Self::MissingDelimiters => write!(
                 formatter,
-                "docs/adr-003-v0-1-exit-register.md: no exit register found between {BEGIN} and \
-                 {END}. Repair: add the register block to the Exit register section."
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: no exit register found \
+                 between {BEGIN} and {END}. Repair: add the register block to the Exit register \
+                 section."
             ),
             Self::MalformedRow { line } => write!(
                 formatter,
-                "docs/adr-003-v0-1-exit-register.md:{line}: malformed exit-register row. Repair: \
-                 supply B1, B2, Exit, Gate and Reachable cells."
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md:{line}: malformed \
+                 exit-register row. Repair: supply B1, B2, Exit, Gate and Reachable cells."
             ),
             Self::UnknownVerdict { found } => write!(
                 formatter,
-                "docs/adr-003-v0-1-exit-register.md: unknown verdict {found:?}. Repair: use \
-                 Falsified or Held."
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: unknown verdict {found:?}. \
+                 Repair: use Falsified or Held."
             ),
             Self::UnknownExit { found } => write!(
                 formatter,
-                "docs/adr-003-v0-1-exit-register.md: unknown exit {found:?}. Repair: use E1 ship \
-                 nothing, E2 ship conventions only, or E3 ship macro."
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: unknown exit {found:?}. \
+                 Repair: use E1 ship nothing, E2 ship conventions only, or E3 ship macro."
             ),
         }
     }
@@ -164,8 +165,8 @@ fn check_ambiguous_four_row_register(rows: &[Row]) -> Result<(), String> {
     });
     match (rows.len(), duplicate) {
         (4, Some((b1, b2))) => Err(format!(
-            "docs/adr-003-v0-1-exit-register.md: ambiguous {b1:?}/{b2:?}. Repair: keep exactly \
-             one row for that combination."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: ambiguous {b1:?}/{b2:?}. \
+             Repair: keep exactly one row for that combination."
         )),
         _ => Ok(()),
     }
@@ -177,8 +178,8 @@ fn check_missing_verdict_combination(rows: &[Row]) -> Result<(), String> {
         .rfind(|(b1, b2)| !rows.iter().any(|row| row.b1 == *b1 && row.b2 == *b2));
     if let Some((b1, b2)) = missing {
         return Err(format!(
-            "docs/adr-003-v0-1-exit-register.md: missing {b1:?}/{b2:?}. Repair: add that verdict \
-             combination."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: missing {b1:?}/{b2:?}. Repair: \
+             add that verdict combination."
         ));
     }
     Ok(())
@@ -189,8 +190,8 @@ fn check_register_row_count(rows: &[Row]) -> Result<(), String> {
         return Ok(());
     }
     Err(
-        "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
-         provide one row for each B1/B2 verdict combination."
+        "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: register must contain exactly four \
+         rows. Repair: provide one row for each B1/B2 verdict combination."
             .to_owned(),
     )
 }
@@ -201,8 +202,8 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
         .find(|row| row.b1 == Verdict::Falsified && row.exit != Exit::E1)
     {
         return Err(format!(
-            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} selects {:?}. Repair: a falsified B1 \
-             must select E1 ship nothing.",
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: {:?}/{:?} selects {:?}. Repair: \
+             a falsified B1 must select E1 ship nothing.",
             row.b1, row.b2, row.exit
         ));
     }
@@ -211,8 +212,8 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
         .find(|row| is_unreachable_dominance_row(row) && row.reachable)
     {
         return Err(format!(
-            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked unreachable. Repair: \
-             set its Reachable cell to no.",
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: {:?}/{:?} must be marked \
+             unreachable. Repair: set its Reachable cell to no.",
             row.b1, row.b2
         ));
     }
@@ -221,21 +222,21 @@ pub(super) fn check_dominance(rows: &[Row]) -> Result<(), String> {
         .find(|row| !is_unreachable_dominance_row(row) && !row.reachable)
     {
         return Err(format!(
-            "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} must be marked reachable. Repair: set \
-             its Reachable cell to yes.",
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: {:?}/{:?} must be marked \
+             reachable. Repair: set its Reachable cell to yes.",
             row.b1, row.b2
         ));
     }
     Ok(())
 }
-/// The borrowed documents consumed together by the ADR 003 clause policy.
+/// The borrowed documents consumed together by the ADR 0003 clause policy.
 #[derive(Clone, Copy)]
 pub(super) struct QuotedClauseDocuments<'a> {
     pub(super) design: &'a str,
     pub(super) terms: &'a str,
     pub(super) context: &'a str,
 }
-/// The source texts checked together by the ADR 003 quoted-clause policy.
+/// The source texts checked together by the ADR 0003 quoted-clause policy.
 pub(super) const QUOTED_CLAUSE_DOCUMENTS: QuotedClauseDocuments<'static> = QuotedClauseDocuments {
     design: super::DESIGN,
     terms: super::TERMS,
@@ -251,7 +252,7 @@ pub(super) fn check_quoted_clauses(
     for clause in quoted_clauses(adr)? {
         if !folded_design.contains(&clause) {
             return Err(format!(
-                "docs/design.md no longer contains {clause:?}. Repair: update ADR 003 and its \
+                "docs/design.md no longer contains {clause:?}. Repair: update ADR 0003 and its \
                  contract together."
             ));
         }
@@ -259,7 +260,7 @@ pub(super) fn check_quoted_clauses(
     if !has_table_bet(documents.design, "B1") || !has_table_bet(documents.design, "B2") {
         return Err(
             "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
-             or revise ADR 003."
+             or revise ADR 0003."
                 .to_owned(),
         );
     }
@@ -283,8 +284,8 @@ fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
     for (gate, task) in GATES {
         if gate_task(adr, gate).as_deref() != Some(task) {
             return Err(format!(
-                "docs/adr-003-v0-1-exit-register.md: {gate} must bind roadmap task {task}. \
-                 Repair: restore the gate table binding."
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: {gate} must bind roadmap \
+                 task {task}. Repair: restore the gate table binding."
             ));
         }
         if !roadmap
@@ -293,7 +294,7 @@ fn check_gate_tasks(adr: &str, roadmap: &str) -> Result<(), String> {
         {
             return Err(format!(
                 "docs/roadmap.md: task {task} is absent or already ticked. Repair: retain the \
-                 live, unticked gate named by ADR 003."
+                 live, unticked gate named by ADR 0003."
             ));
         }
     }
@@ -304,16 +305,16 @@ fn check_row_gates(rows: &[Row]) -> Result<(), String> {
     for row in rows {
         if !GATES.iter().any(|(gate, _)| *gate == row.gate) {
             return Err(format!(
-                "docs/adr-003-v0-1-exit-register.md: row uses unknown gate {}. Repair: use G1, \
-                 G2, or G3.",
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: row uses unknown gate {}. \
+                 Repair: use G1, G2, or G3.",
                 row.gate
             ));
         }
         let required_gate = required_row_gate(row);
         if row.gate != required_gate {
             return Err(format!(
-                "docs/adr-003-v0-1-exit-register.md: {:?}/{:?} with {:?} must use gate \
-                 {required_gate}, not {}. Repair: bind this exit row to {required_gate}.",
+                "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: {:?}/{:?} with {:?} must \
+                 use gate {required_gate}, not {}. Repair: bind this exit row to {required_gate}.",
                 row.b1, row.b2, row.exit, row.gate
             ));
         }
@@ -334,8 +335,8 @@ fn is_unreachable_dominance_row(row: &Row) -> bool {
 fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
     let Some((_, after_heading)) = adr.split_once("## Evidence the register preserves") else {
         return Err(
-            "docs/adr-003-v0-1-exit-register.md lacks its evidence section. Repair: restore the \
-             quoted source clauses."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md lacks its evidence section. \
+             Repair: restore the quoted source clauses."
                 .to_owned(),
         );
     };
@@ -350,8 +351,8 @@ fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
         .collect::<Vec<_>>();
     if clauses.is_empty() {
         return Err(
-            "docs/adr-003-v0-1-exit-register.md cites no clauses. Repair: quote each load-bearing \
-             source clause in the evidence section."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md cites no clauses. Repair: quote \
+             each load-bearing source clause in the evidence section."
                 .to_owned(),
         );
     }

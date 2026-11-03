@@ -1,4 +1,4 @@
-//! Clause scenarios: whether ADR 004's quotations still resolve, and against
+//! Clause scenarios: whether ADR 0004's quotations still resolve, and against
 //! *what* each one resolves.
 //!
 //! `anchor_scenarios.rs` asks where a fragment resolves; these ask whether the
@@ -22,7 +22,7 @@ use super::{
     types::Register,
 };
 
-/// The unchanged documents against which ADR 004's quotations resolve.
+/// The unchanged documents against which ADR 0004's quotations resolve.
 const LIVE_SOURCES: ClauseSources<'static> = ClauseSources {
     design: DESIGN,
     roadmap: ROADMAP,
@@ -40,7 +40,7 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
     let drifted = |path: &str, quoted: &str| {
         Err(format!(
             "{path} no longer contains the quoted clause {quoted:?} under \"6.1 State naming\". \
-             Repair: update ADR 004 and its contract together."
+             Repair: update ADR 0004 and its contract together."
         ))
     };
     // The source no longer carries the clause the ADR quotes. The reported
@@ -91,8 +91,9 @@ fn quoted_passages_still_resolve() -> Result<(), String> {
     assert_eq!(
         clauses::check_quoted_clauses(&misattributed, LIVE_SOURCES),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md attributes a clause to \"context\", \
-             which this contract does not read. Repair: use design, roadmap or adr-002."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md attributes a clause \
+             to \"context\", which this contract does not read. Repair: use design, roadmap or \
+             adr-0002."
                 .to_owned()
         )
     );
@@ -139,7 +140,7 @@ fn a_clause_moved_to_another_task_is_rejected() -> Result<(), String> {
         Err(
             "docs/roadmap.md no longer contains the quoted clause \"backed by observed example \
              consumption, not anticipation\" under \"3.2.1. Finalize the StateName return \
-             shape\". Repair: update ADR 004 and its contract together."
+             shape\". Repair: update ADR 0004 and its contract together."
                 .to_owned()
         ),
         "the clause is no longer in task 3.2.1's own record, so the check must refuse it rather \
@@ -148,10 +149,10 @@ fn a_clause_moved_to_another_task_is_rejected() -> Result<(), String> {
     Ok(())
 }
 
-/// The section name ADR 004 attributes its roadmap quotation to.
+/// The section name ADR 0004 attributes its roadmap quotation to.
 const TASK_3_2_1: &str = "3.2.1. Finalize the StateName return shape";
 
-/// Relocates ADR 004's roadmap quotation from task 3.2.1 into task 3.2.2.
+/// Relocates ADR 0004's roadmap quotation from task 3.2.1 into task 3.2.2.
 ///
 /// The clause occupies two lines once `mdtablefix --wrap` has reflowed it, and
 /// `mutated` refuses any needle a reflow can split, so the move is made by line
@@ -206,7 +207,7 @@ fn task_opens(lines: &[String], number: &str) -> Option<usize> {
     lines.iter().position(|line| line.starts_with(&prefix))
 }
 
-/// Empties ADR 004's evidence block while leaving both delimiters in place.
+/// Empties ADR 0004's evidence block while leaving both delimiters in place.
 ///
 /// Replacing the quoted text would leave the italic markers and so leave an
 /// (empty-bodied) clause behind; the empty-list failure needs a block that

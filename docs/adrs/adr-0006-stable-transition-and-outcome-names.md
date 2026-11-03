@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 006: Stable transition and outcome names
+# Architectural decision record (ADR) 0006: Stable transition and outcome names
 
 ## Status
 
@@ -12,12 +12,12 @@ publishing new runtime vocabulary.
 
 ## Context and problem statement
 
-[ADR 004](adr-004-state-name-consumption-evidence.md) already distinguishes
-label stability across source renames from numeric representation. It defines
-an accepted evidence instrument, not the final `StateName` verdict. This record
-extends the question to transition names and application-defined outcomes. It
-does not supersede ADR 004, change its register, or mark roadmap task 1.1.3
-complete.
+[ADR 0004](adr-0004-define-the-statename-consumption-evidence.md) already
+distinguishes label stability across source renames from numeric
+representation. It defines an accepted evidence instrument, not the final
+`StateName` verdict. This record extends the question to transition names and
+application-defined outcomes. It does not supersede ADR 0004, change its
+register, or mark roadmap task 1.1.3 complete.
 
 A trace query or regression assertion can depend on an operation label after
 the Rust method that implements it is renamed. Deriving every operational name
@@ -35,7 +35,7 @@ to validate, not evidence that Statelet needs a registry or a new public trait.
 - Distinguish field-name stability, label-value stability, and representation.
 - Keep application meanings and namespaces under application ownership.
 - Avoid high-cardinality data in state or outcome labels and metric dimensions.
-- Preserve the accepted naming evidence and aggregation rules in ADR 004.
+- Preserve the accepted naming evidence and aggregation rules in ADR 0004.
 
 ## Options considered
 
@@ -84,9 +84,9 @@ numbering an unbounded set does not make its cardinality bounded.
 ## Evidence and acceptance criteria
 
 Extend the observation-integration evidence proposed by RFC 0004, using its
-separate marker and schema. Do not add rows to ADR 004's accepted register in
+separate marker and schema. Do not add rows to ADR 0004's accepted register in
 this change. Any finding that affects `StateName` still requires a note through
-ADR 004's existing instrument and its normal return-shape decision.
+ADR 0004's existing instrument and its normal return-shape decision.
 
 For each transition or outcome consumer, record the label, owner, current
 representation, source-rename expectation, consumer operation, cardinality
@@ -118,8 +118,8 @@ return type, or justify `TransitionOutcome` publication.
 Roadmap task 6.1.6 reviews this decision. Task 6.3.2 runs rename and
 cardinality controls, and 6.3.3 gathers consumer evidence. Task 6.3.4 decides
 adoption and updates the technical design before any new naming contract
-becomes public. Existing fields and ADR 004 evidence remain authoritative while
-this ADR is proposed.
+becomes public. Existing fields and ADR 0004 evidence remain authoritative
+while this ADR is proposed.
 
 ## Known risks and limitations
 

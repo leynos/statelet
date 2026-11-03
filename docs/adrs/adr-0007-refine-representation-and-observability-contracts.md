@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 007: Refine representation and observability contracts
+# Architectural decision record (ADR) 0007: Refine representation and observability contracts
 
 ## Status
 
@@ -10,11 +10,11 @@ Proposed.
 
 ## Context and problem statement
 
-[ADR 002](adr-002-transition-boundary-scope.md) establishes Statelet as a
-marker-only toolkit: user code owns state, events, storage, dispatch,
-transition tables, and graph safety.
-[ADR 001](adr-001-proving-ground-candidates.md) selects `mdtablefix` and
-`wireframe` as the first two proving grounds for that claim.
+[ADR 0002](adr-0002-scope-statelet-to-transition-boundary-marking.md)
+establishes Statelet as a marker-only toolkit: user code owns state, events,
+storage, dispatch, transition tables, and graph safety.
+[ADR 0001](adr-0001-select-proving-ground-candidates.md) selects `mdtablefix`
+and `wireframe` as the first two proving grounds for that claim.
 
 A review of the proposed `mdtablefix` algebraic data type (ADT) refactors and
 `wireframe` protocol state machines exposes several contracts that the current
@@ -46,13 +46,13 @@ while tightening the naming, observability, and validation contracts used by
 its proving grounds.
 
 This record carries number 007. It was first numbered 006 against a base that
-predated [ADR 006](adr-006-stable-transition-and-outcome-names.md), which
+predated [ADR 0006](adr-0006-stable-transition-and-outcome-names.md), which
 landed on `main` afterwards. The two records changed different paths, so no
 merge conflict flagged the duplicate number, and it was found only after both
 had merged. This record is the later arrival and yields the lower number,
-following the rule already applied to ADR 003, ADR 004, and ADR 005. Its file,
-title, in-body links, and decision-records index entry were renumbered
-together. ADR 006's own file and references were left untouched.
+following the rule already applied to ADR 0003, ADR 0004, and ADR 0005. Its
+file, title, in-body links, and decision-records index entry were renumbered
+together. ADR 0006's own file and references were left untouched.
 
 ## Decision drivers
 
@@ -124,7 +124,7 @@ This option is too ambiguous for the two proving grounds.
 
 Statelet could provide payload containers, typestate marker scaffolding, a
 required event enum, and a universal transition outcome. That would make the
-instrumentation contract easy to implement, but it would cross ADR 002's
+instrumentation contract easy to implement, but it would cross ADR 0002's
 ownership boundary and compete with state-machine frameworks and project domain
 models.
 
@@ -241,13 +241,13 @@ The recommended contract has these refinements:
 
 ## Architectural rationale
 
-The proposal preserves ADR 002's marker-only boundary while making it harder to
-misread marker support as state-model ownership. It also strengthens ADR 001's
-validation logic: `mdtablefix` tests a payload-carrying parser state, while
-`wireframe` tests generic protocol states, fallibility, and async boundaries.
-The shared layer remains naming and observability; invalid-state prevention,
-lifecycle correctness, domain outcomes, and proof obligations remain with the
-project that owns the machine.
+The proposal preserves ADR 0002's marker-only boundary while making it harder
+to misread marker support as state-model ownership. It also strengthens ADR
+0001's validation logic: `mdtablefix` tests a payload-carrying parser state,
+while `wireframe` tests generic protocol states, fallibility, and async
+boundaries. The shared layer remains naming and observability; invalid-state
+prevention, lifecycle correctness, domain outcomes, and proof obligations
+remain with the project that owns the machine.
 
 [^1]: Leon Heuer, Falk Woldmann Lu, and Jan Haase, "Functional State Machines in
     Rust: Typestate and Newtype Patterns (Experience Report)", FUNARCH '26,

@@ -43,7 +43,7 @@ fn note_cells_reject_a_status_borrowed_from_another_field() -> Result<(), String
         check_note_cells(&rows, &cells),
         Err(
             "a StateName note records status \"Enumerated\" for field \"metrics-cardinality\", \
-             which the status register does not define. Repair: use a status ADR 004 lists for \
+             which the status register does not define. Repair: use a status ADR 0004 lists for \
              that field."
                 .to_owned()
         )
@@ -143,7 +143,7 @@ fn duplicate_inadmissible_status_still_blocks() -> Result<(), String> {
     note_with_rows(&["| state-display-name | Invented | `mdtablefix@abc1234:src/process.rs` |",
                      IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW, TRACING_USE_ROW]),
     "a StateName note records status \"Invented\" for field \"state-display-name\", which the \
-     status register does not define. Repair: use a status ADR 004 lists for that field."
+     status register does not define. Repair: use a status ADR 0004 lists for that field."
 )]
 #[case::prose_evidence(
     note_with_rows(&[STATE_DISPLAY_NAME_ROW, IDENTIFIER_NEED_ROW,
@@ -172,7 +172,7 @@ fn duplicate_inadmissible_status_still_blocks() -> Result<(), String> {
 #[case::missing_a_field(
     note_with_rows(&[STATE_DISPLAY_NAME_ROW, IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW]),
     "a StateName note records 3 fields; the status register defines 4. Repair: fill one row per \
-     register field, naming each exactly as ADR 004 does."
+     register field, naming each exactly as ADR 0004 does."
 )]
 #[case::reordered_fields(
     note_with_rows(&[TRACING_USE_ROW, IDENTIFIER_NEED_ROW, METRICS_CARDINALITY_ROW,

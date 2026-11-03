@@ -90,11 +90,11 @@ impact, medium likelihood). Metadata acquisition does not compile, and full
 command end-to-end checks run sequentially outside recursive test discovery. Do
 not add a custom test harness or nested full-repository gate.
 
-The roadmap's macro admission wording is not fully aligned with ADR 003 (medium
-impact, observed). Task 4.1.1 refers to 3.1.3 choosing “ship macro”, whereas
-ADR 003 assigns B1 to 3.1.3 and B2 publication to 4.3.1. This task never reads
-those documents as executable permission. Resolve that later-phase wording
-before a future change admits a macro package.
+The roadmap's macro admission wording is not fully aligned with ADR 0003
+(medium impact, observed). Task 4.1.1 refers to 3.1.3 choosing “ship macro”,
+whereas ADR 0003 assigns B1 to 3.1.3 and B2 publication to 4.3.1. This task
+never reads those documents as executable permission. Resolve that later-phase
+wording before a future change admits a macro package.
 
 ## Progress
 
@@ -1504,18 +1504,20 @@ release before copying APIs. Follow the
 Use the baseline revision above for
 [terms of reference](../terms-of-reference.md), [design](../design.md) draft
 v0.2, [roadmap](../roadmap.md), accepted
-[ADR 002](../adr-002-transition-boundary-scope.md), and
-[ADR 003](../adr-003-v0-1-exit-register.md). There is no separate topology RFC
-or component architecture document. The design owns the policy; the repository
-layout and developer guide own its implementation placement and operation.
+[ADR 0002](../adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md),
+and [ADR 0003](../adrs/adr-0003-record-the-v0-1-exit-register.md). There is no
+separate topology RFC or component architecture document. The design owns the
+policy; the repository layout and developer guide own its implementation
+placement and operation.
 
 The observation RFCs indexed in
-[design Appendix C](../design.md), [ADR 006](../adr-006-stable-transition-and-outcome-names.md),
-and [ADR 007](../adr-007-representation-and-observability-contracts.md) remain
-proposed. Follow the repository layout's distinction between proposal records
-and accepted design authority. Their presence does not admit a new workspace
-member or change this task's acceptance criteria. Roadmap 1.2.1's issue 112
-prerequisite governs any later workspace-policy definition.
+[design Appendix C](../design.md), [ADR 0006](../adrs/adr-0006-stable-transition-and-outcome-names.md),
+and
+[ADR 0007](../adrs/adr-0007-refine-representation-and-observability-contracts.md)
+remain proposed. Follow the repository layout's distinction between proposal
+records and accepted design authority. Their presence does not admit a new
+workspace member or change this task's acceptance criteria. Roadmap 1.2.1's
+issue 112 prerequisite governs any later workspace-policy definition.
 
 R1: roadmap 1.2.1 and design sections 4–5 require a single-runtime starting
 state and no premature macro edge. M1 discharges this through policy table
@@ -1525,13 +1527,13 @@ R2: design section 11.6 requires automated metadata-based rejection rather than
 visual tree inspection. M1 supplies negative cases and acquisition error
 checks; M2 supplies local/CI wiring and end-to-end command evidence.
 
-R3: ADR 002 and ADR 003 preserve the marker-only boundary and evidence-led
+R3: ADR 0002 and ADR 0003 preserve the marker-only boundary and evidence-led
 release exits. Both milestones must leave the runtime API, release outcomes,
 and macro admission unchanged; review the complete diff to establish this.
 
 R4: roadmap completion and contributor documentation require M2's checked task,
 updated guides, and exact-head validation evidence. Task 1.1.1 is already done
-and ADR 002 is Accepted; recheck that prerequisite before implementation.
+and ADR 0002 is Accepted; recheck that prerequisite before implementation.
 
 ## Proposed command and policy
 
@@ -1743,12 +1745,12 @@ Reconsider snapshots if a structured or multivariant report is introduced.
 
 ### M1: validated local command
 
-After approval, confirm ADR 002 and the baseline, load the relevant skills, and
-run the existing gates. Complete the BDD compatibility preflight above. Add the
-minimum V1 failing case first. Observe its failure for the missing policy, then
-implement the evaluator and acquisition adapter. Add the remaining cases, V2
-properties, and V4 scenarios, observing a representative red result before each
-new rule. Add the Make target, help text, and fixture override; then V3
+After approval, confirm ADR 0002 and the baseline, load the relevant skills,
+and run the existing gates. Complete the BDD compatibility preflight above. Add
+the minimum V1 failing case first. Observe its failure for the missing policy,
+then implement the evaluator and acquisition adapter. Add the remaining cases,
+V2 properties, and V4 scenarios, observing a representative red result before
+each new rule. Add the Make target, help text, and fixture override; then V3
 exercises the complete command through its dedicated sequential target. Keep
 the new end-to-end target available in M1; routine wiring is M2.
 

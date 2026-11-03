@@ -2,7 +2,7 @@
 //!
 //! Each of these checks a *link* between two documents: the blank form against
 //! the register it instantiates, and the gate table against the live roadmap. A
-//! drift on either side of either pair fails here. The clauses ADR 004 quotes
+//! drift on either side of either pair fails here. The clauses ADR 0004 quotes
 //! are checked in `clause_scenarios.rs`, and the success criterion's own
 //! controls, which ask *which* copy of a sentence is the criterion rather than
 //! where a fragment resolves, live in `criterion_scenarios.rs`.
@@ -114,13 +114,13 @@ fn the_ambiguity_fragment_still_matches_many_records() {
 /// A fragment is only a task binding when it names a *task*. Each of the
 /// deceiving fragments below is present in `docs/roadmap.md` and would satisfy a
 /// scan of the document's lines: `kill gates` appears in a phase heading,
-/// `adr-004-state-name-consumption-evidence.md` inside a task's link, and
+/// `adr-0004-define-the-statename-consumption-evidence.md` inside a task's link, and
 /// `Requires 1.1.2` inside one of its sub-bullets. None is a task title, so
 /// each must be reported as matching no task.
 fn unresolved_fragment_message(gate: &str, fragment: &str) -> String {
     format!(
         "docs/roadmap.md: gate {gate} names task fragment {fragment:?}, which matches no task. \
-         Repair: restore that task's title, or revise ADR 004's gate table."
+         Repair: restore that task's title, or revise ADR 0004's gate table."
     )
 }
 
@@ -143,8 +143,11 @@ fn unresolved_fragment_message(gate: &str, fragment: &str) -> String {
 )]
 #[case::a_link_is_not_a_task(
     "S4",
-    "adr-004-state-name-consumption-evidence.md",
-    Some(unresolved_fragment_message("S4", "adr-004-state-name-consumption-evidence.md"))
+    "adr-0004-define-the-statename-consumption-evidence.md",
+    Some(unresolved_fragment_message(
+        "S4",
+        "adr-0004-define-the-statename-consumption-evidence.md"
+    ))
 )]
 #[case::a_sub_bullet_is_not_a_task(
     "S4",
@@ -194,7 +197,7 @@ fn live_gate_table_binds_the_live_roadmap() -> Result<(), String> {
     let gates = gate_rows(ADR).map_err(|error| error.to_string())?;
     if gates.is_empty() {
         return Err(
-            "ADR 004's gate table parsed to no rows, so this scenario would pass while binding \
+            "ADR 0004's gate table parsed to no rows, so this scenario would pass while binding \
              nothing. Repair: restore the gate-table block, or revise this contract with it."
                 .to_owned(),
         );
@@ -229,7 +232,7 @@ fn gate_table_fragment(gate: &str) -> Result<String, String> {
 fn the_deceiving_fragments_still_appear_outside_task_titles() {
     for fragment in [
         "kill gates",
-        "adr-004-state-name-consumption-evidence.md",
+        "adr-0004-define-the-statename-consumption-evidence.md",
         "Requires 1.1.2",
     ] {
         let in_document = ROADMAP.lines().any(|line| line.contains(fragment));
@@ -255,7 +258,7 @@ fn deferred_clause_still_resolves() -> Result<(), String> {
         check_deferred_clause(&reworded),
         Err(format!(
             "docs/design.md §6.1 no longer contains {STRONGER:?}. Repair: restore the default's \
-             deferral, or revise ADR 004 and its contract together."
+             deferral, or revise ADR 0004 and its contract together."
         ))
     );
     Ok(())

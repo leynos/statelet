@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 002: Scope Statelet to transition-boundary marking
+# Architectural decision record (ADR) 0002: Scope Statelet to transition-boundary marking
 
 ## Status
 
@@ -133,8 +133,8 @@ of `fallible` or `transition.error`.
 ### `wireframe`: primary proving ground
 
 `wireframe` supplies the complementary case selected by
-[ADR 001](adr-001-proving-ground-candidates.md). Its connection actor has the
-explicit `RunState { Active, ShuttingDown, Finished }` in
+[ADR 0001](adr-0001-select-proving-ground-candidates.md). Its connection actor
+has the explicit `RunState { Active, ShuttingDown, Finished }` in
 `src/connection/state.rs`, generic `ActiveOutput<F, E>` in
 `src/connection/output.rs`, and a fallible `ConnectionActor::dispatch_event` in
 `src/connection/dispatch.rs`. The connection module has no tracing today, so
@@ -186,8 +186,8 @@ model the same `Active`, `ShuttingDown`, and `Finished` labels.
 
 ### `ddlint`: negative control
 
-`ddlint` confirms why [ADR 001](adr-001-proving-ground-candidates.md) treats it
-as the weakest fit. Its `StructLiteralState` in
+`ddlint` confirms why [ADR 0001](adr-0001-select-proving-ground-candidates.md)
+treats it as the weakest fit. Its `StructLiteralState` in
 `src/parser/expression/pratt.rs` is two `usize` counters, `active` and
 `suspension`, manipulated by activation and suspension wrappers around closures.
 `allows_struct_literals()` derives a boolean from those counters; there is no
@@ -361,9 +361,10 @@ machine, while Statelet standardizes names and observability at selected
 transition boundaries. It aligns with the terms of reference (§§1-6, §6.2), the
 design context and non-goals (§§1-3, §2.2), the README, and the user's guide,
 consolidating their shared position into one citable record. It complements
-[ADR 001](adr-001-proving-ground-candidates.md), which selects `wireframe` as
-the proving ground that will test this boundary on production-shaped code
-without Statelet taking ownership of `wireframe`'s Stateright model.
+[ADR 0001](adr-0001-select-proving-ground-candidates.md), which selects
+`wireframe` as the proving ground that will test this boundary on
+production-shaped code without Statelet taking ownership of `wireframe`'s
+Stateright model.
 
 [^1]: crates.io keyword API for `state-machine`, reporting 154 crates on
     2026-06-13: `https://crates.io/api/v1/keywords/state-machine`

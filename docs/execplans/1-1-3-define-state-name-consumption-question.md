@@ -40,11 +40,11 @@ four named fields whose admissible answers are enumerated, and commits it. The
 note has a home, a naming convention, and a reader.
 
 Second, the rule that turns those fields into a verdict is written down in
-`docs/adr-004-state-name-consumption-evidence.md` before any evidence exists,
-so it cannot be reverse-engineered from a result somebody has grown fond of.
-The rule separates *admissibility* (is this note usable evidence at all?) from
-*verdict* (does the evidence overturn the default?), because conflating them
-produces a decision procedure that loops instead of terminating.
+`docs/adrs/adr-0004-define-the-statename-consumption-evidence.md` before any
+evidence exists, so it cannot be reverse-engineered from a result somebody has
+grown fond of. The rule separates *admissibility* (is this note usable evidence
+at all?) from *verdict* (does the evidence overturn the default?), because
+conflating them produces a decision procedure that loops instead of terminating.
 
 Third, the rule for reading several notes *together* is also written down.
 Three notes reach task 3.2.1, from tasks 2.2.1, 2.2.2, and 3.1.2. A rule that
@@ -54,8 +54,8 @@ Fourth, all of it is machine-checked, including a filled note, so the suite
 exercises a completed form and not merely a blank one. The filled note is a
 string fixture rather than a committed file: no honest note can cite work that
 has not happened, so a committed example would have been fabricated evidence
-serving as the suite's accepting witness. ADR 004's worked example is therefore
-an *illustration* — marked as one, and not machine-checked.
+serving as the suite's accepting witness. ADR 0004's worked example is
+therefore an *illustration* — marked as one, and not machine-checked.
 
 Observable acceptance: from a clean checkout, `make test` passes and reports
 the new integration-test binary `state_name_consumption_contract`. Mutating the
@@ -73,7 +73,7 @@ Statelet is an unreleased Rust crate. Its thesis is narrow: handwritten Rust
 state machines are fine, and what they lack is a shared convention for *marking
 the boundary* where a transition happens, so that tracing, diagnostics, and
 review describe that boundary the same way. Statelet does not own dispatch,
-events, storage, transition tables, or graph safety; ADR 002 records that
+events, storage, transition tables, or graph safety; ADR 0002 records that
 boundary.
 
 Two terms, defined because both are easy to misread:
@@ -95,19 +95,20 @@ There is no `StateName` trait, no derive macro, and no `mdtablefix` integration.
 What the repository does have is a body of *documentation-as-code*: integration
 tests that treat design documents as the artefact under test.
 `tests/v0_1_exit_register_contract.rs` and its four private children parse
-`docs/adr-003-v0-1-exit-register.md`, check the exit register is total, check
-that a falsified bet B1 forces the off-ramp, check quoted clauses still resolve
-in their sources, and check named gates resolve to roadmap tasks. Siblings
-`tests/codegen_backend_contract.rs`, `tests/coverage_contract.rs`, and
-`tests/dev_fast_contract.rs` do the same for build configuration.
+`docs/adrs/adr-0003-record-the-v0-1-exit-register.md`, check the exit register
+is total, check that a falsified bet B1 forces the off-ramp, check quoted
+clauses still resolve in their sources, and check named gates resolve to
+roadmap tasks. Siblings `tests/codegen_backend_contract.rs`,
+`tests/coverage_contract.rs`, and `tests/dev_fast_contract.rs` do the same for
+build configuration.
 
 This plan adds one more member of that family. Read
 `tests/v0_1_exit_register_contract.rs` and all four children before starting;
 this plan repeatedly cites specific lines in them, and imitating the good parts
 while avoiding the documented traps is most of the work.
 
-Roadmap tasks 1.1.1 and 1.1.2 are complete (ADR 002 and ADR 003). Task 1.1.3 is
-the next unticked item and is the subject of this plan. Its declared
+Roadmap tasks 1.1.1 and 1.1.2 are complete (ADR 0002 and ADR 0003). Task 1.1.3
+is the next unticked item and is the subject of this plan. Its declared
 dependency, 1.1.2, is satisfied.
 
 ### The question this plan answers, and why the obvious reading is wrong
@@ -166,7 +167,7 @@ obligation — exactly the speculative surface design §6.2 refuses without a
 named consumer.
 
 **Finding four: the one concrete cross-tool consumer favours the string.** ADR
-002's `wireframe` sketch names `crates/wireframe-verification`, whose
+0002's `wireframe` sketch names `crates/wireframe-verification`, whose
 Stateright model wants "production logs, tests, and the model the same `Active`,
 `ShuttingDown`, and `Finished` labels". Its requirement is *equality* across
 tools, which a string serves better than a number, because a number must be
@@ -229,7 +230,7 @@ task prepares — is conspicuously absent from it. One bullet closes that:
 ```markdown
 - Whether `StateName` returns `&'static str`, or a value carrying a stronger
   stability guarantee, as decided by roadmap task 3.2.1 from the validation
-  notes defined in ADR 004.
+  notes defined in ADR 0004.
 ```
 
 **Decided: add the §14 bullet in this task; raise B7 separately, using the row
@@ -386,7 +387,7 @@ the lint, and so does every other test crate in the workspace.
 
 Written (new):
 
-- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md`
 - `docs/phase-2-validation-note-template.md`
 - `docs/validation-notes/README.md`
 - `dylint.toml` — the path-scoped `no_std_fs_operations` exemption settled as Q5
@@ -431,14 +432,17 @@ tree has moved past reads as verified when it is not.
 
 - `docs/design.md` §§6.1, 6.2, 9, 11.1, 12, 13.6, 13.7, 14.
 - `docs/context.md` in full; it is short.
-- `docs/adr-001-proving-ground-candidates.md` "Outstanding decisions", and
-  `docs/adr-002-transition-boundary-scope.md`'s `mdtablefix` and `wireframe`
-  sketches. These name the real state types Phase 2 will meet.
-- `docs/adr-003-v0-1-exit-register.md` — the structural model for ADR 004.
+- `docs/adrs/adr-0001-select-proving-ground-candidates.md` "Outstanding
+  decisions", and
+  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`'s
+  `mdtablefix` and `wireframe` sketches. These name the real state types Phase
+  2 will meet.
+- `docs/adrs/adr-0003-record-the-v0-1-exit-register.md` — the structural model
+  for ADR 0004.
 - `docs/documentation-style-guide.md` — ADR section order and template.
   Note: sentence-case headings, a **numbered** caption under every table
-  (`*Table N: ...*`, per ADR 001, 002, and 003), a language identifier on every
-  fence, 80-column prose, 120-column code, and no first- or second-person
+  (`*Table N: ...*`, per ADRs 0001, 0002, and 0003), a language identifier on
+  every fence, 80-column prose, 120-column code, and no first- or second-person
   pronouns outside `README.md`.
 - `AGENTS.md` — the 400-line file cap and the gate list.
 - `clippy.toml` — `cognitive-complexity-threshold = 9`,
@@ -472,7 +476,7 @@ Upstream artefacts and revisions at the time of writing:
 - Terms of reference: `docs/terms-of-reference.md`, "Draft v0.2 after design
   review", last substantive revision 2026-08-22.
 - Technical design: `docs/design.md`, same status and date.
-- Decision records: ADR 001; ADR 002 (Accepted 2026-07-22); ADR 003 (Accepted
+- Decision records: ADR 0001; ADR 0002 (Accepted 2026-07-22); ADR 0003 (Accepted
   2026-08-22).
 - Roadmap: `docs/roadmap.md` at commit `bad9a04` — still a true statement of
   the inherited basis after the rebase, because that commit remains an ancestor
@@ -490,20 +494,20 @@ Upstream artefacts and revisions at the time of writing:
 Traced items:
 
 ```plaintext
-ROADMAP-1.1.3-success -> EP-M1 -> ADR-004 status register
+ROADMAP-1.1.3-success -> EP-M1 -> ADR-0004 status register
                       -> criterion_scenarios::success_criterion_still_maps
-TDD-6.1-stable-id     -> EP-M1 -> ADR-004 status register
+TDD-6.1-stable-id     -> EP-M1 -> ADR-0004 status register
                       -> register_scenarios::status_register_matches_fixture
-TDD-6.1-default-str   -> EP-M1 -> ADR-004 R-DEFAULT
+TDD-6.1-default-str   -> EP-M1 -> ADR-0004 R-DEFAULT
                       -> register_scenarios::default_survives_without_a_required_property
-TDD-6.1-cardinality   -> EP-M1 -> ADR-004 admissibility
+TDD-6.1-cardinality   -> EP-M1 -> ADR-0004 admissibility
                       -> register_scenarios::register_confines_insufficient_to_the_required_property,
                          note_scenarios::blocked_notes_resolve_to_not_resolved
-TDD-6.2-no-speculative-api -> ADR-004 rationale -> EP-M1
+TDD-6.2-no-speculative-api -> ADR-0004 rationale -> EP-M1
                       -> clause_scenarios::quoted_passages_still_resolve
-ADR-002-wireframe-labels -> Finding four -> EP-M1
+ADR-0002-wireframe-labels -> Finding four -> EP-M1
                       -> clause_scenarios::quoted_passages_still_resolve
-TDD-9-transition-fields -> field tracing-use -> EP-M2 -> ADR-004 worked example
+TDD-9-transition-fields -> field tracing-use -> EP-M2 -> ADR-0004 worked example
 ROADMAP-2.2.1/2.2.2/3.1.2 -> gates S1..S3 -> EP-M3
                       -> anchor_scenarios::gate_titles_resolve
 ROADMAP-3.2.1         -> gate S4 + aggregation register -> EP-M3
@@ -517,20 +521,20 @@ and `scan_scenarios::committed_state_name_notes_are_usable` is the
 committed-note scan. A bare `tests::` prefix would leave a reader to grep for
 which of the two a line meant.
 
-This plan does not deviate from ADR 002 or ADR 003. ADR 002's non-goals leave
-the identifier question open and ADR 001's outstanding decisions name it; this
-plan discharges the preparatory half and leaves the substantive half to task
-3.2.1.
+This plan does not deviate from ADR 0002 or ADR 0003. ADR 0002's non-goals
+leave the identifier question open and ADR 0001's outstanding decisions name
+it; this plan discharges the preparatory half and leaves the substantive half
+to task 3.2.1.
 
 One consequence must be stated plainly rather than discovered later: writing
 the rule before the evidence converts task 3.2.1 from a *decision* into an
-*evaluation*. That is the intent, but it means ADR 004 constrains 3.2.1's
+*evaluation*. That is the intent, but it means ADR 0004 constrains 3.2.1's
 outcome, and a reviewer should approve it on that understanding.
 
 ## Constraints
 
 1. **No runtime code.** Nothing is added to or changed under `src/`.
-2. **No verdict.** ADR 004 defines evidence and rule. It must not conclude that
+2. **No verdict.** ADR 0004 defines evidence and rule. It must not conclude that
    `&'static str` is or is not sufficient.
 3. **No dependency change.** `Cargo.toml` and `Cargo.lock` are untouched.
    **Superseded in part by D52, 2026-09-27.** The constraint is retained as
@@ -600,12 +604,12 @@ outcome, and a reviewer should approve it on that understanding.
   citation of the shape `<repo>@<sha>:<path>` and is checked for it;
   `identifier-need` requires an enumerated *consumers considered* list, so
   "none required" carries a search set rather than being a bare negative
-  existential; ADR 004's illustrative worked example shows what an adequate
+  existential; ADR 0004's illustrative worked example shows what an adequate
   cell looks like.
 
 - Risk: the admissibility blocker "repair the state names" names work in
   `mdtablefix` or `wireframe`, repositories this roadmap does not own.
-  Severity: medium. Likelihood: medium. Mitigation: ADR 004 states that a
+  Severity: medium. Likelihood: medium. Mitigation: ADR 0004 states that a
   blocked note records an upstream issue link, and it blocks: an inadmissible
   note contributes nothing to the verdict, so a verdict drawn as though that
   field had been observed would rest on no observation; the note never
@@ -621,10 +625,10 @@ outcome, and a reviewer should approve it on that understanding.
   fence and a naive scanner truncates the section there.
 
 - Risk: quoted clauses fail to resolve because `mdtablefix --wrap` rewraps
-  ADR 004's prose at different break points from the source document. Severity:
-  high. Likelihood: certain without mitigation — three of the six clauses in
-  this plan's own first draft did not resolve. Mitigation: fold whitespace on
-  both sides before comparison, exactly as
+  ADR 0004's prose at different break points from the source document.
+  Severity: high. Likelihood: certain without mitigation — three of the six
+  clauses in this plan's own first draft did not resolve. Mitigation: fold
+  whitespace on both sides before comparison, exactly as
   `tests/v0_1_exit_register_contract/support.rs:318` does.
 
 - Risk: the register accumulates coupling that makes ordinary documentation
@@ -641,8 +645,8 @@ outcome, and a reviewer should approve it on that understanding.
       unticked, and all three `INV-ANCHORS` clauses present in their named
       sections. No repository artefact changed; this tick and the timestamp
       are the only diff.
-- [x] Step 2 — ADR 004, the notes-directory `README.md`, and the template's
-      home are committed. Ticked retroactively on 2026-09-19: ADR 004 (322
+- [x] Step 2 — ADR 0004, the notes-directory `README.md`, and the template's
+      home are committed. Ticked retroactively on 2026-09-19: ADR 0004 (322
       lines, four empty delimiter pairs per D19) and
       `docs/validation-notes/README.md` landed in `65b59c5`. The template
       document itself was written at Step 6; Steps 3 and 4 ran against a
@@ -670,13 +674,13 @@ outcome, and a reviewer should approve it on that understanding.
       with `Summary: 0 error(s)` and is idempotent. Committed as `261ebc3`; the
       six latent contract defects found on the way are in
       `Surprises & discoveries` and D23/D24.
-- [x] EP-M1 — ADR 004 exists and both its registers are guarded.
-- [x] EP-M2 — the template matches the status register; ADR 004 carries the
+- [x] EP-M1 — ADR 0004 exists and both its registers are guarded.
+- [x] EP-M2 — the template matches the status register; ADR 0004 carries the
       illustrative example.
 - [x] EP-M3 — gates and anchors are guarded.
 - [x] Step 8 — the eight-item sync map is applied and committed as `1e1afd7`.
       Every companion document named in `Conformance basis` now points at
-      ADR 004, the template or the notes directory, and every Step 8 gate was
+      ADR 0004, the template or the notes directory, and every Step 8 gate was
       verified green before the commit. The roadmap's task 1.1.3 was ticked by
       that commit, and the two crossing guards that could have objected — the
       success-criterion `contains` check and the exit register's `GATES` list,
@@ -750,7 +754,7 @@ outcome, and a reviewer should approve it on that understanding.
       that span was closed.
 - [x] CodeRabbit pass over `03985e8` — two findings, both adopted, and the
       round this checklist had never recorded. Both subjects are in the tree:
-      the `PROPERTIES` doc comment, which said "the four properties ADR 004
+      the `PROPERTIES` doc comment, which said "the four properties ADR 0004
       admits" over an array holding five tokens, now says why the fifth exists;
       and this plan's ignore-range figures, which cited a next fence, a skipped
       range and a line count that disagreed, because the first draft was
@@ -810,7 +814,7 @@ outcome, and a reviewer should approve it on that understanding.
       held for the fourth pass running. Two adopted: Step 9's completion
       instruction, which had told a reader to tick task 1.1.3 before the
       zero-finding review EP-M5 requires — the D31 ordering written back in as
-      an instruction — and ADR 004's `as`-cast sentence, whose position claim
+      an instruction — and ADR 0004's `as`-cast sentence, whose position claim
       is true only of implicit discriminants; a `rustc` probe measured implicit
       `B` shifting `1` → `2` on an insertion while an explicit `B` held at `9`
       across a reorder. Three declined: the `identifier-need` `major`, whose
@@ -851,7 +855,7 @@ outcome, and a reviewer should approve it on that understanding.
       why the finding is the first in several rounds to aim at the plan's
       substance rather than at its records. Three declined, every one of them a
       **fourth** appearance of a subject already falsified: `docs/contents.md`'s
-      link lines, the developers-guide heading number, and ADR 004's metadata
+      link lines, the developers-guide heading number, and ADR 0004's metadata
       full stops. Recorded as D37.
       **A defect in this checklist was found while recording that round**: the
       bullets read six, seven, nine, eight, five, because review nine's entry
@@ -912,7 +916,7 @@ outcome, and a reviewer should approve it on that understanding.
       comment D34 records as stale. The red transcript settles it
       independently — all 39 scenarios *ran*, so every `include_str!`
       resolved, and `template_matches_the_status_register` failed on **ADR
-      004's** missing status register rather than on a missing document. Step 2,
+      0004's** missing status register rather than on a missing document. Step 2,
       the Steps 5-7 record and the Progress entry now tell one timeline. Three
       declined as recurrences, re-counted by each subject's own `fileName` and
       line: the developers-guide heading number and the `docs/contents.md` long
@@ -925,7 +929,7 @@ outcome, and a reviewer should approve it on that understanding.
       `outcome: completed`, exit 0, and no abort markers. **Two adopted as one
       subject, and it is the first correction in this workstream to reach an
       *argument* rather than a record.** The two are the round's only
-      non-recurrences: they target the same two lines of ADR 004's "Known risks
+      non-recurrences: they target the same two lines of ADR 0004's "Known risks
       and limitations" and prescribe different remedies. Both are right that the
       passage overreaches:
       it claimed an identifier "cannot reduce metric cardinality" because the
@@ -1048,7 +1052,7 @@ outcome, and a reviewer should approve it on that understanding.
       **finite** data-derived label would have resolved to an admissible
       `Enumerated`/`Bounded` note and contributed nothing. The remedy the
       reviewer offered first — add a blocking status — is the one the document
-      itself selects: ADR 004 line 87 and its architectural rationale both place
+      itself selects: ADR 0004 line 87 and its architectural rationale both place
       naming defects *in admissibility* ("this record gates them instead"), and
       D4 claims the chosen cardinality reading "still detects the dangerous case
       of a name synthesized from data". Narrowing the prose would have falsified
@@ -1060,7 +1064,7 @@ outcome, and a reviewer should approve it on that understanding.
       `99cece6`**, and the round that tested D49's repair rather than adding
       to it. The pass completed in 275 seconds over the same 27 files with no
       abort, the third consecutive clean completion, and **every finding is in
-      this plan file**: no finding touched ADR 004, the status register, its
+      this plan file**: no finding touched ADR 0004, the status register, its
       `fixtures.rs` pin, or any Rust source, so last round's `major` — the one
       finding whose remedy changed shipped documents rather than prose — drew
       no repeat. Findings one and three are one defect reported twice: the
@@ -1343,7 +1347,7 @@ outcome, and a reviewer should approve it on that understanding.
       cited lines. **Subject two** (`policy.rs`, the `check_note_cells`
       narrative-text requirement): **declined as a third recurrence**, already
       raised and disposed of in the twenty-first round (plan lines 2498-2511)
-      and in the ninth (D36), on ADR 004's own scoping. Recorded as **D58**;
+      and in the ninth (D36), on ADR 0004's own scoping. Recorded as **D58**;
       repaired in the commit that carries this item. **Superseded by D60**,
       which adopts the subject this item declined: the plan's disposition of
       the round-27 findings stands as written, but the third recurrence is no
@@ -1388,7 +1392,7 @@ outcome, and a reviewer should approve it on that understanding.
       full stop and semicolon; the `Block` verb prefix in `AGGREGATION_STATES`
       and the two pinned messages it feeds, because `"it must Blocked"` is
       ungrammatical beside the already-verbal `Ratify` and `Amend`; and the
-      round's one `major`, ADR 004's worked example, where the register read
+      round's one `major`, ADR 0004's worked example, where the register read
       `Enumerated` while the prose beneath said the state was unnamed — the
       illustration now names `LineMode` as its single subject and puts `bool
       in_table` explicitly out of scope, in the `Not a named type` /
@@ -1612,7 +1616,7 @@ outcome, and a reviewer should approve it on that understanding.
       actioned elsewhere: the roadmap quotation is now bound to task 3.2.1's own
       *record* rather than the section holding it, with a relocation control
       measured non-vacuous by confirming the section scan still accepts the
-      moved clause; and ADR 004's `Accepted` status now carries the date and
+      moved clause; and ADR 0004's `Accepted` status now carries the date and
       decision summary the documentation style guide requires. The two CodeScene
       diagnostics are static assessments whose own conclusion is to suppress
       rather than refactor, and the `cs` CLI exposes no suppression command, so
@@ -1941,21 +1945,21 @@ Timestamps are added as each item completes.
   property, and the twelve rows are the shape a table grows when the real
   relation is a property — six accepted and six refused cells that sample one
   relation rather than forming a truth table. The Developer Documentation
-  warning asks for ADR 004's accepted body to be frozen and its post-acceptance
-  changes recorded as dated `Addendum` entries; measuring first established
-  that there are **thirteen** such changes, not the two or three the warning's
-  phrasing suggests, so the entry set was derived from `git log --reverse` over
-  the file rather than from the warning's list. This **reverses D68**, which
-  had declined the same request on the grounds that no house convention exists
-  — see D73 for why the reversal is correct and what makes the earlier
-  reasoning insufficient. Committed as `2584929`. Each new property was
-  mutation-tested rather than merely run, and one mutation survived its first
-  pass: a case-sensitive verb comparison, which the predicate documents itself
-  as not making. The generator was widened to emit every verb in arbitrary case
-  and a named witness added, after which the mutation fails. That the *central*
-  property did not catch the whole-cell verb mutation is the reason the
-  displacement property exists, and is written down here so the pair is not
-  later collapsed as duplication.
+  warning asks for ADR 0004's accepted body to be frozen and its
+  post-acceptance changes recorded as dated `Addendum` entries; measuring first
+  established that there are **thirteen** such changes, not the two or three
+  the warning's phrasing suggests, so the entry set was derived from
+  `git log --reverse` over the file rather than from the warning's list. This
+  **reverses D68**, which had declined the same request on the grounds that no
+  house convention exists — see D73 for why the reversal is correct and what
+  makes the earlier reasoning insufficient. Committed as `2584929`. Each new
+  property was mutation-tested rather than merely run, and one mutation
+  survived its first pass: a case-sensitive verb comparison, which the
+  predicate documents itself as not making. The generator was widened to emit
+  every verb in arbitrary case and a named witness added, after which the
+  mutation fails. That the *central* property did not catch the whole-cell verb
+  mutation is the reason the displacement property exists, and is written down
+  here so the pair is not later collapsed as duplication.
 - 2026-09-30, PR #71 is approved and squash-merged. Wall-clock
   `2026-09-30T22:22:51+02:00` (`2026-09-30T20:22:51Z`). CodeRabbit's
   `@coderabbitai approve` comment returned
@@ -1989,9 +1993,9 @@ Timestamps are added as each item completes.
   `02f8923`. That branch also carries the merge record above. It was written
   after the squash, so it existed only in the merged branch's local archive
   commit `59ad4b8` and never reached `main`. Before the tick, the success
-  criterion was re-checked against the merged tree, and it still holds: ADR 004
-  and `docs/phase-2-validation-note-template.md` are on `origin/main`. The tick
-  cannot break the contract suite, for two reasons. The roadmap reader's
+  criterion was re-checked against the merged tree, and it still holds: ADR
+  0004 and `docs/phase-2-validation-note-template.md` are on `origin/main`. The
+  tick cannot break the contract suite, for two reasons. The roadmap reader's
   `record_from_line` admits `x` as well as a space, and
   `check_success_criterion` finds the task by title fragment, not by checkbox.
   The only tests that need a task to be open name 3.1.3, 3.2.1 and 3.2.2.
@@ -2013,12 +2017,12 @@ design.
 
 - Observation: **a review tool's default convention is not a repository rule,
   and the check that invokes it may cite nothing at all.** Round thirty-one's
-  Developer Documentation warning asks that ADR 004's accepted body be kept
+  Developer Documentation warning asks that ADR 0004's accepted body be kept
   immutable and amended only through dated `Addendum` sections. The repository
   has no such rule: the documentation style guide's ADR section requires
   `Status`, `Date` and `Context and Problem Statement` and nothing else, names
   no addendum, and states no immutability constraint. No ADR on `origin/main`
-  carries an `Addendum`, and ADR 004 is **not on `origin/main` at all** — this
+  carries an `Addendum`, and ADR 0004 is **not on `origin/main` at all** — this
   PR introduces it — so there is no accepted record to amend. The warning's
   resolution text is definite and its explanation detailed, which is exactly
   what makes it worth checking rather than obeying: a confidently-stated
@@ -2080,7 +2084,7 @@ design.
   scope works and is strictly narrower.
 
 - Observation: `mdtablefix` merges an empty delimiter pair onto one line.
-  Evidence: on the first `make fmt` run, ADR 004's four delimiter pairs were
+  Evidence: on the first `make fmt` run, ADR 0004's four delimiter pairs were
   each rewritten from two adjacent lines into a single line carrying both
   comments (`<!-- status-register:begin --> <!-- status-register:end -->`).
   Impact: the plan's Step 2 ("delimiter comments but no register tables") would
@@ -2099,7 +2103,7 @@ design.
 - Observation: `std::mem::discriminant` cannot supply a stable numeric
   identifier. Evidence: the standard library's stability clause, and the
   undefined behaviour of transmuting `Discriminant<T>` to a primitive. Impact:
-  any identifier is hand-assigned, hence new public API; recorded in ADR 004's
+  any identifier is hand-assigned, hence new public API; recorded in ADR 0004's
   "Known risks and limitations".
 
 - Observation: a numeric identifier does not by itself *bound* observability
@@ -2112,7 +2116,7 @@ design.
   OpenTelemetry frame cardinality as a property of the observed value set.
   Impact: cardinality gates admissibility and never decides the verdict, which
   is the conclusion the corrected argument still carries. Corrected in ADR
-  004's "Known risks and limitations" and above in this plan.
+  0004's "Known risks and limitations" and above in this plan.
 
 - Observation: adding a row to `docs/design.md` §11.1 is *not* inert, despite
   `has_table_bet` being a presence check. Evidence:
@@ -2217,7 +2221,7 @@ design.
   checker and generated documentation considered" and "emits
   `transition.state.before`" — and every note-derived assertion failed on the
   citation check before reaching the property under test. Impact: both cells
-  now carry a `<repo>@<sha>:<path>` citation alongside their prose. ADR 004
+  now carry a `<repo>@<sha>:<path>` citation alongside their prose. ADR 0004
   requires a citation of every field, including one whose status is `None`, and
   the requirement is doing its job.
 
@@ -2307,7 +2311,7 @@ design.
   false. Finding 5 claimed the ADR date's trailing full stop breaches the
   format; the style guide's own ADR template shows `YYYY-MM-DD.` and both
   pre-existing accepted ADRs carry it. And finding 8 asked for citations on
-  Prometheus and OpenTelemetry claims that ADR 004 never makes — they appear
+  Prometheus and OpenTelemetry claims that ADR 0004 never makes — they appear
   only in this plan — so it was partly fabricated; the two claims the ADR does
   make were each verified against live rustdoc and then cited. Impact: the
   third obligation now states the rule the code actually enforces, the negated
@@ -2361,17 +2365,17 @@ design.
 - Observation: both roadmap-bound checks matched raw document lines, so
   **three kinds of prose resolved as if they named a task**. Evidence: a
   fragment naming the phase heading "kill gates", a task's link text
-  (`adr-004-state-name-consumption-evidence.md`), and one of its sub-bullets
-  (`Requires 1.1.2`) each satisfied a line scan — and the doc comment on
-  `check_success_criterion` already claimed the criterion was read "inside a
-  *task record*", while the code read the document. The gap was not a wrong
-  answer so much as an unfalsifiable one: the check reported success for a
-  fragment that named no task at all, which is the wrong answer stated
+  (`adr-0004-define-the-statename-consumption-evidence.md`), and one of its
+  sub-bullets (`Requires 1.1.2`) each satisfied a line scan — and the doc
+  comment on `check_success_criterion` already claimed the criterion was read
+  "inside a *task record*", while the code read the document. The gap was not a
+  wrong answer so much as an unfalsifiable one: the check reported success for
+  a fragment that named no task at all, which is the wrong answer stated
   confidently. Fixing it forced a second discovery about *span*: the same
   fragment resolves to a different count depending on whether the unit is the
   title or the whole record. Measured against the live roadmap, "baseline"
   names **3 titles** and **6 records**, and the four gate fragments each name
-  exactly 1 title. ADR 004 settles which is right — the gates bind "by task
+  exactly 1 title. ADR 0004 settles which is right — the gates bind "by task
   *title* rather than task number", and Table 4 is headed "Gates bound to
   roadmap tasks by title" — so a gate fragment is matched against the title,
   while the success criterion, a body bullet, is matched against the record's
@@ -2525,7 +2529,7 @@ design.
   the suite's accepting witness — but no honest note can exist before task
   2.2.1 has annotated anything, so its citations would have been fabricated
   while modelling the standard for Phase 2. The witness is a string fixture;
-  the illustrative example lives in ADR 004 marked as illustration.
+  the illustrative example lives in ADR 0004 marked as illustration.
   Date/Author: 2026-09-18, planning agent, after design review.
 
 - D16: `INV-TEMPLATE` compares parsed values, not bytes.
@@ -2703,7 +2707,7 @@ design.
   question rather than a slice of the file: what the *template and roadmap*
   say, what a *note* says, what the *register* says, and what the *scan* reads.
   **F6/F8**: `contribution` collapsed two different non-`nothing` contributions
-  into the stronger one, resolving exactly the note ADR 004 says "is rejected
+  into the stronger one, resolving exactly the note ADR 0004 says "is rejected
   rather than resolved" — and resolving it silently, toward the verdict that
   overturns the default. It now returns the rejection, and
   `contradictory_notes_are_rejected` proves both halves: a register with a
@@ -2771,7 +2775,7 @@ design.
   Whitaker's source, not an unsupported key, and the ADR date's trailing full
   stop reproduces the style guide's own ADR template and both pre-existing
   accepted ADRs. One finding was partly fabricated: it asked for references on
-  Prometheus and OpenTelemetry claims that ADR 004 never makes — they are in
+  Prometheus and OpenTelemetry claims that ADR 0004 never makes — they are in
   this plan — and the two claims the ADR does make were cited as `[^1]`–`[^3]`.
   No requirement, register field, register row, gate binding, invariant, or
   repair message changed. Three of the six documentation findings added prose
@@ -2788,7 +2792,7 @@ design.
   that mutates it, a shape D15 withdrew before the plan was approved, because
   no honest note can cite work that has not happened. The task's own
   contribution summary said the same, so both were reconciled to what shipped:
-  a string fixture is the accepting witness and ADR 004's example is an
+  a string fixture is the accepting witness and ADR 0004's example is an
   illustration. The same stale shape survived in four places the review did not
   name — the `rstest-bdd` refusal (Q3), the evidence-fabrication risk, "What
   was delivered", and the verification plan's "Methods chosen and refused" —
@@ -2834,7 +2838,7 @@ design.
   still carried the three-column `Role` shape, while `parse::gate_rows` reads
   two cells and `fixtures::gate_table` defines two. The snippet is a *copy* of
   the ADR's table, so it had drifted from the document it illustrates; it now
-  has the two columns and the repadded divider ADR 004 and the fixture both
+  has the two columns and the repadded divider ADR 0004 and the fixture both
   carry. **Subject two** (`policy.rs`, `major`): `names_a_consumer` and
   `names_a_property` scanned the whole evidence cell, including the citation,
   so a note could satisfy the consumer obligation by citing `src/tracing.rs`
@@ -2854,7 +2858,7 @@ design.
   the span: gates bind "by task *title*", Table 4 says "bound to roadmap tasks
   by title", so a gate fragment is matched against the title while the success
   criterion — a body bullet — is matched against the record's text. **Subjects
-  four and five** (ADR 004, `major`/`minor` each): the aggregation register's
+  four and five** (ADR 0004, `major`/`minor` each): the aggregation register's
   first column was headed `Admissible notes` while the prose beside it counts
   *contributing* notes, and the Option C rationale claimed "adding a status is
   a documentation edit" without noting that `fixtures.rs` pins the register row
@@ -2912,7 +2916,7 @@ design.
   the agreement rule over the property *named only to deny it* and gives "no
   stability requirement was observed" as its example, which is a prefix
   negation and is exactly what `is_negated` accepts; postfix denial is not
-  named in ADR 004 or in the template, and no committed note uses it. The
+  named in ADR 0004 or in the template, and no committed note uses it. The
   predicate is deliberately a bounded heuristic whose stated failure mode is
   "to accept a note a stricter reader would reject", which is the safe
   direction and leaves the judgement with the reviewer at task 3.2.1. Widening
@@ -2942,7 +2946,7 @@ design.
   The ADR states "three obligations on the evidence cells are checked":
   citation shape, the `identifier-need` consumer set, and the `identifier-need`
   property agreement. "Reject citation-only `Enumerated` evidence" is a fourth,
-  and it appears in ADR 004 only as *prose* — "the note lists the actual
+  and it appears in ADR 0004 only as *prose* — "the note lists the actual
   strings", in the paragraph explaining what `Enumerated` means — never as a
   checked obligation, and all three obligations are scoped to `identifier-need`
   or to every cell's citation. The requirement itself is real and is stated in
@@ -2955,21 +2959,21 @@ design.
   `minor` at both locations): `"what the Rust expected"` is ungrammatical.
   Adopted as a wording fix. **Subject six** (`docs/design.md`, `major`/
   `minor` — the round's one mixed location): name explicit rename support in
-  the deferred decision. Declined — it would pre-empt task 3.2.1. ADR 004's
+  the deferred decision. Declined — it would pre-empt task 3.2.1. ADR 0004's
   `Outstanding decisions` already states that rename support "is part of the
   same verdict, because the rename support is the cheap remedy that a stability
   finding selects", and design.md §14's bullet already points at 3.2.1 and at
-  ADR 004. Resolving it in design.md would breach constraint 2 ("No verdict")
+  ADR 0004. Resolving it in design.md would breach constraint 2 ("No verdict")
   by fixing an outcome ahead of the evidence. **Subject seven**
   (`docs/context.md`, `minor`): reconcile the glossary's `State name` entry
-  with ADR 004. Adopted. The entry describes a stable name without recording
+  with ADR 0004. Adopted. The entry describes a stable name without recording
   that "stable" is undecided, while the `State identifier` entry beside it does
   record that 3.2.1 decides. **Subject eight** (`plan`, `minor`): the
   completion records are future-dated. Declined after checking the clock: the
   plan's own timestamps are **local** time (Europe/Berlin, +0200) and the
   entries were written at `2026-09-21 00:32` local, which is the date they
   carry. The finding compares against UTC, where that instant is still
-  `2026-09-20`; ADR 002 already carries a date of `2026-07-22.` recorded the
+  `2026-09-20`; ADR 0002 already carries a date of `2026-07-22.` recorded the
   same way and the round accepted it. Four of the eight subjects were therefore
   adopted — subject one's first half against a measured defect, subjects three,
   five and seven against the documents they reconcile — and four declined:
@@ -3003,45 +3007,46 @@ design.
   `punctuated_citations_are_accepted` case for each of comma, full stop and
   semicolon; the `registers.rs` grammar fix together with the `Block` verb
   prefix in `AGGREGATION_STATES` and the two pinned messages it feeds; and the
-  `major` on ADR 004's worked example. That finding carried two unrelated
+  `major` on ADR 0004's worked example. That finding carried two unrelated
   halves, and the second half was sound: `"it must Blocked"` is ungrammatical,
   and `Ratify` and `Amend` beside it are already verbs. Both halves are
   applied. **Declined one** (`docs/roadmap.md`, tick 1.1.3): the finding
   reverses D31, which adopted round 4's opposite finding for the same line.
   Both cannot be satisfied. D31's reading is the one EP-M5 states — the tick
   waits on a zero-finding review — and this pass returned ten findings, so the
-  bar is not met. **Declined two** (`docs/adr-004-…md`, drop the full stop from
-  the date): falsified by measurement. The style guide's own ADR template writes
-  `YYYY-MM-DD.` *with* the stop, and three of the repository's four ADRs carry
-  it (`adr-001`, `adr-002`, `adr-004`); the one that does not, `adr-003`, is
-  also the one whose status line omits its own full stop. The same finding had
-  already been raised and falsified once: it is D28's second falsification,
-  from the post-fix round. It is *not* one of round four's — that round's log
-  (`/tmp/coderabbit4-….out`, fourteen findings, all enumerated in D31) contains
-  no date finding at all, so an earlier draft of this entry that attributed it
-  there was itself the kind of unchecked claim this entry is about. **Declined
-  three** (`docs/developers-guide.md`, number the heading): falsified — that
-  guide has no numbered headings at all, so there is no convention for the
-  finding to follow. The style guide does say "Use numbered sections for
-  long-form technical documents", but that guide's own headings are unnumbered,
-  and sixteen of the twenty-two documents in `docs/` are likewise, so the
-  finding asks one of the majority to adopt a convention most of its peers do
-  not use. **Declined four** (`docs/contents.md`, reference-style links):
-  falsified twice. `markdownlint` reports zero errors on the file because MD013
-  exempts a line with no whitespace beyond the limit, and the style guide says
-  "Prefer inline links using `[text](url)`". Date/Author:
-  2026-09-26T00:38:00+02:00 (2026-09-25T22:38:00Z), implementing agent,
-  actioning the review the scrutineer returned after D31. The ten findings
-  carry four declines across four distinct subjects, and each is a convention
-  the repository does not use rather than a defect in the work — the date's
-  full stop is the style guide's own, the guide's headings follow the sixteen of
-  `docs/`'s twenty-two documents that are unnumbered, and `markdownlint`
-  reports no error on the file the fourth asks to rewrap. Two of the four are
-  **repeats of already-settled subjects**: the heading number returns in the
-  next pass, and the date's full stop had been falsified in the post-fix round.
-  Their reappearance is evidence about what the reviewer consistently expects
-  rather than about the branch, and recorded here so that a later pass raising
-  them again is read as recurrence rather than as new information.
+  bar is not met. **Declined two** (`docs/adrs/adr-0004-…md`, drop the full
+  stop from the date): falsified by measurement. The style guide's own ADR
+  template writes `YYYY-MM-DD.` *with* the stop, and three of the repository's
+  four ADRs carry it (`adr-0001`, `adr-0002`, `adr-0004`); the one that does
+  not, `adr-0003`, is also the one whose status line omits its own full stop.
+  The same finding had already been raised and falsified once: it is D28's
+  second falsification, from the post-fix round. It is *not* one of round
+  four's — that round's log (`/tmp/coderabbit4-….out`, fourteen findings, all
+  enumerated in D31) contains no date finding at all, so an earlier draft of
+  this entry that attributed it there was itself the kind of unchecked claim
+  this entry is about. **Declined three** (`docs/developers-guide.md`, number
+  the heading): falsified — that guide has no numbered headings at all, so
+  there is no convention for the finding to follow. The style guide does say
+  "Use numbered sections for long-form technical documents", but that guide's
+  own headings are unnumbered, and sixteen of the twenty-two documents in
+  `docs/` are likewise, so the finding asks one of the majority to adopt a
+  convention most of its peers do not use. **Declined four**
+  (`docs/contents.md`, reference-style links): falsified twice. `markdownlint`
+  reports zero errors on the file because MD013 exempts a line with no
+  whitespace beyond the limit, and the style guide says "Prefer inline links
+  using `[text](url)`". Date/Author: 2026-09-26T00:38:00+02:00
+  (2026-09-25T22:38:00Z), implementing agent, actioning the review the
+  scrutineer returned after D31. The ten findings carry four declines across
+  four distinct subjects, and each is a convention the repository does not use
+  rather than a defect in the work — the date's full stop is the style guide's
+  own, the guide's headings follow the sixteen of `docs/`'s twenty-two
+  documents that are unnumbered, and `markdownlint` reports no error on the
+  file the fourth asks to rewrap. Two of the four are **repeats of
+  already-settled subjects**: the heading number returns in the next pass, and
+  the date's full stop had been falsified in the post-fix round. Their
+  reappearance is evidence about what the reviewer consistently expects rather
+  than about the branch, and recorded here so that a later pass raising them
+  again is read as recurrence rather than as new information.
 
 - D33: **The sixth pass returned four findings in three subjects, all accepted,
   and all three are stale figures in this plan rather than defects in the
@@ -3184,7 +3189,7 @@ design.
   gates and the tick: that is precisely the ordering D31 had to undo one round
   later, written back into the plan as an instruction, so the step now requires
   a pass that returns no findings *before* the tick and says what to do when
-  one returns findings instead. The second is ADR 004's `as`-cast sentence,
+  one returns findings instead. The second is ADR 0004's `as`-cast sentence,
   which said flatly that "a cast reports the variant's position" — true only of
   a variant whose discriminant is implicit. **Measured with a `rustc` probe**
   rather than reasoned about: an implicit `B` cast to `u8` gave `1`, then `2`
@@ -3253,7 +3258,7 @@ design.
   commit. Both findings say the same thing at the same line; the list now names
   the plan and says why. The second subject is the template's
   `state-display-name` bullet, which said a citation-only cell "is not
-  sufficient" and left the enforcer unnamed. ADR 004 already draws that line —
+  sufficient" and left the enforcer unnamed. ADR 0004 already draws that line —
   three obligations are "checked, not merely asked for" — **four since D60,
   which checks the cell's shape and leaves the adequacy of the listed strings
   where this sentence puts it** — and the adequacy of the strings is the
@@ -3310,10 +3315,10 @@ design.
   whitespace follows column 80, which is why `markdownlint-cli2` reports zero
   errors on all 29 files. The developers-guide heading number still has no
   sequence to join: that document has **zero** numbered headings, verified by
-  `grep -c '^#\{1,3\} *[0-9]'`. ADR 004's metadata full stops are the style
+  `grep -c '^#\{1,3\} *[0-9]'`. ADR 0004's metadata full stops are the style
   guide's own template, which writes
   `<Proposed | Accepted | Superseded | Deprecated>.` and `YYYY-MM-DD.` — ADR
-  003 is the estate outlier that omits them, not ADR 004 that keeps them. A
+  0003 is the estate outlier that omits them, not ADR 0004 that keeps them. A
   subject surviving a fourth round is evidence about the reviewer, not about
   the branch, and the three are recorded here as recurrences rather than
   re-litigated. Date/Author: 2026-09-26, implementing agent, actioning the
@@ -3327,7 +3332,7 @@ design.
   rate limit. **Declined, as two near-duplicates.** Both ask `names_a_consumer`
   to apply `is_negated` to its positive tokens, so that "no tracing was used"
   stops counting as naming a consumer. A probe built from the module's own
-  predicates settles it against them. First, ADR 004's second obligation reads
+  predicates settles it against them. First, ADR 0004's second obligation reads
   "the tracing subscriber, the metrics recorder **or its documented absence**,
   any model checker, and generated documentation" — a documented *absence* is a
   negated mention, so the reviewer's rule would refuse a wording the ADR
@@ -3378,7 +3383,7 @@ design.
   "something Step 6 replaces with the `include_str!`" — the comment D34 records
   as stale. The red transcript settles it independently: all 39 scenarios
   *ran*, so every `include_str!` resolved, and
-  `template_matches_the_status_register` failed on *ADR 004's* missing status
+  `template_matches_the_status_register` failed on *ADR 0004's* missing status
   register rather than on any missing document. Step 2's procedure, its
   Progress record, and the Steps 5-7 record now tell that timeline in one
   voice. **Declined, three recurrences**, each counted across the canonical
@@ -3398,7 +3403,7 @@ design.
   `/tmp/coderabbit15-….out` — 16 lines, 4959 bytes, exit 0, valid NDJSON,
   `complete` reached with `outcome: completed`, no abort markers, no rate
   limit. **Adopted.** Two findings — the only two of the round that are not
-  recurrences — target the same two lines of ADR 004's "Known risks and
+  recurrences — target the same two lines of ADR 0004's "Known risks and
   limitations" and prescribe different remedies for them. Both are right that
   the passage overreaches, and they differ only in how far: the claim as
   written was that an identifier "cannot reduce metric cardinality" because the
@@ -3432,10 +3437,10 @@ design.
   narrowest rendering, and the row carries a recorded `MD013` exception rather
   than a hidden one — and the ADR date's trailing full stop, declined a third
   time on the same falsification: the style guide's own ADR template writes
-  `YYYY-MM-DD.` at `docs/documentation-style-guide.md:425`, ADR 004 follows it,
-  and `adr-003` — the estate's outlier — is the one that omits it. Date/Author:
-  2026-09-26, implementing agent, actioning the review the scrutineer returned
-  after D39.
+  `YYYY-MM-DD.` at `docs/documentation-style-guide.md:425`, ADR 0004 follows
+  it, and `adr-0003` — the estate's outlier — is the one that omits it.
+  Date/Author: 2026-09-26, implementing agent, actioning the review the
+  scrutineer returned after D39.
 
 - D41: **The fourteenth pass returned no findings because it never reached
   analysis, and an aborted stream is not evidence of anything.** Both attempts
@@ -3770,7 +3775,7 @@ design.
 
 - D49: **A register that cannot record a defect the prose says it gates is a
   document disagreeing with itself, and the prose was right.** The seventeenth
-  round's `major`: ADR 004's *Admissibility* section named three
+  round's `major`: ADR 0004's *Admissibility* section named three
   upstream-finding classes — a name synthesized from data, a `String` label,
   and a state that is not a named type — but the status register could express
   only `Not a named type` and `Unbounded`. A data-derived label whose value set
@@ -3846,10 +3851,10 @@ design.
   at the delivered totals rather than deleting or renumbering it: a checkpoint
   figure that a later gate run proves true is evidence of a milestone, and
   relabelling keeps both readings rather than trading one for the other.
-  **Finding two** (`major`, ADR 004's aggregation rule against the blocked-note
-  prose) asked to "ensure ratification cannot proceed when an expected note
-  selects a blocking status", with a contract scenario covering one
-  `Sufficient` note combined with one blocking note. Declined as a
+  **Finding two** (`major`, ADR 0004's aggregation rule against the
+  blocked-note prose) asked to "ensure ratification cannot proceed when an
+  expected note selects a blocking status", with a contract scenario covering
+  one `Sufficient` note combined with one blocking note. Declined as a
   re-litigation of the ADR's own rejected Option B, and the document says why
   in its `## Options considered` — "a naming defect … is not a verdict about
   the return type, so a register that treats it as one has no terminating
@@ -3866,7 +3871,7 @@ design.
   the scan's outcome depend on how many notes happen to be committed — a
   property belonging to neither invariant". **Accepted is the finding's other
   half**, "or explicitly define how the other evidence permits ratification":
-  ADR 004's admissibility paragraph now states the consequence in the
+  ADR 0004's admissibility paragraph now states the consequence in the
   register's own terms instead of writing "blocks the *Statelet* gate", a
   phrase the aggregation register cannot be read to mean, and the lone other
   copy in this plan's `Risks` is reworded with it. The two were the only copies
@@ -4131,7 +4136,7 @@ design.
   twenty-seven. **Declined for the reason both earlier rounds give**, which is
   checkable rather than a preference — **and falsified by D60**, which adopts
   the subject this entry declined a third time; the supersession chain is D36,
-  2498-2511, this entry, then D60. ADR 004 stated "three obligations on the
+  2498-2511, this entry, then D60. ADR 0004 stated "three obligations on the
   evidence cells are checked, not merely asked for", and they are citation
   shape on every cell, the `identifier-need` consumer set, and the
   `identifier-need` property agreement. "The note lists the actual strings"
@@ -4149,7 +4154,7 @@ design.
   2026-09-28T01:25:40+02:00 (2026-09-27T23:25:40Z), implementing agent,
   actioning the twenty-seventh round after verifying each finding against the
   bytes at the tip, measuring the provenance of every scope claim at `caabd3e`,
-  and reading ADR 004's obligation list against the reviewer's requested
+  and reading ADR 0004's obligation list against the reviewer's requested
   fourth. **Superseded in part by D59**, which supplies the offset this stamp
   was written without.
 
@@ -4201,11 +4206,11 @@ design.
 
 - D60: **A requirement the user states directly outranks a decline whose
   reasoning was that no rule defined the property — so the third recurrence of
-  "reject citation-only `Enumerated` evidence" is adopted, and ADR 004's
+  "reject citation-only `Enumerated` evidence" is adopted, and ADR 0004's
   obligation count moves with it.** The subject is the one D58 declined as a
   *third* recurrence, and D36 (round nine) and plan 2498-2511 (round
   twenty-one) declined as the first and second. All three declines turn on the
-  same sentence in ADR 004: "three obligations on the evidence cells are
+  same sentence in ADR 0004: "three obligations on the evidence cells are
   checked, not merely asked for", with the cells scoped to every citation, the
   `identifier-need` consumer set, and the `identifier-need` property agreement.
   The plan's own reasoning was that "the note lists the actual strings" appears
@@ -4245,7 +4250,7 @@ design.
   line numbers these sites carried in the first draft of this entry, which were
   stale on arrival: an earlier edit in this same revision had moved all three,
   which is the half-life the line-number observation above describes. **The
-  strings are measured, not chosen**: ADR 002's annotated derivation of
+  strings are measured, not chosen**: ADR 0002's annotated derivation of
   `BufferMode`, the enum whose variants are `Text` and `Table`, supplies
   exactly two, and no commit on this branch had ever listed them. Date/Author:
   `2026-09-28T06:07:22+02:00` (`2026-09-28T04:07:22Z`), implementing agent,
@@ -4360,13 +4365,13 @@ design.
   and the `femtologging` matches that a wider search produces are Go symbols
   inside a vendored `nektos/act` binary, not a Rust type. Second, both
   `LineMode` and "three names" entered in the *same* commit, `2426ea9`, the one
-  that first wrote ADR 004's prose — and round five, `160bb4d`, did not
+  that first wrote ADR 0004's prose — and round five, `160bb4d`, did not
   introduce them; it rewrote a hedged Observations sentence ("only `LineMode`
   was annotated for this note") into a positive assertion that task 2.2.1
   annotated it. So the defect was created and then *strengthened*, which is
   worth naming, because the strengthening commit is the one a reader would
   expect to be a repair. The borrowed numeral is now measurable:
-  `ContinuationMode` — which ADR 002 places in `src/wrap/paragraph/pending.rs`
+  `ContinuationMode` — which ADR 0002 places in `src/wrap/paragraph/pending.rs`
   and which roadmap task **2.2.2** owns, not 2.2.1 — declares exactly three
   variants, `Normalize`, `TightCodeSpan` and `VerbatimFlush`. "three names" is
   that enum's cardinality, carried into an illustration whose subject is the
@@ -4375,7 +4380,7 @@ design.
   `mdtablefix@abc1234:src/process.rs`; the task binding, since 2.2.1 annotates
   `ProcessBuffer` and 2.2.2 is a separate task; the illustration's own prose,
   which puts `bool in_table` in `ProcessBuffer` explicitly out of scope; and
-  ADR 002's annotated example, whose `handle_table_line` consumes
+  ADR 0002's annotated example, whose `handle_table_line` consumes
   `self.mode.state_name()` where `self.mode` is a `BufferMode`. The rule this
   leaves behind is the one the `three names` instance demonstrates: **a
   cardinality is only meaningful beside the type it was counted from, and a
@@ -4434,7 +4439,7 @@ design.
   what D60 specified: a span count alone accepts a cell quoting the state
   beside the *reader* of its name rather than its labels, so the predicate now
   also requires a return verb (`returns`, `returned`, `yields` and `yielded`,
-  read as word-initial stems so every inflection is the same verb). ADR 004's
+  read as word-initial stems so every inflection is the same verb). ADR 0004's
   "four obligations" sentence and the Note-register definition were already
   narrowed by D60; this entry adds the negative control for the reader shape
   and the direct predicate control
@@ -4558,7 +4563,7 @@ design.
   — state, verb, label — by splitting on the mark and walking the alternating
   spans and prose as overlapping runs, and matches the verb against the closed
   list `returns`, `returned`, `yields`, `yielded`. The vocabulary was already
-  closed in ADR 004, in the template and in this contract's own refusal
+  closed in ADR 0004, in the template and in this contract's own refusal
   message; only the code was open. **That is the finding's real shape: the
   predicate was weaker than the message it printed**, which promised "the state
   in backticks, then `returns` or `yields`, then each returned string" while
@@ -4673,7 +4678,7 @@ design.
   rather than accepting the warning's list.
 
 - D68: **The round's Developer Documentation warning is declined in part, and
-  the part declined is the larger one.** Its resolution asks that ADR 004's
+  the part declined is the larger one.** Its resolution asks that ADR 0004's
   body be kept immutable and every post-acceptance change converted into dated
   `Addendum` entries. That framing is **not this repository's**, and the check
   that raised it cites no document that says so: the documentation style guide
@@ -4681,9 +4686,9 @@ design.
   ADR, with conditional sections after, and names no addendum convention and no
   immutability rule (checked by reading the guide's ADR section, not by
   inferring from the warning). No ADR on `origin/main` carries an `Addendum`,
-  and neither ADR 001 nor ADR 003 writes a dated status summary, so there is no
-  house convention to follow either. And the premise does not hold: **ADR 004
-  is absent from `origin/main`** — this PR introduces it — so there is no
+  and neither ADR 0001 nor ADR 0003 writes a dated status summary, so there is
+  no house convention to follow either. And the premise does not hold: **ADR
+  0004 is absent from `origin/main`** — this PR introduces it — so there is no
   published accepted record for an addendum to amend. Writing one would invent
   a convention from a review tool's default, which rule 1 forbids. The **sound
   half is actioned**: the style guide *does* require an `Accepted` ADR to carry
@@ -4691,7 +4696,7 @@ design.
   applies to the document as much as to the code — a status line that says
   "Accepted" and nothing else is weaker than the rule it is meant to satisfy.
   The status now reads `Accepted, 2026-09-19.` with the decision summarized, in
-  the shape ADR 002 already uses. Date/Author: `2026-09-30T16:10:00+02:00`
+  the shape ADR 0002 already uses. Date/Author: `2026-09-30T16:10:00+02:00`
   (`2026-09-30T14:10:00Z`), implementing agent, distinguishing a review tool's
   house style from the repository's by reading the guide and the published ADRs
   rather than by deferring to the warning's confidence.
@@ -4827,7 +4832,7 @@ design.
   edited to make room for the record of its correction. The convention is
   *established* here rather than followed, and that is stated plainly rather
   than presented as compliance with a rule that does not exist. The premise D68
-  leaned on hardest is also the one that matters least: ADR 004 is absent from
+  leaned on hardest is also the one that matters least: ADR 0004 is absent from
   `origin/main` because this PR introduces it, so there is no published record
   to amend — but there is a *reviewed* one, and the reader who cannot see its
   corrections is reading this PR's copy. Date/Author:
@@ -4845,7 +4850,7 @@ design.
   brought up to date. That direction is an acceptance decision, and this plan
   defers to it. It is not evidence of a clean review, so the record keeps both
   facts. The deliverables named by the roadmap's success criterion are on
-  `origin/main`: ADR 004, the Phase 2 validation note template with its four
+  `origin/main`: ADR 0004, the Phase 2 validation note template with its four
   fields, and the contract suite that binds the criterion to them. Every hosted
   review thread stood resolved at merge, and `reviewDecision` was `APPROVED`.
   The local zero-finding bar, by contrast, was never met. The earlier "stays
@@ -5074,48 +5079,48 @@ design.
   the finding. Draft one said line 1142 held "review five's four declines"; it
   held that item's adopted-findings list, and the declines sit 5 lines below it
   at 1147, inside the same item. Draft two, written to replace draft one and
-  asserting that 1142 "held ADR 004's worked example", failed on a subtler
-  test: the *words* "ADR 004's worked example" are there, as review five's last
-  adopted finding, but the worked example itself is not — it lives in
-  `docs/adr-004-…md`, and this plan only ever lists it. A grep for the phrase
-  finds the line; a read finds a finding *about* the illustration. The declines
-  draft two then moved to "line 2385, in a `Progress` checklist item" are at
-  2385 in `Surprises & discoveries`, which is D32's record — the `Progress`
-  copy of the same four declines is at 1147 in `07ce9c7`, and at a line whose
-  number this entry does not need to state. So the numeral was invented rather
-  than drifted, and each attempt to say what it *had* meant substituted a fresh
-  unread line number for the last: three positional claims, three falsified by
-  the command that reads the position. What survived every draft is the thing
-  that never needed a number — the referent is the fence-ignore entry, and a
-  relative pointer names it without arithmetic. The numeral was written under
-  memory of a different revision and survived into the tree because nothing
-  checks it: the plan is an input to three gates and all three read *format*,
-  not reference. Impact: the repair replaced the number with a relative
-  position ("the fence-ignore entry above"), which cannot drift, and the four
-  other self-referential pointers in the section were then checked and all four
-  resolve — a number among them survived only because nothing above it had been
-  inserted since. **The failure then reproduced itself inside this very entry,
-  one draft earlier.** That draft cited line 1142 as evidence of what the
-  numeral had been pointing at, and the Progress entries added by the same
-  commit moved it before the text below was read: they begin at line 1126 and
-  are 29 lines long, so the review-five item they precede starts at 1155 and
-  line 1142 now holds the CodeScene item's opening. The draft's evidence line
-  was correct when written and false by the time it was committed, in the same
-  commit. Neither draft read the file; both inferred the contents from the
-  number, and the second inference was false in the same way as the first, in
-  the same entry, within the hour. **Carried lesson: a cross-reference is
-  evidence about a population of edits, so it is verified the way a count is —
-  by reading what is at the position now, not by trusting what was there when
-  it was written.** **One more numeral from the same commit fell to the same
-  test:** the same Progress item reported "the seven `45 to 75` figures" as
-  intact, where the figure was 3 at `88a6e19` and 4 at `9c9fb5c`, the repair
-  adding the difference. Unlike the line number it has no referent at all: a
-  search of every revision of this plan for a seven-strong set of these figures
-  returns only the sentence claiming one, so the numeral was composed to fit
-  the sentence rather than borrowed from a real count that drifted. `grep -c`
-  settles it in one command — which is why this entry counts only revisions
-  that are named, since the tree being edited counts its own discussion of the
-  figure.
+  asserting that 1142 "held ADR 0004's worked example", failed on a subtler
+  test: the *words* "ADR 0004's worked example" are there, as review five's
+  last adopted finding, but the worked example itself is not — it lives in
+  `docs/adrs/adr-0004-…md`, and this plan only ever lists it. A grep for the
+  phrase finds the line; a read finds a finding *about* the illustration. The
+  declines draft two then moved to "line 2385, in a `Progress` checklist item"
+  are at 2385 in `Surprises & discoveries`, which is D32's record — the
+  `Progress` copy of the same four declines is at 1147 in `07ce9c7`, and at a
+  line whose number this entry does not need to state. So the numeral was
+  invented rather than drifted, and each attempt to say what it *had* meant
+  substituted a fresh unread line number for the last: three positional claims,
+  three falsified by the command that reads the position. What survived every
+  draft is the thing that never needed a number — the referent is the
+  fence-ignore entry, and a relative pointer names it without arithmetic. The
+  numeral was written under memory of a different revision and survived into
+  the tree because nothing checks it: the plan is an input to three gates and
+  all three read *format*, not reference. Impact: the repair replaced the
+  number with a relative position ("the fence-ignore entry above"), which
+  cannot drift, and the four other self-referential pointers in the section
+  were then checked and all four resolve — a number among them survived only
+  because nothing above it had been inserted since. **The failure then
+  reproduced itself inside this very entry, one draft earlier.** That draft
+  cited line 1142 as evidence of what the numeral had been pointing at, and the
+  Progress entries added by the same commit moved it before the text below was
+  read: they begin at line 1126 and are 29 lines long, so the review-five item
+  they precede starts at 1155 and line 1142 now holds the CodeScene item's
+  opening. The draft's evidence line was correct when written and false by the
+  time it was committed, in the same commit. Neither draft read the file; both
+  inferred the contents from the number, and the second inference was false in
+  the same way as the first, in the same entry, within the hour. **Carried
+  lesson: a cross-reference is evidence about a population of edits, so it is
+  verified the way a count is — by reading what is at the position now, not by
+  trusting what was there when it was written.** **One more numeral from the
+  same commit fell to the same test:** the same Progress item reported "the
+  seven `45 to 75` figures" as intact, where the figure was 3 at `88a6e19` and
+  4 at `9c9fb5c`, the repair adding the difference. Unlike the line number it
+  has no referent at all: a search of every revision of this plan for a
+  seven-strong set of these figures returns only the sentence claiming one, so
+  the numeral was composed to fit the sentence rather than borrowed from a real
+  count that drifted. `grep -c` settles it in one command — which is why this
+  entry counts only revisions that are named, since the tree being edited
+  counts its own discussion of the figure.
 
 - Observation: **the code-health service that fails on every revision was never
   recorded, and its failure is a fact about the ruleset rather than about the
@@ -5175,7 +5180,7 @@ design.
 
 Roadmap task 1.1.3 is linked and ticked. The tick came from the repository
 owner's direction after PR #71 merged, not from EP-M5's zero-finding review,
-which never returned clean (D31, D74). ADR 004 defines the `StateName`
+which never returned clean (D31, D74). ADR 0004 defines the `StateName`
 consumption evidence; `docs/phase-2-validation-note-template.md` is the form a
 Phase 2 engineer copies; `tests/state_name_consumption_contract.rs` and its
 nineteen child modules guard both against drift. The task's own success
@@ -5186,7 +5191,7 @@ The task's stated purpose was to make task 3.2.1's instruction executable. A
 Phase 2 engineer now has a form to fill, a rule that turns the filled form into
 a verdict, and an illustrative worked example showing what an adequate evidence
 cell looks like. What does **not** exist, deliberately, is the verdict itself:
-ADR 004 records evidence and the rule for reading it, and leaves "is
+ADR 0004 records evidence and the rule for reading it, and leaves "is
 `&'static str` sufficient?" to task 3.2.1. Constraint 2 forbids the answer, and
 the aggregation register is shaped so that the answer arrives as a row
 selection rather than as prose.
@@ -5222,7 +5227,7 @@ preceding rounds aborted four attempts between them, D49 by the seventeenth,
 whose `major` sent a register row and its `fixtures.rs` pin upstream together,
 D50 by the eighteenth, whose two defects are in this plan's own rerun rule and
 its Stage D ordering and pre-date the commit the round reviewed, D51 by the
-nineteenth, whose `major` is a requested semantics change ADR 004's own
+nineteenth, whose `major` is a requested semantics change ADR 0004's own
 rejected Option B had already refused, D52 by the twentieth, which reverses
 this plan's own refusal of `proptest` on a re-measurement and a changed
 subject, and D53 by the twenty-first, which fixes how the gate list is
@@ -5236,16 +5241,16 @@ are this plan's own `Q3` and `D9` entries, which are the records it corrects.
 **D53 joins D47, D48 and D51 in the named-only group**, for the same reason:
 its subject is this plan's own dispatch instruction and the gate set that
 instruction named, so its downstream impact is bounded by this file. **D49 is
-the exception among the seven**: it amended ADR 004's *Admissibility* prose and
-its status register, so its downstream impact is dispositioned with the other
-upstream corrections below rather than discharged by naming. **D50 is the
+the exception among the seven**: it amended ADR 0004's *Admissibility* prose
+and its status register, so its downstream impact is dispositioned with the
+other upstream corrections below rather than discharged by naming. **D50 is the
 second exception and the first decision in this section whose subject is this
 plan's *instructions* rather than its evidence** — it repairs the rerun rule
 and the Stage D completion summary — so its downstream impact is bounded by
 this file and there is no upstream artefact to check it against; the state that
 must move is the plan's own. **D51 is the third and the only one of the seven
 whose subject is a *sentence* in an upstream document**: its accepted half
-reworded ADR 004's admissibility prose and this plan's `Risks` copy of it, and
+reworded ADR 0004's admissibility prose and this plan's `Risks` copy of it, and
 the rewording restates a rule the register already enforced rather than
 changing it, so like D49's it is dispositioned below among the upstream
 corrections and, unlike D49's, it moved no test. Sixteen observations were
@@ -5272,12 +5277,12 @@ count is the post-gate-runs group only and is not the section's total, which is
 33 and is stated with its arithmetic in the reconciliation above. None bears on
 any upstream artefact, and the second review round — recorded as D29 rather
 than here, because its findings are decisions rather than observations — forced
-one upstream correction of its own, to ADR 004's stable-identifier paragraph,
+one upstream correction of its own, to ADR 0004's stable-identifier paragraph,
 which is dispositioned below.
 
 **Falsified an upstream premise; upstream amended in this task.**
 
-- The nineteenth round's `major` named a rule ADR 004's status register and
+- The nineteenth round's `major` named a rule ADR 0004's status register and
   aggregation register disagreed *in a sentence* rather than in a procedure,
   and the accepted half of it is amended upstream in this task: the ADR's
   *Admissibility* paragraph no longer writes "blocks the *Statelet* gate",
@@ -5334,7 +5339,7 @@ which is dispositioned below.
   register row, gate binding, invariant or repair message. Three of its five
   subjects repaired code the plan had already specified — the citation-reading
   keyword scan, the line-scanning roadmap checks, and the plan's own stale
-  gate-table snippet — and two corrected ADR 004's wording to match the rule
+  gate-table snippet — and two corrected ADR 0004's wording to match the rule
   its prose already stated. The re-split those repairs forced is a
   `file layout` change, as D26's was, and the ADR corrections amend a document
   this task owns rather than an upstream one.
@@ -5350,14 +5355,14 @@ which is dispositioned below.
 
 - **`docs/design.md` §11.1** is byte-identical to its pre-task state except for
   the added §14 bullet elsewhere in the file. The bet table gains no row.
-- **ADR 001's outstanding decision** is *not* resolved by this work, which is
-  the point: task 1.1.3 prepares the evidence 3.2.1 will read. ADR 001 needs no
-  amendment, and none was made.
+- **ADR 0001's outstanding decision** is *not* resolved by this work, which is
+  the point: task 1.1.3 prepares the evidence 3.2.1 will read. ADR 0001 needs
+  no amendment, and none was made.
 - **`docs/terms-of-reference.md`** is untouched. No TOR assumption was
   falsified — the findings above concern how the repository's own tooling
   behaves, not what the project is for.
-- **ADR 002 and ADR 003** are untouched, per constraint 4. Finding four is
-  recorded *inside* ADR 004, and the exit register's gate list does not name
+- **ADR 0002 and ADR 0003** are untouched, per constraint 4. Finding four is
+  recorded *inside* ADR 0004, and the exit register's gate list does not name
   1.1.3, which was checked before Step 8 rather than after.
 
 ### Lessons
@@ -5424,7 +5429,7 @@ having and exactly when it looks like bureaucracy.
   task record.** `locate_section` pays for `#[derive(StateName)]` at column
   zero in `docs/design.md` §6.1 with a rule that bounds a found section by the
   next heading of the same or higher rank, and an attribution matching *prose*
-  — ADR 004's `roadmap 3.2.1. Finalize the …` — inherits `PROSE_RANK`, which is
+  — ADR 0004's `roadmap 3.2.1. Finalize the …` — inherits `PROSE_RANK`, which is
   `##`. On the roadmap that makes the window the rest of the phase rather than
   the task: measured, the *body* `locate_section` returns — everything after
   task 3.2.1's line, up to but excluding the next `##` heading — is **867 bytes
@@ -5434,10 +5439,10 @@ having and exactly when it looks like bureaucracy.
   difference, and the number a reader would get by measuring the tempting way.
   Kept, because the bound is safe in the direction D12 requires from it — it
   will not resolve inside a fence — and because the same rule is what stops ADR
-  004's own evidence clauses from resolving against the wrong section. Recorded
-  rather than repaired: narrowing it to checklist-item boundaries is a parser
-  change, not a wording change, and the parse that would prove it correct is
-  the whole of the next review pass's cost.
+  0004's own evidence clauses from resolving against the wrong section.
+  Recorded rather than repaired: narrowing it to checklist-item boundaries is a
+  parser change, not a wording change, and the parse that would prove it
+  correct is the whole of the next review pass's cost.
 - **The three `docs/validation-notes/` notes this contract expects** — 1.2.3's
   benchmark note, 2.2.3's exit note, 3.1.3's decision note — do not exist yet.
   The marker rule means their arrival is not a build failure, and the scan's
@@ -5495,7 +5500,7 @@ trim. Typed mappers convert rows to register types; policy predicates operate
 on typed rows. A failure is therefore attributable to one layer.
 
 `ParseError` is keyed on a `Register` token rather than on a document string,
-because ADR 004 carries more than one register and a message must say *which*.
+because ADR 0004 carries more than one register and a message must say *which*.
 The token yields document, begin marker, end marker, and section name through
 `const fn` accessors, which is what makes every asserted repair message
 derivable. Note also that the existing implementation's `line` field is
@@ -5514,7 +5519,7 @@ formatter by running `make fmt` before fixtures are written and by
 - **Obligation**: roadmap task 1.1.3's success bullet resolves verbatim
   (whitespace-folded) inside the *task record whose title names that task*, and
   each of its four nouns — state display name, identifier need, metrics
-  cardinality, tracing use — maps to exactly one field identifier in ADR 004's
+  cardinality, tracing use — maps to exactly one field identifier in ADR 0004's
   status register.
 - **Method**: the check runs over the parsed task records, filtered to the one
   whose title carries the task's identifying fragment; one rejection case per
@@ -5550,7 +5555,7 @@ formatter by running `make fmt` before fixtures are written and by
 
 - **Obligation**: the field identifiers in
   `docs/phase-2-validation-note-template.md`'s note register equal the distinct
-  field identifiers of ADR 004's status register, in first-appearance order,
+  field identifiers of ADR 0004's status register, in first-appearance order,
   and every status and evidence cell in the template holds the literal `TBD`.
 - **Method**: parse both, compare typed values with
   `pretty_assertions::assert_eq!`.
@@ -5573,7 +5578,7 @@ formatter by running `make fmt` before fixtures are written and by
 ### INV-REGISTERS — both registers match their fixtures exactly
 
 - **Obligation**: the status register and the aggregation register parsed from
-  ADR 004 equal their fixture literals in `fixtures.rs`.
+  ADR 0004 equal their fixture literals in `fixtures.rs`.
 - **Method**: exact equality per register.
 - **Rationale**: equality against a literal is a stronger and more readable
   check than a family of policy predicates, and a `pretty_assertions` diff
@@ -5594,7 +5599,7 @@ formatter by running `make fmt` before fixtures are written and by
 - **Method**: two predicates over the typed verdict rows.
 - **Rationale**: `INV-REGISTERS` pins the live document, so these are
   *implied* for it. They are not redundant against the real threat model: an
-  editor who changes ADR 004 and updates the fixture in the same commit keeps
+  editor who changes ADR 0004 and updates the fixture in the same commit keeps
   `INV-REGISTERS` green and trips these. Stating that relationship here is
   deliberate, because otherwise a later reviewer reasonably "simplifies" them
   away. The second half is the guard against a degenerate register: this plan's
@@ -5605,14 +5610,14 @@ formatter by running `make fmt` before fixtures are written and by
   `register_scenarios::register_can_select_insufficient`.
 - **Non-vacuity**: a fixture-plus-document pair edited together so that a
   status other than `Property required` selects `Insufficient` must fail with
-  `docs/adr-004-state-name-consumption-evidence.md: field identifier-need status
-  None selects Insufficient. Repair: only the Property required status may
-  overturn the &'static str default.`
+  `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md:
+  field identifier-need status None selects Insufficient. Repair: only the
+  Property required status may overturn the &'static str default.`
   A pair in which the `Property required` row is softened to `Sufficient` —
   which violates nothing else — must fail with
-  `docs/adr-004-state-name-consumption-evidence.md: no row selects Insufficient.
-  Repair: a register that cannot overturn the default is not a decision
-  procedure.`
+  `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md:
+  no row selects Insufficient. Repair: a register that cannot overturn the
+  default is not a decision procedure.`
   A third control separates the two branches of the same check: a status
   selectable as `Insufficient` from a *field* other than `identifier-need` must
   fail naming that field and status.
@@ -5628,7 +5633,7 @@ formatter by running `make fmt` before fixtures are written and by
   blocking status cannot be added without a case, plus one admissible control.
 - **Rationale**: this is where cardinality belongs. The first state Phase 2
   meets is `ProcessBuffer`'s `bool in_table`, which is not a named type at all,
-  and ADR 002 confirms that is the present shape of `mdtablefix`. A vocabulary
+  and ADR 0002 confirms that is the present shape of `mdtablefix`. A vocabulary
   admitting only "recorded" or "not reached" cannot express it, and a register
   treating it as a verdict axis loops.
 - **Artefact**: test `blocked_notes_resolve_to_not_resolved`.
@@ -5640,7 +5645,7 @@ formatter by running `make fmt` before fixtures are written and by
 
 - **Obligation**: a note selecting two different non-`nothing` contributions
   yields an error naming both fields and both contributions, rather than
-  resolving to either one. ADR 004 states the rule in the paragraph before the
+  resolving to either one. ADR 0004 states the rule in the paragraph before the
   status register: a note's contribution is "the single non-`nothing` value
   among the contributions its cells select", and "a note selecting two
   different contributions is contradictory and is rejected rather than
@@ -5676,7 +5681,7 @@ formatter by running `make fmt` before fixtures are written and by
 - **Rationale**: keying on a declared marker rather than on `*.md` matters more
   than it looks. `docs/validation-notes/` is not this task's namespace to
   claim: roadmap task 1.2.3 produces a *benchmark* note with four different
-  fields, task 2.2.3's note chooses one of ADR 003's three exits, and task
+  fields, task 2.2.3's note chooses one of ADR 0003's three exits, and task
   3.1.3's cites both validation examples. None is a `StateName` note. A glob
   would turn the arrival of any of them into a build failure — the same hazard
   D7 removed from the gates, one level down.
@@ -5715,17 +5720,17 @@ formatter by running `make fmt` before fixtures are written and by
 
 ### INV-ANCHORS — the three load-bearing clauses still say what is quoted
 
-- **Obligation**: the clauses quoted in ADR 004's "Evidence the record
+- **Obligation**: the clauses quoted in ADR 0004's "Evidence the record
   preserves" resolve, whitespace-folded, within their named sections: design
   §6.1's "The default remains `&'static str` until a real example consumes
   something stronger"; roadmap 3.2.1's "backed by observed example consumption,
-  not anticipation"; and ADR 002's `wireframe` sentence giving "production
+  not anticipation"; and ADR 0002's `wireframe` sentence giving "production
   logs, tests, and the model the same" labels.
 - **Method**: folded substring resolution, with each section bounded by
   `split_once` on the *next* heading's literal text.
 - **Rationale**: three clauses, not six. Each additional anchor is a permanent
   edit-tax on a document nobody will remember is load-bearing, and these three
-  are the ones the decision rests on. ADR 002's clause is included because
+  are the ones the decision rests on. ADR 0002's clause is included because
   Finding four depends on it and the first draft left it unguarded while
   claiming otherwise.
 - **Artefact**: test `quoted_passages_still_resolve`.
@@ -5737,7 +5742,7 @@ formatter by running `make fmt` before fixtures are written and by
   passes over zero clauses, which is exactly what would have happened at the
   red step of this plan's first draft.
 - **Two traps, both verified during planning**: folding is mandatory, because
-  `mdtablefix --wrap` rewraps ADR 004's prose at different break points from
+  `mdtablefix --wrap` rewraps ADR 0004's prose at different break points from
   the source, and three of six clauses in the first draft did not resolve
   without it. And section bounds must not be found by scanning for a leading
   `#`: design §6.1 contains `#[derive(StateName)]` at column zero inside a
@@ -5757,11 +5762,11 @@ formatter by running `make fmt` before fixtures are written and by
   Binding by title rather than number is deliberate: it keeps the reference
   meaningful without freezing task numbers and without breaking the build on
   the day a bound task is legitimately completed. The *title* is the span ADR
-  004 names — the gates bind "by task title rather than task number", and Table
-  4 is "gates bound to roadmap tasks by title" — so matching the whole record
-  would accept a fragment naming a sub-bullet or a link, which names no task at
-  all. Reading raw document lines is weaker still, and would resolve the "kill
-  gates" phase heading as a task.
+  0004 names — the gates bind "by task title rather than task number", and
+  Table 4 is "gates bound to roadmap tasks by title" — so matching the whole
+  record would accept a fragment naming a sub-bullet or a link, which names no
+  task at all. Reading raw document lines is weaker still, and would resolve
+  the "kill gates" phase heading as a task.
 - **Artefact**: test `gate_titles_resolve`, nine cases;
   `the_deceiving_fragments_still_appear_outside_task_titles` holds the prose
   controls' precondition against the live roadmap.
@@ -5814,18 +5819,18 @@ and the plan needs revision before code.
 
 ### Stage B — red (EP-M1)
 
-Create ADR 004 with its full prose and its delimiter comments but **no register
-tables**, and create `docs/validation-notes/README.md` with an empty directory
-otherwise. The documents the test `include_str!`s must exist before it compiles
-— `include_str!` of a missing file is a compile error, not a test failure. The
-template is not among them at this stage: `fixtures.rs` carries a literal
-placeholder in its place until Step 6 writes the document, and the substitution
-lands with it. Write the contract test in full. Run `make test` and observe the
-red state: `MissingDelimiters` naming each register, plus the empty-clause-list
-failure of `INV-ANCHORS`. `INV-FILLED` does **not** fail, and the prediction
-that it would is corrected by D22 below — an empty `docs/validation-notes/` is
-a pass, because no honest note can exist before task 2.2.1 has annotated
-something. Record the transcript.
+Create ADR 0004 with its full prose and its delimiter comments but **no
+register tables**, and create `docs/validation-notes/README.md` with an empty
+directory otherwise. The documents the test `include_str!`s must exist before
+it compiles — `include_str!` of a missing file is a compile error, not a test
+failure. The template is not among them at this stage: `fixtures.rs` carries a
+literal placeholder in its place until Step 6 writes the document, and the
+substitution lands with it. Write the contract test in full. Run `make test`
+and observe the red state: `MissingDelimiters` naming each register, plus the
+empty-clause-list failure of `INV-ANCHORS`. `INV-FILLED` does **not** fail, and
+the prediction that it would is corrected by D22 below — an empty
+`docs/validation-notes/` is a pass, because no honest note can exist before
+task 2.2.1 has annotated something. Record the transcript.
 
 Do not use an expected-failure marker. `AGENTS.md` requires every commit to
 pass the gates, so the red state is observed within a session and not
@@ -5834,7 +5839,7 @@ its body.
 
 ### Stage C — green (EP-M1, EP-M2, EP-M3)
 
-Insert the status register and the aggregation register into ADR 004. Run
+Insert the status register and the aggregation register into ADR 0004. Run
 `make fmt` first so `mdtablefix` sets column widths, then copy the formatted
 rows into `fixtures.rs`; writing fixtures before formatting is what makes them
 drift. Then proceed to Step 6 for the template and the illustrative example,
@@ -5854,13 +5859,13 @@ EP-M5 both require.
 
 ### EP-M1 — the decision record exists and its registers are guarded
 
-- **Outcome**: ADR 004 exists with its status and aggregation registers;
+- **Outcome**: ADR 0004 exists with its status and aggregation registers;
   `INV-CRITERION`, `INV-REGISTERS`, `INV-EXCLUSION`, and `INV-AGGREGATE` green.
 - **Requirements**: the decision half of `ROADMAP-1.1.3`; `TDD-6.1-stable-id`;
   `TDD-6.2-no-speculative-api`.
 - **Acceptance**: `make test` passes; every negative control asserts a specific
   message rather than `is_err()`.
-- **Conformance check**: no runtime code; no verdict pronounced; ADR 002's
+- **Conformance check**: no runtime code; no verdict pronounced; ADR 0002's
   boundary untouched; no roadmap renumbering; no dependency change — these are
   claims about *this plateau's own commit*, `2426ea9`, at which they hold:
   `Cargo.toml` was not touched until `3a46358`, fifty-two commits later, so the
@@ -5872,12 +5877,12 @@ EP-M5 both require.
 ### EP-M2 — the template matches the register and the example exists
 
 - **Outcome**: the template's fields match the status register and every cell
-  holds `TBD`; ADR 004 carries an illustrative worked example marked as
+  holds `TBD`; ADR 0004 carries an illustrative worked example marked as
   non-evidence; `INV-TEMPLATE`, `INV-ADMISSIBILITY`, and `INV-FILLED` green.
 - **Requirements**: the instrument half of `ROADMAP-1.1.3` — the roadmap's
   literal success criterion.
 - **Acceptance**: `make test` passes; and a manual check that filling the
-  template for `ContinuationMode` yields a verdict derivable from ADR 004
+  template for `ContinuationMode` yields a verdict derivable from ADR 0004
   alone, without a judgement call.
 - **Conformance check**: template fields derived from the status register; the
   illustrative example uses only admissible statuses and is marked as
@@ -5888,7 +5893,7 @@ EP-M5 both require.
 
 ### EP-M3 — gates and anchors are guarded
 
-- **Outcome**: ADR 004 carries its gate table and evidence section, both inside
+- **Outcome**: ADR 0004 carries its gate table and evidence section, both inside
   delimiters; `INV-GATES` and `INV-ANCHORS` green.
 - **Requirements**: binds `ROADMAP-2.2.1`, `2.2.2`, `3.1.2`, and `3.2.1` by
   title.
@@ -5947,18 +5952,18 @@ tree is clean, and every test passes across the five existing binaries.
 
 ### Step 2 — create the documents and the notes directory
 
-Create `docs/adr-004-state-name-consumption-evidence.md` with full prose and
-`docs/validation-notes/README.md`. This step precedes the test because the scan
-`include_str!`s ADR 004, and a file reached that way must exist before the test
-compiles. The template is not created here: it is written at Step 6, and
-`fixtures.rs` holds a literal placeholder until it is. See the corrected Step 4
-below.
+Create `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md` with
+full prose and `docs/validation-notes/README.md`. This step precedes the test
+because the scan `include_str!`s ADR 0004, and a file reached that way must
+exist before the test compiles. The template is not created here: it is written
+at Step 6, and `fixtures.rs` holds a literal placeholder until it is. See the
+corrected Step 4 below.
 
 **Done 2026-09-19, with one departure from the step as written.** The step
 originally asked for "delimiter comments but no tables". `make fmt` merges an
 adjacent, empty delimiter pair onto a single line, which would have made Step 4
 fail with `EmptyRegister` rather than the predicted `MissingDelimiters`; see
-D19 and `Surprises & discoveries`. ADR 004 was therefore committed with its
+D19 and `Surprises & discoveries`. ADR 0004 was therefore committed with its
 four delimiter pairs *empty and merged*, and the registers arrive with their
 delimiters in Step 5. The template's absence from `65b59c5` is not a departure:
 it followed from the placeholder arrangement above, and the compile-time
@@ -5986,7 +5991,7 @@ make test 2>&1 | tee /tmp/test-statelet-red-$(git branch --show-current).out
 Expected transcript fragment:
 
 ```plaintext
-docs/adr-004-state-name-consumption-evidence.md: no status register found
+docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: no status register found
 between <!-- status-register:begin --> and <!-- status-register:end -->.
 Repair: add the register block to the Status register section.
 ```
@@ -6028,7 +6033,7 @@ would change documents under a green test. Commit.
 
 Write `docs/phase-2-validation-note-template.md` from the status register's
 field list, with `TBD` in every cell. Add the illustrative worked example to
-ADR 004 as a fenced block under a heading that marks it explicitly as
+ADR 0004 as a fenced block under a heading that marks it explicitly as
 illustration and not evidence. Run `make fmt` and `make test`. Commit.
 
 `docs/validation-notes/` stays empty except for its `README.md` until task
@@ -6088,7 +6093,7 @@ success bullet as tasks 1.1.1 and 1.1.2 do, set this plan's status to
 
 ## Documentation sync map
 
-1. `docs/contents.md`: add ADR 004 under "Decision records" after ADR 003;
+1. `docs/contents.md`: add ADR 0004 under "Decision records" after ADR 0003;
    add the template and `docs/validation-notes/` under "Project guides", not
    "Product and design" — a blank form is not design material. Also add an
    `execplans/` entry enumerating the three execution plans. That last item
@@ -6096,14 +6101,14 @@ success bullet as tasks 1.1.1 and 1.1.2 do, set this plan's status to
    flagged here rather than slipped in, and may be declined without affecting
    anything else.
 2. `docs/design.md`: add both new documents to the companion list; add one
-   sentence at the end of §6.1 pointing to ADR 004 and the template; add one
+   sentence at the end of §6.1 pointing to ADR 0004 and the template; add one
    sentence at the end of §12 pointing to the template, because §12 is what
    roadmap task 2.2.1 cites. Per Q1, add the `StateName` return-shape bullet to
    §14 "Deferred decisions" — verified inert, because the existing contract
    reads §14 only as a heading-string relocation anchor. Update "Last
    substantive revision". No §11.1 edit — see Q1 and D12.
 3. `docs/terms-of-reference.md`: add both documents to the companion list and
-   ADR 004 to §10.2. Update "Last substantive revision".
+   ADR 0004 to §10.2. Update "Last substantive revision".
 4. `docs/context.md`: add two glossary entries. **State identifier** — "a
    stable value distinguishing one state from another for machine consumption;
    distinct from a state name, which is a human-readable label." **Validation
@@ -6166,7 +6171,7 @@ collected fails here.
 `pretty_assertions::assert_eq!`. A control asserting only `is_err()` does not
 discharge its obligation and must be rewritten.
 
-**Manual acceptance.** Read ADR 004's illustrative worked example and its
+**Manual acceptance.** Read ADR 0004's illustrative worked example and its
 status register, and nothing else. The verdict must be derivable without a
 judgement call. If it is not, the instrument has failed regardless of the tests.
 
@@ -6269,7 +6274,7 @@ Between `<!-- aggregation-register:begin -->` and
 ```
 
 *Table 3: How task 3.2.1 reads the committed notes together. Every outcome is
-conditional on publication: if ADR 003's gate G2 has already selected exit E1,
+conditional on publication: if ADR 0003's gate G2 has already selected exit E1,
 Statelet ships nothing and no return type is ratified.*
 
 ### The gate table
@@ -6288,13 +6293,13 @@ Between `<!-- gate-table:begin -->` and `<!-- gate-table:end -->`:
 *Table 4: Gates, bound by task title rather than task number so that completing
 a gate does not break the build.*
 
-### ADR 004's section order
+### ADR 0004's section order
 
 Per `docs/documentation-style-guide.md`, with custom sections in the slot ADR
-003 uses for `## Exit register`:
+0003 uses for `## Exit register`:
 
 ```plaintext
-# Architectural decision record (ADR) 004: Define the StateName consumption evidence
+# Architectural decision record (ADR) 0004: Define the StateName consumption evidence
 ## Status / ## Date / ## Context and problem statement
 ## Decision drivers
 ## Options considered          -> with a numbered comparison table
@@ -6320,7 +6325,7 @@ transcribed cell for cell: the status register, the aggregation register, the
 gate table, and the section order above. It is not a copy of either document.
 The prose — the admissibility argument, the cardinality rationale, the worked
 example — is written in Stage B directly into
-`docs/adr-004-state-name-consumption-evidence.md` and
+`docs/adrs/adr-0004-define-the-statename-consumption-evidence.md` and
 `docs/phase-2-validation-note-template.md`, and read from there. An earlier
 draft of this paragraph claimed the full prose was "appended to this section as
 it is drafted, so that this plan ends the task self-contained", which was never
@@ -7091,7 +7096,7 @@ pub(crate) fn resolve_note(rows: &[StatusRow], note: &[NoteRow])
 would print `NotResolved` where the documents say `Not resolved`. Note that
 `resolve_note` takes the status register as an argument: admissibility and
 verdict are both *derived* from the document, so adding a blocking status to
-ADR 004 changes behaviour without a Rust edit. Nothing about the vocabulary is
+ADR 0004 changes behaviour without a Rust edit. Nothing about the vocabulary is
 hardcoded.
 
 Every check function returns `Result<(), String>` whose `Err` is the exact
@@ -7135,7 +7140,7 @@ re-permits in tests.
     committed worked example. See D9.
   - `INV-ANCHORS` narrowed from six clauses to three, gained mandatory
     whitespace folding, gained an empty-evidence-section control, and gained
-    ADR 002 — whose clause the first draft called load-bearing while leaving it
+    ADR 0002 — whose clause the first draft called load-bearing while leaving it
     out of the guarded set.
   - Corrected premises: `clippy::panic` is not denied, only
     `panic_in_result_fn`; `expect_used` is re-permitted in tests;
@@ -7162,7 +7167,7 @@ re-permits in tests.
     note into a build failure. See D15.
   - The committed worked example was withdrawn: no honest note can cite work
     that has not happened, so it would have been fabricated evidence serving as
-    the suite's accepting witness. The illustration moved into ADR 004 and the
+    the suite's accepting witness. The illustration moved into ADR 0004 and the
     witness became a fixture. See D15.
   - `INV-TEMPLATE` compares parsed values rather than bytes, removing a
     dependency on `mdtablefix`'s padding algorithm. See D16.
@@ -7170,7 +7175,7 @@ re-permits in tests.
     its bullet is added in this task. Bet B7 is drafted, measured inert, and
     deferred to a separate change. See D12.
   - The aggregation register's outcomes are now explicitly conditional on
-    publication proceeding, so they cannot read as contradicting ADR 003's
+    publication proceeding, so they cannot read as contradicting ADR 0003's
     exit E1.
 - 2026-09-18, approved. Status moved from `DRAFT` to `APPROVED`. All five
   referred decisions were settled as recommended and the "Open questions"
@@ -7314,7 +7319,7 @@ re-permits in tests.
   (The delivered figures stand at 79 across 49 as of the twentieth round's
   property suite; this bullet keeps the counts that round measured.) The
   `major` asks the aggregation rule to stop ratification when an expected note
-  is blocked; **declined**, because ADR 004's `## Options considered` refuses
+  is blocked; **declined**, because ADR 0004's `## Options considered` refuses
   exactly that shape — a naming defect "is not a verdict about the return type,
   so a register that treats it as one has no terminating procedure for those
   notes" — and because the register is already consistent once read as its

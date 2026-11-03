@@ -28,7 +28,7 @@ use super::{
 /// Accepts a citation wearing the punctuation that closed its clause.
 ///
 /// A citation ends the clause that cites it, so it arrives with whatever mark
-/// ended that clause. ADR 004's own worked example writes
+/// ended that clause. ADR 0004's own worked example writes
 /// "`mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table`",
 /// which is the comma case below: an engineer copying the shape the document
 /// teaches writes one, and a citation that ends its cell wears a full stop or a
@@ -111,7 +111,7 @@ fn the_enumerated_obligation_reads_the_return_verb(#[case] cell: &str, #[case] e
         "the cell {evidence:?} must be {} by the enumeration predicate. Repair: the predicate \
          requires the state in backticks, then a return verb (`returns`, `returned`, `yields` or \
          `yielded`) written between it and the labels, and then each returned string in backticks \
-         — the ordered shape ADR 004 illustrates. A cell naming the reader of the name carries \
+         — the ordered shape ADR 0004 illustrates. A cell naming the reader of the name carries \
          the same two spans without naming a single label; one borrowing its verb from a later \
          clause says nothing about the state; one writing `returnable` has not written a verb at \
          all; and one leaving a quote unclosed has not backticked the label that follows it, \
@@ -194,7 +194,7 @@ fn a_ref_citing_cell_is_rejected_without_leaking_its_path() -> Result<(), String
 /// Accepts a cell that denies a consumer exists, in either of the two phrasings
 /// the obligation admits.
 ///
-/// ADR 004 words the third obligation as naming a consumer "or stat[ing] that
+/// ADR 0004 words the third obligation as naming a consumer "or stat[ing] that
 /// none of them exist", and the template repeats that sentence verbatim, so a
 /// note that follows the document has to write those words. The consumer
 /// predicate scans a token list, and the list once carried only the shorter
@@ -211,7 +211,7 @@ fn a_ref_citing_cell_is_rejected_without_leaking_its_path() -> Result<(), String
 /// than one covering for the other.
 #[rstest]
 #[case::adr_wording(
-    "the consumers of ADR 004's search set were considered; none of them exist; \
+    "the consumers of ADR 0004's search set were considered; none of them exist; \
      `mdtablefix@abc1234:src/process.rs`"
 )]
 #[case::short_wording("no consumer exists in the workspace; `mdtablefix@abc1234:src/process.rs`")]
@@ -265,7 +265,7 @@ fn negated_property_claims_do_not_disagree_with_none(#[case] evidence: &str) -> 
 }
 
 /// Accepts a `Property required` cell whose evidence records the property as
-/// *unmet*, which is the observation ADR 004 exists to collect.
+/// *unmet*, which is the observation ADR 0004 exists to collect.
 ///
 /// The counterpart of `negated_property_claims_do_not_disagree_with_none`, and
 /// the reason the two cannot share one rule. Both cells negate a property word,

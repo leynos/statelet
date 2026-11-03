@@ -64,8 +64,8 @@ All repository references below use the baseline revision above. Read
 - R3: `docs/design.md` sections 11.1, 11.5–11.7 connect feature validation to
   bet B5 and routine checks. EP-M2 wires validation; V4 guards the wiring.
   Compile-time budgets and multi-crate policy are not changed here.
-- R4: `docs/terms-of-reference.md` and accepted ADR 002's marker-only scope,
-  ADR 003's exit register, and ADR 004's evidence gate prohibit speculative
+- R4: `docs/terms-of-reference.md` and accepted ADR 0002's marker-only scope,
+  ADR 0003's exit register, and ADR 0004's evidence gate prohibit speculative
   runtime scope. Both milestones retain those decisions. No new product
   contract or architectural decision record is currently needed.
 

@@ -11,10 +11,10 @@ Companion documents:
 - `docs/context.md`
 - `docs/design.md`
 - `docs/roadmap.md`
-- `docs/adr-001-proving-ground-candidates.md`
-- `docs/adr-002-transition-boundary-scope.md`
-- `docs/adr-003-v0-1-exit-register.md`
-- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/adrs/adr-0001-select-proving-ground-candidates.md`
+- `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`
+- `docs/adrs/adr-0003-record-the-v0-1-exit-register.md`
+- `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md`
 - `docs/phase-2-validation-note-template.md`
 
 Last substantive revision: 2026-09-19
@@ -235,7 +235,7 @@ Competing alternatives:
 - The `mdtablefix` spike includes a non-macro baseline using
   `#[tracing::instrument]` and local helpers. A macro passes only if it beats
   that baseline by a stated margin.
-- A second non-toy validation example is named before release. ADR 001 selects
+- A second non-toy validation example is named before release. ADR 0001 selects
   `wireframe` connection actor and active-output transitions as the next
   proving ground after `mdtablefix`.
 - If either validation example shows that `StateName`, documented field names,
@@ -355,9 +355,9 @@ Competing alternatives:
 
 ### 10.2 ADR candidates
 
-- [ADR 003: Record the v0.1 exit register](adr-003-v0-1-exit-register.md).
-- [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md).
-- [ADR 004: Define the StateName consumption evidence](adr-004-state-name-consumption-evidence.md),
+- [ADR 0003: Record the v0.1 exit register](adrs/adr-0003-record-the-v0-1-exit-register.md).
+- [ADR 0002: Scope Statelet to transition-boundary marking](adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md).
+- [ADR 0004: Define the StateName consumption evidence](adrs/adr-0004-define-the-statename-consumption-evidence.md),
   with the [validation note template](phase-2-validation-note-template.md) it
   is instantiated from.
 - ADR: Macro-first versus trait-first API shape.
@@ -365,7 +365,7 @@ Competing alternatives:
 - ADR: Whether v0.1 includes diagram or test metadata.
 - ADR or validation note: `mdtablefix` spike result and whether it justifies
   extracting `statelet` as an external Day 2 library.
-- [ADR 001: candidate proving grounds after `mdtablefix`](adr-001-proving-ground-candidates.md).
+- [ADR 0001: candidate proving grounds after `mdtablefix`](adrs/adr-0001-select-proving-ground-candidates.md).
 - ADR or validation note: dependency-topology checks for proc-macro crate
   splits, informed by `rstest-bdd`.
 

@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 004: Define the StateName consumption evidence
+# Architectural decision record (ADR) 0004: Define the StateName consumption evidence
 
 ## Status
 
@@ -239,7 +239,7 @@ outcome.
 <!-- aggregation-register:end -->
 
 *Table 3: How task 3.2.1 reads the committed notes together. Every outcome is
-conditional on publication proceeding: if ADR 003's gate G2 has already
+conditional on publication proceeding: if ADR 0003's gate G2 has already
 selected exit E1, Statelet ships nothing and no return type is ratified.*
 
 The first column counts *contributing* notes rather than every committed one. A
@@ -280,7 +280,7 @@ Roadmap task: 2.2.1.
 
 ## Observations
 
-The named state this note enumerates is `BufferMode`, the enum ADR 002's
+The named state this note enumerates is `BufferMode`, the enum ADR 0002's
 annotated example derives for `ProcessBuffer`: that is the state task 2.2.1
 annotated, and it is what the `Enumerated` status above covers. The strings
 listed are its variants, `Text` and `Table` — taken from that example's
@@ -298,7 +298,7 @@ keeps `Enumerated` an honest claim about the state it names. A note is read
 through *one* subject — the template names the file `<task>-<subject>.md` for
 that reason — and this note's subject is `BufferMode`, not the local.
 
-The distinction matters because the two are one step apart: ADR 002 records
+The distinction matters because the two are one step apart: ADR 0002 records
 that `ProcessBuffer` tracks table mode as `bool in_table` today and that the
 project roadmap "already proposes promoting that boolean to a small enum". That
 enum is `BufferMode`, and it is the proposed form the illustration shows. A note
@@ -349,7 +349,7 @@ stronger" — design `6.1 State naming`.*
 *"backed by observed example consumption, not anticipation" — roadmap
 `3.2.1. Finalize the StateName return shape`.*
 
-*"production logs, tests, and the model the same" — adr-002
+*"production logs, tests, and the model the same" — adr-0002
 `wireframe: primary proving ground`.*
 
 <!-- evidence:end -->
@@ -369,7 +369,7 @@ stronger" — design `6.1 State naming`.*
   - Publish any trait, trait method or identifier type. `src/` is untouched.
   - Collect evidence. Task 1.1.3 supplies the instrument; Phase 2 supplies the
     observations.
-  - Alter ADR 002's marker-only ownership boundary.
+  - Alter ADR 0002's marker-only ownership boundary.
 
 ## Known risks and limitations
 
@@ -425,7 +425,7 @@ stronger" — design `6.1 State naming`.*
 
 ## Architectural rationale
 
-ADR 002 establishes that Statelet marks transition boundaries without owning
+ADR 0002 establishes that Statelet marks transition boundaries without owning
 dispatch, events, storage, transition tables or graph safety, and leaves the
 identifier question open. This record supplies the missing instrument for that
 open question while keeping the boundary intact: it adds documents and a
@@ -543,7 +543,7 @@ Commits `a7e09b6` and `820413c`. Two changes:
   alongside the type that returns them. The status is not self-certifying: it
   is the list below it that makes the `metrics-cardinality` bound derivable
   from the note rather than asserted by its author. The note register's subject
-  moved to `BufferMode`, the enum ADR 002's annotated example derives for
+  moved to `BufferMode`, the enum ADR 0002's annotated example derives for
   `ProcessBuffer`, and its `metrics-cardinality` bound was reduced to two names
   to match.
 - `820413c` — the third obligation restated: the cell must write the state,

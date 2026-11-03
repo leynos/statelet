@@ -15,8 +15,8 @@ prove that stable state names and documented tracing fields improve real
 `mdtablefix` code before any macro surface is published.
 
 Statelet may deliberately ship nothing if either validation example shows
-little value. [ADR 003](adr-003-v0-1-exit-register.md) records that off-ramp
-alongside the conventions-only and macro release scopes.
+little value. [ADR 0003](adrs/adr-0003-record-the-v0-1-exit-register.md)
+records that off-ramp alongside the conventions-only and macro release scopes.
 
 The installed surface is unchanged by the repository's own validation tooling.
 `make topology-check` checks that the workspace is still the `statelet` runtime
@@ -31,8 +31,8 @@ The shape of the state name itself is likewise unsettled. Whether a
 `&'static str` is enough, or whether consumers need a stable identifier as
 well, will be decided from observations recorded while the validation examples
 are annotated and not before — so no identifier will be added on anticipation
-alone. [ADR 004](adr-004-state-name-consumption-evidence.md) defines what those
-observations record and how they are read.
+alone. [ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md)
+defines what those observations record and how they are read.
 
 ## Quick start
 

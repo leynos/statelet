@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 001: Select proving ground candidates
+# Architectural decision record (ADR) 0001: Select proving ground candidates
 
 ## Status
 

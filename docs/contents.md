@@ -16,7 +16,7 @@ set.
   for Comments (RFC), and roadmap conventions used by this documentation set.
 - [Phase 2 validation note template](phase-2-validation-note-template.md) is
   the blank form a Phase 2 engineer copies to record a `StateName` consumption
-  observation; it is the schema ADR 004's rule reads, not design material.
+  observation; it is the schema ADR 0004's rule reads, not design material.
 - [Macro cost benchmark note template](macro-cost-benchmark-note-template.md)
   is the blank form for the real `mdtablefix` and synthetic 20-transition cost
   comparisons; its private contract guards the Phase 4 evidence prerequisites.
@@ -29,11 +29,11 @@ set.
 - [`docs/execplans/`](execplans/) holds the living design-and-delivery
   documents written before larger tasks:
   - [Record the transition-boundary scope decision as an ADR](execplans/1-1-1-record-the-transition-boundary-scope-decision-as-an-adr.md)
-    carries ADR 002 from its question to its acceptance criteria.
+    carries ADR 0002 from its question to its acceptance criteria.
   - [Record the three possible v0.1 exits](execplans/1-1-2-record-the-three-possible-v0-1-exits.md)
-    carries ADR 003 and the exit register that selects among them.
+    carries ADR 0003 and the exit register that selects among them.
   - [Define the `StateName` consumption question](execplans/1-1-3-define-state-name-consumption-question.md)
-    carries ADR 004 and the contract test that guards it.
+    carries ADR 0004 and the contract test that guards it.
   - [Add the single-crate topology-check placeholder](execplans/1-2-1-topology-check-placeholder.md)
     carried the metadata-based local and CI gate for roadmap task 1.2.1 from
     proposal to implementation.
@@ -65,41 +65,41 @@ set.
 
 ## Decision records
 
-- [ADR 001: Select proving ground candidates](adr-001-proving-ground-candidates.md)
+- [ADR 0001: Select proving ground candidates](adrs/adr-0001-select-proving-ground-candidates.md)
   proposes `wireframe` as the primary proving ground after `mdtablefix`, with
   `weaver`, `netsuke`, and `ddlint` ranked as narrower or weaker candidates.
-- [ADR 002: Scope Statelet to transition-boundary marking](adr-002-transition-boundary-scope.md)
+- [ADR 0002: Scope Statelet to transition-boundary marking](adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md)
   defines the marker-only ownership boundary that keeps Statelet out of
   framework responsibilities.
-- [ADR 003: Record the v0.1 exit register](adr-003-v0-1-exit-register.md)
+- [ADR 0003: Record the v0.1 exit register](adrs/adr-0003-record-the-v0-1-exit-register.md)
   defines every v0.1 release scope and the evidence gate that selects it.
-- [ADR 004: Define the StateName consumption evidence](adr-004-state-name-consumption-evidence.md)
+- [ADR 0004: Define the StateName consumption evidence](adrs/adr-0004-define-the-statename-consumption-evidence.md)
   defines what a `StateName` consumption observation records and the rule that
   reads one note, or several, into an outcome at task 3.2.1.
-- [ADR 005: Adopt the shared CV-005 contract library](adr-005-adopt-the-shared-cv005-contract-library.md)
+- [ADR 0005: Adopt the shared CV-005 contract library](adrs/adr-0005-adopt-the-shared-cv-005-contract-library.md)
   records the move from a local copy of the CV-005 contract to the pinned
   shared check.
-- [ADR 006: Stable transition and outcome names](adr-006-stable-transition-and-outcome-names.md)
-  proposes extending naming-consumption evidence without changing ADR 004's
+- [ADR 0006: Stable transition and outcome names](adrs/adr-0006-stable-transition-and-outcome-names.md)
+  proposes extending naming-consumption evidence without changing ADR 0004's
   accepted register or the pending `StateName` return-shape verdict.
-- [ADR 007: Refine representation and observability
-  contracts](adr-007-representation-and-observability-contracts.md) proposes
-  stronger prerequisites and field semantics for payload-carrying states,
-  semantic labels, domain outcomes, and asynchronous boundaries.
+- [ADR 0007: Refine representation and observability
+  contracts](adrs/adr-0007-refine-representation-and-observability-contracts.md)
+  proposes stronger prerequisites and field semantics for payload-carrying
+  states, semantic labels, domain outcomes, and asynchronous boundaries.
 
 ## Observation integration proposals
 
 These RFCs remain proposed; none describes an implemented runtime API.
 
-- [RFC 0001: Transition capture semantics](rfcs/0001-transition-capture-semantics.md)
+- [RFC 0001: Transition capture semantics](rfcs/rfc-0001-separate-transition-capture-return-and-outcome-semantics.md)
   separates entry/post-state capture, return classification, and domain outcome.
-- [RFC 0002: Explicit observation context](rfcs/0002-explicit-observation-context.md)
+- [RFC 0002: Explicit observation context](rfcs/rfc-0002-expose-explicit-observation-context-and-extension-points.md)
   proposes exact invocation targets and caller-owned extension fields.
-- [RFC 0003: Observational non-interference](rfcs/0003-observational-non-interference.md)
+- [RFC 0003: Observational non-interference](rfcs/rfc-0003-make-observational-non-interference-a-tested-contract.md)
   defines semantic preservation, projection counts, and ownership controls.
-- [RFC 0004: Structured test consumption](rfcs/0004-structured-test-consumption.md)
+- [RFC 0004: Structured test consumption](rfcs/rfc-0004-add-a-structured-observation-consumption-path-for-tests.md)
   proposes a local recorder and explicit completeness requirements for evidence.
-- [RFC 0005: Incomplete completion and cancellation](rfcs/0005-incomplete-completion-and-cancellation.md)
+- [RFC 0005: Incomplete completion and cancellation](rfcs/rfc-0005-describe-incomplete-completion-without-owning-lifecycle.md)
   separates return, unwinding, and incomplete observation while deferring async.
 
 ## Rust reference material

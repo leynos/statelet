@@ -10,12 +10,12 @@ and optional procedural macro.
 
 Governing and companion documents:
 
-- [ADR 002](adr-002-transition-boundary-scope.md) remains the authority for
-  Statelet's marker-only ownership boundary.
-- [ADR 001](adr-001-proving-ground-candidates.md) remains the authority for the
-  proving-ground selection.
-- [ADR 007](adr-007-representation-and-observability-contracts.md) proposes the
-  refinements explained by this document.
+- [ADR 0002](adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md)
+  remains the authority for Statelet's marker-only ownership boundary.
+- [ADR 0001](adrs/adr-0001-select-proving-ground-candidates.md) remains the
+  authority for the proving-ground selection.
+- [ADR 0007](adrs/adr-0007-refine-representation-and-observability-contracts.md)
+  proposes the refinements explained by this document.
 - [Technical design](design.md) remains the primary design for crate topology,
   feature policy, and the existing macro gate.
 - [Focused roadmap](state-representation-and-observability-roadmap.md) sequences

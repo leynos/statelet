@@ -1,4 +1,4 @@
-//! The roadmap's task-record grammar and the two checks that bind ADR 004 to
+//! The roadmap's task-record grammar and the two checks that bind ADR 0004 to
 //! `docs/roadmap.md`.
 //!
 //! Both checks read the roadmap as *task records* rather than as lines, because
@@ -193,9 +193,9 @@ pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str) -> Resu
     for (noun, field) in CRITERION_NOUNS {
         if !rows.iter().any(|row| row.field == field) {
             return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md: no status-register field maps \
-                 the criterion noun {noun:?}. Repair: add the {field} field, or reword the \
-                 roadmap task."
+                "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: no \
+                 status-register field maps the criterion noun {noun:?}. Repair: add the {field} \
+                 field, or reword the roadmap task."
             ));
         }
     }
@@ -206,7 +206,7 @@ pub(crate) fn check_success_criterion(rows: &[StatusRow], roadmap: &str) -> Resu
 ///
 /// A fragment binds a gate when it names exactly one task's *title*. It is
 /// matched against the title alone, not against the whole record, because that
-/// is what the gate table claims: ADR 004 binds each gate "by task title rather
+/// is what the gate table claims: ADR 0004 binds each gate "by task title rather
 /// than task number", and Table 4 says the gates are "bound to roadmap tasks by
 /// title". Matching the record would also accept a fragment naming one of the
 /// task's sub-bullets or its link text, which names no task at all — the repair
@@ -224,7 +224,7 @@ pub(crate) fn check_gate_titles(adr: &str, roadmap: &str) -> Result<(), String> 
             0 => {
                 return Err(format!(
                     "docs/roadmap.md: gate {} names task fragment {:?}, which matches no task. \
-                     Repair: restore that task's title, or revise ADR 004's gate table.",
+                     Repair: restore that task's title, or revise ADR 0004's gate table.",
                     row.gate, row.fragment
                 ));
             }

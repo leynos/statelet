@@ -1,6 +1,6 @@
-//! Contract tests for ADR 004, the `StateName` consumption evidence record.
+//! Contract tests for ADR 0004, the `StateName` consumption evidence record.
 //!
-//! The record is the artefact under test. ADR 004 defines what a validation note
+//! The record is the artefact under test. ADR 0004 defines what a validation note
 //! must contain and the rule that reads one note, or several, into an outcome;
 //! this contract checks that the record still says what it said, that the blank
 //! form instantiates it, and that every committed note under
@@ -88,19 +88,21 @@ use camino::{Utf8Path, Utf8PathBuf};
 use parse::status_rows_or_error;
 use types::StatusRow;
 
-const ADR: &str = include_str!("../docs/adr-004-state-name-consumption-evidence.md");
+const ADR: &str =
+    include_str!("../docs/adrs/adr-0004-define-the-statename-consumption-evidence.md");
 const DESIGN: &str = include_str!("../docs/design.md");
 const ROADMAP: &str = include_str!("../docs/roadmap.md");
-const ADR_002: &str = include_str!("../docs/adr-002-transition-boundary-scope.md");
+const ADR_002: &str =
+    include_str!("../docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md");
 
-/// The clause `docs/design.md` §6.1 must carry, as ADR 004 quotes it.
+/// The clause `docs/design.md` §6.1 must carry, as ADR 0004 quotes it.
 const STRONGER: &str =
     "The default remains `&'static str` until a real example consumes something stronger";
 
 /// The failure an ADR whose evidence section quotes nothing must produce.
-const EMPTY_CLAUSE_LIST: &str = "docs/adr-004-state-name-consumption-evidence.md cites no \
-                                 clauses. Repair: quote each load-bearing source clause as an \
-                                 italic line in the evidence section.";
+const EMPTY_CLAUSE_LIST: &str = "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md \
+                                 cites no clauses. Repair: quote each load-bearing source clause \
+                                 as an italic line in the evidence section.";
 
 /// Parses the live status register, from which most scenarios read vocabulary.
 fn live_status() -> Result<Vec<StatusRow>, String> { status_rows_or_error(ADR) }

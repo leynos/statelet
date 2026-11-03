@@ -1,7 +1,7 @@
 //! Register keys, typed rows and parse failures for the consumption contract.
 //!
 //! Every repair message this contract emits is derived from a `Register` token
-//! rather than from a document string, because ADR 004 carries four registers
+//! rather than from a document string, because ADR 0004 carries four registers
 //! and a failure must say which one it came from.
 
 use std::fmt::{self, Display, Formatter};
@@ -21,7 +21,7 @@ impl Register {
     pub(crate) const fn document(self) -> &'static str {
         match self {
             Self::Status | Self::Aggregation | Self::Gates | Self::Evidence => {
-                "docs/adr-004-state-name-consumption-evidence.md"
+                "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md"
             }
             Self::Note => "docs/phase-2-validation-note-template.md",
         }
@@ -135,7 +135,7 @@ impl Display for ParseError {
     }
 }
 
-/// One row of ADR 004's status register.
+/// One row of ADR 0004's status register.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct StatusRow {
     pub(crate) field: String,
@@ -146,7 +146,7 @@ pub(crate) struct StatusRow {
     pub(crate) contributes: String,
 }
 
-/// One row of ADR 004's aggregation register.
+/// One row of ADR 0004's aggregation register.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct AggRow {
     pub(crate) contributing_notes: String,
@@ -154,7 +154,7 @@ pub(crate) struct AggRow {
     pub(crate) outcome: String,
 }
 
-/// One row of ADR 004's gate table.
+/// One row of ADR 0004's gate table.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct GateRow {
     pub(crate) gate: String,
