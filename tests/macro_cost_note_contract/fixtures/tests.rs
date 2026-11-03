@@ -44,6 +44,7 @@ fn open_tasks_accept_empty_notes_and_both_complete_comparison_forms() {
     check(&form, &open_roadmap(), &[unrelated]).expect("unrelated StateName notes are ignored");
 }
 
+/// Check a marked note rejects an unavailable measurement without a reason.
 #[rstest]
 #[case("Unavailable")]
 #[case("unavailable")]

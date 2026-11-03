@@ -139,6 +139,7 @@ fn claim_states_accept_exactly_the_v2_note_collections(
     }
 }
 
+/// Return a synthetic note whose baseline value is still a placeholder.
 fn placeholder_synthetic() -> Result<MarkdownFile, String> {
     let mut evidence = note(Kind::Synthetic20, 20);
     replace_value(

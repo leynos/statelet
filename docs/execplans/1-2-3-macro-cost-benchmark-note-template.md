@@ -546,11 +546,14 @@ and obtain explicit approval before proceeding.
     forty-character uppercase revisions, so it is split into five properties
     covering short, uppercase, non-hexadecimal, empty-repository and
     empty-path citations.
-  - Docstring Coverage is repaired rather than rebutted. All 45 functions the
-    check counts (cyclomatic complexity of at least 2, touched by the diff) now
-    carry a one-line Rustdoc comment, including the two generic helpers the
-    first sweep missed. Every edited file remains under the 400-line limit; the
-    largest is `contract.rs` at 396 lines.
+  - Docstring Coverage is repaired rather than rebutted. The first sweep
+    documented 43 functions, including the two generic helpers it initially
+    missed. CodeRabbit's follow-up found five branching helpers in
+    `evidence.rs` still undocumented, so a second sweep documented every
+    remaining function with cyclomatic complexity of at least 2. The claim
+    that all 45 counted functions were documented after the first sweep was
+    wrong and is corrected here. Every edited file remains under the 400-line
+    limit; the largest is `contract.rs` at 397 lines.
   - The focused contract target passed 122 of 122 cases. The full sequential
     gate set passed under `LC_ALL=C.UTF-8`: `make check-fmt` (4s),
     `make lint` (572s; Clippy and dylint clean, Pylint 10.00/10),
@@ -559,6 +562,26 @@ and obtain explicit approval before proceeding.
     workflow cases plus five subtests), `make markdownlint` (24s; 0 issues
     across 42 files), `make nixie` (1s), and `git diff --check` in both forms.
     No gate rewrote a tracked file.
+- [x] (2026-11-03) Complete the second review round on `6c0ec1e`.
+  - CodeRabbit's disposition of the `6c0ec1e` reply cleared the
+    attached-generic finding and kept two rows open. The citation properties
+    never generated a revision longer than forty characters, so
+    `a_long_revision_citation_is_rejected` now draws 41 to 80 lowercase
+    hexadecimal characters. The table property generated only two-cell rows,
+    so `a_row_without_three_cells_is_rejected` now draws widths 1, 2, 4 and 5
+    directly, and `a_row_with_an_embedded_pipe_is_rejected` covers a pipe
+    inside a cell.
+  - The Docstring Coverage claim was corrected rather than restated. A second
+    sweep documented the ten remaining functions with cyclomatic complexity
+    of at least 2, including the five `evidence.rs` helpers CodeRabbit named.
+    No function in the contract tree with a decision point now lacks Rustdoc.
+  - The reply's base description was wrong: `9a0104a` is not an ancestor of
+    this branch. The merge base is `7f5a3f0`, and the PR base is `main`.
+  - The focused contract target passed 124 of 124 cases, including the two new
+    properties. The first full gate run then failed `make lint` with
+    `clippy::indexing-slicing` on `cells[..width]` in the new malformed-row
+    property. The row is now built with `cells.iter().take(width)`, which
+    cannot panic, and the gate set was re-run from the start.
 
 ## Surprises & discoveries
 
@@ -719,6 +742,14 @@ reported for owner disposition rather than repaired here.
   the citation property never generated a short revision. The generator now
   excludes marker words by construction, and the citation rule is split into
   five properties, one per rejection reason.
+- (2026-11-03, review correction) Finish the coverage the first repair round
+  claimed. The "all 45 functions" statement was not established: five branching
+  helpers in `evidence.rs` still lacked Rustdoc, and the citation and table
+  properties still omitted the long-revision and non-three-cell widths. The
+  second round documents every remaining function with a decision point and
+  adds the missing generated cases. The lesson is to verify a coverage claim
+  against the source before recording it, rather than inferring it from the
+  size of the sweep.
 
 ## Outcomes & retrospective
 

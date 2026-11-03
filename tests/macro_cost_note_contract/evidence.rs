@@ -93,6 +93,7 @@ pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
     Ok(register)
 }
 
+/// Return the text between the register's single ordered begin/end marker pair.
 fn register_body(file: &MarkdownFile) -> Result<&str, String> {
     const BEGIN: &str = "<!-- macro-cost-register:begin -->";
     const END: &str = "<!-- macro-cost-register:end -->";
@@ -117,12 +118,14 @@ fn register_body(file: &MarkdownFile) -> Result<&str, String> {
     })
 }
 
+/// Return whether every cell is a non-empty Markdown table separator.
 fn is_separator_row(cells: &[&str]) -> bool {
     cells
         .iter()
         .all(|cell| !cell.is_empty() && cell.chars().all(|ch| ch == '-' || ch == ':'))
 }
 
+/// Insert one register row, rejecting a duplicate field name.
 fn insert_row(
     file: &MarkdownFile,
     cells: RegisterCells<'_>,
@@ -203,6 +206,8 @@ pub(super) fn check_fields(file: &MarkdownFile, fields: &[String]) -> Result<(),
         file.path
     ))
 }
+
+/// Check every required field differs from the template and carries a value.
 pub(super) fn check_required_values(
     file: &MarkdownFile,
     register: &Register,
@@ -286,6 +291,7 @@ fn required_value_is_placeholder(field: FieldName<'_>, row: &Row, kind: Kind) ->
     }
 }
 
+/// Check the annotation count and stress-result marker suit the note kind.
 pub(super) fn check_measurement_values(
     file: &MarkdownFile,
     register: &Register,

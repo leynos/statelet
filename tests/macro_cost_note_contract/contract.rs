@@ -382,6 +382,7 @@ fn candidate_id(path: &str, candidate_value: &str) -> Result<(String, String), S
     Ok((macro_revision.to_owned(), design_revision.to_owned()))
 }
 
+/// Return the lines under `heading` up to the next Markdown heading.
 fn section_body(source: &str, heading: &str) -> Option<String> {
     let mut lines = source.lines();
     lines.position(|line| line.trim() == heading)?;

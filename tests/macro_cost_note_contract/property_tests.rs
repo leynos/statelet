@@ -176,6 +176,21 @@ proptest! {
         prop_assert!(!has_revision_citation(CellText(&evidence)));
     }
 
+    /// A revision longer than forty characters is rejected.
+    ///
+    /// The revision is lowercase hexadecimal, so only the length rule can
+    /// reject it; a length check that accepted any prefix would pass the
+    /// short-revision property but fail this one.
+    #[test]
+    fn a_long_revision_citation_is_rejected(
+        repository in "[a-z][a-z0-9-]{0,10}",
+        revision in "[0-9a-f]{41,80}",
+        path in "[a-z][a-z0-9/._-]{0,20}",
+    ) {
+        let evidence = format!("{repository}@{revision}:{path}");
+        prop_assert!(!has_revision_citation(CellText(&evidence)));
+    }
+
     /// A forty-character revision containing an uppercase letter is rejected.
     ///
     /// The length check passes, so only the lowercase rule can reject it.
@@ -239,14 +254,42 @@ proptest! {
         );
     }
 
-    /// A row without three cells is rejected rather than silently truncated.
+    /// A row whose cell count is not three is rejected rather than truncated.
+    ///
+    /// The width is drawn from the non-three widths directly, so every
+    /// generated row is malformed by construction and no case is filtered out.
     #[test]
     fn a_row_without_three_cells_is_rejected(
-        first in "[a-z]{1,8}",
-        second in "[a-z]{1,8}",
+        width in proptest::sample::select(vec![1usize, 2, 4, 5]),
+        cells in proptest::collection::vec("[a-z]{1,8}", 5),
     ) {
         let file = note_file();
-        let line = format!("| {first} | {second} |");
+        // `take` cannot panic, so a width larger than the sample still builds a
+        // malformed row instead of aborting the case.
+        let joined = cells
+            .iter()
+            .take(width)
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join(" | ");
+        let line = format!("| {joined} |");
+        prop_assert!(table_cells(&file, SourceLine(&line)).is_err());
+    }
+
+    /// A pipe inside a cell is rejected because it reads as an extra column.
+    ///
+    /// The row has three logical cells, but the embedded pipe splits the
+    /// second one, so the parser must report four cells rather than silently
+    /// accepting a truncated value.
+    #[test]
+    fn a_row_with_an_embedded_pipe_is_rejected(
+        first in "[a-z]{1,8}",
+        second in "[a-z]{1,8}",
+        third in "[a-z]{1,8}",
+        fourth in "[a-z]{1,8}",
+    ) {
+        let file = note_file();
+        let line = format!("| {first} | {second}|{third} | {fourth} |");
         prop_assert!(table_cells(&file, SourceLine(&line)).is_err());
     }
 }

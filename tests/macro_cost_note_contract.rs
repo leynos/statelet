@@ -195,6 +195,7 @@ fn task_status_tolerates_checkbox_spacing(
 /// Return whether `line` opens a level-two or level-three Markdown heading.
 fn is_heading(line: SourceLine<'_>) -> bool { line.starts_with("## ") || line.starts_with("### ") }
 
+/// Read one repository document relative to `root`.
 fn read_document(root: &Utf8Path, path: DocumentPath<'_>) -> Result<String, String> {
     let directory = Dir::open_ambient_dir(root, ambient_authority())
         .map_err(|error| format!("{root}: cannot open repository root: {error}"))?;
@@ -295,6 +296,7 @@ impl Drop for FixtureRoot {
     }
 }
 
+/// Create an isolated fixture tree under the Cargo test temporary directory.
 fn fixture_root() -> Result<FixtureRoot, String> {
     let temporary_directory = Utf8Path::new(env!("CARGO_TARGET_TMPDIR"));
     let root = Dir::open_ambient_dir(temporary_directory, ambient_authority())
