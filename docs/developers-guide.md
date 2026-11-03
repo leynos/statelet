@@ -292,6 +292,45 @@ status, and contributes nothing to the verdict. Such a note is never deleted to
 make the suite pass: a blocked note that names its blocker is a finding, and
 the finding is the point.
 
+## Macro cost benchmark notes
+
+Copy the fenced register from
+[`docs/macro-cost-benchmark-note-template.md`](macro-cost-benchmark-note-template.md)
+to a task-named file in `docs/validation-notes/`. The benchmark contract uses
+`<!-- macro-cost-note -->`, separate from ADR 004's StateName marker. Record
+the real `mdtablefix` and synthetic 20-transition comparisons as independent
+notes; the G3 roadmap task selects both notes for the same macro and design
+revisions. Put selected-note links in each completed task's `Success:`
+criterion. The private roadmap parser treats the least-indented child dash
+bullets as direct task items; a nested `Success:` does not select evidence.
+
+`tests/macro_cost_note_contract.rs` owns the private benchmark schema and its
+capability-filesystem boundary. The schema helpers stay inside this integration
+test because they encode this register and its roadmap links; do not promote
+them to a shared Markdown parser or reuse the StateName policy. The per-opener
+placeholder check belongs only to this contract's lexical policy; it is not a
+general Rust or Markdown parser. The directory reader treats a missing notes
+directory as empty before Phase 4, and reports enumeration or file-read errors
+with the affected path. The contract's private `evidence.rs` child handles only
+the `Field | Value | Evidence` register. ADR 003's separate five-column
+exit-register parser keeps its own schema and validation rules.
+
+The macro-cost contract keeps field names, table values and evidence prose as
+borrowed text until validation. Unknown or duplicate fields and placeholder
+values must remain available so the contract can report the exact input that
+needs repair. Its `types.rs` child names the roles that cross function
+boundaries — task identifier, document path, revision, source line, field name
+and table cell — as copyable `&str` wrappers. Construct them with a tuple
+literal at the point where text is read. The wrappers assert no invariant and
+keep the raw value reachable, so they are role names rather than validating
+types; do not add fallible constructors or turn them into a general text
+library.
+
+The contract binds roadmap tasks 4.2.2 and 4.3.1 by number and checks required
+phrases in design section 11.7 and each task body. Renumbering or rewording
+those bindings requires updating the contract and its fixtures alongside the
+live documents.
+
 ## Dependency-topology check
 
 `make topology-check` runs `tests/topology_check.rs`, which applies a closed
