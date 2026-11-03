@@ -1118,15 +1118,20 @@ Apply every edit in the sync map. Each insertion is grep-guarded so re-running
 is safe.
 
 ```bash
-grep -rln "adr-0003-v0-1-exit-register" docs/ | sort
+grep -rl "adr-0003-record-the-v0-1-exit-register.md" \
+  docs/contents.md \
+  docs/context.md \
+  docs/design.md \
+  docs/roadmap.md \
+  docs/terms-of-reference.md \
+  docs/users-guide.md | sort
 ```
 
-Expected, exactly these seven files: `docs/contents.md`, `docs/context.md`,
-`docs/design.md`, `docs/developers-guide.md`, `docs/roadmap.md`,
-`docs/terms-of-reference.md`, `docs/users-guide.md`.
-`docs/repository-layout.md` gains a test-file entry, not an ADR link, and
-`README.md` is left alone — it links document *categories*, not individual
-ADRs, and starting a new convention there is out of scope.
+Expected, exactly these six files: `docs/contents.md`, `docs/context.md`,
+`docs/design.md`, `docs/roadmap.md`, `docs/terms-of-reference.md`, and
+`docs/users-guide.md`. `docs/repository-layout.md` gains a test-file entry, not
+an ADR link, and `README.md` is left alone — it links document *categories*,
+not individual ADRs, and starting a new convention there is out of scope.
 
 ### Step 7 — full gates and delivery
 

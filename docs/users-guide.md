@@ -51,16 +51,11 @@ the pinned linker and Rust toolchain components. The test gate also requires
 commands in the [developer guide](developers-guide.md#local-workflow) before
 running `make all`.
 
-Then run the public validation entrypoint from a fresh checkout:
+From a prepared checkout, inspect the public validation targets:
 
+<!-- tested-example: users-guide-validation-targets -->
 ```bash
-git clone https://github.com/leynos/statelet.git
-cd statelet
-make install-build-tools
-make install-cargo-hack
-make install-mdtablefix
-make install-markdownlint
-make all
+make help
 ```
 
 The most useful public commands are:

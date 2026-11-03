@@ -35,26 +35,24 @@ ______________________________________________________________________
 
 ### Installation
 
-Clone the repository, install the pinned tools described in the
-[developer guide](docs/developers-guide.md), and run the generated project
-gates:
+Clone the repository and install the pinned tools described in the
+[developer guide](docs/developers-guide.md). From the checkout root, inspect
+the available commands:
 
+<!-- tested-example: readme-quick-start-targets -->
 ```bash
-git clone https://github.com/leynos/statelet.git
-cd statelet
-make install-build-tools
-make install-cargo-hack
-make all
+make help
 ```
 
 ### Basic usage
 
-The current crate skeleton is intentionally small. The useful "hello world" is
-to validate the repository and read the design gates before adding API:
+The current crate skeleton is intentionally small. Before adding API, inspect
+the available validation targets and read the design gates. Run `make all`
+after installing the prerequisites described in the developer guide.
 
+<!-- tested-example: readme-review-the-roadmap -->
 ```bash
-make install-cargo-hack
-make all
+make help
 sed -n '1,120p' docs/roadmap.md
 ```
 

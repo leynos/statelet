@@ -37,12 +37,20 @@ compact and omits build output such as `target/`.
 ├── tests/
 │   ├── state_name_consumption_contract.rs
 │   ├── state_name_consumption_contract/
+│   ├── documented_examples.rs
+│   ├── documented_examples/
+│   │   ├── behaviour.rs
+│   │   ├── loader.rs
+│   │   └── loader_cases.rs
 │   ├── topology_check.rs
 │   ├── topology_check/
 │   ├── topology_command.rs
 │   ├── feature_matrix_command.rs
 │   ├── feature_matrix_command/
 │   ├── workflow_contracts/
+│   ├── features/
+│   │   ├── documented_examples.feature
+│   │   └── topology_check.feature
 │   └── v0_1_exit_register_contract.rs
 ├── scripts/
 │   ├── build-tools-common.sh
@@ -121,6 +129,13 @@ compact and omits build output such as `target/`.
   in-memory forms, named cases, and the borrowed text-role wrappers. The schema
   stays within this integration test; it is not a general Markdown parser or
   shared runtime utility.
+- `tests/documented_examples.rs` and `tests/documented_examples/`: Load
+  user-facing Markdown directly, validate stable example markers, and execute
+  the fenced Bash examples. The shared loader also backs the behavioural
+  scenarios in `tests/documented_examples/behaviour.rs`; its parser cases are in
+  `tests/documented_examples/loader_cases.rs`.
+- `tests/features/documented_examples.feature`: Names the README and user's
+  guide scenarios that load and run their published examples.
 - `tests/topology_check.rs`: Guards the pre-macro workspace boundary named in
   design section 11.6. It applies a closed policy to Cargo's own metadata for
   this workspace, and it names the guard `make topology-check` selects.

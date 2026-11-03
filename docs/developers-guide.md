@@ -163,6 +163,22 @@ runner is absent:
 cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
 ```
 
+## Tested user-facing examples
+
+The executable fences in `README.md` and `docs/users-guide.md` are the current
+user-facing examples. Each fence has a unique `<!-- tested-example: ... -->`
+marker. The integration test at `tests/documented_examples.rs` loads the
+published Markdown through `tests/documented_examples/loader.rs`, rejects
+unmarked or malformed fences and duplicate identifiers, and runs each Bash
+example from the repository root. The behaviour-driven scenarios in
+`tests/features/documented_examples.feature` use the same loader. Register any
+additional user-facing Markdown document in the loader's inventory.
+
+Keep example commands deterministic and safe to run repeatedly. Do not put
+`make all` or another test-running command in a fenced example: `make test`
+executes these examples, so that would recurse. For comprehensive validation,
+refer readers to `make all` in prose.
+
 ## V0.1 exit-register contract
 
 `tests/v0_1_exit_register_contract.rs` owns the integration-test scenarios for
