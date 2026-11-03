@@ -25,6 +25,7 @@ use super::{
     template,
 };
 
+/// Check open tasks accept any note set, including both complete comparison forms.
 #[test]
 fn open_tasks_accept_empty_notes_and_both_complete_comparison_forms() {
     let form = template();
@@ -84,6 +85,7 @@ fn marked_note_accepts_a_cited_unavailable_measurement_with_a_reason(#[case] val
         .expect("a cited failure reason and inconclusive verdict are complete evidence");
 }
 
+/// Check a note rejects a value copied verbatim from the template's prose.
 #[test]
 fn marked_note_rejects_descriptive_values_copied_from_the_template() {
     let template = template().replace(
@@ -336,6 +338,7 @@ enum CandidateMismatch {
 }
 
 impl CandidateMismatch {
+    /// Return the candidate-id value that mismatches this revision.
     fn replacement(self) -> String {
         match self {
             Self::Macro => format!("macro={}; design={DESIGN_REVISION}", "d".repeat(40)),
@@ -343,6 +346,7 @@ impl CandidateMismatch {
         }
     }
 
+    /// Return the error fragment expected for this candidate mismatch.
     const fn expected_error(self) -> &'static str {
         match self {
             Self::Macro => "different macro commit",

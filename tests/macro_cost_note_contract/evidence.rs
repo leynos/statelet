@@ -24,6 +24,7 @@ pub(super) fn marker_count(source: &str, marker: &str) -> usize {
     source.lines().filter(|line| line.trim() == marker).count()
 }
 
+/// Return the register row for `field`, or an error naming the missing field.
 pub(super) fn row<'a>(
     path: DocumentPath<'_>,
     rows: &'a RegisterRows,
@@ -51,6 +52,7 @@ pub(super) struct Register {
     pub(super) fields: Vec<String>,
 }
 
+/// Parse the marked register body into its ordered fields and rows.
 pub(super) fn parse_register(file: &MarkdownFile) -> Result<Register, String> {
     let mut register = Register {
         rows: BTreeMap::new(),
@@ -152,6 +154,7 @@ fn insert_row(
     Ok(())
 }
 
+/// Return the three cells of a register table row, or `None` for a non-table line.
 pub(super) fn table_cells<'a>(
     file: &MarkdownFile,
     raw_line: SourceLine<'a>,
@@ -178,6 +181,7 @@ pub(super) fn table_cells<'a>(
     Ok(Some([*field, *value, *evidence]))
 }
 
+/// Check the register fields match the required set in template order.
 pub(super) fn check_fields(file: &MarkdownFile, fields: &[String]) -> Result<(), String> {
     if fields.iter().map(String::as_str).eq(REQUIRED_FIELDS) {
         return Ok(());
@@ -244,6 +248,7 @@ pub(super) fn check_required_values(
     Ok(())
 }
 
+/// Check one field's value is filled in and its evidence cites a revision.
 fn check_required_field(
     file: &MarkdownFile,
     kind: Kind,
@@ -267,6 +272,7 @@ fn check_required_field(
     Ok(())
 }
 
+/// Return whether a field's value is empty or still a placeholder for its kind.
 fn required_value_is_placeholder(field: FieldName<'_>, row: &Row, kind: Kind) -> bool {
     let value = row.value.trim();
     match field.0 {

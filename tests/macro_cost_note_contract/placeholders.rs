@@ -10,6 +10,7 @@ use super::{
     full_revision,
 };
 
+/// Return whether `value` is empty or still a template placeholder.
 pub(super) fn placeholder(value: CellText<'_>) -> bool {
     let trimmed = value.0.trim();
     let checked_value = unavailable_reason(CellText(trimmed)).unwrap_or(trimmed);
@@ -30,6 +31,7 @@ pub(super) fn unavailable_reason(value: CellText<'_>) -> Option<&str> {
         .then_some(reason.trim())
 }
 
+/// Return whether `value` begins with a standalone placeholder marker word.
 fn starts_with_placeholder_marker(value: CellText<'_>) -> bool {
     let normalized = value.to_ascii_lowercase();
     ["tbd", "todo", "pending", "n/a"].iter().any(|marker| {
@@ -51,6 +53,7 @@ fn contains_angle_placeholder(value: CellText<'_>) -> bool {
         .any(|(open, _)| placeholder_opening_at(value, open))
 }
 
+/// Return whether the `<` at `open` starts a standalone placeholder token.
 fn placeholder_opening_at(value: CellText<'_>, open: usize) -> bool {
     let candidate_start = open + 1;
     let Some(close_offset) = value.get(candidate_start..).and_then(|tail| tail.find('>')) else {
@@ -64,6 +67,7 @@ fn placeholder_opening_at(value: CellText<'_>, open: usize) -> bool {
     )
 }
 
+/// Return whether `prefix` ends in a path identifier, so a following `<` is generic syntax.
 fn is_attached_to_path_identifier(prefix: CellText<'_>) -> bool {
     // This lexical heuristic admits Rust generics. `Type<sha>` is ambiguous,
     // so revision placeholders must remain standalone to be rejected.
@@ -73,12 +77,14 @@ fn is_attached_to_path_identifier(prefix: CellText<'_>) -> bool {
         .is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
+/// Return whether `candidate` is a placeholder identifier or instruction.
 fn is_placeholder_token(candidate: CellText<'_>) -> bool {
     let trimmed_candidate = candidate.trim();
     is_placeholder_identifier(CellText(trimmed_candidate))
         || is_placeholder_instruction(CellText(trimmed_candidate))
 }
 
+/// Return whether `candidate` is empty or only identifier-like characters.
 fn is_placeholder_identifier(candidate: CellText<'_>) -> bool {
     candidate.is_empty()
         || candidate.chars().all(|character| {
@@ -92,6 +98,7 @@ fn is_placeholder_instruction(candidate: CellText<'_>) -> bool {
         .any(|prefix| candidate.to_ascii_lowercase().starts_with(prefix))
 }
 
+/// Return whether `evidence` contains a `repo@revision:path` citation.
 pub(super) fn has_revision_citation(evidence: CellText<'_>) -> bool {
     evidence.split_whitespace().any(|token| {
         let Some((repository, rest)) = token.split_once('@') else {

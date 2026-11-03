@@ -30,6 +30,7 @@ enum Notes {
 }
 
 impl Notes {
+    /// Return the note collection for this matrix case.
     fn build(self) -> Result<Vec<MarkdownFile>, String> {
         match self {
             Self::None => Ok(Vec::new()),
@@ -48,6 +49,7 @@ enum Expectation {
     Rejected(&'static str),
 }
 
+/// Check each claim state accepts exactly the note collections the V2 matrix allows.
 #[rstest]
 #[case(false, false, Notes::None, Expectation::Accepted)]
 #[case(false, false, Notes::Real, Expectation::Accepted)]

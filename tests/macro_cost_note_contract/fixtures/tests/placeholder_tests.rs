@@ -16,6 +16,7 @@ use super::{
 const SYNTHETIC_SUCCESS: &str =
     "  - Success: [synthetic](validation-notes/4.2.2-synthetic-macro-cost.md)";
 
+/// Check a marked note rejects each placeholder value in its environment field.
 #[rstest]
 #[case("tbd")]
 #[case("TODO")]

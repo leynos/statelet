@@ -30,6 +30,7 @@ mod placeholders;
 #[path = "property_tests.rs"]
 mod property_tests;
 
+/// Return whether `revision` is a full 40-character lowercase hexadecimal revision.
 pub(super) fn full_revision(revision: Revision<'_>) -> bool {
     revision.len() == 40
         && revision
@@ -44,6 +45,7 @@ pub(super) enum Kind {
 }
 
 impl Kind {
+    /// Return the comparison kind named by `value`, or `None` when it is unsupported.
     fn parse(value: &str) -> Option<Self> {
         match value.trim() {
             "mdtablefix" => Some(Self::Mdtablefix),
@@ -52,6 +54,7 @@ impl Kind {
         }
     }
 
+    /// Return the canonical register spelling of this comparison kind.
     pub(super) const fn label(self) -> &'static str {
         match self {
             Self::Mdtablefix => "mdtablefix",
@@ -95,6 +98,7 @@ pub(crate) fn check_contract(
     )
 }
 
+/// Check the template's marker, register schema and calculation guidance, returning its register.
 fn check_template(template: &MarkdownFile) -> Result<Register, String> {
     if marker_count(&template.text, NOTE_MARKER) != 1 {
         return Err(format!(
@@ -135,6 +139,7 @@ fn check_template(template: &MarkdownFile) -> Result<Register, String> {
     Ok(register)
 }
 
+/// Check that design section 11.7 names the template, contract and both roadmap tasks.
 fn check_design(design: &MarkdownFile) -> Result<(), String> {
     let section = section_body(&design.text, "### 11.7 Compile-time and binary-size budget")
         .ok_or_else(|| format!("{} section 11.7 is missing", design.path))?;
@@ -155,6 +160,7 @@ fn check_design(design: &MarkdownFile) -> Result<(), String> {
     Ok(())
 }
 
+/// Check both roadmap tasks require the expected evidence, returning them by task id.
 fn check_roadmap(roadmap: &MarkdownFile) -> Result<RoadmapTasks, String> {
     let mut tasks = BTreeMap::new();
     for (id, evidence) in [
@@ -176,6 +182,7 @@ fn check_roadmap(roadmap: &MarkdownFile) -> Result<RoadmapTasks, String> {
     Ok(tasks)
 }
 
+/// Check a completed task selects exactly one note of each expected kind.
 fn check_claim(
     id: &str,
     expected: &[Kind],
@@ -215,6 +222,7 @@ fn check_claim(
     Ok(())
 }
 
+/// Return the validation-note links in a task's single Success criterion.
 fn linked_note_paths(task: &Task) -> Result<Vec<String>, String> {
     let lines = task.text.lines().collect::<Vec<_>>();
     let child_indent = lines
@@ -268,6 +276,7 @@ fn linked_note_paths(task: &Task) -> Result<Vec<String>, String> {
     Ok(found)
 }
 
+/// Return the kind of a linked note after checking it matches the task's candidate.
 fn resolve_selected_note(
     task: &Task,
     expected: &[Kind],
@@ -306,6 +315,7 @@ fn resolve_selected_note(
     Ok(note.kind)
 }
 
+/// Parse a marked note into its kind and candidate revisions, or `None` when unmarked.
 fn parse_note(file: &MarkdownFile, template: &Register) -> Result<Option<Note>, String> {
     match marker_count(&file.text, NOTE_MARKER) {
         0 => return Ok(None),
@@ -338,6 +348,7 @@ fn parse_note(file: &MarkdownFile, template: &Register) -> Result<Option<Note>, 
     }))
 }
 
+/// Return the comparison kind declared by a note's register.
 fn parse_kind(file: &MarkdownFile, register: &Register) -> Result<Kind, String> {
     row(
         DocumentPath(file.path.as_str()),
@@ -354,6 +365,7 @@ fn parse_kind(file: &MarkdownFile, register: &Register) -> Result<Kind, String> 
     })
 }
 
+/// Return the macro and design revisions named by a note's candidate-id value.
 fn candidate_id(path: &str, candidate_value: &str) -> Result<(String, String), String> {
     let value = candidate_value
         .trim()

@@ -55,6 +55,7 @@ struct Candidate {
     design_revision: String,
 }
 
+/// Return the macro and design revisions declared beside a completed task's claim.
 fn candidate_identity(task: &Task) -> Result<Candidate, String> {
     const PREFIX: &str = "<!-- macro-cost-candidate:";
     let Task {
@@ -127,6 +128,7 @@ fn completed_claim_rejects_invalid_comment_revision(
     );
 }
 
+/// Return the checklist task block for `id`, or an error when it is missing or ambiguous.
 fn task_block(roadmap: &MarkdownFile, id: TaskId<'_>) -> Result<Task, String> {
     let lines = roadmap.text.lines().collect::<Vec<_>>();
     let matches = lines
@@ -160,6 +162,7 @@ fn task_block(roadmap: &MarkdownFile, id: TaskId<'_>) -> Result<Task, String> {
     })
 }
 
+/// Return the completion state when `line` is the checklist entry for `id`.
 fn task_status(line: SourceLine<'_>, id: TaskId<'_>) -> Option<bool> {
     let (status, rest) = line.strip_prefix("- [")?.split_once(']')?;
     let complete = match status {
@@ -189,6 +192,7 @@ fn task_status_tolerates_checkbox_spacing(
     assert_eq!(task_status(line, TaskId("4.2.2")), expected);
 }
 
+/// Return whether `line` opens a level-two or level-three Markdown heading.
 fn is_heading(line: SourceLine<'_>) -> bool { line.starts_with("## ") || line.starts_with("### ") }
 
 fn read_document(root: &Utf8Path, path: DocumentPath<'_>) -> Result<String, String> {
@@ -199,6 +203,7 @@ fn read_document(root: &Utf8Path, path: DocumentPath<'_>) -> Result<String, Stri
         .map_err(|error| format!("{root}/{path}: {error}"))
 }
 
+/// Return the sorted Markdown notes under `docs/validation-notes`, or none when absent.
 fn read_notes(root: &Utf8Path) -> Result<Vec<MarkdownFile>, String> {
     let repository = Dir::open_ambient_dir(root, ambient_authority())
         .map_err(|error| format!("{root}: cannot open repository root: {error}"))?;
@@ -278,6 +283,7 @@ impl FixtureRoot {
 }
 
 impl Drop for FixtureRoot {
+    /// Remove the fixture tree, reporting cleanup failure only when the test is not panicking.
     fn drop(&mut self) {
         if let Err(error) = remove_fixture_root(&self.path) {
             assert!(
@@ -306,6 +312,7 @@ fn fixture_root() -> Result<FixtureRoot, String> {
     Ok(fixture)
 }
 
+/// Remove the fixture tree at `path`, treating an already-absent tree as success.
 fn remove_fixture_root(path: &Utf8Path) -> Result<(), String> {
     let temporary_directory = Utf8Path::new(env!("CARGO_TARGET_TMPDIR"));
     let root = Dir::open_ambient_dir(temporary_directory, ambient_authority())

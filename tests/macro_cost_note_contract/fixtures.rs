@@ -34,6 +34,7 @@ struct SchemaMutation {
     expected_error: &'static str,
 }
 
+/// Return a template fixture with the required register and calculation guidance.
 pub(crate) fn template() -> String {
     let mut text = String::from(concat!(
         "# Macro cost benchmark note\n\n",
@@ -80,6 +81,7 @@ pub(crate) fn open_roadmap() -> String {
     ))
 }
 
+/// Return a roadmap fixture with the requested tasks completed and their claims.
 pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
     let mut roadmap = String::new();
     let status_422 = if claim_422 { "x" } else { " " };
@@ -119,6 +121,7 @@ pub(crate) fn roadmap_with_claims(claim_422: bool, claim_431: bool) -> String {
     roadmap
 }
 
+/// Return a marked note fixture of `kind` recording `count` annotations.
 pub(crate) fn note(kind: Kind, count: u32) -> MarkdownFile {
     let path = match kind {
         Kind::Mdtablefix => "docs/validation-notes/4.2.1-mdtablefix-macro-cost.md",
@@ -173,6 +176,7 @@ pub(crate) fn replace_evidence(
     replace_cell(note, field, FixtureCell::Evidence, evidence)
 }
 
+/// Replace one value or evidence cell in a fixture note, returning an error when absent.
 fn replace_cell(
     note: &mut MarkdownFile,
     field: FixtureField,

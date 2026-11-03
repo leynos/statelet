@@ -535,6 +535,30 @@ and obtain explicit approval before proceeding.
   - The pull-request description is refreshed for `9dbcc81`. The changed-path
     count against `origin/main` is now 19, or 18 excluding the ExecPlan and 17
     excluding the generated `typos.toml`.
+- [x] (2026-11-02) Repair the findings in the pre-merge reconciliation.
+  - CodeRabbit rejected the reconciliation in comment `6585998621`. Both
+    property-test findings were verified against the source and repaired.
+    `an_attached_path_generic_is_not_a_placeholder` drew paths from a generator
+    that admitted `tbd`, and `tbd<A>` is a placeholder because the
+    leading-marker rule is checked before the angle-token exemption. The
+    generator now ends its first segment in `x`, and a plain regression test
+    records the `tbd<A>` interaction. The citation property only generated
+    forty-character uppercase revisions, so it is split into five properties
+    covering short, uppercase, non-hexadecimal, empty-repository and
+    empty-path citations.
+  - Docstring Coverage is repaired rather than rebutted. All 45 functions the
+    check counts (cyclomatic complexity of at least 2, touched by the diff) now
+    carry a one-line Rustdoc comment, including the two generic helpers the
+    first sweep missed. Every edited file remains under the 400-line limit; the
+    largest is `contract.rs` at 396 lines.
+  - The focused contract target passed 122 of 122 cases. The full sequential
+    gate set passed under `LC_ALL=C.UTF-8`: `make check-fmt` (4s),
+    `make lint` (572s; Clippy and dylint clean, Pylint 10.00/10),
+    `make typecheck` (770s), `make test` (325s; 328 nextest cases with three
+    `topology_command` cases skipped and re-run green, one doctest, 432
+    workflow cases plus five subtests), `make markdownlint` (24s; 0 issues
+    across 42 files), `make nixie` (1s), and `git diff --check` in both forms.
+    No gate rewrote a tracked file.
 
 ## Surprises & discoveries
 
@@ -683,6 +707,18 @@ reported for owner disposition rather than repaired here.
   vacuously. `proptest` was already a development dependency, so no manifest
   change results; `table_cells` widens from private to `pub(super)` so the
   splitting property can address it directly.
+- (2026-11-02, review correction) Document every function the hosted Docstring
+  Coverage check counts, rather than rebutting it. The earlier rebuttal argued
+  the counted items were private test helpers, but the check scores symbol
+  coverage inside the assessed range and does not exempt private items. All 45
+  functions with cyclomatic complexity of at least 2 now carry a one-line
+  Rustdoc comment; the comments state each function's decision or return value.
+  The change is documentation-only and keeps every file under 400 lines. The
+  same review found two property invariants that were true only for the
+  generated subset: the attached-generic generator admitted marker words, and
+  the citation property never generated a short revision. The generator now
+  excludes marker words by construction, and the citation rule is split into
+  five properties, one per rejection reason.
 
 ## Outcomes & retrospective
 

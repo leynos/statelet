@@ -38,6 +38,27 @@ fn note_file() -> MarkdownFile {
     }
 }
 
+/// A path identifier that cannot itself start with a placeholder marker.
+///
+/// The marker rule is case-insensitive and matches at the start of the cell,
+/// so a path such as `tbd` would be rejected before the angle-token rule is
+/// consulted. Ending the first segment in `x` keeps the generator
+/// construction-based: no documented marker ends in that character.
+fn non_marker_path() -> impl Strategy<Value = String> {
+    (
+        "[a-z_][a-z0-9_]{0,8}",
+        proptest::collection::vec("[a-z_][a-z0-9_]{0,8}", 0..3),
+    )
+        .prop_map(|(first, rest)| {
+            let mut path = format!("{first}x");
+            for segment in rest {
+                path.push_str("::");
+                path.push_str(&segment);
+            }
+            path
+        })
+}
+
 proptest! {
     #![proptest_config(ProptestConfig {
         cases: 128,
@@ -96,10 +117,11 @@ proptest! {
     ///
     /// The path ends with an identifier character, which is the documented
     /// ambiguity: `Type<sha>` is a generic, so only a standalone token is
-    /// rejected.
+    /// rejected. The path generator excludes marker words because the
+    /// leading-marker rule is checked before the angle-token exemption.
     #[test]
     fn an_attached_path_generic_is_not_a_placeholder(
-        path in "[a-z_][a-z0-9_]*(::[a-z_][a-z0-9_]*)*",
+        path in non_marker_path(),
         token in "[A-Za-z][A-Za-z0-9]{0,6}",
     ) {
         let value = format!("{path}<{token}>");
@@ -143,17 +165,61 @@ proptest! {
         prop_assert!(has_revision_citation(CellText(&evidence)));
     }
 
-    /// A short or uppercase revision citation is rejected.
-    ///
-    /// The revision is forty characters with a trailing uppercase letter, so
-    /// the length check passes and only the lowercase rule can reject it.
+    /// A revision shorter than forty characters is rejected.
     #[test]
-    fn a_short_or_uppercase_revision_citation_is_rejected(
+    fn a_short_revision_citation_is_rejected(
+        repository in "[a-z][a-z0-9-]{0,10}",
+        revision in "[0-9a-f]{0,39}",
+        path in "[a-z][a-z0-9/._-]{0,20}",
+    ) {
+        let evidence = format!("{repository}@{revision}:{path}");
+        prop_assert!(!has_revision_citation(CellText(&evidence)));
+    }
+
+    /// A forty-character revision containing an uppercase letter is rejected.
+    ///
+    /// The length check passes, so only the lowercase rule can reject it.
+    #[test]
+    fn an_uppercase_revision_citation_is_rejected(
         repository in "[a-z][a-z0-9-]{0,10}",
         revision in "[0-9a-f]{39}[A-F]",
         path in "[a-z][a-z0-9/._-]{0,20}",
     ) {
         let evidence = format!("{repository}@{revision}:{path}");
+        prop_assert!(!has_revision_citation(CellText(&evidence)));
+    }
+
+    /// A forty-character revision containing a non-hexadecimal character is
+    /// rejected.
+    ///
+    /// The length check passes, so only the hexadecimal rule can reject it.
+    #[test]
+    fn a_non_hexadecimal_revision_citation_is_rejected(
+        repository in "[a-z][a-z0-9-]{0,10}",
+        revision in "[0-9a-f]{19}[g-z][0-9a-f]{20}",
+        path in "[a-z][a-z0-9/._-]{0,20}",
+    ) {
+        let evidence = format!("{repository}@{revision}:{path}");
+        prop_assert!(!has_revision_citation(CellText(&evidence)));
+    }
+
+    /// A citation with an empty repository component is rejected.
+    #[test]
+    fn a_citation_with_an_empty_repository_is_rejected(
+        revision in "[0-9a-f]{40}",
+        path in "[a-z][a-z0-9/._-]{0,20}",
+    ) {
+        let evidence = format!("@{revision}:{path}");
+        prop_assert!(!has_revision_citation(CellText(&evidence)));
+    }
+
+    /// A citation with an empty path component is rejected.
+    #[test]
+    fn a_citation_with_an_empty_path_is_rejected(
+        repository in "[a-z][a-z0-9-]{0,10}",
+        revision in "[0-9a-f]{40}",
+    ) {
+        let evidence = format!("{repository}@{revision}:");
         prop_assert!(!has_revision_citation(CellText(&evidence)));
     }
 
@@ -183,4 +249,15 @@ proptest! {
         let line = format!("| {first} | {second} |");
         prop_assert!(table_cells(&file, SourceLine(&line)).is_err());
     }
+}
+
+/// A marker word before an angle token is still a placeholder.
+///
+/// The angle-token exemption requires an attached path identifier, but the
+/// leading-marker rule is checked first. `tbd<A>` therefore stays rejected;
+/// this control records that interaction so a future refactor cannot invert
+/// the order silently.
+#[test]
+fn a_marker_word_before_an_angle_token_is_still_a_placeholder() {
+    assert!(placeholder(CellText("tbd<A>")));
 }
