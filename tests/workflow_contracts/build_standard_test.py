@@ -373,6 +373,7 @@ def test_make_lint_keeps_whitaker_outside_development_rustflags() -> None:
     line, assignments, arguments = whitaker[0]
     assert assignments.get("RUSTFLAGS") == "", assignments
     assert assignments.get("CARGO_PROFILE_DEV_CODEGEN_BACKEND") == "llvm", assignments
+    assert assignments.get("CARGO_UNSTABLE_CODEGEN_BACKEND") == "true", assignments
     assert arguments == ["--all", "--workspace", "--", "--all-targets", "--all-features"], arguments
     assert lines.index(commands[-1][1]) < lines.index(line), (
         "test_make_lint_keeps_whitaker_outside_development_rustflags contract failed"
