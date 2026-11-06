@@ -2,6 +2,7 @@
 
 import copy
 import re
+from collections.abc import Callable
 
 import pytest
 
@@ -19,6 +20,13 @@ def test_ci_provisions_the_binding_whitaker_gate() -> None:
     """CI uses the approved shared installer before the direct Make gate."""
     problems = _workflow_problems(_ci())
     assert not problems, f"unexpected Whitaker CI route: {problems}"
+
+
+def _mutate_whitaker_line(text: str, change: Callable[[str], str]) -> str:
+    """Apply ``change`` to the one recipe line that runs Whitaker."""
+    pattern = re.compile(r"(?m)^\t(?:[A-Za-z_]\w*=\S*[ ])*\$\(WHITAKER\)[^\n]*$")
+    assert len(pattern.findall(text)) == 1, "expected one Whitaker recipe line"
+    return pattern.sub(lambda match: change(match.group(0)), text)
 
 
 @pytest.mark.parametrize(
@@ -121,12 +129,12 @@ def test_make_mutations_are_rejected(mutation: str, expected: str) -> None:
                 text,
             )
         case "ignore failure":
-            text = text.replace("\tRUSTFLAGS= $(WHITAKER)", "\t-$(WHITAKER)")
+            text = _mutate_whitaker_line(text, lambda line: "\t-" + line.lstrip())
         case "mask failure":
-            text = re.sub(r"(?m)^(\tRUSTFLAGS= \$\(WHITAKER\)[^\n]*)$", r"\1 || true", text)
+            text = _mutate_whitaker_line(text, lambda line: f"{line} || true")
         case "inject RUSTFLAGS":
-            text = text.replace(
-                "\tRUSTFLAGS= $(WHITAKER)", '\tRUSTFLAGS="-D warnings" $(WHITAKER)'
+            text = _mutate_whitaker_line(
+                text, lambda line: line.replace("RUSTFLAGS=", 'RUSTFLAGS="-D warnings"', 1)
             )
         case _:
             raise AssertionError(f"unrecognized Make mutation: {mutation}")

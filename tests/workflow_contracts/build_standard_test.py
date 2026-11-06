@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from mock_wiring import recipe_lines
+from recipe_words import leading_assignments
 from suite_discovery import suite_findings
 from suite_provisioning import load_workflows
 
@@ -363,14 +364,17 @@ def test_make_lint_keeps_whitaker_outside_development_rustflags() -> None:
     lines = recipe_lines(_make_output("lint"))
     commands = _cargo_commands(lines)
     assert [kind for kind, _ in commands] == ["doc", "clippy"], commands
-    whitaker = [line for line in lines if line.startswith("RUSTFLAGS= whitaker ")]
+    whitaker = []
+    for line in lines:
+        assignments, words = leading_assignments(shlex.split(line))
+        if words[:1] == ["whitaker"]:
+            whitaker.append((line, assignments, words[1:]))
     assert len(whitaker) == 1, whitaker
-    assert whitaker[0] == (
-        "RUSTFLAGS= whitaker --all --workspace -- --all-targets --all-features"
-    ), (
-        "test_make_lint_keeps_whitaker_outside_development_rustflags contract failed"
-    )
-    assert lines.index(commands[-1][1]) < lines.index(whitaker[0]), (
+    line, assignments, arguments = whitaker[0]
+    assert assignments.get("RUSTFLAGS") == "", assignments
+    assert assignments.get("CARGO_PROFILE_DEV_CODEGEN_BACKEND") == "llvm", assignments
+    assert arguments == ["--all", "--workspace", "--", "--all-targets", "--all-features"], arguments
+    assert lines.index(commands[-1][1]) < lines.index(line), (
         "test_make_lint_keeps_whitaker_outside_development_rustflags contract failed"
     )
     assert all("probe-cargo" in shlex.split(line) for _, line in commands), (
