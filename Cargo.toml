@@ -90,6 +90,10 @@ invalid_html_tags                   = "deny"
 invalid_codeblock_attributes        = "deny"
 unescaped_backticks                 = "deny"
 
+[profile.dev]
+incremental = false
+debug = 0
+
 [dev-dependencies]
 # The topology command boundary builds isolated Cargo manifests in a scratch
 # directory. Capability-scoped access keeps those writes inside one opened
