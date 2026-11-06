@@ -265,7 +265,7 @@ lint-clippy: check-build-tools ## Run rustdoc and Clippy with warnings denied
 	RUSTFLAGS="$${RUSTFLAGS:+$$RUSTFLAGS }$(RUST_FLAGS) $(STANDARD_RUSTFLAGS)" $(CARGO) clippy $(CLIPPY_FLAGS)
 
 lint-whitaker: check-build-tools ## Run the rolling Whitaker Dylint suite without repository RUSTFLAGS
-	RUSTFLAGS= $(WHITAKER) --all $(WHITAKER_PACKAGES) -- $(CARGO_FLAGS)
+	CARGO_UNSTABLE_CODEGEN_BACKEND=true CARGO_PROFILE_DEV_CODEGEN_BACKEND=llvm RUSTFLAGS= $(WHITAKER) --all $(WHITAKER_PACKAGES) -- $(CARGO_FLAGS)
 
 typecheck: check-build-tools ## Type-check Python and Rust sources without building
 	+$(MAKE) typecheck-python

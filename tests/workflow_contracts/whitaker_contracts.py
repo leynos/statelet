@@ -3,6 +3,7 @@
 import re
 from pathlib import Path
 
+from recipe_words import leading_assignments
 from suite_provisioning import load_workflows
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -355,19 +356,19 @@ def _whitaker_calls(recipes: list[str]) -> list[tuple[bool, str]]:
 
 def _whitaker_command_findings(ignored: bool, command: str) -> list[str]:
     """Check environment, shell failure handling, and workspace scope."""
-    clears_rustflags = command.startswith("RUSTFLAGS= $(WHITAKER) ")
-    problems = _whitaker_rustflags_findings(command, clears_rustflags)
+    environment, words = leading_assignments(command.split())
+    problems = _whitaker_rustflags_findings(environment)
     if ignored or re.search(r"\|\||\||;|&&", command):
         problems.append("lint-whitaker can mask or ignore a Whitaker failure")
-    words = command.removeprefix("RUSTFLAGS= ").split()
     problems.extend(_whitaker_scope_findings(words))
     return problems
 
 
-def _whitaker_rustflags_findings(command: str, clears_rustflags: bool) -> list[str]:
+def _whitaker_rustflags_findings(environment: dict[str, str]) -> list[str]:
     """Require the tool to receive empty inherited RUSTFLAGS."""
+    clears_rustflags = environment.get("RUSTFLAGS") == ""
     problems = []
-    if "RUSTFLAGS" in command and not clears_rustflags:
+    if "RUSTFLAGS" in environment and not clears_rustflags:
         problems.append("lint-whitaker injects repository RUSTFLAGS")
     if not clears_rustflags:
         problems.append("lint-whitaker does not clear inherited RUSTFLAGS")
