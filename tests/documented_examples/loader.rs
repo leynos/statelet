@@ -64,7 +64,7 @@ pub(super) fn find_document(path: &str) -> Result<Document, String> {
 /// missing identifier, duplicate identifiers within the document, or a
 /// language other than `bash`.
 pub(super) fn load_document(document: Document) -> Result<Vec<Example>, String> {
-    parse_examples(document.path, document.markdown)
+    parse_examples(document)
 }
 
 /// Parses marked fenced blocks and rejects malformed or duplicate markers.
@@ -73,75 +73,108 @@ pub(super) fn load_document(document: Document) -> Result<Vec<Example>, String> 
 ///
 /// Returns a path- and line-specific diagnostic when a fence or marker is
 /// malformed, or when an identifier appears more than once in the document.
-fn parse_examples(path: &'static str, markdown: &str) -> Result<Vec<Example>, String> {
-    let mut examples = Vec::new();
-    let mut identifiers = HashSet::new();
-    let mut pending_identifier = None;
-    let mut lines = markdown.lines().enumerate().peekable();
+fn parse_examples(document: Document) -> Result<Vec<Example>, String> {
+    ExampleParser::new(document).parse()
+}
 
-    while let Some((line_index, line)) = lines.next() {
-        let line_number = line_index + 1;
+/// Holds the state needed to parse one user-facing Markdown source.
+struct ExampleParser {
+    document: Document,
+    lines: Peekable<Enumerate<Lines<'static>>>,
+    examples: Vec<Example>,
+    identifiers: HashSet<String>,
+    pending_identifier: Option<String>,
+}
 
+impl ExampleParser {
+    fn new(document: Document) -> Self {
+        Self {
+            document,
+            lines: document.markdown.lines().enumerate().peekable(),
+            examples: Vec::new(),
+            identifiers: HashSet::new(),
+            pending_identifier: None,
+        }
+    }
+
+    fn parse(mut self) -> Result<Vec<Example>, String> {
+        while let Some((line_index, line)) = self.lines.next() {
+            self.parse_line(line_index + 1, line)?;
+        }
+        self.finish()
+    }
+
+    fn parse_line(&mut self, line_number: usize, line: &str) -> Result<(), String> {
         if is_marker_line(line) {
-            if pending_identifier.is_some() {
-                return Err(diagnostic(
-                    path,
-                    line_number,
-                    "a tested-example marker is not followed immediately by a fence",
-                ));
-            }
-            pending_identifier = Some(parse_marker(path, line_number, line)?);
-            continue;
+            self.read_marker(line_number, line)
+        } else if let Some(fence) = opening_fence(line) {
+            self.read_fenced_example(line_number, fence)
+        } else {
+            self.reject_unrecognized_fence(line_number, line)
         }
+    }
 
-        if let Some(fence) = opening_fence(line) {
-            let identifier = pending_identifier.take().ok_or_else(|| {
-                diagnostic(
-                    path,
-                    line_number,
-                    "fenced block has no tested-example marker",
-                )
-            })?;
-            if !identifiers.insert(identifier.clone()) {
-                return Err(diagnostic(
-                    path,
-                    line_number,
-                    &format!("duplicate tested-example identifier `{identifier}`"),
-                ));
-            }
-            examples.push(read_example(
-                ExampleStart {
-                    document_path: path,
-                    line_number,
-                    identifier,
-                },
-                fence,
-                &mut lines,
-            )?);
-        } else if pending_identifier.is_some() {
+    fn read_marker(&mut self, line_number: usize, line: &str) -> Result<(), String> {
+        if self.pending_identifier.is_some() {
             return Err(diagnostic(
-                path,
+                self.document.path,
                 line_number,
-                "a tested-example marker is not followed immediately by a fenced block",
+                "a tested-example marker is not followed immediately by a fence",
             ));
+        }
+        self.pending_identifier = Some(parse_marker(self.document.path, line_number, line)?);
+        Ok(())
+    }
+
+    fn read_fenced_example(&mut self, line_number: usize, fence: Fence) -> Result<(), String> {
+        let identifier = self.pending_identifier.take().ok_or_else(|| {
+            diagnostic(
+                self.document.path,
+                line_number,
+                "fenced block has no tested-example marker",
+            )
+        })?;
+        if !self.identifiers.insert(identifier.clone()) {
+            return Err(diagnostic(
+                self.document.path,
+                line_number,
+                &format!("duplicate tested-example identifier `{identifier}`"),
+            ));
+        }
+        let example = read_example(
+            ExampleStart {
+                document_path: self.document.path,
+                line_number,
+                identifier,
+            },
+            fence,
+            &mut self.lines,
+        )?;
+        self.examples.push(example);
+        Ok(())
+    }
+
+    fn reject_unrecognized_fence(&self, line_number: usize, line: &str) -> Result<(), String> {
+        let message = if self.pending_identifier.is_some() {
+            "a tested-example marker is not followed immediately by a fenced block"
         } else if looks_like_fence(line) {
+            "fenced block is malformed or uses an unsupported delimiter"
+        } else {
+            return Ok(());
+        };
+        Err(diagnostic(self.document.path, line_number, message))
+    }
+
+    fn finish(self) -> Result<Vec<Example>, String> {
+        if self.pending_identifier.is_some() {
             return Err(diagnostic(
-                path,
-                line_number,
-                "fenced block is malformed or uses an unsupported delimiter",
+                self.document.path,
+                self.document.markdown.lines().count(),
+                "tested-example marker is not followed by a fenced block",
             ));
         }
+        Ok(self.examples)
     }
-
-    if pending_identifier.is_some() {
-        return Err(diagnostic(
-            path,
-            markdown.lines().count(),
-            "tested-example marker is not followed by a fenced block",
-        ));
-    }
-
-    Ok(examples)
 }
 
 /// Reads one fenced block and preserves its command text for execution.

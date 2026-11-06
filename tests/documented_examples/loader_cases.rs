@@ -2,15 +2,15 @@
 
 use rstest::rstest;
 
-use super::parse_examples;
+use super::{Document, parse_examples};
 
 /// Parses a marked Bash block from its source text.
 #[test]
 fn parses_marked_bash_example() {
-    let examples = parse_examples(
-        "fixture.md",
-        "<!-- tested-example: stable-example -->\n```bash\nprintf 'ok\\n'\n```\n",
-    )
+    let examples = parse_examples(Document {
+        path: "fixture.md",
+        markdown: "<!-- tested-example: stable-example -->\n```bash\nprintf 'ok\\n'\n```\n",
+    })
     .expect("the marked Bash example should parse");
     assert_eq!(examples.len(), 1);
     let example = examples
@@ -23,8 +23,11 @@ fn parses_marked_bash_example() {
 /// Ignores inline code spans that begin a prose line.
 #[test]
 fn ignores_inline_code_spans() {
-    let examples = parse_examples("fixture.md", "`typed-fsm` is a state-machine crate.\n")
-        .expect("inline code spans should not be treated as fenced blocks");
+    let examples = parse_examples(Document {
+        path: "fixture.md",
+        markdown: "`typed-fsm` is a state-machine crate.\n",
+    })
+    .expect("inline code spans should not be treated as fenced blocks");
     assert_eq!(examples.len(), 0);
 }
 
@@ -50,8 +53,11 @@ fn ignores_inline_code_spans() {
     "<!-- tested-example: no-language -->\n```\na\n```",
     "supported `bash`"
 )]
-fn rejects_invalid_examples(#[case] markdown: &str, #[case] expected: &str) {
-    let error = parse_examples("fixture.md", markdown)
-        .expect_err("invalid Markdown example should be rejected");
+fn rejects_invalid_examples(#[case] markdown: &'static str, #[case] expected: &str) {
+    let error = parse_examples(Document {
+        path: "fixture.md",
+        markdown,
+    })
+    .expect_err("invalid Markdown example should be rejected");
     assert!(error.contains(expected), "unexpected error: {error}");
 }

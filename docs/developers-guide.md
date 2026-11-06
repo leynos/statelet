@@ -172,7 +172,10 @@ published Markdown through `tests/documented_examples/loader.rs`, rejects
 unmarked or malformed fences and duplicate identifiers, and runs each Bash
 example from the repository root. The behaviour-driven scenarios in
 `tests/features/documented_examples.feature` use the same loader. Register any
-additional user-facing Markdown document in the loader's inventory.
+additional user-facing Markdown document in the loader's inventory. Its
+`Document` descriptor binds compiled Markdown to its repository path for
+diagnostics. Keep the parser and its state private to this test harness; both
+test entry points use the shared loader, and it is not a general Markdown API.
 
 Keep example commands deterministic and safe to run repeatedly. Do not put
 `make all` or another test-running command in a fenced example: `make test`
