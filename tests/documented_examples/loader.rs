@@ -97,53 +97,53 @@ impl<'source> ExampleParser<'source> {
     }
 
     fn parse(mut self) -> Result<Vec<Example>, String> {
-        while let Some((line_index, line)) = self.lines.next() {
-            self.parse_line(line_index + 1, line)?;
+        while let Some((line_index, text)) = self.lines.next() {
+            self.parse_line(SourceLine::new(line_index, text))?;
         }
         self.finish()
     }
 
-    fn parse_line(&mut self, line_number: usize, line: &str) -> Result<(), String> {
-        if is_marker_line(line) {
-            self.read_marker(line_number, line)
-        } else if let Some(fence) = opening_fence(line) {
-            self.read_fenced_example(line_number, fence)
+    fn parse_line(&mut self, line: SourceLine<'_>) -> Result<(), String> {
+        if line.is_marker() {
+            self.read_marker(line)
+        } else if let Some(fence) = line.opening_fence() {
+            self.read_fenced_example(line, fence)
         } else {
-            self.reject_unrecognized_fence(line_number, line)
+            self.reject_unrecognized_fence(line)
         }
     }
 
-    fn read_marker(&mut self, line_number: usize, line: &str) -> Result<(), String> {
+    fn read_marker(&mut self, line: SourceLine<'_>) -> Result<(), String> {
         if self.pending_identifier.is_some() {
             return Err(diagnostic(
                 self.document.path,
-                line_number,
+                line,
                 "a tested-example marker is not followed immediately by a fence",
             ));
         }
-        self.pending_identifier = Some(parse_marker(self.document.path, line_number, line)?);
+        self.pending_identifier = Some(self.parse_marker(line)?);
         Ok(())
     }
 
-    fn read_fenced_example(&mut self, line_number: usize, fence: Fence) -> Result<(), String> {
+    fn read_fenced_example(&mut self, line: SourceLine<'_>, fence: Fence) -> Result<(), String> {
         let identifier = self.pending_identifier.take().ok_or_else(|| {
             diagnostic(
                 self.document.path,
-                line_number,
+                line,
                 "fenced block has no tested-example marker",
             )
         })?;
         if !self.identifiers.insert(identifier.clone()) {
             return Err(diagnostic(
                 self.document.path,
-                line_number,
+                line,
                 &format!("duplicate tested-example identifier `{identifier}`"),
             ));
         }
         let example = read_example(
             ExampleStart {
                 document_path: self.document.path,
-                line_number,
+                line_number: line.number,
                 identifier,
             },
             fence,
@@ -153,22 +153,39 @@ impl<'source> ExampleParser<'source> {
         Ok(())
     }
 
-    fn reject_unrecognized_fence(&self, line_number: usize, line: &str) -> Result<(), String> {
+    fn reject_unrecognized_fence(&self, line: SourceLine<'_>) -> Result<(), String> {
         let message = if self.pending_identifier.is_some() {
             "a tested-example marker is not followed immediately by a fenced block"
-        } else if looks_like_fence(line) {
+        } else if line.looks_like_fence() {
             "fenced block is malformed or uses an unsupported delimiter"
         } else {
             return Ok(());
         };
-        Err(diagnostic(self.document.path, line_number, message))
+        Err(diagnostic(self.document.path, line, message))
+    }
+
+    /// Parses and validates the identifier from a marker line.
+    fn parse_marker(&self, line: SourceLine<'_>) -> Result<String, String> {
+        line.trimmed_text()
+            .strip_prefix("<!-- tested-example:")
+            .and_then(|value| value.strip_suffix("-->"))
+            .map(str::trim)
+            .filter(|value| is_valid_identifier(value))
+            .map(str::to_owned)
+            .ok_or_else(|| {
+                diagnostic(
+                    self.document.path,
+                    line,
+                    "tested-example marker must contain a lowercase kebab-case identifier",
+                )
+            })
     }
 
     fn finish(self) -> Result<Vec<Example>, String> {
         if self.pending_identifier.is_some() {
             return Err(diagnostic(
                 self.document.path,
-                self.document.markdown.lines().count(),
+                SourceLine::numbered(self.document.markdown.lines().count()),
                 "tested-example marker is not followed by a fenced block",
             ));
         }
@@ -185,7 +202,7 @@ fn read_example(
     if fence.info != "bash" {
         return Err(diagnostic(
             start.document_path,
-            start.line_number,
+            SourceLine::numbered(start.line_number),
             &format!(
                 "example `{}` must use the supported `bash` language, got `{}`",
                 start.identifier, fence.info
@@ -195,20 +212,21 @@ fn read_example(
 
     let mut command_lines = Vec::new();
     loop {
-        let Some((_, line)) = lines.next() else {
+        let Some((line_index, text)) = lines.next() else {
             return Err(diagnostic(
                 start.document_path,
-                start.line_number,
+                SourceLine::numbered(start.line_number),
                 &format!(
                     "example `{}` has an unterminated fenced block",
                     start.identifier
                 ),
             ));
         };
-        if closes_fence(line, &fence) {
+        let line = SourceLine::new(line_index, text);
+        if line.closes(&fence) {
             break;
         }
-        command_lines.push(line);
+        command_lines.push(line.text);
     }
 
     Ok(Example {
@@ -252,25 +270,94 @@ struct ExampleStart {
     identifier: String,
 }
 
-/// Returns whether a line begins a tested-example marker.
-fn is_marker_line(line: &str) -> bool { line.trim().starts_with("<!-- tested-example") }
+/// A numbered source line from a user-facing document.
+#[derive(Clone, Copy)]
+struct SourceLine<'source> {
+    /// One-based line number used in diagnostics.
+    number: usize,
+    /// The line's text without its terminating newline.
+    text: &'source str,
+}
 
-/// Parses and validates the identifier from a marker line.
-fn parse_marker(path: &str, line_number: usize, line: &str) -> Result<String, String> {
-    let marker = line.trim();
-    let identifier = marker
-        .strip_prefix("<!-- tested-example:")
-        .and_then(|value| value.strip_suffix("-->"))
-        .map(str::trim)
-        .filter(|value| is_valid_identifier(value))
-        .ok_or_else(|| {
-            diagnostic(
-                path,
-                line_number,
-                "tested-example marker must contain a lowercase kebab-case identifier",
-            )
-        })?;
-    Ok(identifier.to_owned())
+impl<'source> SourceLine<'source> {
+    /// Builds a one-based source line from an iterator's zero-based index.
+    fn new(index: usize, text: &'source str) -> Self {
+        Self {
+            number: index + 1,
+            text,
+        }
+    }
+
+    /// Names an existing position when no line text is available.
+    fn numbered(number: usize) -> Self { Self { number, text: "" } }
+
+    /// Returns the line with surrounding whitespace removed.
+    fn trimmed_text(self) -> &'source str { self.text.trim() }
+
+    /// Returns whether the line begins a tested-example marker.
+    fn is_marker(self) -> bool { self.trimmed_text().starts_with("<!-- tested-example") }
+
+    /// Parses a valid opening fence with up to three leading spaces.
+    fn opening_fence(self) -> Option<Fence> {
+        let content = self.content()?;
+        let delimiter = content.chars().next()?;
+        if delimiter != '`' && delimiter != '~' {
+            return None;
+        }
+        let length = content
+            .chars()
+            .take_while(|character| *character == delimiter)
+            .count();
+        if length < 3 {
+            return None;
+        }
+        let info = content.get(length..)?.trim().to_owned();
+        if delimiter == '`' && info.contains('`') {
+            return None;
+        }
+        Some(Fence {
+            delimiter,
+            length,
+            info,
+        })
+    }
+
+    /// Recognizes a line that looks like a fence but fails the supported syntax.
+    fn looks_like_fence(self) -> bool {
+        self.content().is_some_and(|content| {
+            content.chars().next().is_some_and(|delimiter| {
+                matches!(delimiter, '`' | '~')
+                    && content
+                        .chars()
+                        .take_while(|character| *character == delimiter)
+                        .count()
+                        >= 3
+            })
+        })
+    }
+
+    /// Removes up to three leading spaces from a potential fence line.
+    fn content(self) -> Option<&'source str> {
+        let indentation = self.text.len() - self.text.trim_start_matches(' ').len();
+        if indentation > 3 {
+            return None;
+        }
+        self.text.get(indentation..)
+    }
+
+    /// Recognizes a closing fence with the same delimiter and at least its length.
+    fn closes(self, fence: &Fence) -> bool {
+        let Some(content) = self.content() else {
+            return false;
+        };
+        let length = content
+            .chars()
+            .take_while(|character| *character == fence.delimiter)
+            .count();
+        content
+            .get(length..)
+            .is_some_and(|remaining| length >= fence.length && remaining.trim().is_empty())
+    }
 }
 
 /// Accepts stable lower-case identifiers separated by single hyphens.
@@ -284,71 +371,9 @@ fn is_valid_identifier(identifier: &str) -> bool {
         })
 }
 
-/// Parses a valid opening fence with up to three leading spaces.
-fn opening_fence(line: &str) -> Option<Fence> {
-    let content = fence_content(line)?;
-    let delimiter = content.chars().next()?;
-    if delimiter != '`' && delimiter != '~' {
-        return None;
-    }
-    let length = content
-        .chars()
-        .take_while(|character| *character == delimiter)
-        .count();
-    if length < 3 {
-        return None;
-    }
-    let info = content.get(length..)?.trim().to_owned();
-    if delimiter == '`' && info.contains('`') {
-        return None;
-    }
-    Some(Fence {
-        delimiter,
-        length,
-        info,
-    })
-}
-
-/// Recognizes lines that look like fences but fail the supported syntax.
-fn looks_like_fence(line: &str) -> bool {
-    fence_content(line).is_some_and(|content| {
-        content.chars().next().is_some_and(|delimiter| {
-            matches!(delimiter, '`' | '~')
-                && content
-                    .chars()
-                    .take_while(|character| *character == delimiter)
-                    .count()
-                    >= 3
-        })
-    })
-}
-
-/// Removes up to three leading spaces from a potential fence line.
-fn fence_content(line: &str) -> Option<&str> {
-    let indentation = line.len() - line.trim_start_matches(' ').len();
-    if indentation > 3 {
-        return None;
-    }
-    line.get(indentation..)
-}
-
-/// Recognizes a closing fence with the same delimiter and at least its length.
-fn closes_fence(line: &str, fence: &Fence) -> bool {
-    let Some(content) = fence_content(line) else {
-        return false;
-    };
-    let length = content
-        .chars()
-        .take_while(|character| *character == fence.delimiter)
-        .count();
-    content
-        .get(length..)
-        .is_some_and(|remaining| length >= fence.length && remaining.trim().is_empty())
-}
-
 /// Adds the source path and line number to a parser diagnostic.
-fn diagnostic(path: &str, line_number: usize, message: &str) -> String {
-    format!("{path}:{line_number}: {message}")
+fn diagnostic(path: &str, line: SourceLine<'_>, message: &str) -> String {
+    format!("{path}:{}: {message}", line.number)
 }
 
 #[cfg(test)]

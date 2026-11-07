@@ -5,18 +5,24 @@ use rstest::rstest;
 
 use super::{Document, Example, ensure_unique_identifiers, parse_examples};
 
+/// Parses a fixture document that must contain exactly one example.
+fn parse_single(markdown: &str) -> Example {
+    let mut examples = parse_examples(Document {
+        path: "fixture.md",
+        markdown,
+    })
+    .expect("the fixture document should contain a parseable example");
+    assert_eq!(examples.len(), 1, "expected exactly one example");
+    examples
+        .pop()
+        .expect("the parser reported exactly one example")
+}
+
 /// Parses a marked Bash block from its source text.
 #[test]
 fn parses_marked_bash_example() {
-    let examples = parse_examples(Document {
-        path: "fixture.md",
-        markdown: "<!-- tested-example: stable-example -->\n```bash\nprintf 'ok\\n'\n```\n",
-    })
-    .expect("the marked Bash example should parse");
-    assert_eq!(examples.len(), 1);
-    let example = examples
-        .first()
-        .expect("the parser should return one example");
+    let example =
+        parse_single("<!-- tested-example: stable-example -->\n```bash\nprintf 'ok\\n'\n```\n");
     assert_eq!(example.id, "stable-example");
     assert_eq!(example.command, "printf 'ok\\n'");
 }
@@ -73,16 +79,7 @@ fn rejects_invalid_examples(#[case] markdown: &'static str, #[case] expected: &s
 )]
 fn keeps_non_closing_lines_in_the_command(#[case] description: &str, #[case] body: &str) {
     let markdown = format!("<!-- tested-example: fence-case -->\n{body}\n");
-    let examples = parse_examples(Document {
-        path: "fixture.md",
-        markdown: &markdown,
-    })
-    .map_err(|error| format!("the {description} case should parse: {error}"))
-    .expect("each case body is a marked Bash fence");
-    assert_eq!(examples.len(), 1);
-    let example = examples
-        .first()
-        .expect("the parser should return one example");
+    let example = parse_single(&markdown);
     let expected = body
         .strip_prefix("```bash\n")
         .and_then(|rest| rest.strip_suffix("\n```"))
@@ -93,15 +90,8 @@ fn keeps_non_closing_lines_in_the_command(#[case] description: &str, #[case] bod
 /// Accepts a tilde fence and closes it with a matching tilde line.
 #[test]
 fn parses_tilde_fenced_example() {
-    let examples = parse_examples(Document {
-        path: "fixture.md",
-        markdown: "<!-- tested-example: tilde -->\n~~~bash\nprintf 'ok\\n'\n~~~\n",
-    })
-    .expect("the tilde fence should parse");
-    assert_eq!(examples.len(), 1);
-    let example = examples
-        .first()
-        .expect("the parser should return one example");
+    let example = parse_single("<!-- tested-example: tilde -->\n~~~bash\nprintf 'ok\\n'\n~~~\n");
+    assert_eq!(example.id, "tilde");
     assert_eq!(example.command, "printf 'ok\\n'");
 }
 
