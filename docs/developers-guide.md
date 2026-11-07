@@ -177,6 +177,15 @@ additional user-facing Markdown document in the loader's inventory. Its
 diagnostics. Keep the parser and its state private to this test harness; both
 test entry points use the shared loader, and it is not a general Markdown API.
 
+`tests/documented_examples/runner.rs` owns execution. Its private
+`CommandRunner` port exists so the runner's failure handling is exercised with
+a simulated shell, while `BashRunner` stays the only implementation that spawns
+`bash` from the checkout root. Keep that port scoped to this harness: it is not
+a repository-wide command-execution abstraction, and a second caller should
+reuse the harness rather than widen it. The parser's regression and property
+cases live in `loader_cases.rs`; the runner's execution cases live in
+`runner_cases.rs`.
+
 Keep example commands deterministic and safe to run repeatedly. Do not put
 `make all` or another test-running command in a fenced example: `make test`
 executes these examples, so that would recurse. For comprehensive validation,

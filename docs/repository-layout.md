@@ -41,7 +41,9 @@ compact and omits build output such as `target/`.
 │   ├── documented_examples/
 │   │   ├── behaviour.rs
 │   │   ├── loader.rs
-│   │   └── loader_cases.rs
+│   │   ├── loader_cases.rs
+│   │   ├── runner.rs
+│   │   └── runner_cases.rs
 │   ├── topology_check.rs
 │   ├── topology_check/
 │   ├── topology_command.rs
@@ -133,7 +135,11 @@ compact and omits build output such as `target/`.
   user-facing Markdown directly, validate stable example markers, and execute
   the fenced Bash examples. The shared loader also backs the behavioural
   scenarios in `tests/documented_examples/behaviour.rs`; its parser cases are in
-  `tests/documented_examples/loader_cases.rs`.
+  `tests/documented_examples/loader_cases.rs`. Execution lives in
+  `tests/documented_examples/runner.rs`, whose private `CommandRunner` port
+  keeps the real Bash adapter at the test boundary and lets
+  `tests/documented_examples/runner_cases.rs` exercise failure handling with a
+  simulated shell.
 - `tests/features/documented_examples.feature`: Names the README and user's
   guide scenarios that load and run their published examples.
 - `tests/topology_check.rs`: Guards the pre-macro workspace boundary named in

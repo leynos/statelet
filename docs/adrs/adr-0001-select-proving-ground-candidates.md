@@ -202,3 +202,13 @@ state machine, while Statelet standardizes names and observability at selected
 transition boundaries. `wireframe` gives the project a production-shaped actor,
 runtime logs, and verification vocabulary without requiring Statelet to own
 dispatch or graph semantics.
+
+## Addendum
+
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-001-proving-ground-candidates.md` to
+`docs/adrs/adr-0001-select-proving-ground-candidates.md` and zero-padded the
+serial in its heading. The decision is unchanged; only the record's name and
+its cross-references follow the new pattern.

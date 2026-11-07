@@ -133,3 +133,13 @@ is not a substitute for an application-owned operational label.
 Which consumers require source-rename stability? Should an accepted derive
 later support explicit label overrides? Does any real consumer need a numeric
 representation rather than stable strings? These decisions remain evidence-led.
+
+## Addendum
+
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-006-stable-transition-and-outcome-names.md` to
+`docs/adrs/adr-0006-stable-transition-and-outcome-names.md` and zero-padded the
+serial in its heading. The decision is unchanged; only the record's name and
+its cross-references follow the new pattern.

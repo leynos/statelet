@@ -6,6 +6,14 @@ and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
 Status: COMPLETE
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> historical paths and record identifiers in this completed plan are
+> preserved as written; the [documentation contents](../contents.md) index
+> lists every record under its current name.
+
 ## Purpose / big picture
 
 Statelet's roadmap opens with a foundational phase whose first deliverable is
@@ -25,14 +33,13 @@ reviewers have no single citable authority for rejecting framework-shaped
 feature requests.
 
 After this change, a reader can open
-`docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` and find
-one accepted decision that says, verbatim, that Statelet marks boundaries and
-does not own dispatch, events, storage, transition tables, or graph safety; the
-decision is reachable from the documentation index, the design document, and
-the terms of reference; and the roadmap item is marked done. Success is
-observable by running the repository's Markdown gates and a small content check
-that greps for the required decision sentence and confirms every new
-cross-reference link resolves.
+`docs/adr-002-transition-boundary-scope.md` and find one accepted decision that
+says, verbatim, that Statelet marks boundaries and does not own dispatch,
+events, storage, transition tables, or graph safety; the decision is reachable
+from the documentation index, the design document, and the terms of reference;
+and the roadmap item is marked done. Success is observable by running the
+repository's Markdown gates and a small content check that greps for the
+required decision sentence and confirms every new cross-reference link resolves.
 
 This is a documentation-only deliverable. It introduces no Rust code, no public
 API, and no runtime behaviour, so the project's runtime test stack (`rstest`,
@@ -49,12 +56,11 @@ escalation, not a workaround.
 - The ADR must follow the repository ADR convention in
   `docs/documentation-style-guide.md` (the `## Status`, `## Date`,
   `## Context and problem statement` ordering and the
-  `adrs/adr-nnnn-title-slug.md` naming), not any external or global ADR
+  `adr-NNN-short-description.md` naming), not any external or global ADR
   template. This repository's house style takes precedence over the global
   Y-Statement skill.
-- The ADR file must be named
-  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`. ADR
-  0001 already exists; numbers are allocated sequentially and never reused.
+- The ADR file must be named `docs/adr-002-transition-boundary-scope.md`. ADR
+  001 already exists; numbers are allocated sequentially and never reused.
 - The ADR must contain the success sentence required by roadmap item 1.1.1,
   stating that Statelet marks boundaries and does not own dispatch, events,
   storage, transition tables, or graph safety. The five owned concerns
@@ -104,7 +110,7 @@ Thresholds that trigger escalation rather than autonomous continuation.
   guide draws. Severity: medium. Likelihood: medium. Mitigation: keep the ADR
   narrow; cite design and terms-of-reference sections by number instead of
   restating them; mirror the shape and length of the existing
-  `docs/adrs/adr-0001-select-proving-ground-candidates.md`.
+  `docs/adr-001-proving-ground-candidates.md`.
 - Risk: the decision wording omits one of the five required out-of-scope
   concerns, so the success criterion is not literally met. Severity: high.
   Likelihood: low. Mitigation: the acceptance check greps for the exact
@@ -134,23 +140,23 @@ Thresholds that trigger escalation rather than autonomous continuation.
   that order. No deliverable files changed.
 - [x] (2026-07-22 20:40Z) Stage B: ran the shared inline acceptance predicate
   before authoring. It returned
-  `RED: docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md absent`
-  with exit status 1, as required; no durable script was needed.
+  `RED: docs/adr-002-transition-boundary-scope.md absent` with exit status 1,
+  as required; no durable script was needed.
 - [x] (2026-07-22 20:43Z) Stage C: authored
-  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` from
-  the embedded artefact with the current acceptance date. The shared predicate
-  returned `GREEN: decision sentence present with all five concerns in order`.
+  `docs/adr-002-transition-boundary-scope.md` from the embedded artefact with
+  the current acceptance date. The shared predicate returned
+  `GREEN: decision sentence present with all five concerns in order`.
 - [x] (2026-07-22 20:48Z) Stage D: synchronized companion documents, closed
   roadmap item 1.1.1, and completed validation. The four companion edits were
   tracked separately because they were the highest-risk-to-omit work:
-  - [x] (2026-07-22 20:46Z) D1: added the ADR 0002 entry to
+  - [x] (2026-07-22 20:46Z) D1: added the ADR 002 entry to
     `docs/contents.md` "Decision records".
-  - [x] (2026-07-22 20:46Z) D2: added ADR 0002 to the `docs/design.md`
+  - [x] (2026-07-22 20:46Z) D2: added ADR 002 to the `docs/design.md`
     companion list and a canonical-scope-authority citation in §1.
   - [x] (2026-07-22 20:46Z) D3: resolved the
-    `docs/terms-of-reference.md` §10.2 candidate as an ADR 0002 link and added
+    `docs/terms-of-reference.md` §10.2 candidate as an ADR 002 link and added
     it to the companion list.
-  - [x] (2026-07-22 20:46Z) D4: ticked roadmap 1.1.1 and linked ADR 0002 from
+  - [x] (2026-07-22 20:46Z) D4: ticked roadmap 1.1.1 and linked ADR 002 from
     its success line.
   - [x] (2026-07-22 20:48Z) D5: content and all-touched-files link checks
     passed; `make markdownlint`, `make check-fmt`, and `make nixie` passed;
@@ -178,7 +184,7 @@ implementing agent updates checkboxes with timestamps as stages complete.
   validation uses `make fmt`, restores the unrelated change, then runs the
   check gates.
 - Observation: review found that the ADR's market summary had no source
-  citations, its competing-crate claim reached into ADR 0001, and the embedded
+  citations, its competing-crate claim reached into ADR 001, and the embedded
   ADR had drifted from the delivered ADR's relative link. Impact: added ordered
   footnotes from Appendix A, limited the claim to crates named in this ADR, and
   synchronized the embedded artefact without changing the decision.
@@ -190,22 +196,20 @@ implementing agent updates checkboxes with timestamps as stages complete.
   validation candidates: `mdtablefix` has inconsistent but infallible boundary
   instrumentation, `wireframe` has a fallible handwritten actor seam with no
   tracing, and `ddlint` has counter-based parser guards rather than a real
-  mode. Impact: ADR 0002 records them as validation evidence without changing
+  mode. Impact: ADR 002 records them as validation evidence without changing
   its accepted scope or deciding that the macro should ship.
 
 ## Decision log
 
-- Decision: name the file
-  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`.
-  Rationale: ADR 0001 is taken; the style guide mandates sequential
-  `adrs/adr-nnnn-title-slug.md` naming;
-  "scope-statelet-to-transition-boundary-marking" matches the roadmap task and
-  the terms-of-reference §10.2 candidate wording. Date/Author: 2026-06-24,
-  planning agent.
+- Decision: name the file `docs/adr-002-transition-boundary-scope.md`.
+  Rationale: ADR 001 is taken; the style guide mandates sequential
+  `adr-NNN-short-description.md` naming; "transition-boundary-scope" matches
+  the roadmap task and the terms-of-reference §10.2 candidate wording.
+  Date/Author: 2026-06-24, planning agent.
 - Decision: author the ADR with `Status: Accepted` and the merge date, rather
   than `Proposed`. Rationale: roadmap 1.1.1 success is "one accepted ADR".
-  Unlike ADR 0001 (which proposes a still-open proving-ground ranking), this
-  ADR ratifies a scope boundary already stated as settled across the terms of
+  Unlike ADR 001 (which proposes a still-open proving-ground ranking), this ADR
+  ratifies a scope boundary already stated as settled across the terms of
   reference (§§1-6, §6.2), the design (§§1-3, §2.2), the README, and the user's
   guide. The reviewing pull request is the acceptance act. This is recorded as
   a tolerance so the reviewer can request `Proposed` instead with a one-line
@@ -235,9 +239,9 @@ implementing agent updates checkboxes with timestamps as stages complete.
   the red and green stages test the same contract. Date/Author: 2026-06-24,
   planning agent (post-review revision).
 - Decision: omit the optional ADR sections `Requirements`, `Migration plan`,
-  and `Outstanding decisions` from ADR 0002, and state the decision verbatim
+  and `Outstanding decisions` from ADR 002, and state the decision verbatim
   only once (in `Decision outcome`), with `Status` referring to it. Rationale:
-  those sections are conditional in the style guide and absent from ADR 0001
+  those sections are conditional in the style guide and absent from ADR 001
   too; this ADR ratifies a settled decision with no open questions and no
   phased build (phased work lives in the roadmap). Stating the sentence once
   removes a drift hazard between two copies. Date/Author: 2026-06-24, planning
@@ -247,7 +251,7 @@ implementing agent updates checkboxes with timestamps as stages complete.
   claim scoped to the competing crates named in this ADR, exact-once sentence
   validation, and a failing link check improve traceability without creating
   new product scope. Date/Author: 2026-08-17, review follow-up.
-- Decision: record the three reconnaissance examples in ADR 0002 as validation
+- Decision: record the three reconnaissance examples in ADR 002 as validation
   evidence. Rationale: concrete downstream seams make the scope boundary
   falsifiable while preserving user-owned dispatch, events, storage, and graph
   safety. Date/Author: 2026-08-17, follow-up documentation.
@@ -290,17 +294,16 @@ Key terms, defined for a reader new to the repository:
   them to handlers. `statig` and `rust-fsm` do this; Statelet must not.
 - Graph safety: compile-time or model-checked guarantees that only legal
   transitions can occur. Out of scope for Statelet; downstream projects keep
-  their own (for example `wireframe`'s Stateright model, per ADR 0001).
+  their own (for example `wireframe`'s Stateright model, per ADR 001).
 - ADR: an Architecture Decision Record. In this repository, ADRs capture one
   accepted decision in a fixed section order and are indexed from
   `docs/contents.md`.
 
 Files this plan reads or writes, by full repository-relative path:
 
-- `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` — new
-  file, the deliverable.
-- `docs/adrs/adr-0001-select-proving-ground-candidates.md` — existing ADR; the
-  structural and tonal template to mirror.
+- `docs/adr-002-transition-boundary-scope.md` — new file, the deliverable.
+- `docs/adr-001-proving-ground-candidates.md` — existing ADR; the structural
+  and tonal template to mirror.
 - `docs/documentation-style-guide.md` — normative ADR template, naming, and
   Markdown rules.
 - `docs/terms-of-reference.md` — §§1-6 (problem and scope), §6.2 (non-goals),
@@ -328,8 +331,8 @@ link check rather than a runtime suite; it plays the Red-Green-Refactor role.
 ### Stage A: understand and propose (no file changes)
 
 Re-read `docs/documentation-style-guide.md` ADR section, the existing
-`docs/adrs/adr-0001-select-proving-ground-candidates.md`, and the cited design
-and terms-of-reference sections. Confirm three things: the required ADR section
+`docs/adr-001-proving-ground-candidates.md`, and the cited design and
+terms-of-reference sections. Confirm three things: the required ADR section
 order, the five out-of-scope concerns the headline sentence must name, and the
 exact "instead, use …" redirections (`statig`, `rust-fsm`, `smlang`,
 `stateless`, `typed-fsm`, `sfsm`, `finny`, `macro-machines`). Produce no edits.
@@ -344,7 +347,7 @@ snippet (recorded under `Concrete steps`) that:
 
 1. matches the full canonical decision sentence (which names all five concerns
    in order) against a whitespace-folded copy of
-   `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`, and
+   `docs/adr-002-transition-boundary-scope.md`, and
 2. resolves every relative Markdown link in each touched file against the
    filesystem.
 
@@ -359,35 +362,32 @@ not pull in new tooling without escalation.
 
 ### Stage C: author the ADR
 
-Create `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`
-from the artefact embedded in `Artefacts and notes`, adjusting only the
-acceptance date to the merge date. Keep it within the same order of length as
-ADR 0001. Re-run the Stage B check and confirm it passes (green). Run
-`make markdownlint` and `make fmt`; the formatter must be a no-op at commit
-time.
+Create `docs/adr-002-transition-boundary-scope.md` from the artefact embedded in
+`Artefacts and notes`, adjusting only the acceptance date to the merge date.
+Keep it within the same order of length as ADR 001. Re-run the Stage B check
+and confirm it passes (green). Run `make markdownlint` and `make fmt`; the
+formatter must be a no-op at commit time.
 
 ### Stage D: synchronize companion documents and close the item
 
 Make the minimal cross-reference edits so the decision is reachable and the
 candidate list reflects that it is now recorded:
 
-1. `docs/contents.md`: add a "Decision records" entry for ADR 0002 directly
-   after the ADR 0001 entry, with a one-line audience-focused description.
-2. `docs/design.md`: add
-   `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` to the
+1. `docs/contents.md`: add a "Decision records" entry for ADR 002 directly
+   after the ADR 001 entry, with a one-line audience-focused description.
+2. `docs/design.md`: add `docs/adr-002-transition-boundary-scope.md` to the
    companion-documents list at the top, and add a single citation from §1
-   (Design context) or §2 (Goals and non-goals) naming ADR 0002 as the
-   canonical scope authority. This both satisfies the AGENTS.md rule that
-   substantive decisions are recorded in an ADR referenced from the design
-   document, and gives the duplicated non-goal prose (README, user's guide,
-   terms of reference §6.2, design §2.2) one authority to defer to, so future
-   scope edits point at the ADR rather than drifting independently. Do not
-   delete the existing non-goal prose; only point it at the ADR.
+   (Design context) or §2 (Goals and non-goals) naming ADR 002 as the canonical
+   scope authority. This both satisfies the AGENTS.md rule that substantive
+   decisions are recorded in an ADR referenced from the design document, and
+   gives the duplicated non-goal prose (README, user's guide, terms of
+   reference §6.2, design §2.2) one authority to defer to, so future scope
+   edits point at the ADR rather than drifting independently. Do not delete the
+   existing non-goal prose; only point it at the ADR.
 3. `docs/terms-of-reference.md`: convert the §10.2 candidate bullet "ADR:
    `statelet` is a transition-boundary toolkit, not a state-machine framework."
-   into a resolved inline link to ADR 0002 (mirroring how the ADR 0001 bullet
-   is already a link), and add ADR 0002 to the companion-documents list at the
-   top.
+   into a resolved inline link to ADR 002 (mirroring how the ADR 001 bullet is
+   already a link), and add ADR 002 to the companion-documents list at the top.
 4. `docs/roadmap.md`: tick the item 1.1.1 checkbox (`[ ]` → `[x]`) and append a
    link to the accepted ADR in its success line.
 
@@ -413,7 +413,7 @@ all five concerns in order, and terminal full stop — so a stray occurrence of 
 word like "storage" in unrelated prose cannot cause a false GREEN:
 
 ```bash
-ADR=docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md
+ADR=docs/adr-002-transition-boundary-scope.md
 # The complete canonical decision sentence the success criterion requires
 # (roadmap 1.1.1), including its leading subject so a different subject
 # cannot satisfy the predicate. Matched as a fixed string against a
@@ -460,7 +460,7 @@ the embedded artefact and setting the acceptance date to the merge date. Then
 re-run the same predicate; a zero exit is the expected GREEN:
 
 ```bash
-# write docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md from the embedded artefact
+# write docs/adr-002-transition-boundary-scope.md from the embedded artefact
 check_adr; echo "exit=$?"   # expect: GREEN ... / exit=0
 ```
 
@@ -478,7 +478,7 @@ make nixie        2>&1 | tee /tmp/nixie-statelet-adr002.out
 Stage D — resolve every relative link in each touched file (covering inline and
 reference-style links, anchor-only links, non-`.md` relative targets, and
 `#fragment` resolution against the target's own headings), including the
-roadmap link and the ADR's own outbound link to ADR 0001, not only links *into*
+roadmap link and the ADR's own outbound link to ADR 001, not only links *into*
 the new ADR. Any `BROKEN` line is a failure:
 
 ```bash
@@ -508,7 +508,7 @@ targets_of() {
 
 broken=0
 for f in docs/contents.md docs/design.md docs/terms-of-reference.md \
-         docs/roadmap.md docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md \
+         docs/roadmap.md docs/adr-002-transition-boundary-scope.md \
          docs/execplans/1-1-1-record-the-transition-boundary-scope-decision-as-an-adr.md; do
   dir=$(dirname "$f")
   while read -r tgt; do
@@ -568,9 +568,9 @@ check.
 
 Each companion-document edit in Stage D must be idempotent. Before inserting a
 line into `contents.md`, `design.md`, or `terms-of-reference.md`, grep-guard it
-("add only if the `adr-0002-scope-statelet-to-transition-boundary-marking.md`
-reference is absent") so re-running Stage D cannot append a duplicate index
-entry or companion-list line.
+("add only if the `adr-002-transition-boundary-scope.md` reference is absent")
+so re-running Stage D cannot append a duplicate index entry or companion-list
+line.
 
 Commit after the ADR is authored and green, then again after companion-document
 sync, so the history shows the decision and its wiring as separate, reviewable
@@ -586,14 +586,14 @@ Acceptance is behavioural and observable without any runtime code:
   matches the complete decision sentence ("Statelet marks boundaries and does
   not own dispatch, events, storage, transition tables, or graph safety.")
   against a whitespace-folded, emphasis-stripped copy of
-  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`. The
-  one predicate is the contract: because it matches the whole sentence,
-  including its leading subject and terminal full stop, all five concerns are
-  verified together and in order, a different subject cannot satisfy the match,
-  and the wrap or emphasis styling the ADR is authored with cannot break the
-  match. Before Stage C it exits non-zero (red); after Stage C it exits zero
-  (green). Run this content check and the link check *before* the Markdown
-  gates so a structural failure is not masked by a formatting pass. This is the
+  `docs/adr-002-transition-boundary-scope.md`. The one predicate is the
+  contract: because it matches the whole sentence, including its leading
+  subject and terminal full stop, all five concerns are verified together and
+  in order, a different subject cannot satisfy the match, and the wrap or
+  emphasis styling the ADR is authored with cannot break the match. Before
+  Stage C it exits non-zero (red); after Stage C it exits zero (green). Run
+  this content check and the link check *before* the Markdown gates so a
+  structural failure is not masked by a formatting pass. This is the
   documentation-appropriate Red-Green-Refactor substitute, recorded here in
   place of a runtime test because the deliverable has no executable behaviour.
 - Single source of decision wording: the full decision sentence appears exactly
@@ -602,16 +602,16 @@ Acceptance is behavioural and observable without any runtime code:
   drift.
 - Structure: the ADR contains, in order, `## Status` (Accepted, dated, with a
   one-line summary), `## Date`, and `## Context and problem statement`,
-  matching the style-guide template and the shape of ADR 0001. The optional
+  matching the style-guide template and the shape of ADR 001. The optional
   `Requirements`, `Migration plan`, and `Outstanding decisions` sections are
   deliberately omitted — the decision is settled and carries no open questions,
-  and phased work lives in the roadmap, matching the ADR 0001 precedent.
-- Reachability: `docs/contents.md` lists ADR 0002 in "Decision records";
+  and phased work lives in the roadmap, matching the ADR 001 precedent.
+- Reachability: `docs/contents.md` lists ADR 002 in "Decision records";
   `docs/design.md` and `docs/terms-of-reference.md` cite it; the link check
   resolves every relative link in all touched files — inline, reference-style,
   and anchor-only links, non-`.md` relative targets, and `#fragment` resolution
   against the target's own headings — including `roadmap.md` and the ADR's
-  outbound link to ADR 0001, and prints no `BROKEN` line.
+  outbound link to ADR 001, and prints no `BROKEN` line.
 - Roadmap closure: `docs/roadmap.md` item 1.1.1 shows `[x]` and links the
   accepted ADR.
 - Gates: `make markdownlint` reports no errors; `make check-fmt` is clean;
@@ -636,24 +636,23 @@ content and link checks, and review the `git diff --stat` before committing.
 Every step is safe to repeat. Authoring the ADR is a single file create;
 re-running it overwrites the same content. The companion-document edits are
 grep-guarded insertions and a checkbox flip ("add only if the
-`adr-0002-scope-statelet-to-transition-boundary-marking.md` reference is
-absent"), so a blind re-run of Stage D cannot append a duplicate index entry or
-companion-list line; if a link is wrong, fix the one line and re-run the link
-check. There is nothing destructive: no migrations, no deletions, no generated
-artefacts. If a gate fails, correct the Markdown and re-run; the environment is
-left clean because only tracked Markdown changes.
+`adr-002-transition-boundary-scope.md` reference is absent"), so a blind re-run
+of Stage D cannot append a duplicate index entry or companion-list line; if a
+link is wrong, fix the one line and re-run the link check. There is nothing
+destructive: no migrations, no deletions, no generated artefacts. If a gate
+fails, correct the Markdown and re-run; the environment is left clean because
+only tracked Markdown changes.
 
 ## Artefacts and notes
 
 The following is the full proposed text for
-`docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`. The
-implementer creates the file with this content, changing only the acceptance
-date to the merge date and adjusting wording only if a Stage A review requires
-it. It mirrors the section order, tone, and length of
-`docs/adrs/adr-0001-select-proving-ground-candidates.md`.
+`docs/adr-002-transition-boundary-scope.md`. The implementer creates the file
+with this content, changing only the acceptance date to the merge date and
+adjusting wording only if a Stage A review requires it. It mirrors the section
+order, tone, and length of `docs/adr-001-proving-ground-candidates.md`.
 
 ````markdown
-# Architectural decision record (ADR) 0002: Scope Statelet to transition-boundary marking
+# Architectural decision record (ADR) 002: Scope Statelet to transition-boundary marking
 
 ## Status
 
@@ -788,9 +787,8 @@ of `fallible` or `transition.error`.
 ### `wireframe`: primary proving ground
 
 `wireframe` supplies the complementary case selected by
-[ADR 0001](../adrs/adr-0001-select-proving-ground-candidates.md).
-Its connection actor has the explicit
-`RunState { Active, ShuttingDown, Finished }` in
+[ADR 001](adr-001-proving-ground-candidates.md). Its connection actor has the
+explicit `RunState { Active, ShuttingDown, Finished }` in
 `src/connection/state.rs`, generic `ActiveOutput<F, E>` in
 `src/connection/output.rs`, and a fallible `ConnectionActor::dispatch_event` in
 `src/connection/dispatch.rs`. The connection module has no tracing today, so
@@ -842,8 +840,7 @@ model the same `Active`, `ShuttingDown`, and `Finished` labels.
 
 ### `ddlint`: negative control
 
-`ddlint` confirms why [ADR 0001](../adrs/adr-0001-select-proving-ground-candidates.md)
-treats it
+`ddlint` confirms why [ADR 001](adr-001-proving-ground-candidates.md) treats it
 as the weakest fit. Its `StructLiteralState` in
 `src/parser/expression/pratt.rs` is two `usize` counters, `active` and
 `suspension`, manipulated by activation and suspension wrappers around closures.
@@ -1018,8 +1015,7 @@ machine, while Statelet standardizes names and observability at selected
 transition boundaries. It aligns with the terms of reference (§§1-6, §6.2), the
 design context and non-goals (§§1-3, §2.2), the README, and the user's guide,
 consolidating their shared position into one citable record. It complements
-[ADR 0001](../adrs/adr-0001-select-proving-ground-candidates.md),
-which selects `wireframe` as
+[ADR 001](adr-001-proving-ground-candidates.md), which selects `wireframe` as
 the proving ground that will test this boundary on production-shaped code
 without Statelet taking ownership of `wireframe`'s Stateright model.
 
@@ -1045,9 +1041,8 @@ without Statelet taking ownership of `wireframe`'s Stateright model.
 This item introduces no programmatic interface. Its "interfaces" are
 documentation contracts:
 
-- New file:
-  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`,
-  conforming to the ADR template in `docs/documentation-style-guide.md`.
+- New file: `docs/adr-002-transition-boundary-scope.md`, conforming to the ADR
+  template in `docs/documentation-style-guide.md`.
 - Edited files: `docs/contents.md` (index entry), `docs/design.md` (companion
   list plus one citation), `docs/terms-of-reference.md` (companion list plus
   the resolved §10.2 candidate bullet), `docs/roadmap.md` (item 1.1.1 checkbox
@@ -1059,8 +1054,7 @@ Signposted documentation and skills for the implementer:
 
 - `docs/documentation-style-guide.md` — the normative ADR template, naming, and
   Markdown rules (MD013 wrap 80 / 120; tables and headings exempt).
-- `docs/adrs/adr-0001-select-proving-ground-candidates.md` — the structural and
-  tonal model.
+- `docs/adr-001-proving-ground-candidates.md` — the structural and tonal model.
 - `docs/terms-of-reference.md` and `docs/design.md` — the cited authorities the
   ADR consolidates.
 - `execplans` skill — this plan's format and living-section discipline.
@@ -1072,7 +1066,7 @@ Signposted documentation and skills for the implementer:
 ## Revision note
 
 - 2026-06-24: initial DRAFT. Establishes the four-stage plan, the embedded
-  proposed ADR 0002 artefact, the documentation-appropriate Red-Green-Refactor
+  proposed ADR 002 artefact, the documentation-appropriate Red-Green-Refactor
   substitute, and the companion-document sync set. Remaining work is execution
   pending approval; no implementation has begun.
 - 2026-06-24: post-review revision after a community-of-experts pass. Replaced
@@ -1095,7 +1089,7 @@ Signposted documentation and skills for the implementer:
   local ADR convention and found no scope conflict among the design, terms of
   reference, README, and user's guide. Stage B remains the next step.
 - 2026-07-22: completed the red-green documentation contract. The inline
-  predicate failed because ADR 0002 was absent, then passed after the ADR was
+  predicate failed because ADR 002 was absent, then passed after the ADR was
   created with the required decision sentence. Companion-document wiring and
   final validation remain.
 - 2026-07-22: synchronized the index, design, terms of reference, and roadmap.
@@ -1111,11 +1105,11 @@ Signposted documentation and skills for the implementer:
 - 2026-08-17: review follow-up added ordered Appendix A footnotes for the
   market count and six capability categories, limited the competing-crate claim
   to this ADR, strengthened `check_adr` and the relative-link validator, and
-  synchronized the embedded ADR's ADR 0001 link. These are traceability and
+  synchronized the embedded ADR's ADR 001 link. These are traceability and
   validation repairs only, not new product scope; `make markdownlint` and
   `make nixie` passed after the spelling correction.
 - 2026-08-17: added validated `mdtablefix`, `wireframe`, and `ddlint`
-  reconnaissance examples to ADR 0002 and synchronized the embedded artefact.
+  reconnaissance examples to ADR 002 and synchronized the embedded artefact.
   The examples preserve the marker-only decision: they test conventions, a
   fallible handwritten boundary, and an intentional non-adoption case rather
   than decide the macro or add framework responsibilities.

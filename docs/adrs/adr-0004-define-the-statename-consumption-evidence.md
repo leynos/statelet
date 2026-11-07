@@ -560,6 +560,14 @@ what was decided, so it now reads `Accepted, 2026-09-19.` followed by that
 summary. This is the only change recorded here that amends the Status section
 itself; every other entry amends the rule, an argument, or an illustration.
 
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-004-state-name-consumption-evidence.md` to
+`docs/adrs/adr-0004-define-the-statename-consumption-evidence.md` and
+zero-padded the serial in its heading. The decision is unchanged; only the
+record's name and its cross-references follow the new pattern.
+
 [^1]: `std::mem::discriminant` documentation, accessed 2026-09-20:
     `https://doc.rust-lang.org/std/mem/fn.discriminant.html`
 [^2]: The Rust Reference, "Enumerations", accessed 2026-09-20:

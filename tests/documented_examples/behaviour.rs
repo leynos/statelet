@@ -4,13 +4,16 @@ use rstest::fixture;
 use rstest_bdd::Slot;
 use rstest_bdd_macros::{ScenarioState, given, scenario, then, when};
 
-use super::loader::{self, Document};
+use super::{
+    loader::{self, Document},
+    runner,
+};
 
 /// Carries the chosen published document and the result of running its
 /// examples between scenario steps.
 #[derive(Default, ScenarioState)]
 struct ExamplesWorld {
-    document: Slot<Document>,
+    document: Slot<Document<'static>>,
     result: Slot<Result<(), String>>,
 }
 
@@ -46,7 +49,7 @@ fn run_documented_examples(world: &ExamplesWorld) -> Result<(), String> {
         .ok_or_else(|| "the scenario did not select a user-facing document".to_owned())?;
     let result = loader::load_document(document).and_then(|examples| {
         loader::ensure_unique_identifiers(&examples)?;
-        loader::run_examples(&examples)
+        runner::run_examples(&examples)
     });
     world.result.set(result);
     Ok(())

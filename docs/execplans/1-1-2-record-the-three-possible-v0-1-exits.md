@@ -7,6 +7,14 @@ be kept up to date as work proceeds.
 
 Status: COMPLETE
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> historical paths and record identifiers in this completed plan are
+> preserved as written; the [documentation contents](../contents.md) index
+> lists every record under its current name.
+
 ## Purpose / big picture
 
 Statelet is a pre-1.0 Rust crate that does not yet know whether it should
@@ -26,14 +34,14 @@ without reconstructing them from four separate design sections:
 3. Which of the named bets does that observation falsify or confirm?
 
 Success is observable in two ways. First, a new decision record,
-`docs/adrs/adr-0003-record-the-v0-1-exit-register.md`, states the three exits
-and binds each to concrete evidence in `docs/design.md` and to a gate in
-`docs/roadmap.md`. Second, that binding is machine-checked: `make test` runs a
-contract test that reads the decision record and fails if the exits stop
-covering every combination of bet verdicts, if a design passage the record
-quotes stops existing, or if a roadmap gate the record names is renumbered
-away. Renames and deletions in the upstream documents are caught in the same
-commit that causes them.
+`docs/adr-003-v0-1-exit-register.md`, states the three exits and binds each to
+concrete evidence in `docs/design.md` and to a gate in `docs/roadmap.md`.
+Second, that binding is machine-checked: `make test` runs a contract test that
+reads the decision record and fails if the exits stop covering every
+combination of bet verdicts, if a design passage the record quotes stops
+existing, or if a roadmap gate the record names is renumbered away. Renames and
+deletions in the upstream documents are caught in the same commit that causes
+them.
 
 This is a documentation and test change. It adds no runtime code and no public
 API. That is deliberate: roadmap phase 1 exists precisely to settle exit
@@ -49,11 +57,11 @@ Statelet is a "transition-boundary toolkit" for ordinary Rust state machines. A
 **transition boundary** is a method or function where stateful logic decides to
 stay in its current state, move to another, emit output, ignore input, or fail.
 Statelet's accepted scope, fixed by
-[ADR 0002](../adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md),
-is to *mark* those boundaries and nothing more: it does not own dispatch,
-events, storage, transition tables, or graph safety. The glossary for all such
-terms is `docs/context.md`; treat it as normative and cite it rather than
-redefining terms locally.
+[ADR 002](../adr-002-transition-boundary-scope.md), is to *mark* those
+boundaries and nothing more: it does not own dispatch, events, storage,
+transition tables, or graph safety. The glossary for all such terms is
+`docs/context.md`; treat it as normative and cite it rather than redefining
+terms locally.
 
 ### At plan inception: current state of the repository
 
@@ -217,7 +225,7 @@ Reads only: `docs/design.md`, `docs/terms-of-reference.md`,
 `tests/dev_fast_contract.rs`, `AGENTS.md`, `Makefile`, `clippy.toml`,
 `.markdownlint-cli2.jsonc`.
 
-Creates: `docs/adrs/adr-0003-record-the-v0-1-exit-register.md`;
+Creates: `docs/adr-003-v0-1-exit-register.md`;
 `tests/v0_1_exit_register_contract.rs`;
 `tests/v0_1_exit_register_contract/support.rs`.
 
@@ -278,26 +286,25 @@ Upstream artefacts and their revisions at the time of writing:
   review", last substantive revision 2026-06-14.
 - Technical design: `docs/design.md`, "Draft v0.2 after design review", last
   substantive revision 2026-06-15.
-- Decision records: `docs/adrs/adr-0001-select-proving-ground-candidates.md`;
-  `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`
-  (Accepted, 2026-07-22).
+- Decision records: `docs/adr-001-proving-ground-candidates.md`;
+  `docs/adr-002-transition-boundary-scope.md` (Accepted, 2026-07-22).
 - Roadmap: `docs/roadmap.md` at commit `78c30a1`.
 - Governing standard: `docs/documentation-style-guide.md`.
 
 Traced items:
 
 ```plaintext
-TOR-7.1-ship-nothing -> TDD-11.1-B1 -> EP-M1 -> ADR-0003 exit E1 -> tests::totality_holds
-TDD-13.6             -> TDD-11.1-B2 -> EP-M1 -> ADR-0003 exit E2 -> tests::dominance_holds
-TDD-11.2-macro-gate  -> TDD-11.1-B2 -> EP-M1 -> ADR-0003 exit E3 -> tests::gate_bindings_resolve
-TDD-11.1-B6          -> split case  -> EP-M1 -> ADR-0003 §Exit register -> Open question R1
-ROADMAP-1.1.2        -> EP-M1..M3   -> ADR-0003 + roadmap checkbox ticked
-ROADMAP-2.2.3/3.1.3/4.3.1 -> ADR-0003 gates G1, G2, G3 -> tests::gate_bindings_resolve
+TOR-7.1-ship-nothing -> TDD-11.1-B1 -> EP-M1 -> ADR-003 exit E1 -> tests::totality_holds
+TDD-13.6             -> TDD-11.1-B2 -> EP-M1 -> ADR-003 exit E2 -> tests::dominance_holds
+TDD-11.2-macro-gate  -> TDD-11.1-B2 -> EP-M1 -> ADR-003 exit E3 -> tests::gate_bindings_resolve
+TDD-11.1-B6          -> split case  -> EP-M1 -> ADR-003 §Exit register -> Open question R1
+ROADMAP-1.1.2        -> EP-M1..M3   -> ADR-003 + roadmap checkbox ticked
+ROADMAP-2.2.3/3.1.3/4.3.1 -> ADR-003 gates G1, G2, G3 -> tests::gate_bindings_resolve
 ```
 
-ADR 0002 explicitly declines to decide macro-versus-conventions; its non-goals
+ADR 002 explicitly declines to decide macro-versus-conventions; its non-goals
 say those questions "are tracked separately". This plan therefore does not
-deviate from ADR 0002, it discharges a sibling obligation.
+deviate from ADR 002, it discharges a sibling obligation.
 
 No upstream artefact defines a document type called an "exit note". The
 roadmap's phrase "the exit note" is interpreted as the decision record produced
@@ -324,9 +331,8 @@ escalate rather than working around it.
    milestone and its transcript recorded; a red state is never committed. There
    is no `todo!()` in committed code — `panic_in_result_fn` is denied and
    `RUSTFLAGS="-D warnings"` turns an unused error variant into a build error.
-5. **Repository ADR template only.** File named
-   `docs/adrs/adr-0003-<title-slug>.md`; sections in the order the style guide
-   mandates; every table captioned.
+5. **Repository ADR template only.** File named `docs/adr-003-<slug>.md`;
+   sections in the order the style guide mandates; every table captioned.
 6. **en-GB Oxford spelling**, sentence-case headings, prose wrapped at 80
    columns, code at 120, fenced blocks given a language identifier.
 7. **`std::fs` is forbidden in test code.** Whitaker's `no_std_fs_operations`
@@ -419,7 +425,7 @@ escalate rather than working around it.
 - [x] (2026-08-22 00:29Z) EP-M0: plan approved, including the R1-versus-R2
       choice in `Open question for the approval gate`; orientation and
       conformance-basis checks passed.
-- [x] (2026-08-22 00:29Z) EP-M1: ADR 0003 written; contract test complete and
+- [x] (2026-08-22 00:29Z) EP-M1: ADR 003 written; contract test complete and
       green; the red transcript observed and recorded in `Artefacts and notes`.
 - [x] (2026-08-22 00:29Z) EP-M2: companion-document sync complete; roadmap
       1.1.2 ticked.
@@ -521,14 +527,13 @@ Findings from the planning pass, carried forward:
 
 ## Decision log
 
-- Decision D1: the deliverable is an ADR,
-  `docs/adrs/adr-0003-record-the-v0-1-exit-register.md`. Rationale: roadmap
-  step 1.1 is titled "Ratify the v0.1 product exits", and ratification is a
-  decision act. Task 1.1.1 set the ADR precedent for this step. The style guide
-  supplies an ADR template and no "note" template. Roadmap 2.2.3 says a later
-  note "chooses one of the three exits from 1.1.2", and a chooser needs a
-  stable, dated, citable target rather than a living design section.
-  Date/Author: 2026-08-22, planning agent.
+- Decision D1: the deliverable is an ADR, `docs/adr-003-v0-1-exit-register.md`.
+  Rationale: roadmap step 1.1 is titled "Ratify the v0.1 product exits", and
+  ratification is a decision act. Task 1.1.1 set the ADR precedent for this
+  step. The style guide supplies an ADR template and no "note" template.
+  Roadmap 2.2.3 says a later note "chooses one of the three exits from 1.1.2",
+  and a chooser needs a stable, dated, citable target rather than a living
+  design section. Date/Author: 2026-08-22, planning agent.
 
 - Decision D2: the ADR records a single decision, not three.
   Rationale: no established decision-record format — MADR 4.0, Nygard, or the
@@ -601,7 +606,7 @@ Findings from the planning pass, carried forward:
   Rationale: the decision being ratified is D2's — that these are the three
   exits, with these triggers and these gates. That decision is made now and is
   not contingent on future evidence. The *outcome* of the gates is separately
-  tracked under the ADR's "Outstanding decisions" section. ADR 0002 is
+  tracked under the ADR's "Outstanding decisions" section. ADR 002 is
   `Accepted` on the same reading. The first draft left this ambiguous between
   its Stage C and its Tolerances; it is resolved here. Date/Author: 2026-08-22,
   planning agent, after design review.
@@ -645,7 +650,7 @@ Findings from the planning pass, carried forward:
   Date/Author: 2026-08-23, implementing agent.
 
 - Decision D13: make `check_dominance` the policy owner for register
-  reachability, derive quoted design clauses from ADR 0003's evidence section,
+  reachability, derive quoted design clauses from ADR 003's evidence section,
   and reuse one handwritten-case predicate for live and invalid rows.
   Rationale: reachability is parsed syntax that needs an independent policy
   assertion; a hard-coded citation list cannot detect a fabricated ADR quote;
@@ -718,9 +723,8 @@ improve the test's boundary: the parent names scenarios, while its private
 child owns pure parser and policy work.
 
 EP-M4 closed three review-identified gaps without changing the document model:
-reachability is now a dominance policy, citations come from ADR 0003 itself,
-and the handwritten case predicate tests both the real and dominance-invalid
-rows.
+reachability is now a dominance policy, citations come from ADR 003 itself, and
+the handwritten case predicate tests both the real and dominance-invalid rows.
 
 EP-M5 completed the row-level gate contract and converted the remaining broad
 negative controls into exact error contracts, so a passing test now proves both
@@ -783,8 +787,8 @@ failure the suite exists to prevent.
   document with delimiters but no rows must yield `MissingDelimiters`. (c) A
   register missing one row must check combinations before the final row-count
   check and fail with
-  `docs/adrs/adr-0003-record-the-v0-1-exit-register.md:
-  missing Held/Held. Repair: add that verdict combination.`
+  `docs/adr-003-v0-1-exit-register.md: missing Held/Held. Repair: add that
+  verdict combination.`
   (d) A register with a duplicated combination must fail as ambiguous. (e) A
   register with a spurious fifth combination must retain the four-row
   cardinality error. (f) A register with an unrecognized verdict token must
@@ -837,7 +841,7 @@ failure the suite exists to prevent.
   Additionally the row identifiers `B1` and `B2` must appear as *table rows* of
   §11.1, and the glossary entry anchor for "v0.1 exit" must exist in
   `docs/context.md`.
-- **Method**: extract quoted clauses from ADR 0003's evidence section, then
+- **Method**: extract quoted clauses from ADR 003's evidence section, then
   compare each with `include_str!`-embedded source text after whitespace is
   folded to single spaces.
 - **Rationale**: this obligation earns the test its keep. Checking that a
@@ -852,7 +856,7 @@ failure the suite exists to prevent.
 - **Non-vacuity**: four controls. (a) A design fixture with the §13.7 sentence
   reworded must fail with the exact missing-clause message
   `docs/design.md no longer contains "the macro crate does not ship in v0.1".
-  Repair: update ADR 0003 and its contract together.`
+  Repair: update ADR 003 and its contract together.`
   (b) A design fixture with the **B1 row deleted** but the token `B1` still
   present in surrounding prose must fail — without this control a naive
   `contains("B1")` passes and the check is worthless. (c) A design fixture with
@@ -912,11 +916,11 @@ Every assertion failure must name the two files involved and the one-line
 repair, for example:
 
 ```plaintext
-docs/adrs/adr-0003-record-the-v0-1-exit-register.md cites design.md §13.7 clause
+docs/adr-003-v0-1-exit-register.md cites design.md §13.7 clause
   "the project should ship nothing and keep the pattern local"
 but no such text appears in docs/design.md (whitespace-normalized).
 Repair: restore the clause in docs/design.md §13.7, or update the quotation in
-docs/adrs/adr-0003-record-the-v0-1-exit-register.md and re-check the exit it justifies.
+docs/adr-003-v0-1-exit-register.md and re-check the exit it justifies.
 ```
 
 This is an acceptance criterion, not a nicety. A guard whose failure a stranger
@@ -940,9 +944,9 @@ cannot repair gets deleted rather than fixed.
 
 Read `docs/design.md` §§11.1, 11.2, 13.6, 13.7, and 14; `docs/roadmap.md` step
 1.1 and tasks 2.2.3, 3.1.3, 4.2.1, and 4.3.1;
-`docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` in full,
-for house ADR voice; and `tests/dev_fast_contract.rs`, for house test voice.
-Confirm no file matching `docs/adrs/adr-0003-*` exists.
+`docs/adr-002-transition-boundary-scope.md` in full, for house ADR voice; and
+`tests/dev_fast_contract.rs`, for house test voice. Confirm no file matching
+`docs/adr-003-*` exists.
 
 Validation: run the whitespace-folded clause check from Step 1 below. Do
 **not** attempt a line-for-line comparison of the quotations in this plan
@@ -953,13 +957,12 @@ so a literal match fails spuriously. Compare the folded clauses only.
 
 Add the two dev-dependencies. Write the complete contract test — parser, error
 enum, all predicates, all negative controls. Write
-`docs/adrs/adr-0003-record-the-v0-1-exit-register.md` from the artefact
-embedded below, but initially **without** the register block, so the
-live-document tests fail with `MissingDelimiters`. Apply the glossary entry and
-the authorized R1 source amendments before this red run, so unrelated anchors
-stay green. Capture that transcript; this is the red step. Then insert the
-register block and re-run; this is the green step. Commit only the green state,
-per Constraint 4.
+`docs/adr-003-v0-1-exit-register.md` from the artefact embedded below, but
+initially **without** the register block, so the live-document tests fail with
+`MissingDelimiters`. Apply the glossary entry and the authorized R1 source
+amendments before this red run, so unrelated anchors stay green. Capture that
+transcript; this is the red step. Then insert the register block and re-run;
+this is the green step. Commit only the green state, per Constraint 4.
 
 Validation (go/no-go): `make fmt` then `make check-fmt`, `make lint`,
 `make test`, `make markdownlint`, `make audit`. All green. The red transcript
@@ -981,9 +984,9 @@ Run the full gate set, push, open a draft pull request.
 
 ### EP-M1 — the exit register exists and is guarded
 
-- **Outcome**: `docs/adrs/adr-0003-record-the-v0-1-exit-register.md` is present
-  and accepted; `tests/v0_1_exit_register_contract.rs` passes and would fail if
-  the register or its citations drifted.
+- **Outcome**: `docs/adr-003-v0-1-exit-register.md` is present and accepted;
+  `tests/v0_1_exit_register_contract.rs` passes and would fail if the register
+  or its citations drifted.
 - **Requirements discharged**: `ROADMAP-1.1.2` substantively; `TDD-11.1-B1`,
   `TDD-11.1-B2`, `TDD-11.2`, `TDD-13.6`, `TDD-13.7` each cited by at least one
   exit and checked by `INV-ANCHORS`.
@@ -999,12 +1002,12 @@ Run the full gate set, push, open a draft pull request.
 
 ### EP-M2 — documentation coherent
 
-- **Outcome**: every remaining companion document references ADR 0003 and
+- **Outcome**: every remaining companion document references ADR 003 and
   roadmap 1.1.2 is ticked. `docs/context.md` and the R1 amendments are already
   present from EP-M1 under D9.
 - **Acceptance evidence**: `make markdownlint`, `make nixie`, `make test`
   green; every new cross-reference resolves.
-- **Conformance check**: no scope prose contradicts ADR 0002; the design
+- **Conformance check**: no scope prose contradicts ADR 002; the design
   amendment is the only substantive upstream change and matches R1 exactly.
 - **Recovery**: each edit is a small, independently revertible insertion.
 - **Compatibility decision**: none required.
@@ -1028,7 +1031,7 @@ export LOG=/tmp/statelet-$(git branch --show-current)
 
 ```bash
 git branch --show-current
-ls docs/adrs/adr-*.md
+ls docs/adr-*.md
 fold_check() {
   tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF "$2" \
     && echo "OK   $2" || echo "MISS $2"
@@ -1087,7 +1090,7 @@ negative-control test passes:
 
 ```plaintext
 ---- totality_holds stdout ----
-docs/adrs/adr-0003-record-the-v0-1-exit-register.md: no exit register found between
+docs/adr-003-v0-1-exit-register.md: no exit register found between
   <!-- exit-register:begin --> and <!-- exit-register:end -->.
 Repair: add the register block to the "Exit register" section.
 ```
@@ -1118,20 +1121,15 @@ Apply every edit in the sync map. Each insertion is grep-guarded so re-running
 is safe.
 
 ```bash
-grep -rl "adr-0003-record-the-v0-1-exit-register.md" \
-  docs/contents.md \
-  docs/context.md \
-  docs/design.md \
-  docs/roadmap.md \
-  docs/terms-of-reference.md \
-  docs/users-guide.md | sort
+grep -rln "adr-003-v0-1-exit-register" docs/ | sort
 ```
 
-Expected, exactly these six files: `docs/contents.md`, `docs/context.md`,
-`docs/design.md`, `docs/roadmap.md`, `docs/terms-of-reference.md`, and
-`docs/users-guide.md`. `docs/repository-layout.md` gains a test-file entry, not
-an ADR link, and `README.md` is left alone — it links document *categories*,
-not individual ADRs, and starting a new convention there is out of scope.
+Expected, exactly these seven files: `docs/contents.md`, `docs/context.md`,
+`docs/design.md`, `docs/developers-guide.md`, `docs/roadmap.md`,
+`docs/terms-of-reference.md`, `docs/users-guide.md`.
+`docs/repository-layout.md` gains a test-file entry, not an ADR link, and
+`README.md` is left alone — it links document *categories*, not individual
+ADRs, and starting a new convention there is out of scope.
 
 ### Step 7 — full gates and delivery
 
@@ -1152,20 +1150,19 @@ request.
 
 ## Documentation sync map
 
-1. `docs/contents.md`, "Decision records": add a bullet after the ADR 0002
+1. `docs/contents.md`, "Decision records": add a bullet after the ADR 002
    entry, in the same two-line link-plus-description form.
-2. `docs/design.md`: add a bullet naming
-   `docs/adrs/adr-0003-record-the-v0-1-exit-register.md` to the
-   companion-documents list, matching the form of the ADR 0002 entry already
-   there. At the end of §11.1 add one sentence pointing to ADR 0003 as the
-   record that maps B1 and B2 to the v0.1 exits. **Under resolution R1**, amend
-   §13.7's opening condition from "in both validation examples" to "in either
-   validation example", and add a sentence noting that §§13.6 and 13.7 are
-   registered in ADR 0003 as exits E2 and E1. Update "Last substantive
+2. `docs/design.md`: add a bullet naming `docs/adr-003-v0-1-exit-register.md`
+   to the companion-documents list, matching the form of the ADR 002 entry
+   already there. At the end of §11.1 add one sentence pointing to ADR 003 as
+   the record that maps B1 and B2 to the v0.1 exits. **Under resolution R1**,
+   amend §13.7's opening condition from "in both validation examples" to "in
+   either validation example", and add a sentence noting that §§13.6 and 13.7
+   are registered in ADR 003 as exits E2 and E1. Update "Last substantive
    revision".
 3. `docs/terms-of-reference.md`: add the companion-documents entry; apply the
-   matching R1 amendment to §7.1's final bullet; add ADR 0003 as a linked
-   bullet in §10.2. Update "Last substantive revision".
+   matching R1 amendment to §7.1's final bullet; add ADR 003 as a linked bullet
+   in §10.2. Update "Last substantive revision".
 4. `docs/context.md`: add a glossary entry defining **v0.1 exit** — "one of the
    three mutually exclusive release scopes Statelet may deliver as v0.1, each
    selected by a stated verdict on bets B1 and B2 at a named roadmap gate; not
@@ -1173,11 +1170,11 @@ request.
    `INV-ANCHORS` treats it as a citation target so it cannot be silently
    dropped.
 5. `docs/roadmap.md`: tick task 1.1.2 to `- [x]` and append the ADR link to its
-   "Success:" bullet, matching how task 1.1.1 links ADR 0002. Do **not**
+   "Success:" bullet, matching how task 1.1.1 links ADR 002. Do **not**
    renumber anything; `INV-GATES` depends on 2.2.3, 3.1.3, and 4.3.1 keeping
    their numbers.
 6. `docs/users-guide.md`, "Current status": two sentences telling a prospective
-   consumer that the project may deliberately ship nothing, linking ADR 0003. A
+   consumer that the project may deliberately ship nothing, linking ADR 003. A
    consumer deciding whether to wait for this crate needs that.
 7. `docs/developers-guide.md`: a short subsection recording that the exit
    register is machine-checked, that `tests/v0_1_exit_register_contract.rs` is
@@ -1197,11 +1194,11 @@ Accepted when all of the following hold.
   reported passing by name, alongside every negative-control case.
 - The red transcript from Step 4 is recorded in `Artefacts and notes`, showing
   `MissingDelimiters` for the live-document tests while the controls passed.
-- `docs/adrs/adr-0003-record-the-v0-1-exit-register.md` shows:
-  `Status: Accepted` with a date; three exits E1, E2, E3; a four-row decision
-  table over the final bet verdicts, with `(Falsified, Held)` marked
-  unreachable and explained; a gate table binding G1, G2, G3 to roadmap tasks
-  2.2.3, 3.1.3, 4.3.1; and quotations from `design.md` §§11.1, 11.2, 13.6, 13.7.
+- `docs/adr-003-v0-1-exit-register.md` shows: `Status: Accepted` with a date;
+  three exits E1, E2, E3; a four-row decision table over the final bet
+  verdicts, with `(Falsified, Held)` marked unreachable and explained; a gate
+  table binding G1, G2, G3 to roadmap tasks 2.2.3, 3.1.3, 4.3.1; and quotations
+  from `design.md` §§11.1, 11.2, 13.6, 13.7.
 - **The reviewer's thirty-second check**: delete any one row from the register
   and re-run `make test`; it must fail naming the removed combination. Change a
   `Falsified` cell in a `B1` row to point at E3; it must fail
@@ -1291,7 +1288,7 @@ not one function.
 
 ```rust
 //! Contract tests for the v0.1 exit register in
-//! `docs/adrs/adr-0003-record-the-v0-1-exit-register.md`.
+//! `docs/adr-003-v0-1-exit-register.md`.
 //!
 //! # What this guards
 //!

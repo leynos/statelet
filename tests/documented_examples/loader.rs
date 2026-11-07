@@ -1,20 +1,19 @@
-//! Shared parser and runner for executable examples in published Markdown.
+//! Shared parser for executable examples in published Markdown.
 
 use std::{
     collections::{HashMap, HashSet},
     iter::{Enumerate, Peekable},
-    process::Command,
     str::Lines,
 };
 
 /// A user-facing Markdown document whose fenced examples are part of the test
 /// contract.
 #[derive(Clone, Copy)]
-pub(super) struct Document {
+pub(super) struct Document<'source> {
     /// The repository-relative path used in diagnostics.
     pub(super) path: &'static str,
     /// The Markdown as compiled from the published source file.
-    pub(super) markdown: &'static str,
+    pub(super) markdown: &'source str,
 }
 
 /// A shell example parsed from its published Markdown document.
@@ -25,13 +24,13 @@ pub(super) struct Example {
     /// Repository-relative source document path.
     pub(super) document_path: &'static str,
     /// Exact language identifier on the opening fence.
-    language: String,
+    pub(super) language: String,
     /// Shell script inside the published fence.
-    command: String,
+    pub(super) command: String,
 }
 
 /// Documents whose examples are executable during the test suite.
-pub(super) const USER_FACING_DOCUMENTS: [Document; 2] = [
+pub(super) const USER_FACING_DOCUMENTS: [Document<'static>; 2] = [
     Document {
         path: "README.md",
         markdown: include_str!("../../README.md"),
@@ -48,7 +47,7 @@ pub(super) const USER_FACING_DOCUMENTS: [Document; 2] = [
 ///
 /// Returns an error when a behavioural scenario names a document outside the
 /// explicit user-facing inventory.
-pub(super) fn find_document(path: &str) -> Result<Document, String> {
+pub(super) fn find_document(path: &str) -> Result<Document<'static>, String> {
     USER_FACING_DOCUMENTS
         .iter()
         .find(|document| document.path == path)
@@ -63,7 +62,7 @@ pub(super) fn find_document(path: &str) -> Result<Document, String> {
 /// Returns an error for an unmarked or unterminated fence, an invalid or
 /// missing identifier, duplicate identifiers within the document, or a
 /// language other than `bash`.
-pub(super) fn load_document(document: Document) -> Result<Vec<Example>, String> {
+pub(super) fn load_document(document: Document<'_>) -> Result<Vec<Example>, String> {
     parse_examples(document)
 }
 
@@ -73,21 +72,21 @@ pub(super) fn load_document(document: Document) -> Result<Vec<Example>, String> 
 ///
 /// Returns a path- and line-specific diagnostic when a fence or marker is
 /// malformed, or when an identifier appears more than once in the document.
-fn parse_examples(document: Document) -> Result<Vec<Example>, String> {
+fn parse_examples(document: Document<'_>) -> Result<Vec<Example>, String> {
     ExampleParser::new(document).parse()
 }
 
 /// Holds the state needed to parse one user-facing Markdown source.
-struct ExampleParser {
-    document: Document,
-    lines: Peekable<Enumerate<Lines<'static>>>,
+struct ExampleParser<'source> {
+    document: Document<'source>,
+    lines: Peekable<Enumerate<Lines<'source>>>,
     examples: Vec<Example>,
     identifiers: HashSet<String>,
     pending_identifier: Option<String>,
 }
 
-impl ExampleParser {
-    fn new(document: Document) -> Self {
+impl<'source> ExampleParser<'source> {
+    fn new(document: Document<'source>) -> Self {
         Self {
             document,
             lines: document.markdown.lines().enumerate().peekable(),
@@ -233,45 +232,6 @@ pub(super) fn ensure_unique_identifiers(examples: &[Example]) -> Result<(), Stri
             return Err(format!(
                 "tested-example identifier `{}` appears in both {} and {}",
                 example.id, previous_path, example.document_path
-            ));
-        }
-    }
-    Ok(())
-}
-
-/// Executes each published Bash example from the checkout root.
-///
-/// # Errors
-///
-/// Returns an error if the shell cannot be started or if an example exits
-/// unsuccessfully. The diagnostic includes captured standard output and error.
-pub(super) fn run_examples(examples: &[Example]) -> Result<(), String> {
-    for example in examples {
-        if example.language != "bash" {
-            return Err(format!(
-                "{} example `{}` uses unsupported language `{}`",
-                example.document_path, example.id, example.language
-            ));
-        }
-        let output = Command::new("bash")
-            .args(["-e", "-u", "-o", "pipefail", "-c"])
-            .arg(&example.command)
-            .current_dir(env!("CARGO_MANIFEST_DIR"))
-            .output()
-            .map_err(|error| {
-                format!(
-                    "could not run {} example `{}`: {error}",
-                    example.document_path, example.id
-                )
-            })?;
-        if !output.status.success() {
-            return Err(format!(
-                "{} example `{}` exited with {}\nstdout:\n{}\nstderr:\n{}",
-                example.document_path,
-                example.id,
-                output.status,
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr)
             ));
         }
     }

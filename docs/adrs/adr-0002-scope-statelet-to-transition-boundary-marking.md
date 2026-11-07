@@ -366,6 +366,16 @@ consolidating their shared position into one citable record. It complements
 production-shaped code without Statelet taking ownership of `wireframe`'s
 Stateright model.
 
+## Addendum
+
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-002-transition-boundary-scope.md` to
+`docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` and
+zero-padded the serial in its heading. The decision is unchanged; only the
+record's name and its cross-references follow the new pattern.
+
 [^1]: crates.io keyword API for `state-machine`, reporting 154 crates on
     2026-06-13: `https://crates.io/api/v1/keywords/state-machine`
 [^2]: docs.rs documentation for `statig`, accessed 2026-06-13:

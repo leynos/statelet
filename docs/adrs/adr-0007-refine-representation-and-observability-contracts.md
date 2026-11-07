@@ -249,6 +249,16 @@ boundaries. The shared layer remains naming and observability; invalid-state
 prevention, lifecycle correctness, domain outcomes, and proof obligations
 remain with the project that owns the machine.
 
+## Addendum
+
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-007-representation-and-observability-contracts.md` to
+`docs/adrs/adr-0007-refine-representation-and-observability-contracts.md` and
+zero-padded the serial in its heading. The decision is unchanged; only the
+record's name and its cross-references follow the new pattern.
+
 [^1]: Leon Heuer, Falk Woldmann Lu, and Jan Haase, "Functional State Machines in
     Rust: Typestate and Newtype Patterns (Experience Report)", FUNARCH '26,
     2026, <https://doi.org/10.1145/3830438.3830958>.

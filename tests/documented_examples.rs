@@ -4,6 +4,8 @@
 mod behaviour;
 #[path = "documented_examples/loader.rs"]
 mod loader;
+#[path = "documented_examples/runner.rs"]
+mod runner;
 
 /// Loads the published user-facing documents, checks global identifier
 /// uniqueness, and executes every Bash example from the repository root.
@@ -15,5 +17,5 @@ fn published_user_facing_examples_are_executable() -> Result<(), String> {
     }
 
     loader::ensure_unique_identifiers(&examples)?;
-    loader::run_examples(&examples)
+    runner::run_examples(&examples)
 }
