@@ -10,7 +10,7 @@ Companion documents:
 - `docs/terms-of-reference.md`
 - `docs/design.md`
 - `docs/roadmap.md`
-- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md`
 - `docs/phase-2-validation-note-template.md`
 
 Last substantive revision: 2026-09-19
@@ -76,7 +76,8 @@ representativeness.
 
 One of the three mutually exclusive release scopes Statelet may deliver as
 v0.1, selected by a stated verdict on bets B1 and B2 at a named roadmap gate.
-It is not a test exit criterion. See [ADR 003](adr-003-v0-1-exit-register.md).
+It is not a test exit criterion. See
+[ADR 0003](adrs/adr-0003-record-the-v0-1-exit-register.md).
 
 ### Transition outcome
 
@@ -108,14 +109,15 @@ documentation. A state name is not required to be the same as `Debug` output.
 Stability across releases is an intended property, not a settled one: whether a
 name suffices or a separate stable identifier is needed is the question roadmap
 task 3.2.1 decides from the validation notes defined in
-[ADR 004](adr-004-state-name-consumption-evidence.md).
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md).
 
 ### State identifier
 
 A stable value distinguishing one state from another for machine consumption;
 distinct from a state name, which is a human-readable label. Whether `statelet`
 needs one, or whether a state name suffices for v0.1, is the question roadmap
-task 3.2.1 decides. See [ADR 004](adr-004-state-name-consumption-evidence.md).
+task 3.2.1 decides. See
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md).
 
 ### Transition instrumentation
 
@@ -208,4 +210,5 @@ The record a validation task produces, instantiated from
 `docs/phase-2-validation-note-template.md` and committed to
 `docs/validation-notes/`, carrying the marker comment its contract test keys
 on. A validation note is evidence, not a verdict; the rule that reads one note,
-or several, is [ADR 004](adr-004-state-name-consumption-evidence.md).
+or several, is
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md).

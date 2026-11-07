@@ -6,6 +6,14 @@ and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
 Status: COMPLETE
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> historical paths and record identifiers in this completed plan are
+> preserved as written; the [documentation contents](../contents.md) index
+> lists every record under its current name.
+
 ## Purpose / big picture
 
 Statelet's roadmap opens with a foundational phase whose first deliverable is

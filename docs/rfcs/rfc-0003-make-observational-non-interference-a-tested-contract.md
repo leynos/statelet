@@ -6,7 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 7, 10, and 11;
-  [RFC 0001](0001-transition-capture-semantics.md); [RFC 0002](0002-explicit-observation-context.md).
+  [RFC 0001][rfc-0001]; [RFC 0002][rfc-0002].
 
 ## Summary
 
@@ -175,3 +175,8 @@ check beyond deterministic and property tests once the helper exists?
 
 Make non-interference a conditional, executable contract with explicit limits.
 Do not substitute an unrestricted purity claim for evidence.
+
+[rfc-0001]:
+  rfc-0001-separate-transition-capture-return-and-outcome-semantics.md
+[rfc-0002]:
+  rfc-0002-expose-explicit-observation-context-and-extension-points.md

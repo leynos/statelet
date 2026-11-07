@@ -10,10 +10,10 @@ Companion documents:
 - `docs/terms-of-reference.md`
 - `docs/context.md`
 - `docs/roadmap.md`
-- `docs/adr-001-proving-ground-candidates.md`
-- `docs/adr-002-transition-boundary-scope.md`
-- `docs/adr-003-v0-1-exit-register.md`
-- `docs/adr-004-state-name-consumption-evidence.md`
+- `docs/adrs/adr-0001-select-proving-ground-candidates.md`
+- `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`
+- `docs/adrs/adr-0003-record-the-v0-1-exit-register.md`
+- `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md`
 - `docs/phase-2-validation-note-template.md`
 
 Last substantive revision: 2026-09-19
@@ -25,8 +25,9 @@ It exists for codebases that already want explicit Rust enums, structs,
 methods, and `match` expressions, but want shared discipline around transition
 contracts, fallibility, and observability.
 
-[ADR 002](adr-002-transition-boundary-scope.md) is the canonical authority for
-the boundary between Statelet's transition marking and framework ownership.
+[ADR 0002](adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md) is
+the canonical authority for the boundary between Statelet's transition marking
+and framework ownership.
 
 The design deliberately avoids the full state-machine framework shape. It does
 not own dispatch, storage, events, lifecycle hooks, async orchestration,
@@ -214,8 +215,9 @@ before publishing `StateName`. The default remains `&'static str` until a real
 example consumes something stronger.
 
 What that scrutiny records, and the rule that reads several such records into
-an outcome, are fixed by [ADR 004](adr-004-state-name-consumption-evidence.md)
-and the [validation note template](phase-2-validation-note-template.md) it is
+an outcome, are fixed by
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md) and the
+[validation note template](phase-2-validation-note-template.md) it is
 instantiated from. This section states the requirement; those documents state
 the instrument, and neither pronounces the verdict. That remains roadmap task
 3.2.1's decision, taken against evidence this section cannot foresee.
@@ -426,10 +428,10 @@ evidence-producing gate before the affected API is published.
 
 <!-- markdownlint-enable MD013 -->
 
-ADR 003 records how final B1 and B2 verdicts map to the three v0.1 exit scopes
+ADR 0003 records how final B1 and B2 verdicts map to the three v0.1 exit scopes
 and their roadmap gates.
 
-The following sequence diagram shows how `make test` runs the ADR 003 contract
+The following sequence diagram shows how `make test` runs the ADR 0003 contract
 and traces each document and policy check before reporting a result.
 
 ```mermaid
@@ -445,7 +447,7 @@ sequenceDiagram
 
     Dev->>Make: make test
     Make->>Test: run v0_1_exit_register_contract
-    Test->>ADR: include_str!("docs/adr-003-v0-1-exit-register.md")
+    Test->>ADR: include_str!("docs/adrs/adr-0003-record-the-v0-1-exit-register.md")
     Test->>Design: include_str!("docs/design.md")
     Test->>Roadmap: include_str!("docs/roadmap.md")
     Test->>Terms: include_str!("docs/terms-of-reference.md")
@@ -581,7 +583,7 @@ later workspace policy, as roadmap 1.2.1 requires; the single-crate placeholder
 does not resolve it. Macro admission remains an evidence-led decision, never a
 command-line bypass or an inferred roadmap checkbox. The later admission change
 must also reconcile task 4.1.1's reference to 3.1.3 choosing “ship macro” with
-ADR 003's distinction between B1 at 3.1.3 and the B2 publication decision at
+ADR 0003's distinction between B1 at 3.1.3 and the B2 publication decision at
 4.3.1.
 
 The dependency-topology gate must fail on forbidden workspace cycles or
@@ -672,21 +674,21 @@ The spike fails if the most honest result is a local helper function or
 `tracing::instrument` annotation without `statelet`.
 
 The second non-toy validation candidate is tracked by
-`docs/adr-001-proving-ground-candidates.md`. That ADR selects `wireframe`'s
-connection actor and active-output transitions as the primary proving ground
-after `mdtablefix`, with `weaver` as the next targeted pocket if another
-candidate is needed. Before publishing the macro, the project must either
-validate `statelet` in the accepted second example or record why the candidate
-changed.
+`docs/adrs/adr-0001-select-proving-ground-candidates.md`. That ADR selects
+`wireframe`'s connection actor and active-output transitions as the primary
+proving ground after `mdtablefix`, with `weaver` as the next targeted pocket if
+another candidate is needed. Before publishing the macro, the project must
+either validate `statelet` in the accepted second example or record why the
+candidate changed.
 
 Both phases of this spike, and the second-example validation that follows,
 record their observations as validation notes. The blank form is
 `docs/phase-2-validation-note-template.md`, the filled notes live in
 `docs/validation-notes/`, and the rule that reads them is
-[ADR 004](adr-004-state-name-consumption-evidence.md). Recording is a step of
-the validation task, not a separate exercise: a spike whose observation is not
-written down in this shape has produced no evidence the return-shape decision
-can read.
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md).
+Recording is a step of the validation task, not a separate exercise: a spike
+whose observation is not written down in this shape has produced no evidence
+the return-shape decision can read.
 
 ## 13. Failure modes
 
@@ -730,7 +732,7 @@ validation outcome, not a failed implementation.
 If `StateName`, documented transition fields, and local helpers add little over
 plain `#[tracing::instrument(fields(state = %self.mode))]` in either validation
 example, the project should ship nothing and keep the pattern local. That is
-the B1 failure case and must be treated as a valid discovery outcome. ADR 003
+the B1 failure case and must be treated as a valid discovery outcome. ADR 0003
 registers this outcome as exit E1 and §13.6 as exit E2.
 
 ### 13.8 Attribute syntax looks alien
@@ -760,7 +762,7 @@ The implementation should resolve these before publishing v0.1:
   is proven safe and unsurprising.
 - Whether `StateName` returns `&'static str`, or a value carrying a stronger
   stability guarantee, as decided by roadmap task 3.2.1 from the validation
-  notes defined in ADR 004.
+  notes defined in ADR 0004.
 - Project licence, MSRV, and crates.io metadata.
 
 ## Appendix A. Comparison with `stateless`
@@ -850,21 +852,26 @@ points to `stateless` or another graph-first crate.
 
 The Trasic investigation motivates five Request for Comments (RFC) documents
 and a naming ADR. All remain proposed; listing them here does not change the
-field contract in section 9, the accepted ADR 004 evidence instrument, or the
-publication exits in ADR 003.
+field contract in section 9, the accepted ADR 0004 evidence instrument, or the
+publication exits in ADR 0003.
 
-- [RFC 0001](rfcs/0001-transition-capture-semantics.md) separates entry and
-  post-state capture, return classification, and domain outcomes.
-- [RFC 0002](rfcs/0002-explicit-observation-context.md) proposes exact
-  invocation targets, short capture borrows, and caller-owned context.
-- [RFC 0003](rfcs/0003-observational-non-interference.md) makes observational
-  non-interference testable and states callback and ownership limits.
-- [RFC 0004](rfcs/0004-structured-test-consumption.md) proposes structured
-  test consumption, late-field handling, and explicit evidence completeness.
-- [RFC 0005](rfcs/0005-incomplete-completion-and-cancellation.md) distinguishes
-  return, observed unwinding, and incomplete capture without owning cleanup.
-- [ADR 006](adr-006-stable-transition-and-outcome-names.md) proposes extending
-  naming-consumption evidence to transition and domain-outcome names.
+- [RFC 0001](rfcs/rfc-0001-separate-transition-capture-return-and-outcome-semantics.md)
+  separates entry and post-state capture, return classification, and domain
+  outcomes.
+- [RFC 0002](rfcs/rfc-0002-expose-explicit-observation-context-and-extension-points.md)
+  proposes exact invocation targets, short capture borrows, and caller-owned
+  context.
+- [RFC 0003](rfcs/rfc-0003-make-observational-non-interference-a-tested-contract.md)
+  makes observational non-interference testable and states callback and
+  ownership limits.
+- [RFC 0004](rfcs/rfc-0004-add-a-structured-observation-consumption-path-for-tests.md)
+  proposes structured test consumption, late-field handling, and explicit
+  evidence completeness.
+- [RFC 0005](rfcs/rfc-0005-describe-incomplete-completion-without-owning-lifecycle.md)
+  distinguishes return, observed unwinding, and incomplete capture without
+  owning cleanup.
+- [ADR 0006](adrs/adr-0006-stable-transition-and-outcome-names.md) proposes
+  extending naming-consumption evidence to transition and domain-outcome names.
 
 Roadmap Phase 6 records review, handwritten validation, adoption, and
 conditional macro/async work. It preserves `mdtablefix` and `wireframe` as the

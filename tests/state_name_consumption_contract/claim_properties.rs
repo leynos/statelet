@@ -24,7 +24,7 @@ use proptest::prelude::*;
 
 use super::claims::{is_citation_shaped, names_a_consumer, names_a_property};
 
-/// The consumer vocabulary ADR 004's search set lists, as a generator draws it.
+/// The consumer vocabulary ADR 0004's search set lists, as a generator draws it.
 ///
 /// The same words the predicates scan for, which is what makes a generated
 /// citation path *loaded*: a path spelled from this list would satisfy the

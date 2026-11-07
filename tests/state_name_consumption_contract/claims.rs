@@ -64,7 +64,7 @@ fn is_commit_revision(revision: &str) -> bool {
 /// The three components of a citation-shaped word, or `None` if it is not one.
 ///
 /// A citation ends the clause that cites it, so it arrives wearing the
-/// punctuation that closed that clause. ADR 004's own worked example writes
+/// punctuation that closed that clause. ADR 0004's own worked example writes
 /// "`mdtablefix@abc1234:src/process.rs`, `BufferMode` returns `Text`, `Table`",
 /// and an engineer copying that shape writes a comma; a cell ending its citation
 /// with a full stop writes a full stop. Trailing sentence punctuation is
@@ -108,7 +108,7 @@ const RETURN_VERBS: [&str; 4] = ["returns", "returned", "yields", "yielded"];
 
 /// Whether a cell lists the strings the annotated state returns.
 ///
-/// The `state-display-name` obligation is the one ADR 004 states in prose
+/// The `state-display-name` obligation is the one ADR 0004 states in prose
 /// rather than as a shape: "`Enumerated` only when the note lists the *actual*
 /// strings each annotated state can return". The predicate reads for the
 /// strings, not for a word such as "lists", because the word is the defect it
@@ -155,7 +155,7 @@ const RETURN_VERBS: [&str; 4] = ["returns", "returned", "yields", "yielded"];
 ///
 /// What this cannot check is completeness — a three-variant state whose cell
 /// listed two of its names would pass — because the predicate has no view of the
-/// enum. That is the division ADR 004 draws: the cell's *shape* is checked here,
+/// enum. That is the division ADR 0004 draws: the cell's *shape* is checked here,
 /// and "the actual strings" are matched against the annotated code by the
 /// reviewer at task 3.2.1, who is the only reader holding both.
 pub(crate) fn lists_returned_strings(evidence: &str) -> bool {
@@ -245,7 +245,7 @@ fn narrative_text(evidence: &str) -> String {
         .to_lowercase()
 }
 
-/// Whether a cell names one of the consumers ADR 004's search set lists, or
+/// Whether a cell names one of the consumers ADR 0004's search set lists, or
 /// states that none exist.
 ///
 /// The negative phrases cover both halves of the obligation's two phrasings:
@@ -274,7 +274,7 @@ pub(crate) fn names_a_consumer(evidence: &str) -> bool {
     .any(|consumer| lowered.contains(consumer))
 }
 
-/// The four properties ADR 004 admits, as its fourth obligation names them,
+/// The four properties ADR 0004 admits, as its fourth obligation names them,
 /// plus the adjective one of them is normally written with.
 ///
 /// The array holds five tokens for four properties: "stable" is the
@@ -312,7 +312,7 @@ const REQUIREMENT_NEGATIONS: [&str; 4] = ["no", "none", "never", "without"];
 /// governs one of these — "they do not need ordering" — and in no other case.
 const REQUIREMENT_VERBS: [&str; 4] = ["need", "needs", "require", "requires"];
 
-/// Whether a cell names one of the four properties ADR 004 admits.
+/// Whether a cell names one of the four properties ADR 0004 admits.
 ///
 /// A keyword counts only when the cell *asserts* it, and the two ways a cell can
 /// mention a property without asserting it have to be told apart, because they
@@ -326,7 +326,7 @@ const REQUIREMENT_VERBS: [&str; 4] = ["need", "needs", "require", "requires"];
 /// more informative note; the rule would be demanding a euphemism rather than
 /// agreement.
 ///
-/// The second is the record of a *lacking* property, which ADR 004 expects as its
+/// The second is the record of a *lacking* property, which ADR 0004 expects as its
 /// central evidence: "the subscriber requires labels that are not stable across
 /// releases" is exactly the observation that overturns the default, and reading
 /// its "not stable" as a denial would reject the one note the instrument exists

@@ -6,7 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 9 and 11;
-  [RFC 0001](0001-transition-capture-semantics.md); [RFC 0002](0002-explicit-observation-context.md).
+  [RFC 0001][rfc-0001]; [RFC 0002][rfc-0002].
 
 ## Summary
 
@@ -92,7 +92,7 @@ produce an explicit unusable-evidence result, not disappear silently.
 ### Keep evidence formats separate
 
 Store observation-integration notes under a distinct marker and schema from ADR
-004's `StateName` consumption notes. Do not change that accepted register or
+0004's `StateName` consumption notes. Do not change that accepted register or
 feed new note fields into its parser implicitly. Naming evidence relevant to
 `StateName` still uses its existing instrument.
 
@@ -108,7 +108,7 @@ schema and marker must be reviewed before executable tests consume them.
 - **T3:** Distinguish completion, span closure, filtering, and truncation.
 - **T4:** Make absence assertions conditional on declared capture completeness.
 - **T5:** Keep application identifiers separate from subscriber IDs and keep
-  integration evidence separate from ADR 004's accepted note schema.
+  integration evidence separate from ADR 0004's accepted note schema.
 
 ## Validation and falsification
 
@@ -158,3 +158,8 @@ Treat evidence completeness as a requirement, not a reporting embellishment.
     consulted 2026-10-07.
 [^3]: [Tracing Subscriber identity contract](https://docs.rs/tracing/latest/tracing/subscriber/trait.Subscriber.html#tymethod.new_span),
     consulted 2026-10-07.
+
+[rfc-0001]:
+  rfc-0001-separate-transition-capture-return-and-outcome-semantics.md
+[rfc-0002]:
+  rfc-0002-expose-explicit-observation-context-and-extension-points.md

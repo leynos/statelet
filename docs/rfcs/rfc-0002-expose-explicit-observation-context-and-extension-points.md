@@ -6,7 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), section 9;
-  [RFC 0001](0001-transition-capture-semantics.md).
+  [RFC 0001](rfc-0001-separate-transition-capture-return-and-outcome-semantics.md).
 
 ## Summary
 

@@ -7,6 +7,14 @@ be kept up to date as work proceeds.
 
 Status: COMPLETE
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> historical paths and record identifiers in this completed plan are
+> preserved as written; the [documentation contents](../contents.md) index
+> lists every record under its current name.
+
 ## Purpose / big picture
 
 Statelet is a pre-1.0 Rust crate that does not yet know whether it should

@@ -136,14 +136,14 @@ The generated `Makefile` exposes these public targets:
   `typos.toml` for drift.
 - `make nixie` validates Mermaid diagrams.
 
-The ADR 003 and ADR 004 integration contracts keep their parsing helpers
+The ADR 0003 and ADR 0004 integration contracts keep their parsing helpers
 private to their respective test roots. A borrowed source-document bundle may
 group the specific documents a quoted-clause check reads together; its callers
-remain the owning contract and its negative controls. ADR 004's fixed-width
+remain the owning contract and its negative controls. ADR 0004's fixed-width
 table mapper belongs to its register parser and is reused only by that parser's
 typed register-row constructors. Neither helper is a general Markdown parser:
 malformed text remains a deliberate test input, and each contract continues to
-report its own exact repair message. ADR 004's note policy shares one
+report its own exact repair message. ADR 0004's note policy shares one
 status-row lookup across contribution and cell validation so those checks
 cannot silently disagree about which register row a cell selects. Blocking
 still scans every matching row: an inadmissible duplicate must block a note.
@@ -163,10 +163,38 @@ runner is absent:
 cargo binstall --no-confirm --strategies crate-meta-data,quick-install cargo-nextest
 ```
 
+## Tested user-facing examples
+
+The executable fences in `README.md` and `docs/users-guide.md` are the current
+user-facing examples. Each fence has a unique `<!-- tested-example: ... -->`
+marker. The integration test at `tests/documented_examples.rs` loads the
+published Markdown through `tests/documented_examples/loader.rs`, rejects
+unmarked or malformed fences and duplicate identifiers, and runs each Bash
+example from the repository root. The behaviour-driven scenarios in
+`tests/features/documented_examples.feature` use the same loader. Register any
+additional user-facing Markdown document in the loader's inventory. Its
+`Document` descriptor binds compiled Markdown to its repository path for
+diagnostics. Keep the parser and its state private to this test harness; both
+test entry points use the shared loader, and it is not a general Markdown API.
+
+`tests/documented_examples/runner.rs` owns execution. Its private
+`CommandRunner` port exists so the runner's failure handling is exercised with
+a simulated shell, while `BashRunner` stays the only implementation that spawns
+`bash` from the checkout root. Keep that port scoped to this harness: it is not
+a repository-wide command-execution abstraction, and a second caller should
+reuse the harness rather than widen it. The parser's regression and property
+cases live in `loader_cases.rs`; the runner's execution cases live in
+`runner_cases.rs`.
+
+Keep example commands deterministic and safe to run repeatedly. Do not put
+`make all` or another test-running command in a fenced example: `make test`
+executes these examples, so that would recurse. For comprehensive validation,
+refer readers to `make all` in prose.
+
 ## V0.1 exit-register contract
 
 `tests/v0_1_exit_register_contract.rs` owns the integration-test scenarios for
-ADR 003. Its private `tests/v0_1_exit_register_contract/support.rs` child owns
+ADR 0003. Its private `tests/v0_1_exit_register_contract/support.rs` child owns
 only the pure Markdown parser and policy predicates used by those scenarios.
 Its private `tests/v0_1_exit_register_contract/support/split_case.rs` child,
 called only by `support.rs`, owns the R1 companion-document split-case policy.
@@ -180,8 +208,8 @@ regression boundary rather than extending these children.
 
 The register is machine-checked against the cited design passages, glossary,
 and roadmap gates. Changes to design sections 11.1, 11.2, 13.6, or 13.7, or to
-roadmap tasks 2.2.3, 3.1.3, or 4.3.1, must update ADR 003 and its test together
-when `make test` reports deliberate document drift.
+roadmap tasks 2.2.3, 3.1.3, or 4.3.1, must update ADR 0003 and its test
+together when `make test` reports deliberate document drift.
 
 The contract test keeps `googletest` and `pretty_assertions` test-only. It uses
 `googletest` for matcher-based assertions that identify the affected verdict
@@ -191,26 +219,26 @@ rows differ. Neither dependency belongs in the runtime crate.
 ## StateName consumption contract
 
 `tests/state_name_consumption_contract.rs` owns the integration-test scenarios
-for [ADR 004](adr-004-state-name-consumption-evidence.md). Its child modules
-each own one invariant class rather than a share of the text: `parse.rs` holds
-the one delimited-table syntax function, `types.rs` the register vocabulary and
-the `ParseError` messages, `claims.rs` what an evidence cell's words say — a
-citation, a consumer, a required property, or the strings an `Enumerated` cell
-must list — and `policy.rs` what those answers oblige, naming admissibility,
-the note verdict, and the four obligations each cell carries. The checks that
-bind two documents to each other are one module per binding: `clauses.rs` for
-quoted-clause resolution, `registers.rs` for the cross-register checks and the
-status register's own consistency, and `roadmap.rs` for the roadmap's
-task-record grammar, the gate table, and the success criterion. `notes.rs`
-holds the scan of `docs/validation-notes/` and the scratch roots its controls
-scan instead, and `fixtures.rs` the row constants the negative controls build
-documents from. `claim_properties.rs` is not a scenario module: it holds the
-property suite over the evidence predicates — generated properties rather than
-named scenarios. That module is why `proptest` appears under
-`[dev-dependencies]` in `Cargo.toml`: the evidence predicates read arbitrary
-text, so their invariants are properties rather than cases, and `proptest` is
-the only dependency the contract adds. It is test-only and reaches no shipped
-binary.
+for [ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md). Its
+child modules each own one invariant class rather than a share of the text:
+`parse.rs` holds the one delimited-table syntax function, `types.rs` the
+register vocabulary and the `ParseError` messages, `claims.rs` what an evidence
+cell's words say — a citation, a consumer, a required property, or the strings
+an `Enumerated` cell must list — and `policy.rs` what those answers oblige,
+naming admissibility, the note verdict, and the four obligations each cell
+carries. The checks that bind two documents to each other are one module per
+binding: `clauses.rs` for quoted-clause resolution, `registers.rs` for the
+cross-register checks and the status register's own consistency, and
+`roadmap.rs` for the roadmap's task-record grammar, the gate table, and the
+success criterion. `notes.rs` holds the scan of `docs/validation-notes/` and
+the scratch roots its controls scan instead, and `fixtures.rs` the row
+constants the negative controls build documents from. `claim_properties.rs` is
+not a scenario module: it holds the property suite over the evidence predicates
+— generated properties rather than named scenarios. That module is why
+`proptest` appears under `[dev-dependencies]` in `Cargo.toml`: the evidence
+predicates read arbitrary text, so their invariants are properties rather than
+cases, and `proptest` is the only dependency the contract adds. It is test-only
+and reaches no shipped binary.
 
 The scenarios sit in seven modules, one per invariant class, so that the
 400-line cap binds each part of the contract alike:
@@ -220,7 +248,7 @@ The scenarios sit in seven modules, one per invariant class, so that the
   nouns the register maps?
 - `claims_scenarios.rs` — what an evidence cell may say: accepted citation
   shapes, and the words a cell may and may not use for a consumer or a property.
-- `clause_scenarios.rs` — whether the clauses ADR 004 quotes still resolve, and
+- `clause_scenarios.rs` — whether the clauses ADR 0004 quotes still resolve, and
   against which task's record a roadmap quotation is bound; the subject is the
   quotation, where `anchor_scenarios.rs` resolves a gate fragment.
 - `criterion_scenarios.rs` — which copy of a sentence is the success criterion
@@ -233,18 +261,18 @@ The scenarios sit in seven modules, one per invariant class, so that the
   unreadable or absent directory means, and the end-to-end path over a
   populated scratch tree.
 
-The contract reads ADR 004, the template, `docs/design.md`, `docs/roadmap.md`,
-and `docs/adr-002-transition-boundary-scope.md` with `include_str!` and parses
-them. Four edits break it by design, and each reports where to repair the
-document rather than what Rust expects:
+The contract reads ADR 0004, the template, `docs/design.md`, `docs/roadmap.md`,
+and `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md` with
+`include_str!` and parses them. Four edits break it by design, and each reports
+where to repair the document rather than what Rust expects:
 
 - Changing a register's field names, statuses, admissibility flags, or
   contributions. Both the blocking set and the verdict are read from the
-  register, so ADR 004 and `fixtures.rs` must change together.
+  register, so ADR 0004 and `fixtures.rs` must change together.
 - Rewording roadmap task 1.1.3's success criterion, or removing a criterion
   noun a register field maps. The task text is the link between the roadmap and
   the instrument.
-- Rewording the three clauses ADR 004 quotes in its evidence section, or moving
+- Rewording the three clauses ADR 0004 quotes in its evidence section, or moving
   one to a different section of its source.
 - Changing the template's fields or their order. The template is the schema
   every future note instantiates.
@@ -253,7 +281,7 @@ The gate table binds gates to roadmap tasks by title *fragment*, not by task
 number, so completing a bound task or renumbering the roadmap does not break
 the build. That is deliberate: the project's `mapsplice` tooling renumbers
 tasks, and a numeric binding would freeze four numbers — the four gates S1 to
-S4 ADR 004's table names. ADR 003's exit register reaches the opposite
+S4 ADR 0004's table names. ADR 0003's exit register reaches the opposite
 conclusion for its own three because there the roadmap numbering is
 load-bearing rather than incidental, and the two are not in conflict: each
 binds by the identifier its decision actually consumes.
@@ -622,7 +650,7 @@ holds the local wiring: the pin is a full commit, the target runs the pinned
 checker with `check --repository .` under Python 3.13, `.github/cv005.toml`
 names this repository, `make all` includes the target, and CI runs it. The
 decision is recorded in
-[ADR 005](adr-005-adopt-the-shared-cv005-contract-library.md).
+[ADR 0005](adrs/adr-0005-adopt-the-shared-cv-005-contract-library.md).
 
 ## Workflow pins and Dependabot
 

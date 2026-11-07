@@ -824,20 +824,20 @@ had run.
 
 A local `cs` 1.0.33 review of the Rust contracts at `9a6a0c5` found seven files
 below 10.00, across eight category records. Four records were string-heavy
-arguments in `claims.rs`, `clauses.rs`, `parse.rs`, and the ADR 003
+arguments in `claims.rs`, `clauses.rs`, `parse.rs`, and the ADR 0003
 `support.rs`; two were duplicated parsing and register-scenario logic; two were
 overall complexity in note policy and aggregation registers. The raw baseline
 and first remediation reviews are in `/tmp/codescene-statelet-9a6a0c5-sweep/`
 and `/tmp/codescene-statelet-remediation-9a6a0c5/`.
 
-The test-only repair groups the three ADR 003 source documents that a
-quoted-clause check reads together, maps ADR 004 fixed-width register rows
+The test-only repair groups the three ADR 0003 source documents that a
+quoted-clause check reads together, maps ADR 0004 fixed-width register rows
 through one private constructor path, parameterizes the two independently named
 register counterexamples, and lets the existing multiset-state type own its
 register columns and expected outcome. Note policy now checks one cell at a
 time while retaining the order of its diagnostics. An added regression proves
 that an inadmissible duplicate status blocks a note even if an admissible copy
-appears first. The relocated ADR 003 negative controls are separate named
+appears first. The relocated ADR 0003 negative controls are separate named
 tests; they retain their mutations and exact messages.
 
 The focused first pass cleared both duplication records and the aggregation
@@ -848,7 +848,7 @@ advisories remain: `claims.rs`, `clauses.rs`, `parse.rs`, and `support.rs` each
 score 9.68 for string-heavy arguments. These functions deliberately accept
 arbitrary, possibly malformed document text as their test boundary; wrapping
 every source fragment in a distinct type would not add a domain invariant. The
-source-document bundle records the meaningful ADR 003 roles; ADR 004's
+source-document bundle records the meaningful ADR 0003 roles; ADR 0004's
 `Register` and typed rows supply its register and row roles after parsing. No
 CodeScene threshold, exclusion, or lint suppression changed.
 

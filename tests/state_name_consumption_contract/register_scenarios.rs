@@ -1,6 +1,6 @@
 //! Register-parsing and register-consistency scenarios.
 //!
-//! These read ADR 004's status and aggregation registers directly: the fixture
+//! These read ADR 0004's status and aggregation registers directly: the fixture
 //! pin, the delimiter and section defects, and the predicates that keep the
 //! register a decision procedure. Everything here is a claim about the
 //! *document*, not about a note read through it.
@@ -50,9 +50,9 @@ fn status_register_rejects_missing_delimiters() {
     assert_eq!(
         status_rows_or_error(STATUS_HEADING),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: no status register found between \
-             <!-- status-register:begin --> and <!-- status-register:end -->. Repair: add the \
-             status register to the ## Status register section."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: no status register \
+             found between <!-- status-register:begin --> and <!-- status-register:end -->. \
+             Repair: add the status register to the ## Status register section."
                 .to_owned()
         )
     );
@@ -79,8 +79,8 @@ fn status_register_rejects_an_unknown_status() -> Result<(), String> {
     assert_eq!(
         check_vocabulary(&rows),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: status Enumerated contributes \
-             \"plenty\". Repair: use nothing, Sufficient or Insufficient."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: status Enumerated \
+             contributes \"plenty\". Repair: use nothing, Sufficient or Insufficient."
                 .to_owned()
         )
     );
@@ -163,9 +163,9 @@ fn aggregation_register_rejects_an_outcome_that_does_not_match() -> Result<(), S
     assert_eq!(
         check_aggregation_total(&rows),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: none contributing notes with any \
-             insufficient n/a yields \"Ratify the current return type\" where it must Block. \
-             Repair: a register that does not Block there is not a decision procedure."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: none contributing \
+             notes with any insufficient n/a yields \"Ratify the current return type\" where it \
+             must Block. Repair: a register that does not Block there is not a decision procedure."
                 .to_owned()
         )
     );
@@ -181,9 +181,9 @@ fn aggregation_register_rejects_a_missing_state() -> Result<(), String> {
     assert_eq!(
         check_aggregation_total(&rows),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
-             cover none contributing notes with any insufficient n/a. Repair: add that row; it \
-             must Block."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: the aggregation \
+             register does not cover none contributing notes with any insufficient n/a. Repair: \
+             add that row; it must Block."
                 .to_owned()
         )
     );
@@ -196,7 +196,7 @@ fn aggregation_register_rejects_a_missing_state() -> Result<(), String> {
     "| metrics-cardinality | Bounded | yes | nothing |",
     "| metrics-cardinality | Bounded | yes | Insufficient |",
     concat!(
-        "docs/adr-004-state-name-consumption-evidence.md: field metrics-cardinality status ",
+        "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: field metrics-cardinality status ",
         "Bounded selects Insufficient. Repair: only a recorded required property may overturn ",
         "the &'static str default."
     )
@@ -205,7 +205,7 @@ fn aggregation_register_rejects_a_missing_state() -> Result<(), String> {
     "| identifier-need | None | yes | Sufficient |",
     "| identifier-need | None | yes | Insufficient |",
     concat!(
-        "docs/adr-004-state-name-consumption-evidence.md: field identifier-need status None ",
+        "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: field identifier-need status None ",
         "selects Insufficient. Repair: only the Property required status may overturn the ",
         "&'static str default."
     )
@@ -257,9 +257,9 @@ fn register_confines_insufficient_to_the_required_status() -> Result<(), String>
     assert_eq!(
         check_exclusions(&rows),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: field identifier-need status \
-             Overridden selects Insufficient. Repair: only the Property required status may \
-             overturn the &'static str default."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: field \
+             identifier-need status Overridden selects Insufficient. Repair: only the Property \
+             required status may overturn the &'static str default."
                 .to_owned()
         )
     );
@@ -275,9 +275,9 @@ fn aggregation_vocabulary_rejects_a_register_without_a_neutral_status() -> Resul
     assert_eq!(
         check_aggregation_vocabulary(&rows, &[]),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: no admissible status contributes \
-             nothing, so every admissible note would overturn the default. Repair: the verdict \
-             would no longer be a verdict."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: no admissible \
+             status contributes nothing, so every admissible note would overturn the default. \
+             Repair: the verdict would no longer be a verdict."
                 .to_owned()
         )
     );
@@ -295,8 +295,9 @@ fn register_can_select_insufficient() -> Result<(), String> {
     assert_eq!(
         check_exclusions(&rows),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: no row selects Insufficient. \
-             Repair: a register that cannot overturn the default is not a decision procedure."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: no row selects \
+             Insufficient. Repair: a register that cannot overturn the default is not a decision \
+             procedure."
                 .to_owned()
         )
     );

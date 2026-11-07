@@ -11,6 +11,14 @@ implementation within its constraints and tolerances on 2026-10-25. A
 pinned-tool experiment then exposed a row-selection gap before implementation;
 the user approved the correction on 2026-10-28.
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> historical paths and record identifiers in this completed plan are
+> preserved as written; the [documentation contents](../contents.md) index
+> lists every record under its current name.
+
 ## Purpose and big picture
 
 Provide one contributor command, `make feature-matrix`, that checks the current

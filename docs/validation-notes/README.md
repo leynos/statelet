@@ -62,7 +62,7 @@ revisions. Other contracts ignore these notes.
   `<!-- state-name-note -->` marker. Those are the notes for roadmap task
   1.1.3's instrument and its `StateName` return-shape decision at task 3.2.1.
   The rule those notes are read under is
-  `docs/adr-004-state-name-consumption-evidence.md`.
+  `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md`.
 - `tests/macro_cost_note_contract.rs` reads notes carrying the
   `<!-- macro-cost-note -->` marker. It checks required values, revision-bound
   citations, the synthetic annotation count and the selected roadmap evidence.

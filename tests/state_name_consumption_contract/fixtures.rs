@@ -2,7 +2,7 @@
 //!
 //! These are deliberately *not* the live documents. The register fixtures are
 //! the pin: `INV-REGISTERS` compares the live registers to them row for row, so
-//! an editor of ADR 004 updates the fixture beside it or the suite fails. They
+//! an editor of ADR 0004 updates the fixture beside it or the suite fails. They
 //! are written with single-space cell padding, so a negative control's text
 //! replacement never has to restate a column width.
 //!
@@ -53,7 +53,7 @@ pub(crate) fn status_register() -> String {
 /// A complete, valid aggregation register with its delimiters and its section.
 ///
 /// The outcome column is headed `Outcome if publication proceeds` rather than
-/// `Outcome`. Every row's outcome is conditional on ADR 003's gate G2 not having
+/// `Outcome`. Every row's outcome is conditional on ADR 0003's gate G2 not having
 /// selected exit E1, and the header says so; the header is recognized
 /// structurally, so it is reproduced here exactly.
 pub(crate) fn aggregation_register() -> String {
@@ -111,7 +111,7 @@ pub(crate) fn status_register_without(field: &str) -> String {
 
 /// The `state-display-name` row of the note fixture.
 ///
-/// The strings are `BufferMode`'s, taken from the annotated example in ADR 002
+/// The strings are `BufferMode`'s, taken from the annotated example in ADR 0002
 /// §"`mdtablefix`: conventions baseline" — the enum that example derives for the
 /// `ProcessBuffer` this note is about, and the one whose `state_name()` its
 /// `handle_table_line` transition consumes. They are not invented here: the
@@ -178,7 +178,7 @@ pub(crate) fn note_with_rows(rows: &[&str]) -> String {
 
 /// A complete, valid `StateName` note declaring the marker.
 ///
-/// Every cell carries a citation, as ADR 004 requires of every evidence cell
+/// Every cell carries a citation, as ADR 0004 requires of every evidence cell
 /// including one recording `None`. The `identifier-need` cell carries its
 /// citation beside the search set rather than instead of it, and the
 /// `tracing-use` cell likewise beside the label it observed.

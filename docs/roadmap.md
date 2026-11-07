@@ -41,21 +41,21 @@ outcome informs every later implementation slice. See terms-of-reference.md
   - See terms-of-reference.md §§1-6 and design.md §§1-3.
   - Success: one accepted ADR states that Statelet marks boundaries and does
     not own dispatch, events, storage, transition tables, or graph safety:
-    [ADR 002](adr-002-transition-boundary-scope.md).
+    [ADR 0002](adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md).
 - [x] 1.1.2. Record the three possible v0.1 exits.
   - Requires 1.1.1.
   - Capture the "ship nothing", "ship conventions only", and "ship macro"
     outcomes.
   - Success: the exit note maps B1 and B2 to concrete evidence from
     design.md §11.1 and failure modes in design.md §§13.6-13.7:
-    [ADR 003](adr-003-v0-1-exit-register.md).
+    [ADR 0003](adrs/adr-0003-record-the-v0-1-exit-register.md).
 - [x] 1.1.3. Define the `StateName` consumption question for Phase 2.
   - Requires 1.1.2.
   - Decide what `mdtablefix` must consume to prove whether `&'static str` is
     enough or whether a stable numeric identifier is needed.
   - Success: the Phase 2 validation note template has fields for state display
     name, optional identifier need, metrics cardinality, and tracing use:
-    [ADR 004](adr-004-state-name-consumption-evidence.md).
+    [ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md).
   - See design.md §6.1 and context.md "State name".
 
 ### 1.2. Establish the validation spine
@@ -175,7 +175,7 @@ ships conventions only, or proceeds to a macro spike. See design.md §§11.1,
 Idea: if the same transition-boundary conventions help `wireframe` connection
 actors, Statelet is less likely to be an `mdtablefix`-specific style extraction.
 
-This phase validates the wedge outside Markdown table repair. ADR 001 selects
+This phase validates the wedge outside Markdown table repair. ADR 0001 selects
 `wireframe` as the candidate because connection lifecycle and active-output
 transitions create explicit stateful boundaries without requiring Statelet to
 own routing, protocol modelling, or graph validation.
@@ -186,7 +186,7 @@ This step answers whether Statelet's runtime conventions transfer to a
 connection-actor lifecycle outside Markdown table repair. Its outcome informs
 B1 and B6 before any macro work. See terms-of-reference.md §§7-9, design.md
 §§11.1, 12, and
-[adr-001-proving-ground-candidates.md](adr-001-proving-ground-candidates.md).
+[ADR 0001: Select proving ground candidates](adrs/adr-0001-select-proving-ground-candidates.md).
 
 - [ ] 3.1.1. Identify `wireframe` transition-boundary candidates.
   - Requires phase 2 unless 2.2.3 chose "ship nothing".
@@ -195,7 +195,7 @@ B1 and B6 before any macro work. See terms-of-reference.md §§7-9, design.md
   - Success: the candidate list explains why `stateless` or another
     graph-first crate is not the more honest model.
   - See design.md Appendix A and
-    [adr-001-proving-ground-candidates.md](adr-001-proving-ground-candidates.md).
+    [ADR 0001: Select proving ground candidates](adrs/adr-0001-select-proving-ground-candidates.md).
 - [ ] 3.1.2. Apply the conventions-only baseline to selected `wireframe`
   boundaries.
   - Requires 3.1.1.
@@ -406,9 +406,9 @@ real diagnostics while preserving ordinary Rust ownership and control flow.
 This idea is false if plain tracing remains clearer, the observations interfere
 with domain execution, or the extra vocabulary has no demonstrated consumer.
 
-The five RFCs and ADR 006 remain proposed until their review tasks record a
-verdict. Start with handwritten, example-local experiments. Preserve ADR 003's
-ship-nothing, conventions-only, and macro exits; preserve ADR 004's accepted
+The five RFCs and ADR 0006 remain proposed until their review tasks record a
+verdict. Start with handwritten, example-local experiments. Preserve ADR 0003's
+ship-nothing, conventions-only, and macro exits; preserve ADR 0004's accepted
 naming evidence. Trasic is supplementary to `mdtablefix` and `wireframe`, not a
 replacement for the non-parser proving ground. No new crate or public observer
 trait follows automatically from this phase.
@@ -421,38 +421,48 @@ accept a narrowed experiment, defer a feature, or reject a proposal entirely.
 
 - [ ] 6.1.1. Review entry, return, and post-state capture semantics.
   - Requires 1.1.2.
-  - Review [RFC 0001](rfcs/0001-transition-capture-semantics.md), requirements
+  - Review
+    [RFC 0001](rfcs/rfc-0001-separate-transition-capture-return-and-outcome-semantics.md),
+    requirements
     C1 to C5, including aliases, borrowing projections, and missing post-state.
   - Success: record accepted, revised, and rejected field semantics; no result
     variant or equal state label implies rollback or absence of effects.
 - [ ] 6.1.2. Review explicit targets and caller context.
   - Requires 6.1.1.
-  - Review [RFC 0002](rfcs/0002-explicit-observation-context.md), requirements
+  - Review
+    [RFC 0002](rfcs/rfc-0002-expose-explicit-observation-context-and-extension-points.md),
+    requirements
     H1 to H5, against caller-owned spans and context-parent alternatives.
   - Success: specify field declaration, disabled-target behaviour, and borrow
     boundaries without committing to a new public handle.
 - [ ] 6.1.3. Review the non-interference guarantee and its limits.
   - Requires 6.1.2.
-  - Review [RFC 0003](rfcs/0003-observational-non-interference.md), requirements
+  - Review
+    [RFC 0003](rfcs/rfc-0003-make-observational-non-interference-a-tested-contract.md),
+    requirements
     N1 to N5, and the projection/subscriber preconditions.
   - Success: define capture counts, supported ownership shapes, and semantic
     comparisons for enabled, filtered, and feature-disabled configurations.
 - [ ] 6.1.4. Review structured consumption and evidence completeness.
   - Requires 6.1.2.
-  - Review [RFC 0004](rfcs/0004-structured-test-consumption.md), requirements
+  - Review
+    [RFC 0004](rfcs/rfc-0004-add-a-structured-observation-consumption-path-for-tests.md),
+    requirements
     T1 to T5; define a separate integration-note marker and schema.
   - Success: specify late-field handling, truncation, filtering scope, and
-    absence assertions without modifying ADR 004's register or note parser.
+    absence assertions without modifying ADR 0004's register or note parser.
 - [ ] 6.1.5. Review synchronous completion and deferred cancellation semantics.
   - Requires 6.1.1 and 6.1.3.
-  - Review [RFC 0005](rfcs/0005-incomplete-completion-and-cancellation.md),
+  - Review
+    [RFC 0005](rfcs/rfc-0005-describe-incomplete-completion-without-owning-lifecycle.md),
     requirements L1 to L5, including explicit-finish-only as an outcome.
   - Success: distinguish return, observed unwinding, incomplete capture, and
     missing delivery; preserve the separate async gate at 5.2.1.
 - [ ] 6.1.6. Review transition and outcome naming evidence.
   - Requires 1.1.3.
-  - Review [ADR 006](adr-006-stable-transition-and-outcome-names.md) without
-    reopening ADR 004's accepted aggregation rule implicitly.
+  - Review [ADR 0006](adrs/adr-0006-stable-transition-and-outcome-names.md)
+    without
+    reopening ADR 0004's accepted aggregation rule implicitly.
   - Success: record the disposition and a consumer-led stability question;
     neither numeric identifiers nor a global registry become default policy.
 
@@ -512,7 +522,7 @@ retain the existing conventions baseline.
   - Compare plain tracing, local conventions, and proposed observations in
     `mdtablefix` and `wireframe`; keep source revisions and capture settings.
   - Success: notes cite diagnostic value, limitations, and keep/revise/reject
-    evidence; any `StateName` finding also uses ADR 004's existing instrument.
+    evidence; any `StateName` finding also uses ADR 0004's existing instrument.
 - [ ] 6.3.4. Decide which observation extensions earn adoption.
   - Requires 6.3.3, or an explicit rejection/deferment of the experiment.
   - Decide field meanings, completion policy, context pattern, and naming

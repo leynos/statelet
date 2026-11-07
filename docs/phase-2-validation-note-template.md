@@ -10,13 +10,14 @@ The form is not documentation of a decision. It is the schema of one, and it is
 machine-checked: `tests/state_name_consumption_contract.rs` reads this file,
 extracts the table below, and compares its fields, in order, against the status
 register in
-[ADR 004](adr-004-state-name-consumption-evidence.md#status-register). Editing
-this file therefore changes the schema for every future note, and the contract
-will fail if the change and the register disagree.
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md#status-register).
+Editing this file therefore changes the schema for every future note, and the
+contract will fail if the change and the register disagree.
 
-Read ADR 004 before filling the form. It defines what makes a note *admissible*
-and the rule that reads one note, or several, into an outcome. What follows is
-only the mechanical instruction for making the cells legible to that rule.
+Read ADR 0004 before filling the form. It defines what makes a note
+*admissible* and the rule that reads one note, or several, into an outcome.
+What follows is only the mechanical instruction for making the cells legible to
+that rule.
 
 The form:
 
@@ -65,7 +66,7 @@ of `None`: the absence of a need is itself an observation, and it has a place.
   everywhere, and here it is not sufficient: the contract checks the cell's
   shape — the citation, then the state named in backticks, then `returns` or
   `yields`, then each returned string in backticks, which is the form the
-  illustration in ADR 004 writes — and the reviewer at task 3.2.1 judges
+  illustration in ADR 0004 writes — and the reviewer at task 3.2.1 judges
   whether those strings are the ones the annotated code returns, which is the
   one part of this obligation no contract reading documents can decide. Write
   the verb: quoted spans alone cannot tell a list of labels from a cell that
@@ -91,7 +92,7 @@ of `None`: the absence of a need is itself an observation, and it has a place.
 
 Some statuses are inadmissible. A note selecting one is still committed, still
 useful, and still checked: it resolves to `Not resolved`, names the blocking
-field and status, and contributes nothing to the verdict. ADR 004's
+field and status, and contributes nothing to the verdict. ADR 0004's
 *Admissibility* section states where the repair for such a note belongs.
 
 A note is never deleted to make a suite pass. A blocked note that names its

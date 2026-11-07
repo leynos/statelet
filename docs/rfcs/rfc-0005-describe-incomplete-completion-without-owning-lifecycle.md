@@ -6,7 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 11.3 and 14;
-  [RFC 0001](0001-transition-capture-semantics.md); [RFC 0003](0003-observational-non-interference.md).
+  [RFC 0001][rfc-0001]; [RFC 0003][rfc-0003].
 
 ## Summary
 
@@ -159,3 +159,8 @@ application ownership of cleanup, effects, and cancellation reasons.
     consulted 2026-10-07.
 [^3]: [Tracing Instrument interface](https://docs.rs/tracing/latest/tracing/trait.Instrument.html),
     consulted 2026-10-07.
+
+[rfc-0001]:
+  rfc-0001-separate-transition-capture-return-and-outcome-semantics.md
+[rfc-0003]:
+  rfc-0003-make-observational-non-interference-a-tested-contract.md
