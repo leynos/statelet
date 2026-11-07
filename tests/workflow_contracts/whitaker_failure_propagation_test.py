@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _executable(path: Path, body: str) -> None:
+    """Write ``body`` to ``path`` and mark it executable."""
     path.write_text(body, encoding="utf-8")
     path.chmod(0o755)
 

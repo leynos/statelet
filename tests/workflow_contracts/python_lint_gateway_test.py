@@ -244,10 +244,12 @@ def test_composite_gates_retain_sequential_python_leaves() -> None:
 
 
 def _named_step(steps: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    """Return the first step called ``name``; ``StopIteration`` if there is none."""
     return next(step for step in steps if step.get("name") == name)
 
 
 def _ci_python_gateway_steps(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return the steps that run ``make lint`` or ``make typecheck``."""
     return [
         step
         for step in steps
@@ -261,6 +263,7 @@ def _assert_python_gates_are_required(
     setup: dict[str, Any],
     gateways: list[dict[str, Any]],
 ) -> None:
+    """Assert both gateways are unconditional, hard-failing and after the setup step."""
     assert {step["run"].strip() for step in gateways} == {
         "make lint", "make typecheck"
     }, (

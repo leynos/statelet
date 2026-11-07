@@ -228,16 +228,19 @@ def test_suite_provisioning_contract_rejects_workflow_mutations(
 def _act_validation_steps(
     workflows: dict[str, reading.Workflow],
 ) -> list[reading.Step]:
+    """Return the steps of the act-validation workflow's job."""
     return workflows["act-validation.yml"]["jobs"]["act-validation"]["steps"]
 
 
 def _publisher_coverage_steps(
     workflows: dict[str, reading.Workflow],
 ) -> list[reading.Step]:
+    """Return the steps of the coverage-main workflow's upload job."""
     return workflows["coverage-main.yml"]["jobs"]["coverage-upload"]["steps"]
 
 
 def _mutate_act_installer(steps: list[reading.Step], mutation: str) -> None:
+    """Break the act installer step in ``steps`` in the way ``mutation`` names."""
     installer = next(step for step in steps if step.get("run") == INSTALL_COMMAND)
     match mutation:
         case "remove_act_installer":
@@ -255,6 +258,7 @@ def _mutate_act_installer(steps: list[reading.Step], mutation: str) -> None:
 def _mutate_suite_workflow(
     workflows: dict[str, reading.Workflow], mutation: str
 ) -> None:
+    """Apply the named mutation to the workflow it targets, in place."""
     match mutation:
         case (
             "remove_act_installer"
