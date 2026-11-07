@@ -24,7 +24,7 @@ def _is_lint(step: dict[object, object]) -> bool:
 
 
 def _key(value: object) -> str:
-    """Normalise a workflow key: trimmed, lower-case, underscores as hyphens."""
+    """Normalize a workflow key: trimmed, lower-case, underscores as hyphens."""
     return str(value).strip().lower().replace("_", "-")
 
 
