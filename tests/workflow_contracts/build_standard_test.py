@@ -161,14 +161,13 @@ def _compile_commands(lines: list[str], target: str) -> list[str]:
 def _assigned_rustflags(
     commands: list[str], inherited: str | None
 ) -> list[list[str] | None]:
+    """Return the expanded RUSTFLAGS each command line assigns, or ``None`` if none."""
     assigned: list[list[str] | None] = []
     for line in commands:
         match = RUSTFLAGS_RE.search(line)
         # Any other spelling still replaces the configuration's sources, so a
         # form this reader cannot parse fails rather than passing.
-        assert match or "RUSTFLAGS=" not in line, (
-            f"unreadable RUSTFLAGS assignment in {line!r}"
-        )
+        assert match or "RUSTFLAGS=" not in line, f"unreadable RUSTFLAGS in {line!r}"
         assigned.append(_expanded(match.group(1), inherited) if match else None)
     return assigned
 

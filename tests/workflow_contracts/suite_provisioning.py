@@ -184,6 +184,7 @@ def _route_for_word(
 
 
 def _make_route(words: list[str], index: int) -> tuple[str | None, str | None]:
+    """Classify a Make command and report a target it cannot resolve."""
     target_index = _make_target_index(words, index)
     target = words[target_index] if target_index < len(words) else ""
     if target in MAKE_SUITE_TARGETS:
@@ -209,6 +210,7 @@ def _cargo_route(words: list[str], index: int) -> tuple[str | None, str | None]:
 
 
 def _cargo_command_index(words: list[str], index: int) -> int:
+    """Return the index of the subcommand after Cargo's toolchain and option words."""
     command_index = index + 1
     if command_index < len(words) and words[command_index].startswith("+"):
         command_index += 1
@@ -248,6 +250,7 @@ def _shell_words(command: str) -> list[str]:
 
 
 def _make_target_index(words: list[str], command_index: int) -> int:
+    """Return the index of Make's target after its option and assignment words."""
     target_index = command_index + 1
     while target_index < len(words):
         item = words[target_index]
@@ -261,6 +264,7 @@ def _make_target_index(words: list[str], command_index: int) -> int:
 
 
 def _is_unconditional(step: dict[str, Any]) -> bool:
+    """Report whether ``step`` has no ``if`` and cannot soft-fail."""
     if "if" in step:
         return False
     soft_fail = step.get("continue-on-error", False)
@@ -332,6 +336,7 @@ def _shared_linker_inputs(step: dict[str, Any]) -> bool:
 def _mutation_setup_findings(
     workflow_name: str, job_id: str, job: dict[str, Any]
 ) -> list[str]:
+    """List the ways a suite-calling job's setup fails the provisioning contract."""
     findings = []
     if "if" in job or job.get("continue-on-error") is True:
         findings.append(f"{workflow_name}:{job_id} may skip or soften its suite call")

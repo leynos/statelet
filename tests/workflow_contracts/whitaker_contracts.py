@@ -12,19 +12,19 @@ INSTALL_PIN = "5a99aed78ce68dcebd3052b75c31e6f173162b1e"
 
 
 def _ci() -> dict[object, object]:
+    """Return the parsed ``ci.yml`` workflow, asserting that it exists."""
     workflows = load_workflows()
-    assert "ci.yml" in workflows, (
-        "_ci contract failed"
-    )
+    assert "ci.yml" in workflows, "_ci contract failed"
     return workflows["ci.yml"]
 
 
 def _is_lint(step: dict[object, object]) -> bool:
-    run = step.get("run")
-    return isinstance(run, str) and run.strip() == "make lint"
+    """Report whether ``step`` runs exactly ``make lint``."""
+    return isinstance(run := step.get("run"), str) and run.strip() == "make lint"
 
 
 def _key(value: object) -> str:
+    """Normalize a workflow key: trimmed, lower-case, underscores as hyphens."""
     return str(value).strip().lower().replace("_", "-")
 
 
@@ -396,4 +396,5 @@ def _passes_workspace_scope(words: list[str]) -> bool:
 
 
 def _makefile() -> str:
+    """Return the repository Makefile's text."""
     return (ROOT / "Makefile").read_text(encoding="utf-8")

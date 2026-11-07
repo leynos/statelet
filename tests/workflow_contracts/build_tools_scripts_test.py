@@ -43,6 +43,7 @@ class EnvironmentRequest:
 
 
 def _write_executable(path: Path, content: str) -> None:
+    """Write ``content`` to ``path`` and mark it executable."""
     path.write_text(content, encoding="utf-8")
     path.chmod(0o755)
 
@@ -70,6 +71,7 @@ def _write_fake_rustup(binary_dir: Path) -> None:
 
 
 def _write_fake_linker(binary_dir: Path, options: EnvironmentOptions) -> None:
+    """Write a fake ``mold`` reporting the configured version, if one is configured."""
     if options.mold_version is None:
         return
     _write_executable(
@@ -81,6 +83,7 @@ def _write_fake_linker(binary_dir: Path, options: EnvironmentOptions) -> None:
 
 
 def _write_fake_clang(binary_dir: Path, options: EnvironmentOptions) -> None:
+    """Write a fake ``clang`` that answers ``--version``, only when clang works."""
     if options.clang_works:
         _write_executable(
             binary_dir / "clang",
@@ -122,6 +125,7 @@ def _check_environment(request: EnvironmentRequest) -> dict[str, str]:
 def _run_check(
     tmp_path: Path, options: EnvironmentOptions = EnvironmentOptions()
 ) -> subprocess.CompletedProcess[str]:
+    """Run the build-tools check script in the environment ``options`` describe."""
     return subprocess.run(
         [str(CHECK_SCRIPT)],
         capture_output=True,

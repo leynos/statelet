@@ -237,6 +237,7 @@ def _create_markdown_checkout(tmp_path: Path, defect: str) -> MarkdownCheckout:
 
 
 def _assert_generated_markdown_is_ignored(checkout: Path) -> None:
+    """Assert Git ignores the generated Markdown fixture paths."""
     for relative_path in ("target/generated.md", ".pytest_cache/README.md"):
         ignored = subprocess.run(
             ["git", "-C", str(checkout), "check-ignore", "--quiet", relative_path],
@@ -268,6 +269,7 @@ def _markdown_tools(tmp_path: Path) -> MarkdownTools:
 def _assert_formatter_selects_and_repairs_untracked_markdown(
     fixture: MarkdownCheckout, tools: MarkdownTools
 ) -> None:
+    """Assert check-fmt reports the untracked defect and that fmt then repairs it."""
     before = _run_make("check-fmt", fixture.root, tools)
     assert before.returncode != 0, (
         "check-fmt accepted a formatting defect in a non-ignored untracked Markdown file"
@@ -298,6 +300,11 @@ def _assert_formatter_selects_and_repairs_untracked_markdown(
 def _assert_markdownlint_exclusion_and_failure_propagation(
     fixture: MarkdownCheckout, tools: MarkdownTools, capture: Path
 ) -> None:
+    """Assert markdownlint skips ignored files and fails both targets on its error.
+
+    The linter's non-zero status must surface from ``make markdownlint`` and
+    from ``make fmt``.
+    """
     failure = _run_make("markdownlint", fixture.root, tools, md_lint_status=23)
     assert failure.returncode != 0 and "Error 123" in (
         failure.stdout + failure.stderr
