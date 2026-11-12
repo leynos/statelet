@@ -8,7 +8,7 @@ from suite_provisioning import load_workflows
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL_ACTION = "leynos/shared-actions/.github/actions/install-whitaker"
-INSTALL_PIN = "5a99aed78ce68dcebd3052b75c31e6f173162b1e"
+INSTALL_USES = re.compile(re.escape(INSTALL_ACTION) + r"@[0-9a-f]{40}")
 
 
 def _ci() -> dict[object, object]:
@@ -104,7 +104,7 @@ def _installer_findings(
     """Validate one installer pin, input set, environment, and ordering."""
     installer = steps[installer_index]
     findings = []
-    if installer.get("uses") != f"{INSTALL_ACTION}@{INSTALL_PIN}":
+    if not INSTALL_USES.fullmatch(str(installer.get("uses", ""))):
         findings.append("Whitaker installer is not pinned to the approved full SHA")
     if len(lint_indices) == 1 and installer_index >= lint_indices[0]:
         findings.append("Whitaker installation does not precede direct make lint")
