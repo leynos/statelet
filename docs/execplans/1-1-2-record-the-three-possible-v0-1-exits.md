@@ -13,7 +13,10 @@ Status: COMPLETE
 > `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
 > historical paths and record identifiers in this completed plan are
 > preserved as written; the [documentation contents](../contents.md) index
-> lists every record under its current name.
+> lists every record under its current name. A historical link that no longer
+> resolves carries an adjacent link to the record's current name.
+
+[adr-0002-current]: ../adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md
 
 ## Purpose / big picture
 
@@ -57,11 +60,11 @@ Statelet is a "transition-boundary toolkit" for ordinary Rust state machines. A
 **transition boundary** is a method or function where stateful logic decides to
 stay in its current state, move to another, emit output, ignore input, or fail.
 Statelet's accepted scope, fixed by
-[ADR 002](../adr-002-transition-boundary-scope.md), is to *mark* those
-boundaries and nothing more: it does not own dispatch, events, storage,
-transition tables, or graph safety. The glossary for all such terms is
-`docs/context.md`; treat it as normative and cite it rather than redefining
-terms locally.
+[ADR 002](../adr-002-transition-boundary-scope.md)
+([current record][adr-0002-current]), is to *mark* those boundaries and nothing
+more: it does not own dispatch, events, storage, transition tables, or graph
+safety. The glossary for all such terms is `docs/context.md`; treat it as
+normative and cite it rather than redefining terms locally.
 
 ### At plan inception: current state of the repository
 

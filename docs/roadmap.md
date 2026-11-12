@@ -339,7 +339,7 @@ design.md §§13-14.
     and the other required evidence. A complete form or passing cost result
     alone does not decide the v0.1 exit.
   - See design.md §§11.7 and 13 and
-    [ADR 003](adr-003-v0-1-exit-register.md).
+    [ADR 0003](adrs/adr-0003-record-the-v0-1-exit-register.md).
 - [ ] 4.3.2. Update user and developer documentation for the chosen boundary.
   - Requires 4.3.1.
   - Keep graph-first users pointed at `stateless` and other graph-owning
