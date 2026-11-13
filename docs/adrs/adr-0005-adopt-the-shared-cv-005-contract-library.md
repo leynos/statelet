@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 005: Adopt the shared CV-005 contract library
+# Architectural decision record (ADR) 0005: Adopt the shared CV-005 contract library
 
 ## Status
 
@@ -67,3 +67,13 @@ library does not hold them.
 
 Ownership of the rule moves to the repository that owns the shared actions,
 while this repository keeps the choice of when to adopt a change.
+
+## Addendum
+
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-005-adopt-the-shared-cv005-contract-library.md` to
+`docs/adrs/adr-0005-adopt-the-shared-cv-005-contract-library.md` and
+zero-padded the serial in its heading. The decision is unchanged; only the
+record's name and its cross-references follow the new pattern.

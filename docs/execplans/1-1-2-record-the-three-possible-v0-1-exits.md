@@ -7,6 +7,18 @@ be kept up to date as work proceeds.
 
 Status: COMPLETE
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> record identifiers and textual paths in this completed plan are preserved as
+> written; the [documentation contents](../contents.md) index lists every
+> record under its current name. A historical link that pointed at a path
+> renamed since has been reduced to its plain-text identifier, followed by an
+> adjacent link to the record's current name.
+
+[adr-0002-current]: ../adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md
+
 ## Purpose / big picture
 
 Statelet is a pre-1.0 Rust crate that does not yet know whether it should
@@ -48,12 +60,11 @@ Begin with this section when the repository is unfamiliar.
 Statelet is a "transition-boundary toolkit" for ordinary Rust state machines. A
 **transition boundary** is a method or function where stateful logic decides to
 stay in its current state, move to another, emit output, ignore input, or fail.
-Statelet's accepted scope, fixed by
-[ADR 002](../adr-002-transition-boundary-scope.md), is to *mark* those
-boundaries and nothing more: it does not own dispatch, events, storage,
-transition tables, or graph safety. The glossary for all such terms is
-`docs/context.md`; treat it as normative and cite it rather than redefining
-terms locally.
+Statelet's accepted scope, fixed by ADR 002
+([current record][adr-0002-current]), is to *mark* those boundaries and nothing
+more: it does not own dispatch, events, storage, transition tables, or graph
+safety. The glossary for all such terms is `docs/context.md`; treat it as
+normative and cite it rather than redefining terms locally.
 
 ### At plan inception: current state of the repository
 

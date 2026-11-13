@@ -22,6 +22,7 @@ compact and omits build output such as `target/`.
 │       ├── ci.yml
 
 ├── docs/
+│   ├── adrs/
 │   ├── contents.md
 │   ├── developers-guide.md
 │   ├── repository-layout.md
@@ -36,12 +37,22 @@ compact and omits build output such as `target/`.
 ├── tests/
 │   ├── state_name_consumption_contract.rs
 │   ├── state_name_consumption_contract/
+│   ├── documented_examples.rs
+│   ├── documented_examples/
+│   │   ├── behaviour.rs
+│   │   ├── loader.rs
+│   │   ├── loader_cases.rs
+│   │   ├── runner.rs
+│   │   └── runner_cases.rs
 │   ├── topology_check.rs
 │   ├── topology_check/
 │   ├── topology_command.rs
 │   ├── feature_matrix_command.rs
 │   ├── feature_matrix_command/
 │   ├── workflow_contracts/
+│   ├── features/
+│   │   ├── documented_examples.feature
+│   │   └── topology_check.feature
 │   └── v0_1_exit_register_contract.rs
 ├── scripts/
 │   ├── build-tools-common.sh
@@ -90,12 +101,13 @@ compact and omits build output such as `target/`.
   tooling used to work on the generated project.
 - `docs/repository-layout.md`: Documents the repository tree and path
   responsibilities.
-- `docs/rfcs/`: Holds the numbered Requests for Comments that propose, and
-  record the disposition of, integration contracts not yet accepted into the
-  design. An RFC states requirements, alternatives, validation and
-  falsification controls, and its own status; it is a proposal record, not a
-  binding contract, and only an accepted ADR or the technical design carries
-  authority. Each RFC is named `<number>-<subject>.md` and is indexed from
+- `docs/adrs/`: Holds Architecture Decision Records (ADRs) that capture
+  accepted architectural and design decisions. Each ADR follows the
+  `adrs/adr-nnnn-title-slug.md` pattern relative to `docs/` and is indexed from
+  `docs/contents.md`.
+- `docs/rfcs/`: Holds Requests for Comments (RFCs) that propose changes
+  for technical review before they become binding. Each RFC follows the
+  `rfcs/rfc-nnnn-title-slug.md` pattern relative to `docs/` and is indexed from
   `docs/contents.md`.
 
 - `src/lib.rs`: Contains the library crate root and exported public API
@@ -103,9 +115,9 @@ compact and omits build output such as `target/`.
 
 - `tests/`: Holds integration and behavioural tests that exercise public
   behaviour.
-- `tests/v0_1_exit_register_contract.rs`: Guards ADR 003 against drift in its
+- `tests/v0_1_exit_register_contract.rs`: Guards ADR 0003 against drift in its
   exit register, cited evidence, and roadmap gates.
-- `tests/state_name_consumption_contract.rs`: Guards ADR 004 against drift in
+- `tests/state_name_consumption_contract.rs`: Guards ADR 0004 against drift in
   its status and aggregation registers, its gate table, the validation note
   template, and the source clauses it quotes. It also reads
   `docs/validation-notes/` to check any committed note carrying the
@@ -119,6 +131,17 @@ compact and omits build output such as `target/`.
   in-memory forms, named cases, and the borrowed text-role wrappers. The schema
   stays within this integration test; it is not a general Markdown parser or
   shared runtime utility.
+- `tests/documented_examples.rs` and `tests/documented_examples/`: Load
+  user-facing Markdown directly, validate stable example markers, and execute
+  the fenced Bash examples. The shared loader also backs the behavioural
+  scenarios in `tests/documented_examples/behaviour.rs`; its parser cases are in
+  `tests/documented_examples/loader_cases.rs`. Execution lives in
+  `tests/documented_examples/runner.rs`, whose private `CommandRunner` port
+  keeps the real Bash adapter at the test boundary and lets
+  `tests/documented_examples/runner_cases.rs` exercise failure handling with a
+  simulated shell.
+- `tests/features/documented_examples.feature`: Names the README and user's
+  guide scenarios that load and run their published examples.
 - `tests/topology_check.rs`: Guards the pre-macro workspace boundary named in
   design section 11.6. It applies a closed policy to Cargo's own metadata for
   this workspace, and it names the guard `make topology-check` selects.
@@ -185,7 +208,7 @@ compact and omits build output such as `target/`.
   named `<task>-<subject>.md`. Shared by decisions in Phases 2, 3, and 4; a
   note declares which contract reads it with a marker comment.
 - `docs/phase-2-validation-note-template.md`: The blank form a validation note
-  is instantiated from. It is the schema ADR 004's rule reads, not design
+  is instantiated from. It is the schema ADR 0004's rule reads, not design
   material, and it is never edited to record an observation.
 - `docs/macro-cost-benchmark-note-template.md`: The blank real and synthetic
   macro cost evidence form, checked by `tests/macro_cost_note_contract.rs`.

@@ -1,4 +1,4 @@
-# Architectural decision record (ADR) 003: Record the v0.1 exit register
+# Architectural decision record (ADR) 0003: Record the v0.1 exit register
 
 ## Status
 
@@ -122,7 +122,7 @@ contract test can detect a semantic rewrite in their source documents:
 - Non-goals:
   - Choose a release scope before the validation evidence exists.
   - Add runtime code, a public API or a proc-macro crate.
-  - Alter ADR 002's marker-only ownership boundary.
+  - Alter ADR 0002's marker-only ownership boundary.
 
 ## Known risks and limitations
 
@@ -140,7 +140,17 @@ contract test can detect a semantic rewrite in their source documents:
 
 ## Architectural rationale
 
-ADR 002 establishes that Statelet marks transition boundaries without owning
+ADR 0002 establishes that Statelet marks transition boundaries without owning
 dispatch, events, storage, transition tables or graph safety. This ADR is its
 delivery counterpart: it preserves that narrow boundary while making the
 product's evidence-based off-ramp and macro gate explicit.
+
+## Addendum
+
+### 2026-11-06: the record renamed, no decision changed
+
+Commit `43647c3`. The documentation style guide adopted in PR #169 moved this
+record from `docs/adr-003-v0-1-exit-register.md` to
+`docs/adrs/adr-0003-record-the-v0-1-exit-register.md` and zero-padded the
+serial in its heading. The decision is unchanged; only the record's name and
+its cross-references follow the new pattern.

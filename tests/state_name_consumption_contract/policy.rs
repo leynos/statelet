@@ -4,7 +4,7 @@
 //! Nothing here panics on a document defect. `unwrap_used` and
 //! `indexing_slicing` are denied, so parsing uses `split_once`, slice patterns,
 //! `get` and `let ... else`. The vocabulary is never hardcoded: the blocking set
-//! and the verdict both come from ADR 004's status register, so adding a status
+//! and the verdict both come from ADR 0004's status register, so adding a status
 //! is a documentation edit.
 //!
 //! The register's own consistency — that its vocabulary is closed and that the
@@ -62,7 +62,7 @@ fn check_note_fields(rows: &[StatusRow], note: &[NoteRow]) -> Result<(), String>
     if note.len() != expected.len() {
         return Err(format!(
             "a StateName note records {} fields; the status register defines {}. Repair: fill one \
-             row per register field, naming each exactly as ADR 004 does.",
+             row per register field, naming each exactly as ADR 0004 does.",
             note.len(),
             expected.len()
         ));
@@ -97,7 +97,7 @@ fn registered_status<'a>(rows: &'a [StatusRow], note: &NoteRow) -> Option<&'a St
 /// Reduces an admissible note's cells to a verdict, rejecting a contradictory
 /// note rather than resolving it.
 ///
-/// ADR 004 defines a note's contribution as "the single non-`nothing` value
+/// ADR 0004 defines a note's contribution as "the single non-`nothing` value
 /// among the contributions its cells select", and says that a note selecting
 /// two different contributions "is contradictory and is rejected rather than
 /// resolved". Collapsing the pair into the stronger contribution would resolve
@@ -159,7 +159,7 @@ fn check_note_cell(rows: &[StatusRow], row: &NoteRow) -> Result<(), String> {
     if registered_status(rows, row).is_none() {
         return Err(format!(
             "a StateName note records status {:?} for field {:?}, which the status register does \
-             not define. Repair: use a status ADR 004 lists for that field.",
+             not define. Repair: use a status ADR 0004 lists for that field.",
             row.status, row.field
         ));
     }
@@ -173,7 +173,7 @@ fn check_note_cell(rows: &[StatusRow], row: &NoteRow) -> Result<(), String> {
     Ok(())
 }
 
-/// Checks the obligation ADR 004 places on an `Enumerated` cell.
+/// Checks the obligation ADR 0004 places on an `Enumerated` cell.
 ///
 /// The ADR's own definition: `state-display-name` is `Enumerated` "only when
 /// the note lists the actual strings each annotated state can return". A cell
@@ -215,7 +215,7 @@ fn check_state_display_name_evidence(note: &[NoteRow]) -> Result<(), String> {
     ))
 }
 
-/// Checks the two obligations ADR 004 places on the `identifier-need` cell.
+/// Checks the two obligations ADR 0004 places on the `identifier-need` cell.
 fn check_identifier_need_evidence(note: &[NoteRow]) -> Result<(), String> {
     let Some(row) = note.iter().find(|row| row.field == IDENTIFIER_NEED) else {
         return Ok(());

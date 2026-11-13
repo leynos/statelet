@@ -1,9 +1,9 @@
-//! Resolution of the source clauses ADR 004 quotes.
+//! Resolution of the source clauses ADR 0004 quotes.
 //!
-//! The rule ADR 004 records rests on three statements in other documents. Each
+//! The rule ADR 0004 records rests on three statements in other documents. Each
 //! is quoted in its evidence section and must still resolve, whitespace-folded,
 //! within its named section of its source. Folding is mandatory rather than
-//! cosmetic: `mdtablefix --wrap` rewraps ADR 004's prose at different break
+//! cosmetic: `mdtablefix --wrap` rewraps ADR 0004's prose at different break
 //! points from its sources, and clauses that resolve in the source do not
 //! resolve unfolded.
 
@@ -13,7 +13,7 @@ use super::{
     types::{ParseError, Register, TaskRecord},
 };
 
-/// The three source documents whose clauses ADR 004 is allowed to quote.
+/// The three source documents whose clauses ADR 0004 is allowed to quote.
 ///
 /// An attribution is a document role, not an arbitrary path: each role is
 /// resolved to its one source and repair path inside this contract.
@@ -33,7 +33,10 @@ impl<'a> ClauseSources<'a> {
         match name {
             "design" => Some(("docs/design.md", self.design)),
             "roadmap" => Some(("docs/roadmap.md", self.roadmap)),
-            "adr-002" => Some(("docs/adr-002-transition-boundary-scope.md", self.adr_002)),
+            "adr-0002" => Some((
+                "docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md",
+                self.adr_002,
+            )),
             _ => None,
         }
     }
@@ -49,9 +52,9 @@ pub(crate) fn check_quoted_clauses(adr: &str, sources: ClauseSources<'_>) -> Res
         let (document, section, quoted) = resolve_clause(&clause)?;
         let Some((path, source)) = sources.attributed(&document) else {
             return Err(format!(
-                "docs/adr-004-state-name-consumption-evidence.md attributes a clause to \
-                 {document:?}, which this contract does not read. Repair: use design, roadmap or \
-                 adr-002."
+                "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md attributes a \
+                 clause to {document:?}, which this contract does not read. Repair: use design, \
+                 roadmap or adr-0002."
             ));
         };
         // A roadmap clause resolves against the *record* the section names, and
@@ -63,14 +66,14 @@ pub(crate) fn check_quoted_clauses(adr: &str, sources: ClauseSources<'_>) -> Res
             .or_else(|| locate_section(source, &section).map(str::to_owned))
         else {
             return Err(format!(
-                "{path} has no section {section:?}. Repair: restore it, or revise ADR 004's \
+                "{path} has no section {section:?}. Repair: restore it, or revise ADR 0004's \
                  quoted clause."
             ));
         };
         if !fold_whitespace(&body).contains(&quoted) {
             return Err(format!(
                 "{path} no longer contains the quoted clause {quoted:?} under {section:?}. \
-                 Repair: update ADR 004 and its contract together."
+                 Repair: update ADR 0004 and its contract together."
             ));
         }
     }
@@ -98,7 +101,7 @@ pub(crate) fn task_record(roadmap: &str, section: &str) -> Option<TaskRecord> {
 /// The body of the named section: what follows its heading, up to the next
 /// heading of the same or higher rank.
 ///
-/// The section is named in ADR 004 as rendered prose — `6.1 State naming`,
+/// The section is named in ADR 0004 as rendered prose — `6.1 State naming`,
 /// `wireframe: primary proving ground` — while the source may carry it as a
 /// heading that wraps a word in a code span and prefixes it with `#` marks.
 /// Comparing the two therefore normalizes each source line to plain text and
@@ -156,7 +159,7 @@ fn plain_text(line: &str) -> String {
         .to_owned()
 }
 
-/// The clauses ADR 004's evidence section quotes, as it renders them.
+/// The clauses ADR 0004's evidence section quotes, as it renders them.
 ///
 /// Each clause is one italic *block* rather than one line. `mdtablefix --wrap`
 /// rewraps prose at the column limit, so a clause long enough to be worth
@@ -170,8 +173,8 @@ fn plain_text(line: &str) -> String {
 fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
     let Some((_, after_heading)) = adr.split_once(Register::Evidence.section()) else {
         return Err(
-            "docs/adr-004-state-name-consumption-evidence.md lacks its evidence section. Repair: \
-             restore the quoted source clauses."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md lacks its evidence \
+             section. Repair: restore the quoted source clauses."
                 .to_owned(),
         );
     };
@@ -202,8 +205,9 @@ fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
         .collect::<Vec<String>>();
     if clauses.is_empty() {
         return Err(
-            "docs/adr-004-state-name-consumption-evidence.md cites no clauses. Repair: quote each \
-             load-bearing source clause as an italic line in the evidence section."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md cites no clauses. \
+             Repair: quote each load-bearing source clause as an italic line in the evidence \
+             section."
                 .to_owned(),
         );
     }
@@ -224,8 +228,8 @@ fn quoted_clauses(adr: &str) -> Result<Vec<String>, String> {
 pub(crate) fn resolve_clause(clause: &str) -> Result<(String, String, String), String> {
     let attributed = |near: &str| {
         format!(
-            "docs/adr-004-state-name-consumption-evidence.md quotes a clause without {near}. \
-             Repair: render each clause as `\"<text>\" — <document> <section>.`"
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md quotes a clause \
+             without {near}. Repair: render each clause as `\"<text>\" — <document> <section>.`"
         )
     };
     let (_, after_open) = clause

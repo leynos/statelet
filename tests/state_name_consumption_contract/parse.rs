@@ -44,7 +44,7 @@ pub(crate) fn parse_table(
 /// The bound is taken with `split_once` on the literal text that ends a section,
 /// never by scanning for a leading `#`. `docs/design.md` §6.1 contains
 /// `#[derive(StateName)]` at column zero inside a fence, and a scanner looking
-/// for `#` truncates the section there. Every register in ADR 004 sits under a
+/// for `#` truncates the section there. Every register in ADR 0004 sits under a
 /// top-level `##` heading, so the next such heading ends the section.
 fn section_body(source: &str, register: Register) -> Result<&str, ParseError> {
     let Some((_, after_heading)) = source.split_once(register.section()) else {

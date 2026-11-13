@@ -26,7 +26,7 @@ use support::{
     parse_register,
 };
 
-const ADR: &str = include_str!("../docs/adr-003-v0-1-exit-register.md");
+const ADR: &str = include_str!("../docs/adrs/adr-0003-record-the-v0-1-exit-register.md");
 const DESIGN: &str = include_str!("../docs/design.md");
 const TERMS: &str = include_str!("../docs/terms-of-reference.md");
 const CONTEXT: &str = include_str!("../docs/context.md");
@@ -53,7 +53,7 @@ fn dominance_invalid_rows() -> Result<Vec<Row>, String> {
 fn totality_holds(#[case] b1: Verdict, #[case] b2: Verdict) -> Result<(), String> {
     let rows = live_rows()?;
     check_totality(&rows)
-        .expect("ADR 003 must provide one row for every final verdict combination");
+        .expect("ADR 0003 must provide one row for every final verdict combination");
     assert_that!(
         rows.iter()
             .filter(|row| row.b1 == b1 && row.b2 == b2)
@@ -72,8 +72,8 @@ fn dominance_holds() -> Result<(), String> {
     assert_eq!(
         check_dominance(&invalid),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: Falsified/Held selects E3. Repair: a falsified \
-             B1 must select E1 ship nothing."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: Falsified/Held selects E3. \
+             Repair: a falsified B1 must select E1 ship nothing."
                 .to_owned()
         )
     );
@@ -91,8 +91,8 @@ fn dominance_rejects_a_reachable_dead_row() -> Result<(), String> {
     assert_eq!(
         check_dominance(&invalid),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: Falsified/Held must be marked unreachable. \
-             Repair: set its Reachable cell to no."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: Falsified/Held must be marked \
+             unreachable. Repair: set its Reachable cell to no."
                 .to_owned()
         )
     );
@@ -104,7 +104,7 @@ fn dominance_rejects_a_reachable_dead_row() -> Result<(), String> {
 fn gate_bindings_resolve() -> Result<(), String> {
     let rows = live_rows()?;
     check_gate_bindings(&rows, ADR, ROADMAP)
-        .expect("ADR 003 gates must resolve to live roadmap tasks");
+        .expect("ADR 0003 gates must resolve to live roadmap tasks");
     Ok(())
 }
 
@@ -116,8 +116,8 @@ fn gate_bindings_reject_wrong_adr_task() -> Result<(), String> {
     assert_eq!(
         check_gate_bindings(&rows, &changed_gate, ROADMAP),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: G2 must bind roadmap task 3.1.3. Repair: restore \
-             the gate table binding."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: G2 must bind roadmap task \
+             3.1.3. Repair: restore the gate table binding."
                 .to_owned()
         )
     );
@@ -135,8 +135,8 @@ fn gate_bindings_reject_unknown_adr_gate_table_identifier() -> Result<(), String
     assert_eq!(
         check_gate_bindings(&rows, &changed_gate, ROADMAP),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: G2 must bind roadmap task 3.1.3. Repair: restore \
-             the gate table binding."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: G2 must bind roadmap task \
+             3.1.3. Repair: restore the gate table binding."
                 .to_owned()
         )
     );
@@ -164,7 +164,7 @@ fn assert_roadmap_task_is_rejected(roadmap: &str) -> Result<(), String> {
         check_gate_bindings(&rows, ADR, roadmap),
         Err(
             "docs/roadmap.md: task 3.1.3 is absent or already ticked. Repair: retain the live, \
-             unticked gate named by ADR 003."
+             unticked gate named by ADR 0003."
                 .to_owned()
         )
     );
@@ -179,9 +179,9 @@ fn gate_bindings_reject_unknown_row_gate() {
     assert_eq!(
         check_gate_bindings(&rows, ADR, ROADMAP),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: row uses unknown gate G9. Repair: use G1, G2, or \
-             G3."
-            .to_owned()
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: row uses unknown gate G9. \
+             Repair: use G1, G2, or G3."
+                .to_owned()
         )
     );
 }
@@ -197,8 +197,8 @@ fn gate_bindings_reject_wrong_known_row_gate() {
     assert_eq!(
         check_gate_bindings(&rows, ADR, ROADMAP),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: Held/Held with E3 must use gate G3, not G1. \
-             Repair: bind this exit row to G3."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: Held/Held with E3 must use gate \
+             G3, not G1. Repair: bind this exit row to G3."
                 .to_owned()
         )
     );
@@ -231,8 +231,8 @@ fn hand_written_cases_reject_a_dominance_invalid_register() -> Result<(), String
             Exit::E1,
         ),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: Falsified/Held selects Some(E3). Repair: restore \
-             its handwritten exit expectation to E1."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: Falsified/Held selects \
+             Some(E3). Repair: restore its handwritten exit expectation to E1."
                 .to_owned()
         )
     );
@@ -254,8 +254,8 @@ fn check_hand_written_case(
         Ok(())
     } else {
         Err(format!(
-            "docs/adr-003-v0-1-exit-register.md: {b1:?}/{b2:?} selects {actual:?}. Repair: \
-             restore its handwritten exit expectation to {expected_exit:?}."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: {b1:?}/{b2:?} selects \
+             {actual:?}. Repair: restore its handwritten exit expectation to {expected_exit:?}."
         ))
     }
 }
@@ -291,24 +291,24 @@ fn totality_rejects_missing_duplicate_and_extra_rows() {
     assert_eq!(
         check_totality(&parse_register(&missing).expect("missing-row control parses")),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: missing Held/Held. Repair: add that verdict \
-             combination."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: missing Held/Held. Repair: add \
+             that verdict combination."
                 .to_owned()
         )
     );
     assert_eq!(
         check_totality(&parse_register(&duplicate).expect("duplicate control parses")),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: ambiguous Falsified/Held. Repair: keep exactly \
-             one row for that combination."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: ambiguous Falsified/Held. \
+             Repair: keep exactly one row for that combination."
                 .to_owned()
         )
     );
     assert_eq!(
         check_totality(&parse_register(&extra).expect("extra-row control parses")),
         Err(
-            "docs/adr-003-v0-1-exit-register.md: register must contain exactly four rows. Repair: \
-             provide one row for each B1/B2 verdict combination."
+            "docs/adrs/adr-0003-record-the-v0-1-exit-register.md: register must contain exactly \
+             four rows. Repair: provide one row for each B1/B2 verdict combination."
                 .to_owned()
         )
     );

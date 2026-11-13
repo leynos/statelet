@@ -51,9 +51,9 @@ fn success_criterion_still_maps() -> Result<(), String> {
     assert_eq!(
         check_success_criterion(&rows, ROADMAP),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: no status-register field maps the \
-             criterion noun \"tracing use\". Repair: add the tracing-use field, or reword the \
-             roadmap task."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: no status-register \
+             field maps the criterion noun \"tracing use\". Repair: add the tracing-use field, or \
+             reword the roadmap task."
                 .to_owned()
         )
     );

@@ -6,7 +6,7 @@
 - **Status:** Proposed
 - **Created:** 2026-10-07
 - **Related:** [Technical design](../design.md), sections 7 to 9;
-  [ADR 002](../adr-002-transition-boundary-scope.md).
+  [ADR 0002](../adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md).
 
 ## Summary
 
@@ -119,9 +119,11 @@ documented capabilities.
   borrow across a body that requires mutable access.
 - **C4:** Offer explicit borrowing result classification before considering
   additional automatic return-shape inference or public result types.
-- **C5:** Apply [RFC 0003](0003-observational-non-interference.md) to evaluation
-  counts, filtering, and projection preconditions, and
-  [RFC 0005](0005-incomplete-completion-and-cancellation.md) to missing returns.
+- **C5:** Apply
+  [RFC 0003](rfc-0003-make-observational-non-interference-a-tested-contract.md)
+  to evaluation counts, filtering, and projection preconditions, and
+  [RFC 0005](rfc-0005-describe-incomplete-completion-without-owning-lifecycle.md)
+  to missing returns.
 
 ## Validation and falsification
 

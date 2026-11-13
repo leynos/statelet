@@ -149,7 +149,7 @@ fn an_absent_notes_directory_yields_no_notes() -> Result<(), String> {
 }
 
 /// Scans the live notes directory, checks every marked note, and aggregates the
-/// resolutions through ADR 004's aggregation register.
+/// resolutions through ADR 0004's aggregation register.
 ///
 /// A failure names the note it came from. A message saying only that some note
 /// holds a `TBD` would send a Phase 2 engineer to the directory rather than to
@@ -158,7 +158,7 @@ fn an_absent_notes_directory_yields_no_notes() -> Result<(), String> {
 /// The resolutions are *retained* rather than discarded, because the register's
 /// question is about the multiset and a note is only ever half the answer. A
 /// scan that checked each note and dropped its verdict would leave the second
-/// half of ADR 004 unread: the register could say anything at all about the
+/// half of ADR 0004 unread: the register could say anything at all about the
 /// combination, and this contract would not notice. Reading it here is what
 /// makes Table 3 a tested rule rather than a described one.
 ///
@@ -349,9 +349,10 @@ fn an_uncovered_multiset_state_is_rejected() -> Result<(), String> {
     assert_eq!(
         aggregate_resolutions(&trimmed, &[Resolution::Insufficient]),
         Err(
-            "docs/adr-004-state-name-consumption-evidence.md: the aggregation register does not \
-             cover One or more contributing notes with any insufficient Yes, which 1 committed \
-             note(s) reach. Repair: add that row; the verdict has no outcome to take."
+            "docs/adrs/adr-0004-define-the-statename-consumption-evidence.md: the aggregation \
+             register does not cover One or more contributing notes with any insufficient Yes, \
+             which 1 committed note(s) reach. Repair: add that row; the verdict has no outcome to \
+             take."
                 .to_owned()
         )
     );

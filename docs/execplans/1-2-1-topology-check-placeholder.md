@@ -24,6 +24,21 @@ This ExecPlan is a living document. Keep Constraints, Tolerances, Risks,
 Progress, Surprises & discoveries, Decision log, Outcomes & retrospective,
 Conformance basis, and Verification plan current at every milestone.
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> record identifiers and textual paths in this completed plan are preserved as
+> written; the [documentation contents](../contents.md) index lists every
+> record under its current name. A historical link that pointed at a path
+> renamed since has been reduced to its plain-text identifier, followed by an
+> adjacent link to the record at this plan's recorded baseline revision.
+
+[adr-0002-baseline]: https://github.com/leynos/statelet/blob/7cb12674737491af3c76c18220862a84b60d1e15/docs/adr-002-transition-boundary-scope.md
+[adr-0003-baseline]: https://github.com/leynos/statelet/blob/7cb12674737491af3c76c18220862a84b60d1e15/docs/adr-003-v0-1-exit-register.md
+[adr-0006-baseline]: https://github.com/leynos/statelet/blob/7cb12674737491af3c76c18220862a84b60d1e15/docs/adr-006-stable-transition-and-outcome-names.md
+[adr-0007-baseline]: https://github.com/leynos/statelet/blob/7cb12674737491af3c76c18220862a84b60d1e15/docs/adr-007-representation-and-observability-contracts.md
+
 ## Purpose / big picture
 
 Roadmap task 1.2.1 establishes a real, locally runnable dependency-topology
@@ -1503,19 +1518,18 @@ release before copying APIs. Follow the
 
 Use the baseline revision above for
 [terms of reference](../terms-of-reference.md), [design](../design.md) draft
-v0.2, [roadmap](../roadmap.md), accepted
-[ADR 002](../adr-002-transition-boundary-scope.md), and
-[ADR 003](../adr-003-v0-1-exit-register.md). There is no separate topology RFC
-or component architecture document. The design owns the policy; the repository
-layout and developer guide own its implementation placement and operation.
+v0.2, [roadmap](../roadmap.md), accepted ADR 002
+([baseline][adr-0002-baseline]), and ADR 003 ([baseline][adr-0003-baseline]).
+There is no separate topology RFC or component architecture document. The
+design owns the policy; the repository layout and developer guide own its
+implementation placement and operation.
 
-The observation RFCs indexed in
-[design Appendix C](../design.md), [ADR 006](../adr-006-stable-transition-and-outcome-names.md),
-and [ADR 007](../adr-007-representation-and-observability-contracts.md) remain
-proposed. Follow the repository layout's distinction between proposal records
-and accepted design authority. Their presence does not admit a new workspace
-member or change this task's acceptance criteria. Roadmap 1.2.1's issue 112
-prerequisite governs any later workspace-policy definition.
+The observation RFCs indexed in [design Appendix C](../design.md), ADR 006
+([baseline][adr-0006-baseline]), and ADR 007 ([baseline][adr-0007-baseline])
+remain proposed. Follow the repository layout's distinction between proposal
+records and accepted design authority. Their presence does not admit a new
+workspace member or change this task's acceptance criteria. Roadmap 1.2.1's
+issue 112 prerequisite governs any later workspace-policy definition.
 
 R1: roadmap 1.2.1 and design sections 4–5 require a single-runtime starting
 state and no premature macro edge. M1 discharges this through policy table

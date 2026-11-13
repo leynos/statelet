@@ -53,7 +53,7 @@ fn indented_headings_end_sections_but_code_lines_do_not() {
 /// Resolves every quoted clause against the live source documents.
 #[test]
 fn quoted_passages_still_resolve() {
-    check_quoted_clauses(ADR, QUOTED_CLAUSE_DOCUMENTS).expect("ADR 003 citations must resolve");
+    check_quoted_clauses(ADR, QUOTED_CLAUSE_DOCUMENTS).expect("ADR 0003 citations must resolve");
 }
 
 /// Refuses a rewritten design claim even when the ADR quote is unchanged.
@@ -73,7 +73,7 @@ fn quoted_passages_reject_a_rewritten_design_claim() {
         ),
         Err(
             "docs/design.md no longer contains \"the macro crate does not ship in v0.1\". Repair: \
-             update ADR 003 and its contract together."
+             update ADR 0003 and its contract together."
                 .to_owned()
         )
     );
@@ -101,7 +101,7 @@ fn quoted_passages_reject_a_missing_bet_row() {
         ),
         Err(
             "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
-             or revise ADR 003."
+             or revise ADR 0003."
                 .to_owned()
         )
     );
@@ -147,7 +147,7 @@ fn quoted_passages_reject_an_invented_citation() {
         check_quoted_clauses(&invented_citation, QUOTED_CLAUSE_DOCUMENTS),
         Err(
             "docs/design.md no longer contains \"a made-up validation clause\". Repair: update \
-             ADR 003 and its contract together."
+             ADR 0003 and its contract together."
                 .to_owned()
         )
     );
@@ -173,7 +173,7 @@ fn quoted_passages_reject_a_bet_outside_its_table() {
         ),
         Err(
             "docs/design.md is missing B1 or B2 from the bet table. Repair: restore the bet row \
-             or revise ADR 003."
+             or revise ADR 0003."
                 .to_owned()
         )
     );

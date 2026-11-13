@@ -12,6 +12,14 @@ owner's direction. EP-M5's zero-finding review bar was never met. D74 records
 it as waived, not as met. The filesystem-lint deviation is accepted in the
 path-scoped form; see Q5, D18, and D20.
 
+> **Record naming update (2026-11-06).** The documentation style guide
+> adopted in PR #169 renamed the decision records to
+> `docs/adrs/adr-nnnn-title-slug.md` and the RFCs to
+> `docs/rfcs/rfc-nnnn-title-slug.md`, each with a four-digit serial. The
+> historical paths and record identifiers in this completed plan are
+> preserved as written; the [documentation contents](../contents.md) index
+> lists every record under its current name.
+
 ## Purpose / big picture
 
 Statelet intends to publish a trait whose whole public surface is one method:
