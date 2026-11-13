@@ -35,7 +35,7 @@ jobs:
         with:
           version: "0.6.1"
       - name: Setup uv
-        uses: astral-sh/setup-uv@b06acff4b6a41bdd9cdac56507ead0bd7734e757
+        uses: astral-sh/setup-uv@963ce8fe9e4fb39553bd07a010f5e986c4dcff9d
         with:
           python-version: '3.14'
       - name: Install test runner
