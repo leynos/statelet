@@ -1,9 +1,16 @@
-//! Parser regression and property tests for the documented-example contract.
+//! Parser regression tests for the documented-example contract.
 
-use proptest::{prelude::*, string::string_regex};
 use rstest::rstest;
 
-use super::{Document, Example, ensure_unique_identifiers, parse_examples};
+use super::{
+    Document,
+    Example,
+    ensure_unique_identifiers,
+    find_document,
+    load_document,
+    load_non_empty_document,
+    parse_examples,
+};
 
 /// Parses a fixture document that must contain exactly one example.
 fn parse_single(markdown: &str) -> Example {
@@ -16,6 +23,70 @@ fn parse_single(markdown: &str) -> Example {
     examples
         .pop()
         .expect("the parser reported exactly one example")
+}
+
+/// Loads each published document through the public loader entry point and
+/// compares its example inventory with the published text.
+#[rstest]
+#[case::readme(
+    "README.md",
+    vec![
+        ("readme-quick-start-targets", "make help"),
+        (
+            "readme-review-the-roadmap",
+            "make help\nsed -n '1,120p' docs/roadmap.md"
+        ),
+    ]
+)]
+#[case::users_guide(
+    "docs/users-guide.md",
+    vec![("users-guide-validation-targets", "make help")]
+)]
+fn loads_each_published_document(
+    #[case] path: &'static str,
+    #[case] expected: Vec<(&'static str, &'static str)>,
+) -> Result<(), String> {
+    let examples = load_non_empty_document(find_document(path)?)?;
+    let actual: Vec<(&str, &str)> = examples
+        .iter()
+        .map(|example| (example.id.as_str(), example.command.as_str()))
+        .collect();
+    if actual != expected {
+        return Err(format!(
+            "{path} published {actual:?} instead of {expected:?}"
+        ));
+    }
+    Ok(())
+}
+
+/// Reports malformed Markdown through the public loader entry point.
+#[test]
+fn load_document_reports_malformed_markdown() {
+    let document = Document {
+        path: "fixture.md",
+        markdown: "```bash\nprintf 'ok'\n```\n",
+    };
+    let error = load_document(document).expect_err("an unmarked fence should be rejected");
+    assert!(
+        error.contains("fixture.md:1"),
+        "the diagnostic should name the opening line: {error}"
+    );
+    assert!(
+        error.contains("no tested-example marker"),
+        "unexpected error: {error}"
+    );
+}
+
+/// Rejects a published document whose example inventory is empty.
+#[test]
+fn rejects_a_published_document_without_examples() {
+    let document = Document {
+        path: "fixture.md",
+        markdown: "# A document with no examples\n",
+    };
+    let error = load_non_empty_document(document)
+        .expect_err("an empty example inventory should be rejected");
+    assert_eq!(error, "fixture.md publishes no tested-example blocks");
 }
 
 /// Parses a marked Bash block from its source text.
@@ -124,107 +195,5 @@ fn accepts_distinct_identifiers_across_documents() {
     ensure_unique_identifiers(&examples).expect("distinct identifiers are valid");
 }
 
-/// Generates a valid lower-case kebab-case identifier.
-fn identifier() -> impl Strategy<Value = String> {
-    string_regex("[a-z0-9]{1,8}(-[a-z0-9]{1,8}){0,2}")
-        .expect("the identifier pattern is a valid regular expression")
-}
-
-/// Generates command text that cannot begin a fence.
-fn command_line() -> impl Strategy<Value = String> {
-    string_regex("[!-~ ]{0,30}")
-        .expect("the command-line pattern is a valid regular expression")
-        .prop_filter("a command line must not begin a fence", |line| {
-            let trimmed = line.trim_start();
-            !trimmed.starts_with('`') && !trimmed.starts_with('~')
-        })
-}
-
-/// Generates an identifier the parser must reject.
-fn invalid_identifier() -> impl Strategy<Value = String> {
-    (
-        "[a-z0-9]{1,4}",
-        proptest::sample::select(vec!['A', 'Z', '_', ' ', '.', '/']),
-        "[a-z0-9]{1,4}",
-    )
-        .prop_map(|(prefix, invalid, suffix)| format!("{prefix}{invalid}{suffix}"))
-}
-
-/// Wraps a command inside a marked Bash fence.
-fn marked_example(id: &str, command: &str) -> String {
-    format!("<!-- tested-example: {id} -->\n```bash\n{command}\n```\n")
-}
-
-proptest! {
-    /// A generated valid marker and fence round-trip their identifier and text.
-    #[test]
-    fn parses_generated_marked_examples(
-        id in identifier(),
-        lines in prop::collection::vec(command_line(), 0..3),
-    ) {
-        let command = lines.join("\n");
-        let markdown = marked_example(&id, &command);
-        let examples = parse_examples(Document { path: "fixture.md", markdown: &markdown })
-            .expect("a generated valid example should parse");
-        prop_assert_eq!(examples.len(), 1);
-        let parsed = examples
-            .first()
-            .map(|example| (example.id.as_str(), example.command.as_str()));
-        prop_assert_eq!(parsed, Some((id.as_str(), command.as_str())));
-    }
-
-    /// A generated malformed identifier is rejected.
-    #[test]
-    fn rejects_generated_invalid_identifiers(id in invalid_identifier()) {
-        let markdown = marked_example(&id, "echo ok");
-        let error = parse_examples(Document { path: "fixture.md", markdown: &markdown })
-            .expect_err("an invalid identifier should be rejected");
-        prop_assert!(error.contains("identifier"), "unexpected error: {}", error);
-    }
-
-    /// A repeated identifier is rejected wherever it appears in the document.
-    #[test]
-    fn rejects_duplicate_generated_identifiers(id in identifier()) {
-        let block = marked_example(&id, "echo run");
-        let markdown = format!("{block}{block}");
-        let error = parse_examples(Document { path: "fixture.md", markdown: &markdown })
-            .expect_err("a duplicate identifier should be rejected");
-        prop_assert!(error.contains("duplicate"), "unexpected error: {}", error);
-    }
-
-    /// A marker separated from its fence by prose is rejected.
-    #[test]
-    fn rejects_markers_detached_from_their_fence(
-        id in identifier(),
-        filler in command_line().prop_filter("filler must not be blank", |line| {
-            !line.trim().is_empty()
-        }),
-    ) {
-        let markdown = format!("<!-- tested-example: {id} -->\n{filler}\n```bash\necho ok\n```\n");
-        let error = parse_examples(Document { path: "fixture.md", markdown: &markdown })
-            .expect_err("a detached marker should be rejected");
-        prop_assert!(error.contains("immediately"), "unexpected error: {}", error);
-    }
-
-    /// Every distinct example in a document is extracted with its own command.
-    #[test]
-    fn preserves_every_distinct_example(
-        ids in prop::collection::hash_set(identifier(), 1..5),
-    ) {
-        let markdown: String = ids
-            .iter()
-            .map(|id| marked_example(id, &format!("echo {id}")))
-            .collect();
-        let examples = parse_examples(Document { path: "fixture.md", markdown: &markdown })
-            .expect("distinct examples should parse");
-        prop_assert_eq!(examples.len(), ids.len());
-        for id in &ids {
-            let expected = format!("echo {id}");
-            prop_assert!(
-                examples.iter().any(|example| &example.id == id && example.command == expected),
-                "missing example for {}",
-                id
-            );
-        }
-    }
-}
+#[path = "loader_property_cases.rs"]
+mod properties;

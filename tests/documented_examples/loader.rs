@@ -6,6 +6,8 @@ use std::{
     str::Lines,
 };
 
+use fence::{Fence, SourceLine};
+
 /// A user-facing Markdown document whose fenced examples are part of the test
 /// contract.
 #[derive(Clone, Copy)]
@@ -64,6 +66,26 @@ pub(super) fn find_document(path: &str) -> Result<Document<'static>, String> {
 /// language other than `bash`.
 pub(super) fn load_document(document: Document<'_>) -> Result<Vec<Example>, String> {
     parse_examples(document)
+}
+
+/// Loads a published document and requires it to publish at least one example.
+///
+/// A document whose examples all disappeared would make the executable-example
+/// contract vacuous while still passing, so an empty inventory is an error.
+///
+/// # Errors
+///
+/// Returns the diagnostics from [`load_document`], or a message naming the
+/// document when it declares no tested-example block.
+pub(super) fn load_non_empty_document(document: Document<'_>) -> Result<Vec<Example>, String> {
+    let examples = load_document(document)?;
+    if examples.is_empty() {
+        return Err(format!(
+            "{} publishes no tested-example blocks",
+            document.path
+        ));
+    }
+    Ok(examples)
 }
 
 /// Parses marked fenced blocks and rejects malformed or duplicate markers.
@@ -256,108 +278,11 @@ pub(super) fn ensure_unique_identifiers(examples: &[Example]) -> Result<(), Stri
     Ok(())
 }
 
-/// Opening-fence details needed to recognize its matching closer.
-struct Fence {
-    delimiter: char,
-    length: usize,
-    info: String,
-}
-
 /// Source location and marker identity for one opening fence.
 struct ExampleStart {
     document_path: &'static str,
     line_number: usize,
     identifier: String,
-}
-
-/// A numbered source line from a user-facing document.
-#[derive(Clone, Copy)]
-struct SourceLine<'source> {
-    /// One-based line number used in diagnostics.
-    number: usize,
-    /// The line's text without its terminating newline.
-    text: &'source str,
-}
-
-impl<'source> SourceLine<'source> {
-    /// Builds a one-based source line from an iterator's zero-based index.
-    fn new(index: usize, text: &'source str) -> Self {
-        Self {
-            number: index + 1,
-            text,
-        }
-    }
-
-    /// Names an existing position when no line text is available.
-    fn numbered(number: usize) -> Self { Self { number, text: "" } }
-
-    /// Returns the line with surrounding whitespace removed.
-    fn trimmed_text(self) -> &'source str { self.text.trim() }
-
-    /// Returns whether the line begins a tested-example marker.
-    fn is_marker(self) -> bool { self.trimmed_text().starts_with("<!-- tested-example") }
-
-    /// Parses a valid opening fence with up to three leading spaces.
-    fn opening_fence(self) -> Option<Fence> {
-        let content = self.content()?;
-        let delimiter = content.chars().next()?;
-        if delimiter != '`' && delimiter != '~' {
-            return None;
-        }
-        let length = content
-            .chars()
-            .take_while(|character| *character == delimiter)
-            .count();
-        if length < 3 {
-            return None;
-        }
-        let info = content.get(length..)?.trim().to_owned();
-        if delimiter == '`' && info.contains('`') {
-            return None;
-        }
-        Some(Fence {
-            delimiter,
-            length,
-            info,
-        })
-    }
-
-    /// Recognizes a line that looks like a fence but fails the supported syntax.
-    fn looks_like_fence(self) -> bool {
-        self.content().is_some_and(|content| {
-            content.chars().next().is_some_and(|delimiter| {
-                matches!(delimiter, '`' | '~')
-                    && content
-                        .chars()
-                        .take_while(|character| *character == delimiter)
-                        .count()
-                        >= 3
-            })
-        })
-    }
-
-    /// Removes up to three leading spaces from a potential fence line.
-    fn content(self) -> Option<&'source str> {
-        let indentation = self.text.len() - self.text.trim_start_matches(' ').len();
-        if indentation > 3 {
-            return None;
-        }
-        self.text.get(indentation..)
-    }
-
-    /// Recognizes a closing fence with the same delimiter and at least its length.
-    fn closes(self, fence: &Fence) -> bool {
-        let Some(content) = self.content() else {
-            return false;
-        };
-        let length = content
-            .chars()
-            .take_while(|character| *character == fence.delimiter)
-            .count();
-        content
-            .get(length..)
-            .is_some_and(|remaining| length >= fence.length && remaining.trim().is_empty())
-    }
 }
 
 /// Accepts stable lower-case identifiers separated by single hyphens.
@@ -375,6 +300,9 @@ fn is_valid_identifier(identifier: &str) -> bool {
 fn diagnostic(path: &str, line: SourceLine<'_>, message: &str) -> String {
     format!("{path}:{}: {message}", line.number)
 }
+
+#[path = "fence.rs"]
+mod fence;
 
 #[cfg(test)]
 #[path = "loader_cases.rs"]

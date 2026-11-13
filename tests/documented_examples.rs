@@ -13,7 +13,7 @@ mod runner;
 fn published_user_facing_examples_are_executable() -> Result<(), String> {
     let mut examples = Vec::new();
     for document in loader::USER_FACING_DOCUMENTS {
-        examples.extend(loader::load_document(document)?);
+        examples.extend(loader::load_non_empty_document(document)?);
     }
 
     loader::ensure_unique_identifiers(&examples)?;

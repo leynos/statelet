@@ -47,7 +47,7 @@ fn run_documented_examples(world: &ExamplesWorld) -> Result<(), String> {
         .document
         .get()
         .ok_or_else(|| "the scenario did not select a user-facing document".to_owned())?;
-    let result = loader::load_document(document).and_then(|examples| {
+    let result = loader::load_non_empty_document(document).and_then(|examples| {
         loader::ensure_unique_identifiers(&examples)?;
         runner::run_examples(&examples)
     });
