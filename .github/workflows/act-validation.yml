@@ -22,7 +22,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Rust
-        uses: leynos/shared-actions/.github/actions/setup-rust@b804b69fa7f978cf9091b9d9bd5481d8ce58c2ea
+        uses: leynos/shared-actions/.github/actions/setup-rust@203eedc136c14c28041e92c06a929383807b3a3f
         with:
           install-mold: 'true'
           install-clang-lld: 'true'
@@ -31,7 +31,7 @@ jobs:
       - name: Install cargo-hack
         run: make install-cargo-hack
       - name: Install mdtablefix
-        uses: leynos/shared-actions/.github/actions/install-mdtablefix@5bc2b2611f5921ef2c56e4ee3fde2b879a319361
+        uses: leynos/shared-actions/.github/actions/install-mdtablefix@203eedc136c14c28041e92c06a929383807b3a3f
         with:
           version: "0.6.1"
       - name: Setup uv
