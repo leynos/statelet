@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
       id-token: write # OIDC workflow-source resolution
-    uses: leynos/shared-actions/.github/workflows/mutation-cargo.yml@b804b69fa7f978cf9091b9d9bd5481d8ce58c2ea
+    uses: leynos/shared-actions/.github/workflows/mutation-cargo.yml@203eedc136c14c28041e92c06a929383807b3a3f
     with:
       # CI runs tests with --all-features, so mutants must face the same
       # feature surface.
