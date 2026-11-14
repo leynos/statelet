@@ -1,7 +1,8 @@
 //! Contract test for the coverage target's codegen backend.
 //!
-//! `.cargo/config.toml` selects Cranelift for the dev profile, which is what
-//! makes ordinary builds fast. Cranelift cannot instrument coverage: with it
+//! `.cargo/config.toml` no longer selects Cranelift for the dev profile (the
+//! selection is disabled), but an opt-in or an inherited profile variable can
+//! still select it. Cranelift cannot instrument coverage: with it
 //! active, `cargo llvm-cov` fails outright with "`-Cinstrument-coverage` is
 //! LLVM specific and not supported by Cranelift". The `coverage` recipe
 //! therefore overrides the backend for that one invocation.
