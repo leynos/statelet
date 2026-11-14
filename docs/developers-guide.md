@@ -460,18 +460,23 @@ Makefile edit, and the diagnostic says so.
 
 ## Development build standard
 
-Cargo uses Cranelift for development builds, with the parallel frontend
-(`-Zthreads=8`) and Linux clang/linker setup configured in
-`.cargo/config.toml`. Cargo takes `RUSTFLAGS` from one source; assigning it
-replaces the config's build and target Rust flags, while the configured linker
-selection remains active. Make's development recipes compose inherited flags
-with `STANDARD_RUSTFLAGS` to retain the parallel frontend and Linux linker
-argument. The lint, typecheck, test, and coverage targets also add
-`-D warnings`; `make build` does not. The pinned linker binary is installed and
-checked locally by `make install-build-tools` and `make check-build-tools`.
-CI's pinned `setup-rust` action owns the Linux linkers; the following
-`make install-rust-toolchain` installs Statelet's additional Rust components
-without downloading the linker again.
+LLVM is the default codegen backend: the estate standard dropped Cranelift,
+with review due 14 May 2027 (see the
+[concordat decision record](https://github.com/leynos/concordat/blob/main/docs/adrs/adr-0004-cranelift-is-not-part-of-the-rust-build-standard.md)).
+To opt in, pass `--config 'profile.dev.codegen-backend="cranelift"'`;
+Cranelift does not unwind, so no test may rely on a caught panic under it, and
+an inherited `CARGO_PROFILE_*_CODEGEN_BACKEND` can still select it. Cargo
+development builds use the parallel frontend (`-Zthreads=8`) and Linux
+clang/linker setup configured in `.cargo/config.toml`. Cargo takes `RUSTFLAGS`
+from one source; assigning it replaces the config's build and target Rust
+flags, while the configured linker selection remains active. Make's development
+recipes compose inherited flags with `STANDARD_RUSTFLAGS` to retain the
+parallel frontend and Linux linker argument. The lint, typecheck, test, and
+coverage targets also add `-D warnings`; `make build` does not. The pinned
+linker binary is installed and checked locally by `make install-build-tools` and
+`make check-build-tools`. CI's pinned `setup-rust` action owns the Linux
+linkers; the following `make install-rust-toolchain` installs Statelet's
+additional Rust components without downloading the linker again.
 
 The Linux linker selector assumes native compilation, where clang targets the
 host. A cross-compilation to another Linux target would also match the selector
@@ -507,12 +512,12 @@ flowchart TD
     accDescr: Direct Cargo defaults, Make development, coverage, release, and Whitaker flag and linker routes.
     Start[Direct Cargo development command or Make target] --> Assigned{RUSTFLAGS assigned?}
     Assigned -->|No| Config[Cargo configuration Rust flags]
-    Assigned -->|Direct Cargo with caller flags| Caller["Cranelift dev profile; caller RUSTFLAGS replace config flags"]
+    Assigned -->|Direct Cargo with caller flags| Caller["LLVM dev profile; caller RUSTFLAGS replace config flags"]
     Assigned -->|Development Make target| Compose[Inherited flags plus STANDARD_RUSTFLAGS]
     Assigned -->|Coverage Make target| Coverage[Coverage flags and LLVM backend]
     Assigned -->|Release Make target| Release["Inherited RUSTFLAGS or empty; no added standard flags"]
     Assigned -->|Whitaker Make target| Whitaker[RUSTFLAGS empty]
-    Config --> Fast["Parallel frontend; Cranelift dev profile"]
+    Config --> Fast["Parallel frontend; LLVM dev profile"]
     Compose --> Fast
     Fast --> Linux{Native Linux target?}
     Linux -->|Yes| Mold["Configured clang linker; mold argument in selected flags"]
@@ -533,7 +538,7 @@ typecheck, test, and coverage but not `make build`. Coverage uses LLVM with
 `lld`. `make release` adds no standard flags, but retains inherited caller
 flags and Cargo's LLVM release profile. Whitaker clears `RUSTFLAGS` and uses
 its installer-managed toolchain. Caller `RUSTFLAGS` do not replace the Cargo
-development profile's Cranelift backend. The configured Linux clang linker
+development profile's codegen backend. The configured Linux clang linker
 remains active independently of `RUSTFLAGS`; other targets use Cargo's default
 platform linker.*
 

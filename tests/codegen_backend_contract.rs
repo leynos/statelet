@@ -1,8 +1,10 @@
 //! Contract test for the repository's codegen-backend and linker standard.
 //!
-//! Dev-profile Cranelift with the pinned linker, configured in
-//! `.cargo/config.toml`, is the standard for development, test, lint, and
-//! proof builds. Release builds use LLVM because `--release` selects a profile
+//! LLVM with the pinned linker, configured in `.cargo/config.toml`, is the
+//! standard for development, test, lint, and proof builds; the Cranelift
+//! selection is disabled (14 November 2026, review due 14 May 2027) and the
+//! unstable key stays so it can be opted into. Release builds use LLVM because
+//! `--release` selects a profile
 //! that file does not configure, and coverage runs override the backend for
 //! their own invocation because `-Cinstrument-coverage` is LLVM-specific.
 //!
@@ -72,14 +74,13 @@ fn selects_a_linker(target: &Value) -> bool {
 }
 
 #[test]
-fn the_dev_profile_uses_cranelift() {
+fn the_dev_profile_leaves_cranelift_unselected() {
     let config = config().expect("`.cargo/config.toml` must be valid TOML");
 
-    assert_eq!(
+    assert_ne!(
         string_at(&config, &["profile", "dev"], "codegen-backend"),
         Some("cranelift"),
-        "[profile.dev] must select Cranelift, the standard for development, test, lint, and proof \
-         builds:\n{CARGO_CONFIG}"
+        "[profile.dev] must not select Cranelift; LLVM is the estate default:\n{CARGO_CONFIG}"
     );
     assert_eq!(
         table(&config, &["unstable"]).and_then(|t| t.get("codegen-backend")),

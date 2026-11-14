@@ -5,8 +5,9 @@ codegen-backend = true
 # `.rmeta` files), replacing `no-embed-metadata`.
 embed-metadata = false
 
-[profile.dev]
-codegen-backend = "cranelift"
+# Cranelift disabled estate-wide on 14 November 2026 (concordat ADR; review 14 May 2027). Uncomment to opt back in.
+# [profile.dev]
+# codegen-backend = "cranelift"
 
 # The parallel `rustc` frontend is the default for every development build.
 [build]
