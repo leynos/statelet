@@ -383,11 +383,11 @@ collaboration.
 ## Development build standard
 
 Bare Cargo development builds and Make's Rust build, test, rustdoc, Clippy, and
-type-check recipes use `.cargo/config.toml`: Cranelift, the parallel `rustc`
-frontend (`-Zthreads=8`), and clang with the pinned `mold` linker on Linux.
-Make recipes that assign `RUSTFLAGS` restate the development flags so they
-remain in effect. `make install-build-tools` installs the pinned build tools,
-and standard Make targets check their availability before compiling.
+type-check recipes use `.cargo/config.toml`: LLVM by default, the parallel
+`rustc` frontend (`-Zthreads=8`), and clang with the pinned `mold` linker on
+Linux. Make recipes that assign `RUSTFLAGS` restate the development flags so
+they remain in effect. `make install-build-tools` installs the pinned build
+tools, and standard Make targets check their availability before compiling.
 
 Release and coverage use explicit LLVM routes; coverage also uses `lld` for
 instrumentation. Whitaker uses its installer-managed toolchain without the
