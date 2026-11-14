@@ -463,9 +463,11 @@ Makefile edit, and the diagnostic says so.
 LLVM is the default codegen backend: the estate standard dropped Cranelift,
 with review due 14 May 2027 (see the
 [concordat decision record](https://github.com/leynos/concordat/blob/main/docs/adrs/adr-0004-cranelift-is-not-part-of-the-rust-build-standard.md)).
-To opt in, pass `--config 'profile.dev.codegen-backend="cranelift"'`;
-Cranelift does not unwind, so no test may rely on a caught panic under it, and
-an inherited `CARGO_PROFILE_*_CODEGEN_BACKEND` can still select it. Cargo
+Uncommenting the selection in `.cargo/config.toml` is a persistent opt-in and
+must come with an update to `tests/codegen_backend_contract.rs`. For a one-off
+opt-in, pass `--config 'profile.dev.codegen-backend="cranelift"'`; Cranelift
+does not unwind, so no test may rely on a caught panic under it, and an
+inherited `CARGO_PROFILE_*_CODEGEN_BACKEND` can still select it. Cargo
 development builds use the parallel frontend (`-Zthreads=8`) and Linux
 clang/linker setup configured in `.cargo/config.toml`. Cargo takes `RUSTFLAGS`
 from one source; assigning it replaces the config's build and target Rust

@@ -8,11 +8,9 @@
 //! that file does not configure, and coverage runs override the backend for
 //! their own invocation because `-Cinstrument-coverage` is LLVM-specific.
 //!
-//! This is a contract rather than a comment because the repository previously
-//! documented the opposite rule, that Cranelift must never appear in
-//! `.cargo/config.toml` (withdrawn in #60). That text is still in the history,
-//! and acting on it would silently make every debug build slower while leaving
-//! nothing to fail.
+//! This is a contract rather than a comment so a stray dev-profile Cranelift
+//! selection, which cannot unwind, fails here instead of surfacing as an abort
+//! in a test that panics on purpose.
 //!
 //! The configuration is parsed as TOML rather than searched as text. A
 //! substring search cannot tell a live table from a commented-out one, so
