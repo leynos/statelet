@@ -217,19 +217,24 @@ project:
     `RUSTDOCFLAGS` set to `--cfg docsrs -D warnings`; `cargo clippy` with the
     default `CARGO_FLAGS` of `--all-targets --all-features` and `-D warnings`;
     the Whitaker Dylint suite across the workspace with `RUSTFLAGS` cleared;
-    Pylint with the df12 house lints over the Python sources; and `interrogate`,
-    which fails on any undocumented Python definition. Documentation warnings,
-    Clippy warnings, and Whitaker findings fail the command.
+    Pylint with the df12 house lints over the Python sources; and `interrogate`
+    over the Python source roots, subject to its default exclusions. Documentation
+    warnings, Clippy warnings, Whitaker findings, Pylint findings, and `MISSED`
+    `interrogate` rows fail the command.
   - `make test` runs `cargo nextest run --all-targets --all-features` (the
     default `TEST_FLAGS`), which requires `cargo-nextest`. It then runs
     `cargo test --workspace --doc --all-features` for doctests, followed by the
     workflow-contract checks (`cv005-contracts check` and pytest over
     `tests/workflow_contracts`) and the topology and feature-matrix command
     boundary cases.
-  - The recipes that assign `RUSTFLAGS` keep any inherited value, then add
-    `-D warnings` and the development flags described in
+  - The development gate recipes (`make lint`, `make test`, `make typecheck`,
+    and the topology and feature-matrix targets) keep any inherited
+    `RUSTFLAGS`, then add `-D warnings` and the development flags described in
     [Development build standard](#development-build-standard). Warnings are
-    therefore denied in these Cargo invocations.
+    therefore denied in those Cargo invocations. The Whitaker pass clears
+    `RUSTFLAGS`, `make build` adds the development flags without `-D warnings`,
+    `make release` adds neither, and `make coverage` replaces inherited flags
+    with its own.
   - Use `make fmt` to apply formatting fixes. It runs `cargo fmt --all`,
     `mdtablefix --in-place` with the same rules, and `markdownlint-cli2 --fix`
     over Markdown files.
@@ -356,7 +361,8 @@ project:
   Where a test harness must read or set process environment variables, this
   repository's accepted local form is a scoped, reason-bearing
   `#[expect(clippy::disallowed_methods, reason = "...")]` on that harness
-  boundary, as recorded in [developers' guide](docs/developers-guide.md).
+  boundary. The [developers' guide](docs/developers-guide.md) records this as
+  the one in-process exception; it is not a general permission.
 - **Process-wide locks are not an escape hatch.** Serializing environment
   mutation behind a shared `Mutex`, `OnceLock`, or `serial_test` attribute is
   not an accepted fallback. It serializes the suite, defeats property-based
