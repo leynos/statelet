@@ -48,12 +48,14 @@ literal for each variant, such as `Self::Normalize => "Normalize"`. The
 [trait's Rustdoc example](../src/lib.rs) is a complete implementation that the
 doctest suite compiles and runs.
 
-A label is independent of a state's payload: `Reading(u64)` and `Reading(0)`
+A label is independent of a state's payload: `Reading(42)` and `Reading(0)`
 both report `"Reading"` when the implementation matches on the variant rather
 than its value. The method borrows the state and returns a static string, so
-naming does not consume the state and the returned label is not a fresh
-allocation. The trait does not prevent an implementation from doing other work
-internally.
+naming does not consume the state and the returned reference remains valid for
+the rest of the program. The return type alone does not guarantee that an
+implementation avoids allocation; it can build or leak a string before
+returning it. The trait also does not prevent an implementation from doing
+other work internally.
 
 The implementor owns label stability. The trait checks the return type and
 lifetime, not a policy; deriving a label from `Debug`, `Display`, a type name,

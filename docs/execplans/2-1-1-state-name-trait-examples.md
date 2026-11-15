@@ -171,6 +171,15 @@ than bypassing it or starting duplicate builds.
         `/tmp/feature-matrix-statelet-2-1-1-rebased.out`,
         `/tmp/markdownlint-statelet-2-1-1-rebased.out`, and
         `/tmp/nixie-statelet-2-1-1-rebased.out`.
+  - [x] (2026-11-15) Hosted completeness assessment
+        EP-2-1-1-COMP-20261115-01 found no runtime defect and two documentation
+        issues: the user guide claimed the returned label is not a fresh
+        allocation, which the return type cannot guarantee (D7), and this
+        retrospective called the 373-test EP-M2 run final while the planning
+        steps still said implementation was unauthorized. The retrospective
+        now distinguishes the EP-M2 and EP-M3 runs, and the planning steps are
+        marked historical. Follow-up posted at
+        <https://github.com/leynos/statelet/pull/172#issuecomment-6886883078>.
 
 ## Surprises & discoveries
 
@@ -234,6 +243,13 @@ executed as a doctest.
   would therefore break a repository gate; the doctest already compiles and
   runs the full example. ADR references use the target's `docs/adrs/`
   four-digit paths because the old filenames no longer exist.
+- D7 (2026-11-15): describe only the guarantees the signature actually gives.
+  A `&'static str` return keeps the label alive for the rest of the program and
+  does not consume the state, but it does not prove that no allocation
+  happened: an implementation can build and leak a string before returning it.
+  The guide now states the lifetime guarantee and explicitly declines the
+  allocation claim, so it cannot mislead a reader into assuming an
+  allocation-free implementation.
 
 ## Outcomes & retrospective
 
@@ -250,9 +266,11 @@ with an unresolved import; the payload-zero negative control failed the named
 boundary test before the correct match was restored. EP-M2 documented the new
 integration test, updated the contents entry, and marked roadmap 2.1.1 done.
 
-Both milestone gate sequences passed all seven applicable checks, with the
-final run covering 373 nextest tests plus doctests, Python workflow contracts,
-and the topology and feature-matrix command boundaries. The approved runtime
+Each milestone gate sequence passed all seven applicable checks. EP-M2's run
+covered 373 nextest tests plus doctests, Python workflow contracts, and the
+topology and feature-matrix command boundaries. After the rebase, EP-M3 re-ran
+every gate, and that final run covered 392 nextest tests, 2 doctests, 515
+Python contract tests, and the same command boundaries. The approved runtime
 scope did not change and no dependency changed. One documentation adaptation
 followed the rebase: D6 replaces the user-guide's duplicated Rust fence with a
 link to the compiled Rustdoc example, because the target branch now requires
@@ -478,13 +496,16 @@ Makefile's documented installer targets; do not weaken gates. If spelling
 regenerates unrelated `typos.toml` content, follow the repository's
 separate-base-change policy rather than folding it in.
 
-For this planning-only PR, run formatting and documentation gates; runtime
-milestones and their code gates remain unexecuted until approval. Inspect the
-full branch diff, commit the validated plan, push over verified SSH, refresh
-`origin/2-1-1-state-name-trait-examples`, and set it as upstream. Create a
+Historical planning step, completed on 2026-11-03 and superseded by the
+2026-11-15 approval: for the then-planning-only PR, run formatting and
+documentation gates; runtime milestones and their code gates were not executed
+until approval. That step inspected the full branch diff, committed the
+validated plan, pushed over verified SSH, refreshed
+`origin/2-1-1-state-name-trait-examples`, and set it as upstream. It created a
 draft PR titled `Plan: Implement StateName and handwritten examples (2.1.1)`
 with a branch link to this document and a terminal References section linking
-the Lody session. This publication is authorized; implementation is not.
+the Lody session. That publication was authorized; implementation was not
+authorized until the approval recorded at the top of this plan.
 
 ## Idempotence and recovery
 
