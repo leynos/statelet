@@ -29,8 +29,8 @@ nothing if local conventions prove sufficient.
 - Keep the trait open to downstream implementations. Do not seal it or derive
   its labels from `Debug`, `Display`, type names, or numeric discriminants.
 - Do not modify `mdtablefix` or claim its consumption evidence from local tests.
-  Preserve ADR 004's pending return-shape decision at task 3.2.1.
-- Proposed ADRs 006–007 and observation RFCs are not accepted requirements for
+  Preserve ADR 0004's pending return-shape decision at task 3.2.1.
+- Proposed ADRs 0006–0007 and observation RFCs are not accepted requirements for
   this task. Do not import their wider contracts or derive test matrix.
 - Preserve strict lints, the shared Cargo cache, compiler admission wrappers,
   and sequential gates. Do not use `/tmp` as a build directory.
@@ -111,7 +111,7 @@ than bypassing it or starting duplicate builds.
   - [x] (2026-11-15) Review R1–R4 against the diff: exact label tests, the
         no-`Debug` witness, and both doctests discharge R1; the single
         dependency-free trait and green topology/feature-matrix gates preserve
-        R2; the provisional return shape and unchanged ADR 004 gate preserve
+        R2; the provisional return shape and unchanged ADR 0004 gate preserve
         R3; the repository test frameworks and sequential gates satisfy R4.
         Commit EP-M1 as the coherent feature commit (`d1b293a`).
 - [x] EP-M2: finish documentation, reconcile evidence, and mark 2.1.1 done.
@@ -119,10 +119,10 @@ than bypassing it or starting duplicate builds.
         and confirm every updated document is reachable from
         `docs/contents.md`. Update the contents entry for this plan from a
         proposal to the delivered record.
-  - [x] (2026-11-15) Review the three examples (design sketch, two Rustdoc
-        examples, user-guide copy) for consistent labels and wording. They
-        describe local behaviour only; neither `mdtablefix` consumption nor a
-        return-shape verdict is claimed.
+  - [x] (2026-11-15) Review the examples (design sketch, two Rustdoc examples,
+        and the user-guide reference to them) for consistent labels and
+        wording. They describe local behaviour only; neither `mdtablefix`
+        consumption nor a return-shape verdict is claimed.
   - [x] (2026-11-15) Mark roadmap 2.1.1 `[x]` because its implementation and
         acceptance evidence now exist; leave 2.1.2, 2.1.3, and the isolated
         representation roadmap's unrelated 2.1.1 untouched.
@@ -142,6 +142,35 @@ than bypassing it or starting duplicate builds.
   - [x] (2026-11-15) Commit the documentation and completion bookkeeping;
         re-run the Markdown and format checks over the recorded evidence, which
         is the only content changed after the full gate run.
+- [x] EP-M3: rebase onto advanced `origin/main` and revalidate.
+  - [x] (2026-11-15) Rebase the three-commit series from baseline `d979204`
+        onto target `37e0c70` using the merge backend with `zdiff3` and the
+        ambient Weave driver bypassed for an unattended replay. The two
+        implementation commits applied cleanly; only
+        `docs/repository-layout.md` conflicted, between the target's
+        `tests/documented_examples` inventory and ADR renumbering and this
+        branch's new entries. The resolution keeps both. The replayed series
+        is `32545ee`, `c8b8ae3`, `7c7dba6`; recovery refs remain under
+        `refs/recovery/2-1-1/`.
+  - [x] (2026-11-15) Refresh inbound ADR links to the target's
+        `docs/adrs/adr-nnnn-...` paths and normalize citations to four-digit
+        numbers. Replace the user-guide Rust fence with a reference to the
+        compiled Rustdoc example, as required by the target's tested
+        user-facing example policy (D6).
+  - [x] (2026-11-15) Full gate sequence passed sequentially through the
+        scrutineer over `7c7dba6` plus these edits: `make check-fmt`,
+        `make test`, `make typecheck`, `make lint`, `make feature-matrix`,
+        `make markdownlint`, and `make nixie` all exited zero. `make test`
+        reported 392 nextest tests passed (21 skipped), 2 doctests, 515 Python
+        contract tests, 3 topology command-boundary tests, and 18 feature-matrix
+        command-boundary tests. Logs are
+        `/tmp/check-fmt-statelet-2-1-1-rebased.out`,
+        `/tmp/test-statelet-2-1-1-rebased.out`,
+        `/tmp/typecheck-statelet-2-1-1-rebased.out`,
+        `/tmp/lint-statelet-2-1-1-rebased.out`,
+        `/tmp/feature-matrix-statelet-2-1-1-rebased.out`,
+        `/tmp/markdownlint-statelet-2-1-1-rebased.out`, and
+        `/tmp/nixie-statelet-2-1-1-rebased.out`.
 
 ## Surprises & discoveries
 
@@ -163,6 +192,19 @@ than a syntax error in the new test. The temporary payload-zero mutation was
 observed failing the named boundary test before the correct body was restored.
 No new dependency or feature was needed.
 
+After publication, `origin/main` advanced from the planning baseline to
+`37e0c70`, which adopted the latest documentation style guide (#169). That
+change moved ADRs under `docs/adrs/` with four-digit numbers, added
+`tests/documented_examples.rs`, and made every fence in a user-facing document
+a marked, executable Bash example. The rebase applied both implementation
+commits cleanly and conflicted only in `docs/repository-layout.md`, where the
+new `tests/` inventory and the ADR renumbering met this branch's new entries.
+The guide's Rust fence also violated the adopted example policy: the loader
+rejects any unmarked or non-Bash fence in `docs/users-guide.md`. The user-guide
+copy therefore became a link to the compiled Rustdoc example rather than a
+duplicated fence, so the copyable implementation remains available and is
+executed as a doctest.
+
 ## Decision log
 
 - D1 (2026-11-03): use the exact §6.1 trait, directly in `src/lib.rs`. A second
@@ -179,11 +221,19 @@ No new dependency or feature was needed.
   milestone for a trait declaration.
 - D4 (2026-11-03): describe stable labels as the implementor's contract, not a
   guarantee the trait can enforce for arbitrary downstream Rust code. Retain
-  ADR 004's evidence gate and publication uncertainty.
+  ADR 0004's evidence gate and publication uncertainty.
 - D5 (2026-11-15): mark the trait method `#[must_use]`. The repository denies
   `clippy::must_use_candidate`, and the attribute states the existing contract
   that a returned label should be used. It adds no supertrait, default method,
   associated item, or sealing, so the approved signature is unchanged.
+- D6 (2026-11-15): after rebasing onto `37e0c70`, satisfy the user-guide
+  deliverable by linking to the compiled Rustdoc example instead of repeating a
+  Rust fence. The adopted documentation style guide requires every fence in a
+  user-facing document to be a marked, executable Bash example, and its loader
+  fails the build on any other fence. Repeating the implementation as a fence
+  would therefore break a repository gate; the doctest already compiles and
+  runs the full example. ADR references use the target's `docs/adrs/`
+  four-digit paths because the old filenames no longer exist.
 
 ## Outcomes & retrospective
 
@@ -202,12 +252,15 @@ integration test, updated the contents entry, and marked roadmap 2.1.1 done.
 
 Both milestone gate sequences passed all seven applicable checks, with the
 final run covering 373 nextest tests plus doctests, Python workflow contracts,
-and the topology and feature-matrix command boundaries. No deviation from the
-approved scope was needed, no dependency changed, and no `mdtablefix` evidence
-or return-shape verdict is claimed. The remaining limitations are intentional:
-the trait's label stability is an implementor obligation, not an enforced
-property, and the `&'static str` return shape remains ADR 004's open decision
-at roadmap task 3.2.1.
+and the topology and feature-matrix command boundaries. The approved runtime
+scope did not change and no dependency changed. One documentation adaptation
+followed the rebase: D6 replaces the user-guide's duplicated Rust fence with a
+link to the compiled Rustdoc example, because the target branch now requires
+every user-facing fence to be an executable Bash example. No `mdtablefix`
+evidence or return-shape verdict is claimed. The remaining limitations are
+intentional: the trait's label stability is an implementor obligation, not an
+enforced property, and the `&'static str` return shape remains ADR 0004's open
+decision at roadmap task 3.2.1.
 
 ## Context and orientation
 
@@ -222,28 +275,31 @@ changing versions or adding features for this task.
 `docs/contents.md` indexes documentation. `docs/users-guide.md` currently
 explains the design-phase status. `docs/developers-guide.md` owns internal
 conventions and reuse guidance; `docs/repository-layout.md` owns file placement.
-`docs/design.md` §6.1 owns the public naming contract. ADR 004 and
+`docs/design.md` §6.1 owns the public naming contract. ADR 0004 and
 `docs/phase-2-validation-note-template.md` govern later consumption evidence.
 Do not fill a validation note with synthetic evidence from these examples.
 
 ## Conformance basis
 
-All references below are the versions at planning baseline
-`d9792043ce6a3625c722b8bce8947d4f575605d2`. Refresh this basis if upstream
-changes before approval or execution.
+All references below were the versions at planning baseline
+`d9792043ce6a3625c722b8bce8947d4f575605d2` and were refreshed after the rebase
+onto target `37e0c70a5bc1c73aeabeac8bd795b98260be4202`. The target moved ADRs
+under `docs/adrs/` with four-digit numbers, so the links and citations below
+use those canonical paths.
 
 - R1: [roadmap 2.1.1](../roadmap.md) and [design §6.1](../design.md) require
   stable enum labels without `Debug`. EP-M1 discharges this through exact label
   tests, a no-`Debug` compile witness, and runnable documentation.
 - R2: design §§3.1–3.2, 9–10 and
-  [ADR 002](../adr-002-transition-boundary-scope.md) constrain ownership and
-  runtime size. EP-M1 keeps one dependency-free trait; existing topology and
-  feature-matrix gates plus diff review check the boundary.
+  [ADR 0002](../adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md)
+  constrain ownership and runtime size. EP-M1 keeps one dependency-free trait;
+  existing topology and feature-matrix gates plus diff review check the
+  boundary.
 - R3: [terms of reference §§7–9](../terms-of-reference.md),
-  [ADR 003](../adr-003-v0-1-exit-register.md), and
-  [ADR 004](../adr-004-state-name-consumption-evidence.md) preserve the product
-  exit and evidence gates. EP-M2 updates status without claiming B1 validation
-  or a settled identifier decision.
+  [ADR 0003](../adrs/adr-0003-record-the-v0-1-exit-register.md), and
+  [ADR 0004](../adrs/adr-0004-define-the-statename-consumption-evidence.md)
+  preserve the product exit and evidence gates. EP-M2 updates status without
+  claiming B1 validation or a settled identifier decision.
 - R4: repository `AGENTS.md` and the user's testing requirements map to the
   verification plan and the sequential acceptance commands in both milestones.
 

@@ -11,7 +11,8 @@ boundaries in ordinary Rust state machines. Its only runtime API is the
 handwritten `StateName` trait described below; it does not yet expose a
 procedural macro or a stable public API. The trait's `&'static str` return
 shape is provisional until the consumption evidence required by
-[ADR 004](adr-004-state-name-consumption-evidence.md) is recorded.
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md) is
+recorded.
 
 The first validation slice is deliberately conventions-only. The project must
 prove that stable state names and documented tracing fields improve real
@@ -42,29 +43,10 @@ defines what those observations record and how they are read.
 Implement `statelet::StateName` for an application-owned enum when a state
 needs an observable label but must not implement `Debug`. The implementation is
 handwritten: the crate does not generate it, and the label is an explicit
-literal chosen by the implementor.
-
-```rust
-use statelet::StateName;
-
-enum ContinuationMode {
-    Normalize,
-    TightCodeSpan,
-    VerbatimFlush,
-}
-
-impl StateName for ContinuationMode {
-    fn state_name(&self) -> &'static str {
-        match self {
-            Self::Normalize => "Normalize",
-            Self::TightCodeSpan => "TightCodeSpan",
-            Self::VerbatimFlush => "VerbatimFlush",
-        }
-    }
-}
-
-assert_eq!(ContinuationMode::TightCodeSpan.state_name(), "TightCodeSpan");
-```
+literal chosen by the implementor. A `match` over the enum returns the chosen
+literal for each variant, such as `Self::Normalize => "Normalize"`. The
+[trait's Rustdoc example](../src/lib.rs) is a complete implementation that the
+doctest suite compiles and runs.
 
 A label is independent of a state's payload: `Reading(u64)` and `Reading(0)`
 both report `"Reading"` when the implementation matches on the variant rather
