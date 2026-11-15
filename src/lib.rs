@@ -28,7 +28,8 @@
 ///
 /// assert_eq!(
 ///     ContinuationMode::TightCodeSpan.state_name(),
-///     "TightCodeSpan"
+///     "TightCodeSpan",
+///     "TightCodeSpan must report its exact label"
 /// );
 /// ```
 ///
@@ -63,7 +64,11 @@ pub trait StateName {
     /// }
     ///
     /// let reading = Scan::Reading(42);
-    /// assert_eq!(reading.state_name(), "Reading");
+    /// assert_eq!(
+    ///     reading.state_name(),
+    ///     "Reading",
+    ///     "Scan::Reading must report the label Reading"
+    /// );
     /// ```
     #[must_use]
     fn state_name(&self) -> &'static str;

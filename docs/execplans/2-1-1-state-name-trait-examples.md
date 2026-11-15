@@ -187,6 +187,17 @@ than bypassing it or starting duplicate builds.
         property; the user guide and design §6.1 no longer claim every variant
         rename changes a label derived from `Debug`, `Display`, a type name, or
         a discriminant (D8).
+  - [x] (2026-11-15) The follow-up assessment replied that the whole approved
+        plan is clear at `0b8a340`, against plan blob
+        `acbc54f5841d13e853e8614224047c25d89a1a33` (reply
+        <https://github.com/leynos/statelet/pull/172#issuecomment-6887561170>).
+        Hosted CI, CodeScene, Codex code review, and Codex security review were
+        green or found nothing. The first formal CodeRabbit review then
+        requested one change: both Rustdoc `assert_eq!` calls and the
+        label-order assertion in `tests/state_name.rs` lacked the custom
+        diagnostic message that `AGENTS.md` requires. The finding is valid, so
+        each assertion gained a message naming the expected label or order; the
+        assertions and expected values are unchanged.
 
 ## Surprises & discoveries
 

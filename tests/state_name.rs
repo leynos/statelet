@@ -92,7 +92,11 @@ fn all_fieldless_labels_match_the_declared_table() {
     .map(StateName::state_name)
     .collect();
 
-    assert_eq!(actual, ["Normalize", "TightCodeSpan", "VerbatimFlush"]);
+    assert_eq!(
+        actual,
+        ["Normalize", "TightCodeSpan", "VerbatimFlush"],
+        "fieldless labels must follow the declared table order"
+    );
 }
 
 /// The label is `'static`, repeatable, and leaves the state usable.
