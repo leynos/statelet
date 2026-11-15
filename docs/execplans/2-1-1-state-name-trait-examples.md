@@ -1,11 +1,11 @@
 # Implement StateName and handwritten examples
 
-Status: APPROVED — implementation in progress (2026-11-15).
+Status: COMPLETE (2026-11-15).
 
 This ExecPlan is a living document. Keep its constraints, tolerances, risks,
 progress, discoveries, decisions, verification, and outcomes current. Approval
-was granted explicitly on 2026-11-15; this change implements roadmap task 2.1.1
-and records completion only when its acceptance evidence exists.
+was granted explicitly on 2026-11-15; this change implements roadmap task
+2.1.1, records its acceptance evidence, and marks the task done.
 
 ## Purpose / big picture
 
@@ -73,7 +73,7 @@ than bypassing it or starting duplicate builds.
 - [x] (2026-11-15) Validate and publish the planning-only draft pull request
       as PR 172.
 - [x] (2026-11-15) Obtain explicit plan approval.
-- [ ] EP-M1: implement and validate the minimal public contract and examples.
+- [x] EP-M1: implement and validate the minimal public contract and examples.
   - [x] (2026-11-15) Re-run unchanged baseline gates: `make fmt`,
         `make check-fmt`, `make lint`, and `make test` all exited zero; logs
         are `/tmp/fmt-statelet-2-1-1-baseline.out`,
@@ -113,8 +113,35 @@ than bypassing it or starting duplicate builds.
         dependency-free trait and green topology/feature-matrix gates preserve
         R2; the provisional return shape and unchanged ADR 004 gate preserve
         R3; the repository test frameworks and sequential gates satisfy R4.
-        Commit EP-M1 as the coherent feature commit.
-- [ ] EP-M2: finish documentation, reconcile evidence, and mark 2.1.1 done.
+        Commit EP-M1 as the coherent feature commit (`d1b293a`).
+- [x] EP-M2: finish documentation, reconcile evidence, and mark 2.1.1 done.
+  - [x] (2026-11-15) Document `tests/state_name.rs` in the repository layout
+        and confirm every updated document is reachable from
+        `docs/contents.md`. Update the contents entry for this plan from a
+        proposal to the delivered record.
+  - [x] (2026-11-15) Review the three examples (design sketch, two Rustdoc
+        examples, user-guide copy) for consistent labels and wording. They
+        describe local behaviour only; neither `mdtablefix` consumption nor a
+        return-shape verdict is claimed.
+  - [x] (2026-11-15) Mark roadmap 2.1.1 `[x]` because its implementation and
+        acceptance evidence now exist; leave 2.1.2, 2.1.3, and the isolated
+        representation roadmap's unrelated 2.1.1 untouched.
+  - [x] (2026-11-15) Complete EP-M2 gate sequence passed sequentially through
+        the scrutineer over `d1b293a` plus these documentation edits:
+        `make check-fmt`, `make lint`, `make test`, `make feature-matrix`,
+        `make typecheck`, `make markdownlint`, and `make nixie` all exited
+        zero. `make test` ran 373 nextest tests, all passed (33 skipped by
+        design), and the Python workflow contracts and doctests were green.
+        Logs are `/tmp/check-fmt-statelet-2-1-1-m2.out`,
+        `/tmp/lint-statelet-2-1-1-m2.out`,
+        `/tmp/test-statelet-2-1-1-m2.out`,
+        `/tmp/feature-matrix-statelet-2-1-1-m2.out`,
+        `/tmp/typecheck-statelet-2-1-1-m2.out`,
+        `/tmp/markdownlint-statelet-2-1-1-m2.out`, and
+        `/tmp/nixie-statelet-2-1-1-m2.out`.
+  - [x] (2026-11-15) Commit the documentation and completion bookkeeping;
+        re-run the Markdown and format checks over the recorded evidence, which
+        is the only content changed after the full gate run.
 
 ## Surprises & discoveries
 
@@ -164,10 +191,23 @@ The Wyvern team and the six-perspective expert panel completed planning review.
 The revised plan documents reuse before implementation, checks the actual
 feature matrix separately, stops gate scripts on failure, and uses a generic
 lifetime witness. The planning-only PR delivered no runtime feature; approval
-on 2026-11-15 authorized the implementation now in EP-M1. Record actual gate
-logs, commits, and observed behaviour here during execution. Before declaring
-`COMPLETE`, reconcile discoveries against every conformance document below and
-record any accepted deviations; unresolved deviations prevent completion.
+on 2026-11-15 authorized the implementation.
+
+EP-M1 delivered the exact `StateName` trait in `src/lib.rs` with two
+handwritten doctests, added `tests/state_name.rs` with no-`Debug` fixtures, and
+updated the design, user, and developer documentation. The red stage failed
+with an unresolved import; the payload-zero negative control failed the named
+boundary test before the correct match was restored. EP-M2 documented the new
+integration test, updated the contents entry, and marked roadmap 2.1.1 done.
+
+Both milestone gate sequences passed all seven applicable checks, with the
+final run covering 373 nextest tests plus doctests, Python workflow contracts,
+and the topology and feature-matrix command boundaries. No deviation from the
+approved scope was needed, no dependency changed, and no `mdtablefix` evidence
+or return-shape verdict is claimed. The remaining limitations are intentional:
+the trait's label stability is an implementor obligation, not an enforced
+property, and the `&'static str` return shape remains ADR 004's open decision
+at roadmap task 3.2.1.
 
 ## Context and orientation
 
@@ -435,3 +475,9 @@ Revision note (2026-11-15): explicit approval recorded; PR 172 published the
 planning-only draft and carries this implementation. Status moved from DRAFT to
 APPROVED. Implementation begins at EP-M1; no scope, tolerance, or API decision
 changed at approval.
+
+Revision note (2026-11-15, completion): EP-M1 and EP-M2 are delivered and
+verified, roadmap 2.1.1 is checked, and status moved from APPROVED to COMPLETE.
+The recorded negative control, gate counts, and log paths are the acceptance
+evidence; the return-shape decision and any `mdtablefix` consumption evidence
+remain outside this plan.
