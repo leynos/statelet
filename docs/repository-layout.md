@@ -35,6 +35,7 @@ compact and omits build output such as `target/`.
 │   └── lib.rs
 
 ├── tests/
+│   ├── state_name.rs
 │   ├── state_name_consumption_contract.rs
 │   ├── state_name_consumption_contract/
 │   ├── documented_examples.rs
@@ -111,10 +112,15 @@ compact and omits build output such as `target/`.
   `docs/contents.md`.
 
 - `src/lib.rs`: Contains the library crate root and exported public API
-  surface.
+  surface, currently the `StateName` trait.
 
 - `tests/`: Holds integration and behavioural tests that exercise public
   behaviour.
+- `tests/state_name.rs`: Exercises the public `StateName` API as a downstream
+  consumer sees it. Its local fieldless and payload-bearing enums deliberately
+  omit `Debug`, so a supertrait added to the trait fails compilation. Expected
+  labels and payload boundaries stay as independent test data, and no fixture
+  is exported as a shared runtime utility.
 - `tests/v0_1_exit_register_contract.rs`: Guards ADR 0003 against drift in its
   exit register, cited evidence, and roadmap gates.
 - `tests/state_name_consumption_contract.rs`: Guards ADR 0004 against drift in

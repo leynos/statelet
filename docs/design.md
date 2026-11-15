@@ -185,7 +185,7 @@ tool that consumes `cargo metadata` and fails on forbidden workspace edges.
 
 ### 6.1 State naming
 
-The runtime crate should expose a state naming trait and a derive macro:
+The runtime crate exposes a state naming trait:
 
 ```rust
 pub trait StateName {
@@ -193,7 +193,12 @@ pub trait StateName {
 }
 ```
 
-The derive macro should support enums first:
+Roadmap task 2.1.1 implements this trait by hand and documents it with
+handwritten examples. The trait has no supertraits, default method, associated
+items, or sealing, so a downstream crate can implement it for its own enum
+without implementing `Debug` or any other trait. Derive support is deferred
+until the macro baseline gate passes, so the derive below describes the
+intended later surface rather than an exported macro:
 
 ```rust
 #[derive(StateName)]
@@ -204,9 +209,19 @@ enum ContinuationMode {
 }
 ```
 
-Struct support can wait until a real use case needs it. The generated names
-should default to variant names and allow explicit renames later only if
-examples prove the need.
+The derive macro, once that gate passes, should support enums first. Struct
+support can wait until a real use case needs it. The generated names should
+default to variant names and allow explicit renames later only if examples
+prove the need.
+
+Implementors own the stability of the labels they return. The trait fixes the
+return lifetime and type, but it cannot enforce that a name remains meaningful
+after a variant rename or that an implementation is free of side effects. An
+implementation should therefore use explicit string literals for deliberate
+labels rather than deriving them from `Debug`, `Display`, type names, or
+numeric discriminants. A derived label can follow the implementation detail
+instead of the variant name, or stay unchanged across a rename; an explicit
+literal changes only when the implementor changes it.
 
 The `mdtablefix` baseline must scrutinize whether `&'static str` is enough for
 the first slice. If instrumentation, metrics, or downstream dashboards need a

@@ -7,8 +7,12 @@ manual.
 ## Current status
 
 Statelet is being evaluated as a small toolkit for marking transition
-boundaries in ordinary Rust state machines. It does not yet expose a stable
-runtime API or a procedural macro.
+boundaries in ordinary Rust state machines. Its only runtime API is the
+handwritten `StateName` trait described below; it does not yet expose a
+procedural macro or a stable public API. The trait's `&'static str` return
+shape is provisional until the consumption evidence required by
+[ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md) is
+recorded.
 
 The first validation slice is deliberately conventions-only. The project must
 prove that stable state names and documented tracing fields improve real
@@ -33,6 +37,34 @@ well, will be decided from observations recorded while the validation examples
 are annotated and not before — so no identifier will be added on anticipation
 alone. [ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md)
 defines what those observations record and how they are read.
+
+## Naming a state without `Debug`
+
+Implement `statelet::StateName` for an application-owned enum when a state
+needs an observable label but must not implement `Debug`. The implementation is
+handwritten: the crate does not generate it, and the label is an explicit
+literal chosen by the implementor. A `match` over the enum returns the chosen
+literal for each variant, such as `Self::Normalize => "Normalize"`. The
+[trait's Rustdoc example](../src/lib.rs) is a complete implementation that the
+doctest suite compiles and runs.
+
+The examples treat a label as independent of a state's payload: `Reading(42)`
+and `Reading(0)` both report `"Reading"` because the implementation matches on
+the variant rather than its value. The trait does not require that choice, and
+an implementation may return different literals for different payloads. The
+method borrows the state and returns a static string, so naming does not
+consume the state and the returned reference remains valid for the rest of the
+program. The return type alone does not guarantee that an implementation avoids
+allocation; it can build or leak a string before returning it. The trait also
+does not prevent an implementation from doing other work internally.
+
+The implementor owns label stability. The trait checks the return type and
+lifetime, not a policy. A label taken from `Debug` output changes when the
+derived variant name changes, though it can carry other content too; one
+derived from a handwritten `Display`, a type name, or a numeric discriminant
+can stay unchanged across a rename or change for a reason unrelated to the
+name. Use explicit literals for any name that operational tooling may observe,
+so a rename and its label change are one deliberate edit.
 
 ## Quick start
 

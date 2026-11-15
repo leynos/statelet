@@ -113,7 +113,7 @@ This step answers whether Statelet can expose a useful public contract without
 owning transitions. Its outcome informs the `mdtablefix` baseline and the shape
 of any later macro. See design.md §§3.1-3.2, 6.1, 9, and 10.
 
-- [ ] 2.1.1. Implement the `StateName` trait and handwritten examples.
+- [x] 2.1.1. Implement the `StateName` trait and handwritten examples.
   - Requires steps 1.1-1.2.
   - Keep derive support out of this task unless the macro gate has passed.
   - Success: enum states can expose stable names without requiring `Debug` as

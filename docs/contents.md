@@ -44,6 +44,10 @@ set.
     specifies the delivered cost evidence form and Phase 4 completeness
     checks; EP-M1 and EP-M2 are complete.
 
+  - [Implement StateName and handwritten examples](execplans/2-1-1-state-name-trait-examples.md)
+    records the approved and delivered runtime trait and examples for task
+    2.1.1, including their local verification.
+
 ## Product and design
 
 - [Terms of reference](terms-of-reference.md) defines the problem space,

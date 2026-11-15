@@ -17,6 +17,23 @@ Statelet uses Rust 2024, a pinned nightly toolchain, strict lint settings, and
 documented starter code. The current repository is a library project and renders
 `src/lib.rs`.
 
+## StateName trait reuse
+
+`statelet::StateName` is a projection over application-owned state, not a state
+store. An application owns its enums, transitions, and explicit `match` arms;
+its state types may implement the trait when their labels need to be
+observable. The runtime crate supplies only the trait and its method, so
+Statelet does not own state storage, transition machinery, identifiers, tracing
+adapters, or outcome vocabulary.
+
+Reuse the trait from the application crate rather than adding a shared Statelet
+fixture. An example enum in a test or doctest stays local to that test and must
+not be exported as a parser model or a shared runtime utility. Consumers depend
+on the `&'static str` projection alone; they must not assume the label matches
+`Debug` output, a numeric discriminant, or a type name. Labels are chosen and
+preserved by the implementor, and the trait cannot enforce that policy for
+downstream implementations.
+
 ## Local Workflow
 
 Install `rustup` and `uv` first. Local repository Python gateways use managed
