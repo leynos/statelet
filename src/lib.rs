@@ -40,9 +40,10 @@
 pub trait StateName {
     /// Returns the state's deliberately chosen static label.
     ///
-    /// The label is chosen by the implementor, not derived by this crate. It is
-    /// independent of any payload the state carries, so equal variants with
-    /// different payloads report the same label:
+    /// The label is chosen by the implementor, not derived by this crate. The
+    /// trait does not require payload independence, but the example below
+    /// treats the label as naming the variant, so `Scan::Reading(42)` and
+    /// `Scan::Reading(0)` both report `"Reading"`:
     ///
     /// ```
     /// use statelet::StateName;

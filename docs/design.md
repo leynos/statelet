@@ -219,8 +219,9 @@ return lifetime and type, but it cannot enforce that a name remains meaningful
 after a variant rename or that an implementation is free of side effects. An
 implementation should therefore use explicit string literals for deliberate
 labels rather than deriving them from `Debug`, `Display`, type names, or
-numeric discriminants, so a rename does not silently rename an operational
-label.
+numeric discriminants. A derived label can follow the implementation detail
+instead of the variant name, or stay unchanged across a rename; an explicit
+literal changes only when the implementor changes it.
 
 The `mdtablefix` baseline must scrutinize whether `&'static str` is enough for
 the first slice. If instrumentation, metrics, or downstream dashboards need a

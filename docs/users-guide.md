@@ -48,19 +48,23 @@ literal for each variant, such as `Self::Normalize => "Normalize"`. The
 [trait's Rustdoc example](../src/lib.rs) is a complete implementation that the
 doctest suite compiles and runs.
 
-A label is independent of a state's payload: `Reading(42)` and `Reading(0)`
-both report `"Reading"` when the implementation matches on the variant rather
-than its value. The method borrows the state and returns a static string, so
-naming does not consume the state and the returned reference remains valid for
-the rest of the program. The return type alone does not guarantee that an
-implementation avoids allocation; it can build or leak a string before
-returning it. The trait also does not prevent an implementation from doing
-other work internally.
+The examples treat a label as independent of a state's payload: `Reading(42)`
+and `Reading(0)` both report `"Reading"` because the implementation matches on
+the variant rather than its value. The trait does not require that choice, and
+an implementation may return different literals for different payloads. The
+method borrows the state and returns a static string, so naming does not
+consume the state and the returned reference remains valid for the rest of the
+program. The return type alone does not guarantee that an implementation avoids
+allocation; it can build or leak a string before returning it. The trait also
+does not prevent an implementation from doing other work internally.
 
 The implementor owns label stability. The trait checks the return type and
-lifetime, not a policy; deriving a label from `Debug`, `Display`, a type name,
-or a numeric discriminant makes a variant rename silently rename the label. Use
-explicit literals for any name that operational tooling may observe.
+lifetime, not a policy. A label taken from `Debug` output changes when the
+derived variant name changes, though it can carry other content too; one
+derived from a handwritten `Display`, a type name, or a numeric discriminant
+can stay unchanged across a rename or change for a reason unrelated to the
+name. Use explicit literals for any name that operational tooling may observe,
+so a rename and its label change are one deliberate edit.
 
 ## Quick start
 

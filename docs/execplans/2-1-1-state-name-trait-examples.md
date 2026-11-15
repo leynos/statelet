@@ -180,6 +180,13 @@ than bypassing it or starting duplicate builds.
         now distinguishes the EP-M2 and EP-M3 runs, and the planning steps are
         marked historical. Follow-up posted at
         <https://github.com/leynos/statelet/pull/172#issuecomment-6886883078>.
+  - [x] (2026-11-15) Follow-up assessment EP-2-1-1-COMP-20261115-01-R1
+        confirmed the two corrections and found two further documentation
+        overclaims, both about properties the trait cannot guarantee. The
+        `state_name` Rustdoc no longer states payload independence as a trait
+        property; the user guide and design §6.1 no longer claim every variant
+        rename changes a label derived from `Debug`, `Display`, a type name, or
+        a discriminant (D8).
 
 ## Surprises & discoveries
 
@@ -250,6 +257,14 @@ executed as a doctest.
   The guide now states the lifetime guarantee and explicitly declines the
   allocation claim, so it cannot mislead a reader into assuming an
   allocation-free implementation.
+- D8 (2026-11-15): keep documentation claims inside what the trait enforces.
+  Payload-independent labels are a convention of the examples (D2), not a rule
+  the trait imposes; an implementation may return different literals for
+  different payloads. Likewise, a derived label does not necessarily follow a
+  variant rename: `Debug` output follows the derived variant name, while a
+  handwritten `Display`, a type name, or an unchanged discriminant can stay the
+  same or change for an unrelated reason. Both passages now describe the risk
+  and the explicit-literal recommendation without asserting the false universal.
 
 ## Outcomes & retrospective
 
