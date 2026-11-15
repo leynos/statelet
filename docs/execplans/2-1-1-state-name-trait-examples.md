@@ -1,10 +1,11 @@
 # Implement StateName and handwritten examples
 
-Status: DRAFT — awaiting explicit approval before implementation.
+Status: APPROVED — implementation in progress (2026-11-15).
 
 This ExecPlan is a living document. Keep its constraints, tolerances, risks,
-progress, discoveries, decisions, verification, and outcomes current. This
-change prepares roadmap task 2.1.1; it does not implement or complete it.
+progress, discoveries, decisions, verification, and outcomes current. Approval
+was granted explicitly on 2026-11-15; this change implements roadmap task 2.1.1
+and records completion only when its acceptance evidence exists.
 
 ## Purpose / big picture
 
@@ -69,9 +70,50 @@ than bypassing it or starting duplicate builds.
 - [x] (2026-11-03) Draft contracts and proportionate verification strategy.
 - [x] (2026-11-03) Complete six-perspective expert review and reconcile
       findings.
-- [ ] Validate and publish the planning-only draft pull request.
-- [ ] Obtain explicit plan approval.
+- [x] (2026-11-15) Validate and publish the planning-only draft pull request
+      as PR 172.
+- [x] (2026-11-15) Obtain explicit plan approval.
 - [ ] EP-M1: implement and validate the minimal public contract and examples.
+  - [x] (2026-11-15) Re-run unchanged baseline gates: `make fmt`,
+        `make check-fmt`, `make lint`, and `make test` all exited zero; logs
+        are `/tmp/fmt-statelet-2-1-1-baseline.out`,
+        `/tmp/check-fmt-statelet-2-1-1-baseline.out`,
+        `/tmp/lint-statelet-2-1-1-baseline.out`, and
+        `/tmp/test-statelet-2-1-1-baseline.out`.
+  - [x] (2026-11-15) Write the `StateName` contract into design §6.1 and the
+        reuse policy into the developer guide before production code.
+  - [x] (2026-11-15) Add `tests/state_name.rs`; the red stage failed with
+        `E0432: unresolved import statelet::StateName` (exit 101, log
+        `/tmp/test-state-name-red.out`).
+  - [x] (2026-11-15) Replace the greeting stub with the exact trait and two
+        handwritten doctests; focused tests and doctests pass (10 integration
+        tests, 2 doctests; logs `/tmp/test-state-name-green.out` and
+        `/tmp/test-state-name-doc.out`).
+  - [x] (2026-11-15) Negative control: a temporary `Reading(0) => "Idle"`
+        branch failed `naming_preserves_boundary_payloads::case_1_zero` with
+        actual `"Idle"` against expected `"Reading"` (log
+        `/tmp/test-state-name-negative-control.out`); the mutation was removed
+        before the milestone gates.
+  - [x] (2026-11-15) Complete EP-M1 gate sequence passed sequentially through
+        the scrutineer against the final candidate: `make check-fmt`,
+        `make lint`, `make test`, `make feature-matrix`, `make typecheck`,
+        `make markdownlint`, and `make nixie` all exited zero. `make test`
+        reported 352 nextest tests passed (21 skipped), 2 doctests passed,
+        515 Python contract tests passed, and 3 topology plus 18 feature-matrix
+        command-boundary tests passed. Logs are
+        `/tmp/check-fmt-statelet-2-1-1.out`,
+        `/tmp/lint-statelet-2-1-1.out`,
+        `/tmp/test-statelet-2-1-1.out`,
+        `/tmp/feature-matrix-statelet-2-1-1.out`,
+        `/tmp/typecheck-statelet-2-1-1.out`,
+        `/tmp/markdownlint-statelet-2-1-1.out`, and
+        `/tmp/nixie-statelet-2-1-1.out`.
+  - [x] (2026-11-15) Review R1–R4 against the diff: exact label tests, the
+        no-`Debug` witness, and both doctests discharge R1; the single
+        dependency-free trait and green topology/feature-matrix gates preserve
+        R2; the provisional return shape and unchanged ADR 004 gate preserve
+        R3; the repository test frameworks and sequential gates satisfy R4.
+        Commit EP-M1 as the coherent feature commit.
 - [ ] EP-M2: finish documentation, reconcile evidence, and mark 2.1.1 done.
 
 ## Surprises & discoveries
@@ -86,6 +128,13 @@ CodeGraph tools were absent from the available tool inventory and discovery
 results. The requested skill was loaded; direct file reads supplied the
 fallback evidence. Context pack `pk_ephobhax` carries the reconnaissance for
 agent collaboration; this document contains the durable execution context.
+
+At implementation on 2026-11-15, the compiled tree matched the planning
+baseline: `src/lib.rs` held only `greet()`, and no runtime `StateName` existed.
+The red stage failed for the intended reason — an unresolved import — rather
+than a syntax error in the new test. The temporary payload-zero mutation was
+observed failing the named boundary test before the correct body was restored.
+No new dependency or feature was needed.
 
 ## Decision log
 
@@ -104,17 +153,21 @@ agent collaboration; this document contains the durable execution context.
 - D4 (2026-11-03): describe stable labels as the implementor's contract, not a
   guarantee the trait can enforce for arbitrary downstream Rust code. Retain
   ADR 004's evidence gate and publication uncertainty.
+- D5 (2026-11-15): mark the trait method `#[must_use]`. The repository denies
+  `clippy::must_use_candidate`, and the attribute states the existing contract
+  that a returned label should be used. It adds no supertrait, default method,
+  associated item, or sealing, so the approved signature is unchanged.
 
 ## Outcomes & retrospective
 
 The Wyvern team and the six-perspective expert panel completed planning review.
 The revised plan documents reuse before implementation, checks the actual
 feature matrix separately, stops gate scripts on failure, and uses a generic
-lifetime witness. No runtime feature, release, consumption verdict, or roadmap
-completion is delivered by this PR. Record actual gate logs, commits, and
-observed behaviour here during execution. Before declaring `COMPLETE`,
-reconcile discoveries against every conformance document below and record any
-accepted deviations; unresolved deviations prevent completion.
+lifetime witness. The planning-only PR delivered no runtime feature; approval
+on 2026-11-15 authorized the implementation now in EP-M1. Record actual gate
+logs, commits, and observed behaviour here during execution. Before declaring
+`COMPLETE`, reconcile discoveries against every conformance document below and
+record any accepted deviations; unresolved deviations prevent completion.
 
 ## Context and orientation
 
@@ -377,3 +430,8 @@ implementation, the test/proof boundary, and the explicit approval gate.
 Revision note (2026-11-03, expert review): apply the architecture, contract,
 and delivery corrections above. The planned API and approval gate are
 unchanged; acceptance now explicitly includes the candidate feature matrix.
+
+Revision note (2026-11-15): explicit approval recorded; PR 172 published the
+planning-only draft and carries this implementation. Status moved from DRAFT to
+APPROVED. Implementation begins at EP-M1; no scope, tolerance, or API decision
+changed at approval.

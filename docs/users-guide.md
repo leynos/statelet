@@ -7,8 +7,11 @@ manual.
 ## Current status
 
 Statelet is being evaluated as a small toolkit for marking transition
-boundaries in ordinary Rust state machines. It does not yet expose a stable
-runtime API or a procedural macro.
+boundaries in ordinary Rust state machines. Its only runtime API is the
+handwritten `StateName` trait described below; it does not yet expose a
+procedural macro or a stable public API. The trait's `&'static str` return
+shape is provisional until the consumption evidence required by
+[ADR 004](adr-004-state-name-consumption-evidence.md) is recorded.
 
 The first validation slice is deliberately conventions-only. The project must
 prove that stable state names and documented tracing fields improve real
@@ -33,6 +36,47 @@ well, will be decided from observations recorded while the validation examples
 are annotated and not before — so no identifier will be added on anticipation
 alone. [ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md)
 defines what those observations record and how they are read.
+
+## Naming a state without `Debug`
+
+Implement `statelet::StateName` for an application-owned enum when a state
+needs an observable label but must not implement `Debug`. The implementation is
+handwritten: the crate does not generate it, and the label is an explicit
+literal chosen by the implementor.
+
+```rust
+use statelet::StateName;
+
+enum ContinuationMode {
+    Normalize,
+    TightCodeSpan,
+    VerbatimFlush,
+}
+
+impl StateName for ContinuationMode {
+    fn state_name(&self) -> &'static str {
+        match self {
+            Self::Normalize => "Normalize",
+            Self::TightCodeSpan => "TightCodeSpan",
+            Self::VerbatimFlush => "VerbatimFlush",
+        }
+    }
+}
+
+assert_eq!(ContinuationMode::TightCodeSpan.state_name(), "TightCodeSpan");
+```
+
+A label is independent of a state's payload: `Reading(u64)` and `Reading(0)`
+both report `"Reading"` when the implementation matches on the variant rather
+than its value. The method borrows the state and returns a static string, so
+naming does not consume the state and the returned label is not a fresh
+allocation. The trait does not prevent an implementation from doing other work
+internally.
+
+The implementor owns label stability. The trait checks the return type and
+lifetime, not a policy; deriving a label from `Debug`, `Display`, a type name,
+or a numeric discriminant makes a variant rename silently rename the label. Use
+explicit literals for any name that operational tooling may observe.
 
 ## Quick start
 
