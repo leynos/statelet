@@ -286,7 +286,7 @@ lines).
 - [x] (2026-11-16T19:55Z) Community-of-experts design review (six lenses in
       three panels) completed; verdict "proceed with conditions"; findings
       reconciled in D4–D7 and D12–D16 (see `Revision note`).
-- [ ] Draft PR opened for the plan.
+- [x] (2026-11-16T20:05Z) Draft PR opened for the plan as PR 194.
 - [ ] Plan approved by the user.
 - [ ] `EP-M1` contract recorded, constants exported, and lint compatibility
       of `#[instrument]` confirmed.
