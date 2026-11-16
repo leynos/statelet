@@ -232,7 +232,7 @@ Configuration is two dev-dependency entries with their explanatory comments
 
 ## Surprises & discoveries
 
-- Observation: a hand-written `tracing::Subscriber` whose `enter` and `exit`
+- Observation: a handwritten `tracing::Subscriber` whose `enter` and `exit`
   are no-ops makes `Span::current()` return a disabled span, so every late
   `record` call silently vanishes. Evidence: the first probe run printed no
   `transition.outcome` or `transition.error` values; adding a span stack and
@@ -708,7 +708,7 @@ Feature: Transition tracing fields with ordinary instrument
 
 Question: does `#[instrument(fields({crate::path::CONST} = ...))]` with
 dotted constant values produce the same fields as dotted literals, and does a
-hand-written subscriber observe late `record` calls? Done in a scratch crate
+handwritten subscriber observe late `record` calls? Done in a scratch crate
 under `target/probe-2-1-2/` (deleted afterwards) against the locked
 `tracing` 0.1.44 and `tracing-core` 0.1.36. Result: go. Transcript in
 `Artefacts and notes`.
