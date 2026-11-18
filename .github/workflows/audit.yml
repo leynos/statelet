@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: '3.14'
       - name: Setup uv
-        uses: astral-sh/setup-uv@b06acff4b6a41bdd9cdac56507ead0bd7734e757
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d
         with:
           python-version: '3.14'
       - name: Audit dependencies
