@@ -1,0 +1,94 @@
+//! Transition tracing field names, published as a semver-relevant contract.
+//!
+//! A transition boundary — the function or method where a state machine
+//! handles one input and decides what happens next — records its work on a
+//! `tracing` span. Statelet fixes the names of five fields on that span so
+//! dashboards, alerts, and log queries can depend on them. The full contract,
+//! including each field's meaning, when it is recorded, and the shape of its
+//! value, is [ADR 0008][adr-0008]; this module publishes the names so a
+//! downstream crate can use them from code.
+//!
+//! Naming a field through these constants moves the spelling under the
+//! compiler. A misspelt constant fails to compile, while a misspelt dotted
+//! literal silently creates a different field that nothing reads:
+//!
+//! ```
+//! use statelet::{StateName, fields};
+//!
+//! enum Mode {
+//!     Normalize,
+//! }
+//!
+//! impl StateName for Mode {
+//!     fn state_name(&self) -> &'static str { "Normalize" }
+//! }
+//!
+//! #[tracing::instrument(skip_all, fields(
+//!     {fields::TRANSITION_NAME} = "handle_line",
+//!     {fields::TRANSITION_STATE_BEFORE} = mode.state_name(),
+//!     {fields::TRANSITION_EVENT} = "table_row",
+//!     {fields::TRANSITION_OUTCOME} = tracing::field::Empty,
+//!     {fields::TRANSITION_ERROR} = tracing::field::Empty,
+//! ))]
+//! fn handle_line(mode: &Mode) -> &'static str {
+//!     let outcome = "stay";
+//!     tracing::Span::current().record(fields::TRANSITION_OUTCOME, outcome);
+//!     outcome
+//! }
+//!
+//! assert_eq!(
+//!     handle_line(&Mode::Normalize),
+//!     "stay",
+//!     "the boundary must report the label it recorded"
+//! );
+//! ```
+//!
+//! A field recorded after the span is created must be declared when the span
+//! is created — with `tracing::field::Empty` or a bare `fields(name)`
+//! declaration — because `tracing` silently discards a value recorded for an
+//! undeclared field. A declared field that is never recorded stays absent, and
+//! absence means only that the boundary did not capture it: it never implies
+//! success or failure.
+//!
+//! Braced constant field names need `tracing` 0.1.42 or later, which carries
+//! `tracing-attributes` 0.1.31. Dotted string literals such as
+//! `"transition.name"` produce the same fields on every `tracing` 0.1 release
+//! and remain an equal alternative.
+//!
+//! [adr-0008]: https://github.com/leynos/statelet/blob/main/docs/adrs/adr-0008-publish-the-transition-tracing-field-contract.md
+
+/// The stable label naming the transition boundary.
+///
+/// The application chooses the label, usually the instrumented function's
+/// name. Every boundary span carries this field.
+#[doc(alias = "transition.name")]
+pub const TRANSITION_NAME: &str = "transition.name";
+
+/// The [`crate::StateName`] label of the state observed on entry.
+///
+/// Recorded by a boundary that observes a state; the label is the same one
+/// `StateName::state_name` returns.
+#[doc(alias = "transition.state.before")]
+pub const TRANSITION_STATE_BEFORE: &str = "transition.state.before";
+
+/// The stable semantic class of the input the boundary handles.
+///
+/// A low-cardinality class of the input, not the input itself, so a raw parsed
+/// line never reaches the trace.
+#[doc(alias = "transition.event")]
+pub const TRANSITION_EVENT: &str = "transition.event";
+
+/// The stable label of the result the boundary produced.
+///
+/// Chosen by the application, for example the variant label of its own
+/// decision enum. The contract does not require it to be absent when the
+/// boundary returns an error.
+#[doc(alias = "transition.outcome")]
+pub const TRANSITION_OUTCOME: &str = "transition.outcome";
+
+/// The stable category of the error a fallible boundary returned.
+///
+/// A bounded category such as the variant label of the application's error
+/// enum, not arbitrary error text. Only fallible boundaries declare it.
+#[doc(alias = "transition.error")]
+pub const TRANSITION_ERROR: &str = "transition.error";

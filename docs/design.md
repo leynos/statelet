@@ -14,6 +14,7 @@ Companion documents:
 - `docs/adrs/adr-0002-scope-statelet-to-transition-boundary-marking.md`
 - `docs/adrs/adr-0003-record-the-v0-1-exit-register.md`
 - `docs/adrs/adr-0004-define-the-statename-consumption-evidence.md`
+- `docs/adrs/adr-0008-publish-the-transition-tracing-field-contract.md`
 - `docs/phase-2-validation-note-template.md`
 
 Last substantive revision: 2026-09-19
@@ -367,20 +368,37 @@ it is a lint-like syntactic contract, not semantic proof.
 
 ## 9. Observability
 
-The `tracing` feature should generate transition-specific instrumentation. It
-should not duplicate every option in `tracing-attributes::instrument`.
+### 9.1 Field contract
 
-The default generated fields are:
+Five field names are the published transition tracing contract:
 
-- `transition.name`
-- `transition.state.before`
-- `transition.event`
-- `transition.outcome`
-- `transition.error`
+- `transition.name` — the boundary's stable label.
+- `transition.state.before` — the `StateName` label of the observed state.
+- `transition.event` — the semantic class of the handled input.
+- `transition.outcome` — the label of the result the boundary produced.
+- `transition.error` — the bounded category of a returned error.
 
 These field names are public operational API. Dashboards, alerts, and log
 queries may depend on them. Renaming or changing their meaning is
 semver-relevant even if Rust type checking cannot detect the break.
+
+[ADR 0008](adrs/adr-0008-publish-the-transition-tracing-field-contract.md)
+holds the single source of each field's meaning, presence rule, and value rule,
+together with the semantic-versioning and prefix-ownership rules. Beyond the
+`transition.` prefix claim on boundary spans, the runtime crate publishes the
+names as the constants in [`statelet::fields`](../src/fields.rs), so a
+downstream crate can name a field through the compiler. The dotted string
+literal form is an equal alternative.
+
+Roadmap task 2.1.2 publishes this contract; roadmap task 2.1.3 owns the
+user-facing conventions-only usage pattern.
+
+### 9.2 Generated instrumentation
+
+The `tracing` feature should generate transition-specific instrumentation. It
+should not duplicate every option in `tracing-attributes::instrument`.
+
+The default generated fields are those of §9.1.
 
 The first implementation may record only a subset if the return type cannot be
 inspected without imposing trait bounds. The macro should prefer explicit,
@@ -778,6 +796,11 @@ The implementation should resolve these before publishing v0.1:
 - Whether `StateName` returns `&'static str`, or a value carrying a stronger
   stability guarantee, as decided by roadmap task 3.2.1 from the validation
   notes defined in ADR 0004.
+- Whether the macro's `event(...)` records the expression itself or a
+  projected low-cardinality class. §6.3 and ADR 0002 show the expression form;
+  ADR 0008 recommends a class for hand-recorded events without forbidding it.
+- Whether `transition.outcome` is recorded when a boundary returns an error.
+  ADR 0008 leaves it unspecified until proposed RFC 0001 is resolved.
 - Project licence, MSRV, and crates.io metadata.
 
 ## Appendix A. Comparison with `stateless`

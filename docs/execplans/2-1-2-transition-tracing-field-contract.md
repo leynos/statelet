@@ -292,6 +292,11 @@ lines).
       of `#[instrument]` confirmed.
 - [ ] `EP-M2` downstream instrumentation proven by capture tests and BDD.
 - [ ] `EP-M3` documentation agreement enforced and delivery closed.
+- [ ] (2026-11-23) `EP-M1` red observed: `cargo nextest run --test
+      transition_fields` failed on the unresolved `statelet::fields` path.
+- [ ] (2026-11-23) `EP-M1` green observed for the constants and contract
+      tests; doctests pass. Lint compatibility resolved through D17 and D18
+      (see `Surprises & discoveries`).
 
 ## Surprises & discoveries
 
@@ -318,6 +323,20 @@ lines).
 - Observation: the design documents disagree on the five fields. Evidence:
   see `Context and orientation`. Impact: ADR 0008 must settle meanings
   explicitly rather than restate design §9.
+- Observation: `#[tracing::instrument]`'s expansion trips this crate's
+  `clippy::cognitive_complexity` threshold by itself. Evidence: with the
+  attribute removed the fixture is clean; with it, `make lint` reports
+  "cognitive complexity of (10/9)" on the instrumented function; the same error
+  appears for dotted literals, the constant form, `skip_all` alone, and a body
+  containing nothing. `clippy -- -Zunpretty=expanded` shows the guard
+  `tracing-attributes` 0.1.31 generates, whose `log`-fallback branch exists
+  because `rstest-bdd` enables `tracing/log`. Impact: D17.
+- Observation: declaring `tracing-core` with its default features adds the
+  optional `valuable` package to `Cargo.lock`, increasing the resolved package
+  count. Evidence: the first `cargo nextest` run printed "Adding valuable
+  v0.1.1"; `tracing-core`'s default feature list contains `valuable?/std`.
+  Declaring it with `default-features = false` leaves only the two
+  dependency-list lines in the lock diff. Impact: D18.
 
 ## Decision log
 
@@ -511,6 +530,31 @@ lines).
   `allow_attributes_without_reason`; discovering an incompatibility after the
   suite is written would waste the milestone. Date/Author: 2026-11-16, design
   review.
+- D17. Decision: accept the lint-compatibility tolerance's trigger and record
+  its resolution rather than abandoning the `#[instrument]` evidence. Each
+  instrumented downstream fixture carries an item-scoped
+  `#[expect(clippy::cognitive_complexity, reason = "...")]` naming the
+  `tracing-attributes` expansion; no other lint is suppressed and no
+  repository-wide threshold changes. Rationale: `EP-M1` proved that the
+  attribute's generated guard alone scores 10 against this crate's
+  CodeScene-aligned ceiling of 9, whatever the body and whichever form the
+  field names take; `rstest-bdd`'s `tracing/log` feature adds the
+  `log`-fallback branch that pushes it over. The lint is measuring third-party
+  generated code, not fixture logic; the roadmap success criterion requires
+  ordinary `#[instrument(fields(...))]`, so replacing the attribute would void
+  the evidence. The expectation is item-scoped, carries a reason, and fails
+  closed: if a later `tracing` release stops generating the branch,
+  `unfulfilled_lint_expectations` fails the gate and forces its removal. This
+  is the repository's sanctioned last resort, not the "wholesale" suppression
+  the tolerance prohibits. Date/Author: 2026-11-23, implementation agent;
+  evidence in `Surprises & discoveries`.
+- D18. Decision: declare the `tracing-core` dev-dependency with
+  `default-features = false`. Rationale: `tracing-core`'s default features
+  include `valuable?/std`, which adds the optional `valuable` package to
+  `Cargo.lock` and breaks the plan's "no increase in resolved packages"
+  tolerance. `tracing` already enables `tracing-core/std` transitively, so the
+  capture subscriber keeps the API it needs and the lockfile records only the
+  two dependency-list lines. Date/Author: 2026-11-23, implementation agent.
 
 ## Outcomes & retrospective
 

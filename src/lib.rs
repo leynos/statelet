@@ -1,4 +1,9 @@
 //! Transition-boundary support for ordinary Rust state machines.
+//!
+//! [`fields`] publishes the `tracing` field names a transition boundary
+//! records, so a downstream crate can name them through the compiler.
+
+pub mod fields;
 
 /// A state that reports a stable, deliberately chosen label.
 ///
