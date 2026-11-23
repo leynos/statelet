@@ -297,6 +297,8 @@ lines).
 - [ ] (2026-11-23) `EP-M1` green observed for the constants and contract
       tests; doctests pass. Lint compatibility resolved through D17 and D18
       (see `Surprises & discoveries`).
+- [ ] (2026-11-23) `EP-M2` capture subscriber, fixtures, form-equivalence, and
+      five BDD scenarios pass: 42 focused tests green. Seeded faults next.
 
 ## Surprises & discoveries
 
@@ -1257,6 +1259,32 @@ elided in rows 1–4 for width:
 Before `current_span` was implemented, rows 1–4 showed no `outcome` or `error`
 values. The probe's `bad row` error value was a `Display` rendering; D6 later
 replaced free error text with a category label.
+
+Seeded-fault evidence (`EP-M2`, 2026-11-23). Each fault was applied alone to
+the working tree, the focused suite run with `--no-fail-fast`, and the file
+restored from a copy:
+
+```plaintext
+outcome Empty declaration removed  42 run, 4 failed  (forms success, BDD success, string-tag)
+subscriber enabled -> false        42 run, 12 failed (capture tests, BDD, forms)
+current_span -> Current::none()    42 run, 9 failed  (late-record test, BDD, forms)
+record -> no-op                    42 run, 9 failed  (late-record test, BDD, forms)
+outcome recorded with Display      42 run, 3 failed  (BDD success, form agreement, string-tag)
+```
+
+The `enabled -> false` run leaves `capture_rejects_no_span` passing, which is
+correct: a subscriber that observes nothing still reports "no span". Each
+absence-bearing scenario failed through `CaptureError::NoSpan` rather than
+passing vacuously.
+
+Document seeded faults (`EP-M3`, 2026-11-23), each rejected and reverted:
+
+```plaintext
+ADR table renames transition.event   "field table does not name ... [transition.event]"
+design loses "semver-relevant"       design_keeps_quoted_phrases::case_2_semver fails
+src/fields.rs gains a sixth constant constants_match_the_contract_table fails
+users' guide gains transition.state.after  "names [transition.state.after], which the contract does not publish"
+```
 
 ## Interfaces and dependencies
 

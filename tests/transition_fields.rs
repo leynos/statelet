@@ -7,7 +7,17 @@
 //! compiles as an external crate, so it can only use the public `statelet`
 //! API.
 
+#[path = "transition_fields/behaviour.rs"]
+mod behaviour;
+#[path = "transition_fields/behaviour_scenarios.rs"]
+mod behaviour_scenarios;
+#[path = "transition_fields/capture.rs"]
+mod capture;
+#[path = "transition_fields/capture_tests.rs"]
+mod capture_tests;
 #[path = "transition_fields/contract.rs"]
 mod contract;
 #[path = "transition_fields/downstream.rs"]
 mod downstream;
+#[path = "transition_fields/forms.rs"]
+mod forms;
