@@ -90,6 +90,9 @@ set.
   contracts](adrs/adr-0007-refine-representation-and-observability-contracts.md)
   proposes stronger prerequisites and field semantics for payload-carrying
   states, semantic labels, domain outcomes, and asynchronous boundaries.
+- [ADR 0008: Publish the transition tracing field contract](adrs/adr-0008-publish-the-transition-tracing-field-contract.md)
+  publishes the five `transition.*` tracing field names as semver-relevant
+  operational API, with their location, presence, value, and extension rules.
 
 ## Observation integration proposals
 

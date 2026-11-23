@@ -16,29 +16,24 @@ use rstest::rstest;
 use statelet::fields;
 
 use super::{
-    capture::{CapturedSpan, Via, capture},
+    capture::{Via, capture},
     downstream::{Decision, Mode, handle_line, handle_line_with_literals},
 };
-
-/// A capture failure is a test failure with the reason attached.
-fn captured(
-    span: Result<CapturedSpan, super::capture::CaptureError>,
-) -> Result<CapturedSpan, String> {
-    span.map_err(|error| error.to_string())
-}
 
 /// Both naming forms produce the same span for the same run.
 #[rstest]
 #[case::success(false)]
 #[case::error(true)]
-fn literal_and_constant_forms_agree(#[case] fails: bool) -> Result<(), String> {
+fn literal_and_constant_forms_agree(#[case] fails: bool) {
     let mode = Mode::Normalize;
-    let constants = captured(capture("handle_line", || {
-        let _ = handle_line(&mode, fails);
-    }))?;
-    let literals = captured(capture("handle_line", || {
-        let _ = handle_line_with_literals(&mode, fails);
-    }))?;
+    let constants = capture("handle_line", || {
+        let _outcome = handle_line(&mode, fails);
+    })
+    .expect("the constant-form boundary must create exactly one span");
+    let literals = capture("handle_line", || {
+        let _outcome = handle_line_with_literals(&mode, fails);
+    })
+    .expect("the literal-form boundary must create exactly one span");
 
     assert_eq!(
         constants.declared.len(),
@@ -58,16 +53,16 @@ fn literal_and_constant_forms_agree(#[case] fails: bool) -> Result<(), String> {
         constants, literals,
         "the constant and literal forms must produce identical spans"
     );
-    Ok(())
 }
 
 /// The success run records the decision label as a string.
 #[test]
-fn the_success_run_records_the_outcome_as_a_string() -> Result<(), String> {
+fn the_success_run_records_the_outcome_as_a_string() {
     let mode = Mode::Normalize;
-    let span = captured(capture("handle_line", || {
-        let _ = handle_line(&mode, false);
-    }))?;
+    let span = capture("handle_line", || {
+        let _outcome = handle_line(&mode, false);
+    })
+    .expect("the success run must create exactly one span");
 
     assert_eq!(
         span.value(fields::TRANSITION_OUTCOME)
@@ -75,16 +70,16 @@ fn the_success_run_records_the_outcome_as_a_string() -> Result<(), String> {
         Some(("stay", Via::Str)),
         "the outcome must be recorded as the decision's string label"
     );
-    Ok(())
 }
 
 /// The error run records the error category as a string and no outcome.
 #[test]
-fn the_error_run_records_the_category_as_a_string() -> Result<(), String> {
+fn the_error_run_records_the_category_as_a_string() {
     let mode = Mode::Normalize;
-    let span = captured(capture("handle_line", || {
-        let _ = handle_line(&mode, true);
-    }))?;
+    let span = capture("handle_line", || {
+        let _outcome = handle_line(&mode, true);
+    })
+    .expect("the error run must create exactly one span");
 
     assert_eq!(
         span.value(fields::TRANSITION_ERROR)
@@ -97,16 +92,16 @@ fn the_error_run_records_the_category_as_a_string() -> Result<(), String> {
         None,
         "this fixture records no outcome on the error path"
     );
-    Ok(())
 }
 
 /// A declared field that is never recorded is absent.
 #[test]
-fn an_unrecorded_field_is_absent() -> Result<(), String> {
-    let span = captured(capture("absence_probe", || {
+fn an_unrecorded_field_is_absent() {
+    let span = capture("absence_probe", || {
         let span = tracing::info_span!("absence_probe", late = tracing::field::Empty);
         let _guard = span.enter();
-    }))?;
+    })
+    .expect("the absence probe must create exactly one span");
 
     assert!(
         span.declares("late"),
@@ -117,17 +112,17 @@ fn an_unrecorded_field_is_absent() -> Result<(), String> {
         None,
         "a declared field that is never recorded must be absent"
     );
-    Ok(())
 }
 
 /// The same declared field recorded with `""` is present with `""`.
 #[test]
-fn an_empty_string_is_recorded_as_present() -> Result<(), String> {
-    let span = captured(capture("absence_probe", || {
+fn an_empty_string_is_recorded_as_present() {
+    let span = capture("absence_probe", || {
         let span = tracing::info_span!("absence_probe", late = tracing::field::Empty);
         let _guard = span.enter();
         tracing::Span::current().record("late", "");
-    }))?;
+    })
+    .expect("the absence probe must create exactly one span");
 
     assert_eq!(
         span.value("late")
@@ -135,7 +130,6 @@ fn an_empty_string_is_recorded_as_present() -> Result<(), String> {
         Some(("", Via::Str)),
         "recording the empty string must produce a present value, not an absent one"
     );
-    Ok(())
 }
 
 /// The fixtures' decision labels are the documented fixture data.

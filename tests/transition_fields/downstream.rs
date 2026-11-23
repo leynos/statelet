@@ -43,7 +43,7 @@ pub enum Decision {
 impl Decision {
     /// The stable label of this decision.
     #[must_use]
-    pub const fn label(&self) -> &'static str {
+    pub const fn label(self) -> &'static str {
         match self {
             Self::Stay => "stay",
             Self::Move => "move",
@@ -61,7 +61,7 @@ pub enum ParseFailure {
 impl ParseFailure {
     /// The stable category of this failure.
     #[must_use]
-    pub const fn category(&self) -> &'static str {
+    pub const fn category(self) -> &'static str {
         match self {
             Self::UnterminatedRow => "unterminated_row",
         }
@@ -73,11 +73,6 @@ impl ParseFailure {
 /// Records the outcome on success and the error category on failure. Both late
 /// fields are declared `tracing::field::Empty`, so the error path can fill its
 /// field after the span exists.
-#[expect(
-    clippy::cognitive_complexity,
-    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; the crate's ceiling is 9 and the guard alone scores 10"
-)]
 #[tracing::instrument(skip_all, fields(
     {fields::TRANSITION_NAME} = "handle_line",
     {fields::TRANSITION_STATE_BEFORE} = mode.state_name(),
@@ -98,14 +93,9 @@ pub fn handle_line(mode: &Mode, fails: bool) -> Result<Decision, ParseFailure> {
 
 /// The same boundary as [`handle_line`], naming its fields with literals.
 ///
-/// Written out rather than parameterised: the two must differ only in how the
+/// Written out rather than parameterized: the two must differ only in how the
 /// field names are spelled, so the form-equivalence test compares like with
 /// like.
-#[expect(
-    clippy::cognitive_complexity,
-    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; the crate's ceiling is 9 and the guard alone scores 10"
-)]
 #[tracing::instrument(name = "handle_line", skip_all, fields(
     transition.name = "handle_line",
     transition.state.before = mode.state_name(),
@@ -128,7 +118,8 @@ pub fn handle_line_with_literals(mode: &Mode, fails: bool) -> Result<Decision, P
 #[expect(
     clippy::cognitive_complexity,
     reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; the crate's ceiling is 9 and the guard alone scores 10"
+              boundary complexity; this fixture's body fits the ceiling but the guard alone \
+              scores 10"
 )]
 #[tracing::instrument(skip_all, fields(
     {fields::TRANSITION_NAME} = "handle_fence",
@@ -150,7 +141,8 @@ pub fn handle_fence(mode: &Mode) -> Decision {
 #[expect(
     clippy::cognitive_complexity,
     reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; the crate's ceiling is 9 and the guard alone scores 10"
+              boundary complexity; this fixture's body fits the ceiling but the guard alone \
+              scores 10"
 )]
 #[tracing::instrument(skip_all, fields({fields::TRANSITION_NAME} = "handle_undeclared"))]
 pub fn handle_undeclared(outcome: &str) {
@@ -162,11 +154,6 @@ pub fn handle_undeclared(outcome: &str) {
 /// The `record` call is unreachable when the guard fails, so the span never
 /// learns about the error. This is the control for "absence never implies
 /// success": the call really did fail.
-#[expect(
-    clippy::cognitive_complexity,
-    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; the crate's ceiling is 9 and the guard alone scores 10"
-)]
 #[tracing::instrument(skip_all, fields(
     {fields::TRANSITION_NAME} = "handle_early_return",
     {fields::TRANSITION_STATE_BEFORE} = mode.state_name(),
@@ -189,12 +176,13 @@ const fn check(fails: bool) -> Result<Decision, ParseFailure> {
 
 /// The instrumented fixture boundary compiles and runs.
 #[test]
-fn the_instrumented_boundary_runs() -> Result<(), ParseFailure> {
+fn the_instrumented_boundary_runs() {
     let mode = Mode::Normalize;
+    let decision = handle_line(&mode, false)
+        .expect("the fixture boundary must return its decision without an error");
     assert_eq!(
-        handle_line(&mode, false)?.label(),
+        decision.label(),
         "stay",
         "the fixture boundary must return its project-local decision"
     );
-    Ok(())
 }

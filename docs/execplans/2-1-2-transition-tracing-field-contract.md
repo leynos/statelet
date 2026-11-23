@@ -5,7 +5,8 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: APPROVED (user approval recorded 2026-11-23; implementation started)
+Status: COMPLETE (implementation and local validation finished 2026-11-24;
+hosted validation and PR delivery continue under `pr-babysitting`).
 
 Branch: `2-1-2-transition-tracing-field-contract`
 
@@ -185,6 +186,28 @@ git diff --name-only "$base" -- ':!docs/execplans' | wc -l
 
 There is no elapsed-time limit; a healthy compiler queue is not a failure.
 
+Measured at completion (2026-11-24), against the merge base `e69af49`:
+
+```plaintext
+files   22 changed non-ExecPlan files   limit 20   exceeded by 2
+code    1674 net lines                  limit 1300 exceeded by 374
+config  13 net lines                    limit 20   within
+docs    407 net lines                   limit 550  within
+```
+
+Both exceptions are recorded rather than silently accepted. The file count
+moved because the plan's budget assumed five modules under
+`tests/transition_fields/` while its plan of work names six, and the 400-line
+cap then forced `capture_tests.rs` and `behaviour_scenarios.rs` out of their
+parents (the latter required by the plan's own "split `behaviour.rs` … if it
+passes 300"). The code count is rustdoc- and comment-density, the same cause
+the budget rationale records for 1.2.1's 900-to-1,736 overrun; no unapproved
+behaviour, interface, or dependency is in the excess. Reducing either number
+would mean deleting required evidence (the capture unit tests, the
+document-agreement checks, or the module and item documentation this
+repository's lints require), so the deviation is recorded here for review
+rather than papered over.
+
 Budget rationale. The surveyed surface is `src/lib.rs` (75 lines, one trait),
 `tests/state_name.rs` (134 lines), the 21-line `tests/documented_examples.rs`
 root with its `#[path]` modules, two BDD feature files, the 241-line
@@ -288,10 +311,13 @@ lines).
       reconciled in D4–D7 and D12–D16 (see `Revision note`).
 - [x] (2026-11-16T20:05Z) Draft PR opened for the plan as PR 194.
 - [x] (2026-11-23) Plan approved by the user; implementation began.
-- [ ] `EP-M1` contract recorded, constants exported, and lint compatibility
-      of `#[instrument]` confirmed.
-- [ ] `EP-M2` downstream instrumentation proven by capture tests and BDD.
-- [ ] `EP-M3` documentation agreement enforced and delivery closed.
+- [x] (2026-11-23) `EP-M1` contract recorded, constants exported, and lint
+      compatibility of `#[instrument]` confirmed; committed as `b61be0f`.
+- [x] (2026-11-23) `EP-M2` downstream instrumentation proven by capture tests
+      and BDD; committed as `5aa798b`.
+- [ ] `EP-M3` documentation agreement enforced and delivery closed: documents,
+      agreement tests, and seeded faults are in the working tree; the final
+      commit follows the conforming module-doc fix.
 - [ ] (2026-11-23) `EP-M1` red observed: `cargo nextest run --test
       transition_fields` failed on the unresolved `statelet::fields` path.
 - [ ] (2026-11-23) `EP-M1` green observed for the constants and contract
@@ -560,7 +586,57 @@ lines).
 
 ## Outcomes & retrospective
 
-Not started. Complete at each milestone and at completion.
+Delivered. `statelet::fields` exports the five contracted names as
+zero-dependency constants; ADR 0008 is the single source of their meaning,
+presence, value, location, prefix, and semver rules; design §9.1 links to it
+and §9.2 keeps the generated-instrumentation paragraphs; and the users' and
+developers' guides describe the downstream workflow. `tests/transition_fields`
+proves the fields with ordinary `#[tracing::instrument(fields(...))]` through a
+capture subscriber, form-equivalence and absence cases, five behavioural
+scenarios, and a document-agreement check.
+
+Acceptance evidence, local (2026-11-24):
+
+- `make check-fmt`, `make markdownlint`, and `make nixie` pass.
+- `make lint` passes rustdoc, Clippy with `--all-targets --all-features`,
+  the Whitaker Dylint suite, Pylint, and interrogate (391/391).
+- `make test` passes the main nextest suite (434 passed, 21 skipped), the
+  doctests (3 passed, including the new `statelet::fields` example), the
+  workflow contracts (515 passed), and the topology command boundary (3
+  passed). Its final `test-feature-matrix-command` phase reached 4 of 18 cases
+  with zero failures before the runner's two-hour cap; the remaining cases are
+  untouched by this change and were slow only because the shared compiler pool
+  had a 651-request queue. Hosted CI is the complete rerun.
+- Every seeded fault listed in `Artefacts and notes` was observed to fail and
+  was reverted.
+- `Cargo.lock` gains no resolved package; the diff is the two dependency-list
+  lines in the `statelet` package record.
+
+Tolerances: the file-count and code-line limits were exceeded and the measured
+values and reasons are recorded under `Tolerances`; the configuration and
+documentation limits are within budget.
+
+Retrospective lessons:
+
+- The plan's `EP-M1` lint probe was worth doing first: it found that
+  `#[tracing::instrument]`'s expansion alone scores 10 against this
+  repository's ceiling of 9. The resolution (D17) is narrow and fails closed,
+  and the fixtures' shrinking bodies later made three of five expectations
+  unfulfilled — exactly the feedback the `#[expect]` mechanism should give.
+- The plan's assumption that `tracing-core` could be added without a lockfile
+  change was wrong by one package until `default-features = false` was used
+  (D18). Measure dependency claims against the actual lock, not the graph the
+  dependency was already in.
+- The agreement test initially scanned whole documents and rejected ADR 0008's
+  legitimate non-goal mentions. Scoping the scan to the four sections the plan
+  names keeps the check precise.
+
+## Handoff
+
+Local implementation and validation are complete. Hosted CI, CodeRabbit review,
+readiness, and merge remain with `pr-babysitting`. The working tree's final
+commit adds the document-agreement test, the documentation, the roadmap tick,
+and this record.
 
 ## Context and orientation
 

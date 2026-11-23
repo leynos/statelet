@@ -13,7 +13,7 @@
 
 use rstest::fixture;
 use rstest_bdd::Slot;
-use rstest_bdd_macros::{ScenarioState, given, scenario, then, when};
+use rstest_bdd_macros::{ScenarioState, given, then, when};
 use statelet::fields;
 
 use super::{
@@ -146,13 +146,12 @@ fn require_string_value(span: &CapturedSpan, field: &str, expected: &str) -> Res
 /// Requires `field` to be absent from a span that is otherwise non-empty.
 fn require_absent(span: &CapturedSpan, field: &str) -> Result<(), String> {
     require_name(span)?;
-    match span.value(field) {
-        None => Ok(()),
-        Some(value) => Err(format!(
+    span.value(field).map_or(Ok(()), |value| {
+        Err(format!(
             "{field} must be absent, but was recorded as {:?}",
             value.text
-        )),
-    }
+        ))
+    })
 }
 
 /// Runs the fallible fixture named by the plan.
@@ -348,6 +347,8 @@ fn span_has_no_outcome(world: &TransitionWorld) -> Result<(), String> {
 fn span_does_not_declare_error(world: &TransitionWorld) -> Result<(), String> {
     let span = stored_span(world)?;
     require_name(&span)?;
+    let plan = stored_plan(world)?;
+    require_string_value(&span, fields::TRANSITION_EVENT, &plan.event)?;
     if span.declares(fields::TRANSITION_ERROR) {
         return Err(
             "the span declares transition.error, but this boundary is infallible".to_owned(),
@@ -366,13 +367,12 @@ fn span_exists_without_outcome(world: &TransitionWorld) -> Result<(), String> {
 /// Requires the boundary to have returned an error.
 #[then("the boundary returns an error")]
 fn boundary_returns_error(world: &TransitionWorld) -> Result<(), String> {
-    match stored_result(world)? {
-        Err(_) => Ok(()),
-        Ok(decision) => Err(format!(
+    stored_result(world)?.map_or(Ok(()), |decision| {
+        Err(format!(
             "the boundary returned {:?}; the scenario expected an error",
             decision.label()
-        )),
-    }
+        ))
+    })
 }
 
 /// Requires a non-empty span that recorded no error.

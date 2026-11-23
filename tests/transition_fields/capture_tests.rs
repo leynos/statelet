@@ -1,3 +1,10 @@
+//! Unit tests for the capture subscriber, through the real macros.
+//!
+//! These prove the subscriber itself is faithful before the downstream
+//! scenarios rely on it: a late field recorded through `Span::current`
+//! arrives, an unrecorded one stays absent, and `capture` reports a missing,
+//! extra, or misnamed span instead of returning an empty one.
+
 use pretty_assertions::assert_eq;
 use rstest::rstest;
 use tracing::info_span;
@@ -6,13 +13,13 @@ use super::capture::{CaptureError, Via, capture};
 
 /// A late field declared `Empty` is recorded through `Span::current()`.
 #[test]
-fn a_late_field_records_through_the_current_span() -> Result<(), String> {
+fn a_late_field_records_through_the_current_span() {
     let span = capture("capture_unit", || {
         let span = info_span!("capture_unit", late = tracing::field::Empty);
         let _guard = span.enter();
         tracing::Span::current().record("late", "recorded");
     })
-    .map_err(|error| error.to_string())?;
+    .expect("the capture subscriber must observe exactly one span");
 
     assert!(
         span.declares("late"),
@@ -24,17 +31,16 @@ fn a_late_field_records_through_the_current_span() -> Result<(), String> {
         Some(("recorded", Via::Str)),
         "the late field must arrive as a string value"
     );
-    Ok(())
 }
 
 /// A declared field that is never recorded stays absent.
 #[test]
-fn an_unrecorded_late_field_is_absent() -> Result<(), String> {
+fn an_unrecorded_late_field_is_absent() {
     let span = capture("capture_unit", || {
         let span = info_span!("capture_unit", late = tracing::field::Empty);
         let _guard = span.enter();
     })
-    .map_err(|error| error.to_string())?;
+    .expect("the capture subscriber must observe exactly one span");
 
     assert!(
         span.declares("late"),
@@ -45,7 +51,6 @@ fn an_unrecorded_late_field_is_absent() -> Result<(), String> {
         None,
         "an unrecorded field must be absent rather than defaulted"
     );
-    Ok(())
 }
 
 /// A closure that creates no span is an error, not an empty capture.

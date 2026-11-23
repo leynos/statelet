@@ -17,6 +17,8 @@ mod capture;
 mod capture_tests;
 #[path = "transition_fields/contract.rs"]
 mod contract;
+#[path = "transition_fields/docs_agree.rs"]
+mod docs_agree;
 #[path = "transition_fields/downstream.rs"]
 mod downstream;
 #[path = "transition_fields/forms.rs"]
