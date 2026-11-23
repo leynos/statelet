@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections `Constraints`,
 `Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
 be kept up to date as work proceeds.
 
-Status: DRAFT (expert design review applied; awaiting user approval)
+Status: APPROVED (user approval recorded 2026-11-23; implementation started)
 
 Branch: `2-1-2-transition-tracing-field-contract`
 
@@ -287,7 +287,7 @@ lines).
       three panels) completed; verdict "proceed with conditions"; findings
       reconciled in D4–D7 and D12–D16 (see `Revision note`).
 - [x] (2026-11-16T20:05Z) Draft PR opened for the plan as PR 194.
-- [ ] Plan approved by the user.
+- [x] (2026-11-23) Plan approved by the user; implementation began.
 - [ ] `EP-M1` contract recorded, constants exported, and lint compatibility
       of `#[instrument]` confirmed.
 - [ ] `EP-M2` downstream instrumentation proven by capture tests and BDD.
