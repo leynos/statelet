@@ -103,6 +103,11 @@ that the boundary did not capture it. It never implies success or failure: a
 `?` or an early return can leave `transition.error` absent even though the
 boundary failed, so do not build an alert on a missing field alone.
 
+Recording through `tracing::Span::current()` targets the nearest enabled span.
+If the subscriber's filter disables the boundary's own span, the record can
+reach an enclosing span that declares the same field, so keep the boundary span
+enabled when the field's location matters.
+
 Each boundary call creates one span, filtered by the subscriber's level like
 any other `tracing` span, so record a boundary only where the transition is
 worth observing. The field names are semver-relevant once a release contains

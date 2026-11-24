@@ -7,9 +7,14 @@
 
 use pretty_assertions::assert_eq;
 use rstest::rstest;
-use tracing::info_span;
+use statelet::fields;
+use tracing::{info_span, level_filters::LevelFilter};
+use tracing_core::{
+    Metadata,
+    span::{Attributes, Current, Id, Record},
+};
 
-use super::capture::{CaptureError, Via, capture};
+use super::capture::{CaptureError, CaptureSubscriber, Via, capture};
 
 /// A late field declared `Empty` is recorded through `Span::current()`.
 #[test]
@@ -103,4 +108,99 @@ fn capture_rejects_a_misnamed_span(#[case] actual: &str) {
         }
         other => panic!("expected UnexpectedName, got {other:?}"),
     }
+}
+
+/// A subscriber that rejects one named span while capturing everything else.
+///
+/// It models a level or target filter that disables a boundary's own span but
+/// leaves an enclosing span enabled, which is the case the documentation
+/// warns about.
+struct FilteredSubscriber {
+    /// The capture subscriber the wrapper delegates to.
+    inner: CaptureSubscriber,
+    /// The span name the filter rejects.
+    rejected: &'static str,
+}
+
+impl tracing::Subscriber for FilteredSubscriber {
+    fn enabled(&self, metadata: &Metadata<'_>) -> bool {
+        metadata.name() != self.rejected && self.inner.enabled(metadata)
+    }
+
+    fn max_level_hint(&self) -> Option<LevelFilter> { self.inner.max_level_hint() }
+
+    fn new_span(&self, attributes: &Attributes<'_>) -> Id { self.inner.new_span(attributes) }
+
+    fn record(&self, span: &Id, values: &Record<'_>) { self.inner.record(span, values) }
+
+    fn record_follows_from(&self, span: &Id, follows: &Id) {
+        self.inner.record_follows_from(span, follows);
+    }
+
+    fn event(&self, event: &tracing::Event<'_>) { self.inner.event(event) }
+
+    fn enter(&self, span: &Id) { self.inner.enter(span); }
+
+    fn exit(&self, span: &Id) { self.inner.exit(span); }
+
+    fn current_span(&self) -> Current { self.inner.current_span() }
+}
+
+/// A boundary whose own span the filter rejects.
+#[expect(
+    clippy::cognitive_complexity,
+    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
+              boundary complexity; this fixture's body fits the ceiling but the guard alone \
+              scores 10"
+)]
+#[tracing::instrument(name = "filtered_boundary", skip_all, fields(
+    {fields::TRANSITION_NAME} = "filtered_boundary",
+    {fields::TRANSITION_OUTCOME} = tracing::field::Empty,
+))]
+fn filtered_boundary() {
+    tracing::Span::current().record(fields::TRANSITION_OUTCOME, "child_outcome");
+}
+
+/// A filtered boundary's late record lands on an enabled ancestor span.
+///
+/// This is the hazard the rustdoc and ADR 0008 warn about, not a behaviour
+/// the contract endorses: the boundary's own span is disabled, so
+/// `Span::current()` resolves to the parent that declares the same field.
+/// Keeping the observation explicit stops a later change from silently
+/// altering what the documentation promises.
+#[test]
+fn a_filtered_boundary_records_into_an_enabled_ancestor() {
+    let inner = CaptureSubscriber::new();
+    let subscriber = FilteredSubscriber {
+        inner: inner.clone(),
+        rejected: "filtered_boundary",
+    };
+    tracing::subscriber::with_default(subscriber, || {
+        tracing::callsite::rebuild_interest_cache();
+        let parent = info_span!("enabled_parent", transition.outcome = tracing::field::Empty);
+        let guard = parent.enter();
+        filtered_boundary();
+        drop(guard);
+    });
+
+    let spans = inner.into_spans();
+    assert_eq!(
+        spans.len(),
+        1,
+        "only the enabled parent span must be captured"
+    );
+    let parent = spans
+        .first()
+        .expect("the enabled parent span must be captured");
+    assert_eq!(
+        parent.name, "enabled_parent",
+        "the captured span must be the enabled ancestor"
+    );
+    assert_eq!(
+        parent
+            .value("transition.outcome")
+            .map(|value| value.text.as_str()),
+        Some("child_outcome"),
+        "the filtered boundary's record must land on the enabled ancestor, as documented"
+    );
 }

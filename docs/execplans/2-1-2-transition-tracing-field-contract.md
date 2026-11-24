@@ -315,9 +315,11 @@ lines).
       compatibility of `#[instrument]` confirmed; committed as `b61be0f`.
 - [x] (2026-11-23) `EP-M2` downstream instrumentation proven by capture tests
       and BDD; committed as `5aa798b`.
-- [ ] `EP-M3` documentation agreement enforced and delivery closed: documents,
-      agreement tests, and seeded faults are in the working tree; the final
-      commit follows the conforming module-doc fix.
+- [x] (2026-11-24) `EP-M3` documentation agreement enforced and delivery
+      closed; committed as `0dfad42`.
+- [x] (2026-11-24) Milestone CodeRabbit CLI review completed (CLI 0.9.6,
+      `--committed --fresh --base-commit e69af49`, 23/23 files, exit 0). Three
+      minor findings, all verified genuine and fixed under D19.
 - [ ] (2026-11-23) `EP-M1` red observed: `cargo nextest run --test
       transition_fields` failed on the unresolved `statelet::fields` path.
 - [ ] (2026-11-23) `EP-M1` green observed for the constants and contract
@@ -583,6 +585,22 @@ lines).
   tolerance. `tracing` already enables `tracing-core/std` transitively, so the
   capture subscriber keeps the API it needs and the lockfile records only the
   two dependency-list lines. Date/Author: 2026-11-23, implementation agent.
+- D19. Decision: accept and fix all three minor findings from the milestone
+  CodeRabbit CLI review. (1) ADR 0008 now says the `#[instrument(err)]` event
+  renders with `Display`, naming `err(Debug)` as the opt-in; verified against
+  `tracing-attributes` 0.1.31, whose expansion emits `%e` by default. (2) The
+  `statelet::fields` doctest is now fallible, records a bounded error category,
+  and returns `Result`, so it no longer declares `transition.error` on an
+  infallible boundary — the contradiction the tested contract and the BDD
+  infallible scenario forbid. (3) The `Span::current()` filtering hazard is
+  documented in the module rustdoc, ADR 0008's location rules, and the users'
+  guide, and pinned by a regression test with a filter-rejecting subscriber: a
+  disabled boundary's record reaches an enabled ancestor that declares the same
+  field. Rationale: the mechanism was confirmed in `tracing` 0.1.44 (a disabled
+  span's `enter` is a no-op), and the contract's location rule would otherwise
+  promise something the recommended recording idiom cannot always keep.
+  Date/Author: 2026-11-24, implementation agent; review evidence in
+  `/tmp/coderabbit-review-statelet-2-1-2-transition-tracing-field-contract.out`.
 
 ## Outcomes & retrospective
 
@@ -1430,3 +1448,11 @@ evidence route open to drop the constants at roadmap step 3.2.
 
 These changes alter the remaining work only in scope and evidence, not in
 milestone order.
+
+Revision 2, 2026-11-24, after the milestone CodeRabbit CLI review (CLI 0.9.6,
+committed scope, base `e69af49`). Three minor findings, all verified and fixed
+(D19): the ADR's `#[instrument(err)]` rendering is `Display`, the rustdoc
+example is fallible so it no longer declares an error field on an infallible
+boundary, and the `Span::current()` filtered-boundary hazard is documented and
+pinned by a regression test. No finding was declined and none changed the
+contract's names, location rule, or semver rule.

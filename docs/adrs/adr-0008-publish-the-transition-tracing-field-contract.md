@@ -137,6 +137,13 @@ lists, and the exported constants stay in agreement.
   default or a guessed value, and it never implies success or failure. A
   boundary that returns through `?` before its `record` call leaves
   `transition.error` absent even though it failed.
+- A late record written through `Span::current()` targets the nearest enabled
+  span. When the subscriber's filter disables the boundary's own span, entering
+  it does nothing and the record can reach an enclosing span that declares the
+  same field. The contract does not treat that value as the boundary's own, and
+  an application that needs the strict location must keep the boundary span
+  enabled. `tests/transition_fields/capture_tests.rs` demonstrates the hazard,
+  and the `statelet::fields` rustdoc states it.
 
 ## Value rules
 
@@ -182,8 +189,9 @@ exit E1, nothing is promised.
 `#[instrument(err)]` does not record a span field. It emits an `ERROR`-level
 event carrying a field named `error`. `transition.error` complements it: the
 contracted field carries a bounded category on the span, while the event
-carries the error's `Debug` rendering for diagnosis. `transition.error` does
-not set an OpenTelemetry span status, and no field in this contract does.
+carries the error's `Display` rendering for diagnosis. `err(Debug)` selects
+`Debug` instead; `Display` is the default. `transition.error` does not set an
+OpenTelemetry span status, and no field in this contract does.
 
 ## Goals and non-goals
 

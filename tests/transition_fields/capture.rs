@@ -156,7 +156,7 @@ impl CaptureSubscriber {
     }
 
     /// Reports every span the run created, in creation order.
-    fn into_spans(self) -> Vec<CapturedSpan> {
+    pub(crate) fn into_spans(self) -> Vec<CapturedSpan> {
         let state = self.state();
         state
             .spans

@@ -30,16 +30,26 @@
 //!     {fields::TRANSITION_OUTCOME} = tracing::field::Empty,
 //!     {fields::TRANSITION_ERROR} = tracing::field::Empty,
 //! ))]
-//! fn handle_line(mode: &Mode) -> &'static str {
+//! fn handle_line(mode: &Mode, fails: bool) -> Result<&'static str, &'static str> {
+//!     if fails {
+//!         let category = "unterminated_row";
+//!         tracing::Span::current().record(fields::TRANSITION_ERROR, category);
+//!         return Err(category);
+//!     }
 //!     let outcome = "stay";
 //!     tracing::Span::current().record(fields::TRANSITION_OUTCOME, outcome);
-//!     outcome
+//!     Ok(outcome)
 //! }
 //!
 //! assert_eq!(
-//!     handle_line(&Mode::Normalize),
-//!     "stay",
-//!     "the boundary must report the label it recorded"
+//!     handle_line(&Mode::Normalize, false),
+//!     Ok("stay"),
+//!     "the boundary must return the label it recorded"
+//! );
+//! assert_eq!(
+//!     handle_line(&Mode::Normalize, true),
+//!     Err("unterminated_row"),
+//!     "the boundary must return its bounded error category"
 //! );
 //! ```
 //!
@@ -49,6 +59,13 @@
 //! undeclared field. A declared field that is never recorded stays absent, and
 //! absence means only that the boundary did not capture it: it never implies
 //! success or failure.
+//!
+//! A late record written through `tracing::Span::current()` targets the
+//! nearest enabled span. When the subscriber's filter disables the boundary's
+//! own span, entering it does nothing and the record can reach an enclosing
+//! span that declares the same field, so do not rely on `Span::current()` to
+//! identify the boundary's own span under filtering. An application that needs
+//! the strict location must keep the boundary span enabled.
 //!
 //! Braced constant field names need `tracing` 0.1.42 or later, which carries
 //! `tracing-attributes` 0.1.31. Dotted string literals such as
