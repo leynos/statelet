@@ -319,7 +319,14 @@ lines).
       closed; committed as `0dfad42`.
 - [x] (2026-11-24) Milestone CodeRabbit CLI review completed (CLI 0.9.6,
       `--committed --fresh --base-commit e69af49`, 23/23 files, exit 0). Three
-      minor findings, all verified genuine and fixed under D19.
+      minor findings, all verified genuine and fixed under D19, committed as
+      `5194bc8`.
+- [x] (2026-11-24) Re-validated `5194bc8` after the review fixes:
+      `make check-fmt`, `make lint` (rustdoc, Clippy, Whitaker, Pylint,
+      interrogate), the focused suite (43/43), `cargo test --doc` (3 passed),
+      `make markdownlint`, and `make nixie` all pass. `make test` was not
+      re-run; its earlier phases passed on the prior candidate and the
+      feature-matrix suite is untouched by these edits.
 - [ ] (2026-11-23) `EP-M1` red observed: `cargo nextest run --test
       transition_fields` failed on the unresolved `statelet::fields` path.
 - [ ] (2026-11-23) `EP-M1` green observed for the constants and contract
