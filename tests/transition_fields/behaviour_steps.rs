@@ -5,7 +5,8 @@
 //! statement of what a scenario knows and this module a statement of what it
 //! does.
 
-use rstest_bdd_macros::{given, then, when};
+use pretty_assertions::Comparison;
+use rstest_bdd_macros::{StepArgs, given, then, when};
 use statelet::fields;
 
 use super::{
@@ -14,6 +15,7 @@ use super::{
         Event,
         TransitionWorld,
         captured,
+        expected_values,
         parse_mode,
         require_absent,
         require_name,
@@ -28,26 +30,58 @@ use super::{
     downstream::{Mode, handle_early_return, handle_fence, handle_undeclared},
 };
 
+/// The state and event labels a boundary `Given` step supplies.
+///
+/// Grouping them keeps the step signature to one value and names the pair the
+/// plan stores, rather than passing two interchangeable strings.
+#[derive(StepArgs)]
+struct BoundaryLabels {
+    /// The state the boundary observes.
+    state: String,
+    /// The event the boundary handles.
+    event: String,
+}
+
+/// The state, event, and outcome labels an outcome `Then` step supplies.
+#[derive(StepArgs)]
+struct OutcomeLabels {
+    /// The state the boundary observed.
+    state: String,
+    /// The event the boundary handled.
+    event: String,
+    /// The outcome the scenario expects.
+    outcome: String,
+}
+
+/// Parses a `Given` step's labels and stores the plan for `boundary`.
+fn select_boundary(
+    world: &TransitionWorld,
+    boundary: Boundary,
+    state: &str,
+    event: &str,
+) -> Result<(), String> {
+    let mode = parse_mode(state)?;
+    let handled = Event::from_label(event)?;
+    store_plan(world, boundary, mode, handled);
+    Ok(())
+}
+
 /// A fallible boundary handling a named input.
 #[given("a fallible boundary in state \"{state}\" handling a \"{event}\" input")]
-fn fallible_boundary(world: &TransitionWorld, state: String, event: String) -> Result<(), String> {
-    let observed_mode = parse_mode(&state)?;
-    let handled_event = Event::from_label(&event)?;
-    store_plan(world, Boundary::Fallible, observed_mode, handled_event);
-    Ok(())
+fn fallible_boundary(
+    #[step_args] labels: BoundaryLabels,
+    world: &TransitionWorld,
+) -> Result<(), String> {
+    select_boundary(world, Boundary::Fallible, &labels.state, &labels.event)
 }
 
 /// An infallible boundary handling a named input.
 #[given("an infallible boundary in state \"{state}\" handling a \"{event}\" input")]
 fn infallible_boundary(
+    #[step_args] labels: BoundaryLabels,
     world: &TransitionWorld,
-    state: String,
-    event: String,
 ) -> Result<(), String> {
-    let observed_mode = parse_mode(&state)?;
-    let handled_event = Event::from_label(&event)?;
-    store_plan(world, Boundary::Infallible, observed_mode, handled_event);
-    Ok(())
+    select_boundary(world, Boundary::Infallible, &labels.state, &labels.event)
 }
 
 /// A boundary that declares only its name.
@@ -94,6 +128,9 @@ fn returns_outcome(world: &TransitionWorld, label: String) -> Result<(), String>
                     ));
                 }
             }
+            world
+                .expected
+                .set(expected_values(plan, "handle_line", Some(&label), None));
             world.span.set(span);
             world.result.set(result);
             Ok(())
@@ -111,6 +148,9 @@ fn returns_outcome(world: &TransitionWorld, label: String) -> Result<(), String>
                     decision.label()
                 ));
             }
+            world
+                .expected
+                .set(expected_values(plan, "handle_fence", Some(&label), None));
             world.span.set(span);
             world.result.set(Ok(decision));
             Ok(())
@@ -142,6 +182,9 @@ fn returns_error(world: &TransitionWorld, category: String) -> Result<(), String
             ));
         }
     }
+    world
+        .expected
+        .set(expected_values(plan, "handle_line", None, Some(&category)));
     world.span.set(span);
     world.result.set(result);
     Ok(())
@@ -150,9 +193,15 @@ fn returns_error(world: &TransitionWorld, category: String) -> Result<(), String
 /// Runs the undeclared-field control and keeps its span.
 #[when("the boundary records the outcome \"{label}\"")]
 fn records_undeclared_outcome(world: &TransitionWorld, label: String) -> Result<(), String> {
+    let plan = stored_plan(world)?;
     let span = captured(capture("handle_undeclared", || {
         handle_undeclared(&label);
     }))?;
+    // The recording call is the same one the declared fixtures make, but this
+    // span never declared the field, so the value is absent from the map.
+    world
+        .expected
+        .set(expected_values(plan, "handle_undeclared", None, None));
     world.span.set(span);
     Ok(())
 }
@@ -167,6 +216,11 @@ fn fails_before_recording(world: &TransitionWorld) -> Result<(), String> {
         returned = Some(handle_early_return(mode, true));
     }))?;
     let result = returned.ok_or_else(|| "the early-return boundary did not run".to_owned())?;
+    // The failure path returns before recording, so neither the error nor the
+    // success outcome is in the map.
+    world
+        .expected
+        .set(expected_values(plan, "handle_early_return", None, None));
     world.span.set(span);
     world.result.set(result);
     Ok(())
@@ -190,16 +244,14 @@ fn span_records_name(world: &TransitionWorld, name: String) -> Result<(), String
     "the span records state \"{state}\", event \"{event}\", and outcome \"{outcome}\" as strings"
 )]
 fn span_records_state_event_outcome(
+    #[step_args] labels: OutcomeLabels,
     world: &TransitionWorld,
-    state: String,
-    event: String,
-    outcome: String,
 ) -> Result<(), String> {
     let span = stored_span(world)?;
     require_name(&span)?;
-    require_string_value(&span, fields::TRANSITION_STATE_BEFORE, &state)?;
-    require_string_value(&span, fields::TRANSITION_EVENT, &event)?;
-    require_string_value(&span, fields::TRANSITION_OUTCOME, &outcome)
+    require_string_value(&span, fields::TRANSITION_STATE_BEFORE, &labels.state)?;
+    require_string_value(&span, fields::TRANSITION_EVENT, &labels.event)?;
+    require_string_value(&span, fields::TRANSITION_OUTCOME, &labels.outcome)
 }
 
 /// Requires the error field to be absent from a non-empty span.
@@ -255,6 +307,29 @@ fn boundary_returns_error(world: &TransitionWorld) -> Result<(), String> {
             decision.label()
         ))
     })
+}
+
+/// Requires the captured field map to equal the scenario's full expectation.
+///
+/// This is the whole-map comparison the plan's verification method requires:
+/// keys, values, and visitor tags must match exactly, so an extra
+/// `transition.*` value or a `Debug`-delivered label fails even when the
+/// individually checked fields are right.
+#[then("the span records exactly the expected fields")]
+fn span_records_exactly(world: &TransitionWorld) -> Result<(), String> {
+    let span = stored_span(world)?;
+    require_name(&span)?;
+    let expected = world
+        .expected
+        .get()
+        .ok_or_else(|| "the When step did not record its expectation".to_owned())?;
+    if span.values == expected {
+        return Ok(());
+    }
+    Err(format!(
+        "the captured fields differ from the scenario's expectation:\n{}",
+        Comparison::new(&expected, &span.values)
+    ))
 }
 
 /// Requires a non-empty span that recorded no error.

@@ -10,7 +10,7 @@
 //!
 //! Naming a field through these constants moves the spelling under the
 //! compiler. A misspelt constant fails to compile, while a misspelt dotted
-//! literal silently creates a different field that nothing reads:
+//! name silently creates a different field that nothing reads:
 //!
 //! ```
 //! use statelet::{StateName, fields};
@@ -68,30 +68,35 @@
 //! the strict location must keep the boundary span enabled.
 //!
 //! Braced constant field names need `tracing` 0.1.42 or later, which carries
-//! `tracing-attributes` 0.1.31. Dotted string literals such as
-//! `"transition.name"` produce the same fields on every `tracing` 0.1 release
-//! and remain an equal alternative.
+//! `tracing-attributes` 0.1.31. A dotted field name written in the list, such
+//! as `transition.name = "handle_line"`, produces the same field and needs
+//! `tracing` 0.1.9 or later; earlier 0.1 releases reject a dotted key. Dotted
+//! names remain an equal alternative to the constants.
 //!
 //! [adr-0008]: https://github.com/leynos/statelet/blob/main/docs/adrs/adr-0008-publish-the-transition-tracing-field-contract.md
 
 /// The stable label naming the transition boundary.
 ///
 /// The application chooses the label, usually the instrumented function's
-/// name. Every boundary span carries this field.
+/// name. Every boundary span carries this field. The value rules are
+/// provisional until roadmap task 3.1.3.
 #[doc(alias = "transition.name")]
 pub const TRANSITION_NAME: &str = "transition.name";
 
 /// The [`crate::StateName`] label of the state observed on entry.
 ///
-/// Recorded by a boundary that observes a state; the label is the same one
-/// `StateName::state_name` returns.
+/// Recorded by a boundary that observes a state. The value *should* be the
+/// label `StateName::state_name` returns; the contract recommends that label
+/// but does not require it, and a different stable label is permitted.
 #[doc(alias = "transition.state.before")]
 pub const TRANSITION_STATE_BEFORE: &str = "transition.state.before";
 
 /// The stable semantic class of the input the boundary handles.
 ///
-/// A low-cardinality class of the input, not the input itself, so a raw parsed
-/// line never reaches the trace.
+/// The contract *recommends* a low-cardinality class of the input rather than
+/// the input itself, so a raw parsed line does not reach the trace. It does not
+/// forbid recording the expression form a future macro's `event(...)` argument
+/// accepts; that projection question is deferred in design §14.
 #[doc(alias = "transition.event")]
 pub const TRANSITION_EVENT: &str = "transition.event";
 
@@ -99,13 +104,16 @@ pub const TRANSITION_EVENT: &str = "transition.event";
 ///
 /// Chosen by the application, for example the variant label of its own
 /// decision enum. The contract does not require it to be absent when the
-/// boundary returns an error.
+/// boundary returns an error, and the value rules behind it are provisional
+/// until roadmap task 3.1.3.
 #[doc(alias = "transition.outcome")]
 pub const TRANSITION_OUTCOME: &str = "transition.outcome";
 
 /// The stable category of the error a fallible boundary returned.
 ///
 /// A bounded category such as the variant label of the application's error
-/// enum, not arbitrary error text. Only fallible boundaries declare it.
+/// enum, not arbitrary error text; the contract forbids secrets and raw
+/// payloads in any value. Only fallible boundaries declare it. The value rules
+/// are provisional until roadmap task 3.1.3.
 #[doc(alias = "transition.error")]
 pub const TRANSITION_ERROR: &str = "transition.error";

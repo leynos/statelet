@@ -11,13 +11,15 @@
 //! captured span, so a scenario that captured nothing fails rather than passing
 //! because the field it checks is also missing.
 
+use std::collections::BTreeMap;
+
 use rstest::fixture;
 use rstest_bdd::Slot;
 use rstest_bdd_macros::ScenarioState;
-use statelet::fields;
+use statelet::{StateName, fields};
 
 use super::{
-    capture::{CaptureError, CapturedSpan, Via, capture},
+    capture::{CaptureError, CapturedSpan, CapturedValue, Via, capture},
     downstream::{Decision, Mode, ParseFailure, handle_line},
 };
 
@@ -82,6 +84,8 @@ pub(crate) struct TransitionWorld {
     pub(crate) span: Slot<CapturedSpan>,
     /// What the boundary returned.
     pub(crate) result: Slot<Result<Decision, ParseFailure>>,
+    /// The complete field map the scenario expects, including tags.
+    pub(crate) expected: Slot<BTreeMap<String, CapturedValue>>,
 }
 
 /// The world each scenario owns.
@@ -113,6 +117,41 @@ pub(crate) fn store_plan(world: &TransitionWorld, boundary: Boundary, mode: Mode
         mode,
         event,
     });
+}
+
+/// The complete field map a boundary with `name` must record.
+///
+/// Every contracted value is a string, so each entry carries [`Via::Str`]. An
+/// absence is represented by leaving the key out, which is what the whole-map
+/// comparison then enforces.
+pub(crate) fn expected_values(
+    plan: Plan,
+    name: &str,
+    outcome: Option<&str>,
+    error: Option<&str>,
+) -> BTreeMap<String, CapturedValue> {
+    let mut expected = BTreeMap::new();
+    let mut insert = |field: &str, text: &str| {
+        expected.insert(
+            field.to_owned(),
+            CapturedValue {
+                text: text.to_owned(),
+                via: Via::Str,
+            },
+        );
+    };
+    insert(fields::TRANSITION_NAME, name);
+    if !matches!(plan.boundary, Boundary::Undeclared) {
+        insert(fields::TRANSITION_STATE_BEFORE, plan.mode.state_name());
+        insert(fields::TRANSITION_EVENT, plan.event.label());
+    }
+    if let Some(label) = outcome {
+        insert(fields::TRANSITION_OUTCOME, label);
+    }
+    if let Some(category) = error {
+        insert(fields::TRANSITION_ERROR, category);
+    }
+    expected
 }
 
 /// The plan a preceding `Given` stored, or the reason there is none.

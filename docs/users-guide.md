@@ -85,12 +85,14 @@ and what its value may contain. The
 [`statelet::fields` Rustdoc example](../src/fields.rs) compiles and runs an
 instrumented boundary that uses all five.
 
-Name the fields either as dotted string literals, which work with every
-`tracing` 0.1 release, or through the exported constants, which move the
-spelling under the compiler: a misspelt constant fails to compile, while a
-misspelt literal silently creates a field nothing reads. The constant form needs
-`tracing` 0.1.42 or later, which carries `tracing-attributes` 0.1.31; dotted
-literals are the equal alternative.
+Name the fields either as dotted field names in the `fields(...)` list — for
+example `transition.name = "handle_line"` — or through the exported constants,
+which move the spelling under the compiler: a misspelt constant fails to
+compile, while a misspelt name silently creates a field nothing reads. Dotted
+field names need `tracing` 0.1.9 or later, whose `tracing-attributes` 0.1.9
+first accepted them; earlier 0.1 releases reject a dotted key. The compiled
+constant form needs `tracing` 0.1.42 or later, which carries
+`tracing-attributes` 0.1.31. Dotted names are the equal alternative.
 
 Two habits keep a span readable. First, use `skip_all` on the instrumented
 boundary: without it every argument is recorded with `Debug`, including raw

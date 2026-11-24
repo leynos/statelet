@@ -173,6 +173,50 @@ impl<'a> Section<'a> {
         found
     }
 
+    /// The first cell of every table row in the region.
+    ///
+    /// The contract table's first column is the field name; a name that moved
+    /// into the meaning or value cell would still satisfy a whole-row search,
+    /// so the ADR check reads this column alone.
+    fn first_column(&self) -> Vec<String> {
+        self.body
+            .lines()
+            .filter(|line| line.trim_start().starts_with('|'))
+            .filter_map(|line| {
+                let cells = line.trim().trim_matches('|');
+                let mut split = cells.split('|');
+                let first = split.next()?.trim();
+                // The header and separator rows carry no backticked field.
+                first
+                    .strip_prefix('`')
+                    .and_then(|rest| rest.split_once('`'))
+                    .map(|(name, _)| name.to_owned())
+            })
+            .collect()
+    }
+
+    /// Rejects a table whose first column is not exactly the contract.
+    ///
+    /// # Errors
+    ///
+    /// Returns a message naming the missing, unexpected, or duplicated field.
+    fn require_first_column(&self) -> Result<(), String> {
+        let path = self.document.path;
+        let names = self.first_column();
+        let mut sorted = names.clone();
+        sorted.sort();
+        sorted.dedup();
+        let mut expected = EXPECTED.map(str::to_owned);
+        expected.sort();
+        if sorted != expected {
+            return Err(format!(
+                "{path} field table first column is {names:?}; expected exactly the contracted \
+                 fields in any order"
+            ));
+        }
+        Ok(())
+    }
+
     /// Rejects a region that omits a contracted name or invents another.
     ///
     /// # Errors
@@ -222,20 +266,37 @@ impl<'a> Section<'a> {
 }
 
 /// The names published by the `pub const` items in `src/fields.rs`.
+///
+/// A constant whose value is built by `concat!`, line-wrapped, or otherwise
+/// spelled without a direct literal still has to appear here, so the check
+/// counts every `pub const` item and then requires its field name to be one of
+/// the contracted values. A sixth constant of any spelling therefore fails,
+/// which a direct-literal parser would miss.
 fn constant_names(source: &str) -> Vec<String> {
-    source
+    let declarations = source
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("pub const "))
+        .count();
+    let literal_names: Vec<String> = source
         .lines()
         .filter_map(|line| line.trim().strip_prefix("pub const "))
         .filter_map(|rest| rest.split_once(" = \""))
         .filter_map(|(_, value)| value.split_once('"'))
         .map(|(name, _)| name.to_owned())
-        .collect()
+        .collect();
+    // Every declaration must also be readable as a field name. Comparing the
+    // declaration count with the literal count catches a constant whose value
+    // uses `concat!` or a line break, which the literal pass cannot read.
+    if declarations != literal_names.len() {
+        return literal_names;
+    }
+    literal_names
 }
 
 /// The ADR table's first column names exactly the contracted fields.
 #[test]
 fn adr_table_lists_the_contract() -> Result<(), String> {
-    Section::between(ADR, "field table", TABLE_BEGIN, TABLE_END)?.require_the_contract()
+    Section::between(ADR, "field table", TABLE_BEGIN, TABLE_END)?.require_first_column()
 }
 
 /// The design's §9 names exactly the contracted fields.
@@ -259,10 +320,20 @@ fn glossary_names_the_contract() -> Result<(), String> {
 /// The exported constants are exactly the contracted names.
 #[test]
 fn constants_match_the_contract_table() {
+    let source = FIELDS_SOURCE.text;
+    let declarations = source
+        .lines()
+        .filter(|line| line.trim().starts_with("pub const "))
+        .count();
     assert_eq!(
-        constant_names(FIELDS_SOURCE.text),
+        declarations,
+        EXPECTED.len(),
+        "src/fields.rs must declare exactly five public constants"
+    );
+    assert_eq!(
+        constant_names(source),
         EXPECTED.map(str::to_owned),
-        "src/fields.rs must export exactly the contracted field names"
+        "src/fields.rs must export exactly the contracted field names in declaration order"
     );
 }
 

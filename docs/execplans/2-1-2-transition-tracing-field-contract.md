@@ -189,24 +189,27 @@ There is no elapsed-time limit; a healthy compiler queue is not a failure.
 Measured at completion (2026-11-24), against the merge base `e69af49`:
 
 ```plaintext
-files   22 changed non-ExecPlan files   limit 20   exceeded by 2
-code    1674 net lines                  limit 1300 exceeded by 374
+files   23 changed non-ExecPlan files   limit 20   exceeded by 3
+code    2200 net lines                  limit 1300 exceeded by 900
 config  13 net lines                    limit 20   within
-docs    407 net lines                   limit 550  within
+docs    419 net lines                   limit 550  within
 ```
 
 Both exceptions are recorded rather than silently accepted. The file count
 moved because the plan's budget assumed five modules under
 `tests/transition_fields/` while its plan of work names six, and the 400-line
-cap then forced `capture_tests.rs` and `behaviour_scenarios.rs` out of their
-parents (the latter required by the plan's own "split `behaviour.rs` … if it
-passes 300"). The code count is rustdoc- and comment-density, the same cause
-the budget rationale records for 1.2.1's 900-to-1,736 overrun; no unapproved
-behaviour, interface, or dependency is in the excess. Reducing either number
-would mean deleting required evidence (the capture unit tests, the
-document-agreement checks, or the module and item documentation this
-repository's lints require), so the deviation is recorded here for review
-rather than papered over.
+cap then forced `capture_tests.rs`, `behaviour_scenarios.rs` and
+`behaviour_steps.rs` out of their parents (the last two required by the plan's
+own "split `behaviour.rs` … if it passes 300"). The code count moved further
+when the hosted CodeScene review required genuine refactors rather than
+suppression (D20, D21), adding the expectation map, the whole-map comparison,
+the first-column and declaration-count checks, and their documentation. That
+growth is rustdoc- and comment-heavy in the same way the budget rationale
+records for 1.2.1's 900-to-1,736 overrun; no unapproved behaviour, interface,
+or dependency is in the excess. Reducing either number would mean deleting
+required evidence (the capture unit tests, the document-agreement checks, or
+the module and item documentation this repository's lints require), so the
+deviation is recorded here for review rather than papered over.
 
 Budget rationale. The surveyed surface is `src/lib.rs` (75 lines, one trait),
 `tests/state_name.rs` (134 lines), the 21-line `tests/documented_examples.rs`
@@ -287,8 +290,9 @@ lines).
   triggers the lint-compatibility tolerance.
 - Risk: the `{path::CONST}` form fails for downstream crates on `tracing`
   older than 0.1.42. Severity: low. Likelihood: medium. Mitigation: the guide
-  and rustdoc state the minimum version and keep dotted literals as the
-  universally supported, equal alternative.
+  and rustdoc state the minimum version and keep dotted literals as the equal
+  alternative; it needs `tracing` 0.1.9 or later, since 0.1.8's
+  `tracing-attributes` rejects a dotted key.
 - Risk: document-agreement tests become brittle prose checks. Severity: low.
   Likelihood: medium. Mitigation: one marker-delimited table is the single
   source (D12); other documents are checked only for their name sets and two
@@ -352,7 +356,8 @@ lines).
   arrived in `tracing-attributes` 0.1.31, released with `tracing` 0.1.42 on
   2025-11-26 (tokio-rs/tracing PR 3158). Evidence: the `CHANGELOG.md` files of
   both crates in the Cargo registry. Impact: the constant form needs a recent
-  `tracing`; dotted literals remain the universally supported form (D13).
+  `tracing`; dotted field names remain an equal alternative from `tracing`
+  0.1.9 (D13).
 - Observation: `#[instrument(err)]` does not record a span field; it emits an
   `ERROR`-level event carrying a field named `error`. Evidence:
   `tracing-attributes` 0.1.31 documentation and design review. Impact: the
@@ -623,6 +628,28 @@ lines).
   changed and no source directive was added. Date/Author: 2026-11-24,
   implementation agent; hosted findings in the CodeScene review at head
   `c35b290`.
+
+- D21. Decision: accept and fix the genuine findings from the hosted ExecPlan
+  completeness assessment, and rebut the two that are mistaken. Fixed: (1) the
+  dotted field-name claim is corrected — `tracing-attributes` 0.1.9 first
+  accepted a dotted key (`Punctuated<Ident>`); 0.1.8's parser rejects it
+  explicitly, so "every `tracing` 0.1 release" was wrong and the guides now say
+  `tracing` 0.1.9 or later. (2) `handle_early_return` now declares
+  `transition.outcome`, so its success path records it instead of silently
+  dropping an undeclared value. (3) the ADR table check reads the first column
+  only, and the constant check counts every `pub const` declaration so a
+  `concat!` value cannot hide a sixth constant. (4) each BDD scenario now ends
+  with a whole-map comparison of keys, values, and visitor tags via
+  `pretty_assertions::Comparison`. (5) the rustdoc now says *should* and
+  *recommends* where ADR 0008 does, and names the deferred event projection.
+  (6) the tolerance record is corrected to the measured 23 files and 1,963 net
+  code lines. Rebutted with evidence: the early-return fixture's error path
+  deliberately records nothing (that is the scenario), and the smoke test now
+  runs inside `capture` anyway; the seeded-fault record was incomplete only for
+  the constant-value swap, whose first probe was malformed (it swapped whole
+  declarations, moving the identifiers with their values, so nothing changed) —
+  the corrected value-only swap fails both `names_are_exact` cases and is now
+  recorded. Date/Author: 2026-11-24, implementation agent.
 
 ## Outcomes & retrospective
 
@@ -1396,10 +1423,12 @@ passing vacuously.
 Document seeded faults (`EP-M3`, 2026-11-23), each rejected and reverted:
 
 ```plaintext
-ADR table renames transition.event   "field table does not name ... [transition.event]"
+ADR table renames transition.event   "field table first column is ..." (missing transition.event)
 design loses "semver-relevant"       design_keeps_quoted_phrases::case_2_semver fails
-src/fields.rs gains a sixth constant constants_match_the_contract_table fails
+src/fields.rs gains a sixth constant constants_match_the_contract_table fails (declaration count)
 users' guide gains transition.state.after  "names [transition.state.after], which the contract does not publish"
+state.before value becomes transition.state_before  5 tests fail across contract, docs_agree, forms
+outcome and error constant VALUES swap   names_are_exact case_4 and case_5 both fail
 ```
 
 ## Interfaces and dependencies

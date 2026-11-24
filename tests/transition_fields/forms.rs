@@ -17,7 +17,7 @@ use statelet::fields;
 
 use super::{
     capture::{Via, capture},
-    downstream::{Decision, Mode, handle_line, handle_line_with_literals},
+    downstream::{Decision, Mode, handle_early_return, handle_line, handle_line_with_literals},
 };
 
 /// Both naming forms produce the same span for the same run.
@@ -139,5 +139,31 @@ fn decision_labels_are_stable_fixture_data() {
         (Decision::Stay.label(), Decision::Move.label()),
         ("stay", "move"),
         "the fixture decision labels must match the scenarios' expected values"
+    );
+}
+
+/// The early-return fixture's success path records its outcome.
+///
+/// The error path leaves `transition.error` absent; this case proves the
+/// same fixture does record an outcome when it succeeds, so the absence in
+/// the error scenario is a missed capture rather than a fixture that never
+/// records anything.
+#[test]
+fn the_early_return_fixture_records_its_outcome_on_success() {
+    let span = capture("handle_early_return", || {
+        let _outcome = handle_early_return(Mode::Normalize, false);
+    })
+    .expect("the early-return success run must create exactly one span");
+
+    assert_eq!(
+        span.value(fields::TRANSITION_OUTCOME)
+            .map(|value| (value.text.as_str(), value.via)),
+        Some(("stay", Via::Str)),
+        "the early-return fixture must record its outcome when it succeeds"
+    );
+    assert_eq!(
+        span.value(fields::TRANSITION_ERROR),
+        None,
+        "a successful run must not record an error"
     );
 }

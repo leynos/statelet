@@ -157,13 +157,15 @@ pub fn handle_undeclared(outcome: &str) {
 
 /// A fallible boundary that returns through `?` before recording its error.
 ///
-/// The `record` call is unreachable when the guard fails, so the span never
-/// learns about the error. This is the control for "absence never implies
-/// success": the call really did fail.
+/// The `record` call for the error is unreachable when the guard fails, so the
+/// span never learns about the error; the outcome it would have recorded on
+/// success is declared so the success path can still fill it. This is the
+/// control for "absence never implies success": the call really did fail.
 #[tracing::instrument(skip_all, fields(
     {fields::TRANSITION_NAME} = "handle_early_return",
     {fields::TRANSITION_STATE_BEFORE} = mode.state_name(),
     {fields::TRANSITION_EVENT} = "table_row",
+    {fields::TRANSITION_OUTCOME} = tracing::field::Empty,
     {fields::TRANSITION_ERROR} = tracing::field::Empty,
 ))]
 pub fn handle_early_return(mode: Mode, fails: bool) -> Result<Decision, ParseFailure> {
@@ -180,15 +182,26 @@ const fn check(fails: bool) -> Result<Decision, ParseFailure> {
     Ok(Decision::Stay)
 }
 
-/// The instrumented fixture boundary compiles and runs.
+/// The instrumented fixture boundary compiles and runs under a dispatcher.
+///
+/// The call stays inside `super::capture`, because a span created with no
+/// scoped subscriber can be discarded and would make later observations
+/// vacuous; this test only proves the fixture compiles and returns.
 #[test]
 fn the_instrumented_boundary_runs() {
     let mode = Mode::Normalize;
-    let decision = handle_line(mode, false)
-        .expect("the fixture boundary must return its decision without an error");
-    assert_eq!(
-        decision.label(),
-        "stay",
-        "the fixture boundary must return its project-local decision"
+    let span = super::capture::capture("handle_line", || {
+        let decision = handle_line(mode, false)
+            .expect("the fixture boundary must return its decision without an error");
+        assert_eq!(
+            decision.label(),
+            "stay",
+            "the fixture boundary must return its project-local decision"
+        );
+    })
+    .expect("the fixture boundary must create exactly one span");
+    assert!(
+        span.value(fields::TRANSITION_NAME).is_some(),
+        "the fixture span must record its transition name"
     );
 }

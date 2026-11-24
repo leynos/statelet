@@ -83,11 +83,12 @@ what stability promise attaches to them.
 
 Statelet fixes the five field names, records them in the table below, and
 publishes the names as five zero-dependency constants in the module
-`statelet::fields`. The dotted string literal form remains a documented, equal
-alternative. The contract fixes field names, their location, and their meaning,
-presence, and value-shape rules. It does not fix the label vocabulary of any
-value: transition names, state labels, event classes, outcome labels, and error
-categories remain application-owned.
+`statelet::fields`. A dotted field name written in the `fields(...)` list
+remains a documented, equal alternative, and needs `tracing` 0.1.9 or later
+(earlier 0.1 releases reject a dotted key). The contract fixes field names,
+their location, and their meaning, presence, and value-shape rules. It does not
+fix the label vocabulary of any value: transition names, state labels, event
+classes, outcome labels, and error categories remain application-owned.
 
 ## The field contract
 
