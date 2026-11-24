@@ -38,9 +38,9 @@ After this change, a downstream crate author can do three things.
    states each field's meaning, presence rule, and value rule, together with
    the semantic-versioning policy. `docs/design.md` §9 and
    `docs/users-guide.md` name the same fields and link to that table.
-2. Name the fields either as dotted literals, which work with any `tracing`
-   0.1 release, or through zero-dependency constants that Statelet exports,
-   which need `tracing` 0.1.42 or later:
+2. Name the fields either as dotted field names, which need a resolved
+   `tracing-attributes` 0.1.9 or later, or through zero-dependency constants
+   that Statelet exports, which need `tracing-attributes` 0.1.31 or later:
 
    ```rust
    use statelet::{StateName, fields};
@@ -650,6 +650,22 @@ lines).
   declarations, moving the identifiers with their values, so nothing changed) —
   the corrected value-only swap fails both `names_are_exact` cases and is now
   recorded. Date/Author: 2026-11-24, implementation agent.
+- D22. Decision: accept and fix the three findings from the second
+  completeness-assessment round. (1) The version requirement moves to the
+  resolved `tracing-attributes` crate: a given `tracing` release permits an
+  older attributes version (`tracing` 0.1.9 allows 0.1.3+), so "tracing 0.1.9"
+  was not a sufficient statement; the guides now say a resolved
+  `tracing-attributes` 0.1.9 for dotted names and 0.1.31 for the constant form,
+  and design §9.1's "dotted string literal" wording is corrected too. (2)
+  Agreement sections are extracted by exact ATX heading and bounded by heading
+  rank, so §9.1 no longer swallows §9.2 and the glossary entry no longer runs
+  into the next entry; both moves were reproduced and are now rejected. (3) The
+  ADR table's meaning column now separates what a field *is* from what an
+  application *should* record, matching its own value rules, and states that
+  the secrets/raw-payload ban is not provisional. Also recorded: the plan's
+  Debug-delivered outcome probe now ran (it previously recorded a Display
+  substitution); it fails the string-tag assertion with the value `"stay"`
+  delivered via Debug. Date/Author: 2026-11-24, implementation agent.
 
 ## Outcomes & retrospective
 
@@ -1413,6 +1429,9 @@ subscriber enabled -> false        42 run, 12 failed (capture tests, BDD, forms)
 current_span -> Current::none()    42 run, 9 failed  (late-record test, BDD, forms)
 record -> no-op                    42 run, 9 failed  (late-record test, BDD, forms)
 outcome recorded with Display      42 run, 3 failed  (BDD success, form agreement, string-tag)
+outcome recorded with Debug        44 run, 2 failed  (string-tag, BDD success: via Debug)
+design 9.1 event moved into 9.2    design_names_the_contract fails (missing transition.event)
+glossary event moved to next entry glossary_names_the_contract fails
 ```
 
 The `enabled -> false` run leaves `capture_rejects_no_span` passing, which is

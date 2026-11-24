@@ -387,8 +387,8 @@ holds the single source of each field's meaning, presence rule, and value rule,
 together with the semantic-versioning and prefix-ownership rules. Beyond the
 `transition.` prefix claim on boundary spans, the runtime crate publishes the
 names as the constants in [`statelet::fields`](../src/fields.rs), so a
-downstream crate can name a field through the compiler. The dotted string
-literal form is an equal alternative.
+downstream crate can name a field through the compiler. The dotted field-name
+form is an equal alternative.
 
 Roadmap task 2.1.2 publishes this contract; roadmap task 2.1.3 owns the
 user-facing conventions-only usage pattern.

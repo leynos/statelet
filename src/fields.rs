@@ -67,10 +67,12 @@
 //! identify the boundary's own span under filtering. An application that needs
 //! the strict location must keep the boundary span enabled.
 //!
-//! Braced constant field names need `tracing` 0.1.42 or later, which carries
-//! `tracing-attributes` 0.1.31. A dotted field name written in the list, such
-//! as `transition.name = "handle_line"`, produces the same field and needs
-//! `tracing` 0.1.9 or later; earlier 0.1 releases reject a dotted key. Dotted
+//! Braced constant field names need a resolved `tracing-attributes` 0.1.31 or
+//! later, which `tracing` 0.1.42 first carried. A dotted field name written in
+//! the list, such as `transition.name = "handle_line"`, produces the same field
+//! and needs a resolved `tracing-attributes` 0.1.9 or later; `tracing` 0.1.9
+//! itself permits an older `tracing-attributes`, so the requirement is on the
+//! resolved attributes crate rather than the `tracing` version alone. Dotted
 //! names remain an equal alternative to the constants.
 //!
 //! [adr-0008]: https://github.com/leynos/statelet/blob/main/docs/adrs/adr-0008-publish-the-transition-tracing-field-contract.md

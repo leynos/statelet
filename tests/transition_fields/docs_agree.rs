@@ -19,6 +19,8 @@ use pretty_assertions::assert_eq;
 use rstest::rstest;
 use statelet::fields;
 
+use self::section::Section;
+
 /// One document this agreement check reads.
 #[derive(Debug, Clone, Copy)]
 struct Document {
@@ -77,193 +79,62 @@ const EXPECTED_SPANS: [&str; 5] = [
     "`transition.error`",
 ];
 
-/// One extracted region of a document, with the name it is reported under.
-#[derive(Debug, Clone, Copy)]
-struct Section<'a> {
-    /// The document the region was extracted from.
-    document: Document,
-    /// What the region is called in a failure message.
-    name: &'a str,
-    /// The extracted text.
-    body: &'a str,
+/// The rank of an ATX heading line, or `None` for any other line.
+///
+/// A rank of one is `#`, two is `##`, and so on. Leading indentation of up to
+/// three spaces is permitted, matching Markdown's ATX rule.
+fn heading_rank(line: &str) -> Option<usize> {
+    let indent = line
+        .chars()
+        .take_while(|character| *character == ' ')
+        .count();
+    if indent > 3 {
+        return None;
+    }
+    let hashes = line
+        .chars()
+        .skip(indent)
+        .take_while(|character| *character == '#')
+        .count();
+    if hashes == 0 || hashes > 6 {
+        return None;
+    }
+    let rest = line
+        .char_indices()
+        .nth(indent + hashes)
+        .map(|(_, character)| character);
+    if rest.is_none_or(|character| character == ' ') {
+        Some(hashes)
+    } else {
+        None
+    }
 }
 
-impl<'a> Section<'a> {
-    /// The region between two marker lines in `document`.
-    ///
-    /// # Errors
-    ///
-    /// Returns a message naming the missing marker when either marker is
-    /// absent, and a message when the delimited region is empty.
-    fn between(document: Document, name: &'a str, begin: &str, end: &str) -> Result<Self, String> {
-        let after_begin = document
-            .text
-            .split_once(begin)
-            .ok_or_else(|| format!("{}: opening marker {begin:?} is missing", document.path))?
-            .1;
-        let body = after_begin
-            .split_once(end)
-            .ok_or_else(|| format!("{}: closing marker {end:?} is missing", document.path))?
-            .0;
-        Self::require_non_empty(document, name, body)
-    }
-
-    /// The body of the level-two section whose heading starts with `prefix`.
-    ///
-    /// The body ends at the next heading of the same or higher rank, so the
-    /// check follows a restructured section rather than silently reading to the
-    /// end of the document.
-    ///
-    /// # Errors
-    ///
-    /// Returns a message naming the missing heading when no such section
-    /// exists, and a message when the section body is empty.
-    fn level_two(document: Document, heading: &'a str) -> Result<Self, String> {
-        let marker = format!("## {heading}");
-        let after_heading = document
-            .text
-            .split_once(&marker)
-            .ok_or_else(|| format!("{}: heading {marker:?} is missing", document.path))?
-            .1;
-        let body = after_heading
-            .split_once("\n## ")
-            .map_or(after_heading, |(body, _)| body);
-        Self::require_non_empty(document, heading, body)
-    }
-
-    /// Accepts the region, rejecting an empty one.
-    ///
-    /// A section that exists but says nothing would compare "no names" with
-    /// "no names" and pass, so emptiness is an error rather than a result.
-    fn require_non_empty(document: Document, name: &'a str, body: &'a str) -> Result<Self, String> {
-        if body.trim().is_empty() {
-            return Err(format!("{}: the {name} region is empty", document.path));
-        }
-        Ok(Self {
-            document,
-            name,
-            body,
-        })
-    }
-
-    /// Folds the region's whitespace runs to single spaces.
-    ///
-    /// `mdtablefix --wrap` rewraps each document at its own column, so a phrase
-    /// quoted in one and looked for in another arrives with different line
-    /// breaks.
-    fn folded(&self) -> String { self.body.split_whitespace().collect::<Vec<_>>().join(" ") }
-
-    /// Every `transition.*` token in the region, deduplicated and sorted.
-    ///
-    /// Tokens are trimmed of surrounding punctuation so a sentence-final full
-    /// stop does not become part of a name. A bare `transition.` prefix
-    /// mention is not a field name and is ignored.
-    fn tokens(&self) -> Vec<String> {
-        let mut found: Vec<String> = Vec::new();
-        for raw in self.body.split(|character: char| {
-            character.is_whitespace() || matches!(character, '`' | '(' | ')' | ',' | '"' | '\'')
-        }) {
-            let token = raw.trim_end_matches(['.', ':', ';']);
-            if token.starts_with("transition.") && token.len() > "transition.".len() {
-                found.push(token.to_owned());
+/// The body of the section headed exactly `heading`, at `rank`.
+///
+/// Returns `None` when no line is that heading. The body runs from the line
+/// after it to the next line whose rank is `rank` or higher, so a level-three
+/// section stops at its section's next heading and a level-two section stops at
+/// the next level-two or level-one heading.
+fn section_body<'a>(text: &'a str, heading: &str, rank: usize) -> Option<&'a str> {
+    let mut begin = None;
+    let mut offset = 0_usize;
+    for line in text.split_inclusive('\n') {
+        let content = line.trim_end_matches('\n');
+        if begin.is_none() {
+            if content.trim_end() == heading {
+                begin = Some(offset + line.len());
             }
+        } else if heading_rank(content).is_some_and(|next| next <= rank) {
+            return text.get(begin?..offset);
         }
-        found.sort();
-        found.dedup();
-        found
+        offset += line.len();
     }
-
-    /// The first cell of every table row in the region.
-    ///
-    /// The contract table's first column is the field name; a name that moved
-    /// into the meaning or value cell would still satisfy a whole-row search,
-    /// so the ADR check reads this column alone.
-    fn first_column(&self) -> Vec<String> {
-        self.body
-            .lines()
-            .filter(|line| line.trim_start().starts_with('|'))
-            .filter_map(|line| {
-                let cells = line.trim().trim_matches('|');
-                let mut split = cells.split('|');
-                let first = split.next()?.trim();
-                // The header and separator rows carry no backticked field.
-                first
-                    .strip_prefix('`')
-                    .and_then(|rest| rest.split_once('`'))
-                    .map(|(name, _)| name.to_owned())
-            })
-            .collect()
-    }
-
-    /// Rejects a table whose first column is not exactly the contract.
-    ///
-    /// # Errors
-    ///
-    /// Returns a message naming the missing, unexpected, or duplicated field.
-    fn require_first_column(&self) -> Result<(), String> {
-        let path = self.document.path;
-        let names = self.first_column();
-        let mut sorted = names.clone();
-        sorted.sort();
-        sorted.dedup();
-        let mut expected = EXPECTED.map(str::to_owned);
-        expected.sort();
-        if sorted != expected {
-            return Err(format!(
-                "{path} field table first column is {names:?}; expected exactly the contracted \
-                 fields in any order"
-            ));
-        }
-        Ok(())
-    }
-
-    /// Rejects a region that omits a contracted name or invents another.
-    ///
-    /// # Errors
-    ///
-    /// Returns a message listing the contracted names the region does not
-    /// mention, or the `transition.*` tokens that the contract does not publish.
-    fn require_the_contract(&self) -> Result<(), String> {
-        let path = self.document.path;
-        let name = self.name;
-        let missing: Vec<&str> = EXPECTED_SPANS
-            .iter()
-            .copied()
-            .filter(|span| !self.body.contains(span))
-            .collect();
-        if !missing.is_empty() {
-            return Err(format!(
-                "{path} {name} does not name the contracted field(s) {missing:?}"
-            ));
-        }
-        let unexpected: Vec<String> = self
-            .tokens()
-            .into_iter()
-            .filter(|token| !EXPECTED.contains(&token.as_str()))
-            .collect();
-        if !unexpected.is_empty() {
-            return Err(format!(
-                "{path} {name} names {unexpected:?}, which the contract does not publish"
-            ));
-        }
-        Ok(())
-    }
-
-    /// Requires the region to carry `phrase`, ignoring line breaks.
-    ///
-    /// # Errors
-    ///
-    /// Returns a message naming the region and the absent phrase.
-    fn require_phrase(&self, phrase: &str) -> Result<(), String> {
-        if self.folded().contains(phrase) {
-            return Ok(());
-        }
-        Err(format!(
-            "{} {} must still contain the quoted phrase {phrase:?}",
-            self.document.path, self.name
-        ))
-    }
+    text.get(begin?..)
 }
+
+#[path = "docs_agree/section.rs"]
+mod section;
 
 /// The names published by the `pub const` items in `src/fields.rs`.
 ///
@@ -302,19 +173,19 @@ fn adr_table_lists_the_contract() -> Result<(), String> {
 /// The design's §9 names exactly the contracted fields.
 #[test]
 fn design_names_the_contract() -> Result<(), String> {
-    Section::level_two(DESIGN, "9. Observability")?.require_the_contract()
+    Section::heading(DESIGN, "### 9.1 Field contract")?.require_the_contract()
 }
 
 /// The users' guide section names exactly the contracted fields.
 #[test]
 fn users_guide_names_the_contract() -> Result<(), String> {
-    Section::level_two(USERS_GUIDE, "Transition tracing fields")?.require_the_contract()
+    Section::heading(USERS_GUIDE, "## Transition tracing fields")?.require_the_contract()
 }
 
 /// The glossary entry names exactly the contracted fields.
 #[test]
 fn glossary_names_the_contract() -> Result<(), String> {
-    Section::level_two(CONTEXT, "Transition field contract")?.require_the_contract()
+    Section::heading(CONTEXT, "### Transition field contract")?.require_the_contract()
 }
 
 /// The exported constants are exactly the contracted names.
@@ -342,7 +213,7 @@ fn constants_match_the_contract_table() {
 #[case::public_api("public operational API")]
 #[case::semver("semver-relevant")]
 fn design_keeps_quoted_phrases(#[case] phrase: &str) {
-    let section = Section::level_two(DESIGN, "9. Observability")
+    let section = Section::heading(DESIGN, "### 9.1 Field contract")
         .expect("the design must still have its observability section");
     section
         .require_phrase(phrase)

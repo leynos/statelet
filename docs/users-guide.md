@@ -89,10 +89,12 @@ Name the fields either as dotted field names in the `fields(...)` list — for
 example `transition.name = "handle_line"` — or through the exported constants,
 which move the spelling under the compiler: a misspelt constant fails to
 compile, while a misspelt name silently creates a field nothing reads. Dotted
-field names need `tracing` 0.1.9 or later, whose `tracing-attributes` 0.1.9
-first accepted them; earlier 0.1 releases reject a dotted key. The compiled
-constant form needs `tracing` 0.1.42 or later, which carries
-`tracing-attributes` 0.1.31. Dotted names are the equal alternative.
+field names need a resolved `tracing-attributes` 0.1.9 or later, the first
+release that parses a dotted key; `tracing` 0.1.9 permits an older
+`tracing-attributes`, so the requirement is on the resolved attributes crate,
+not on the `tracing` version alone. The compiled constant form needs a resolved
+`tracing-attributes` 0.1.31 or later, which `tracing` 0.1.42 first carried.
+Dotted names are the equal alternative.
 
 Two habits keep a span readable. First, use `skip_all` on the instrumented
 boundary: without it every argument is recorded with `Debug`, including raw

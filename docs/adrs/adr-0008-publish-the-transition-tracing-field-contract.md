@@ -84,11 +84,14 @@ what stability promise attaches to them.
 Statelet fixes the five field names, records them in the table below, and
 publishes the names as five zero-dependency constants in the module
 `statelet::fields`. A dotted field name written in the `fields(...)` list
-remains a documented, equal alternative, and needs `tracing` 0.1.9 or later
-(earlier 0.1 releases reject a dotted key). The contract fixes field names,
-their location, and their meaning, presence, and value-shape rules. It does not
-fix the label vocabulary of any value: transition names, state labels, event
-classes, outcome labels, and error categories remain application-owned.
+remains a documented, equal alternative; it needs a resolved
+`tracing-attributes` 0.1.9 or later, and the braced constant form needs 0.1.31
+or later. The requirement is on the resolved attributes crate, because a given
+`tracing` release may permit an older `tracing-attributes`. The contract fixes
+field names, their location, and their meaning, presence, and value-shape
+rules. It does not fix the label vocabulary of any value: transition names,
+state labels, event classes, outcome labels, and error categories remain
+application-owned.
 
 ## The field contract
 
@@ -103,14 +106,21 @@ lists, and the exported constants stay in agreement.
 | Field                     | Meaning                                                    | Recorded when                                                  | Value rule                                                                                                                             |
 | ------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `transition.name`         | Stable label naming the transition boundary                | Always, when the span is created                               | A stable, low-cardinality label chosen by the application, usually the boundary's name                                                 |
-| `transition.state.before` | The `StateName` label of the state observed on entry       | When the boundary observes a state                             | A stable label; it should be the value `StateName::state_name` returns                                                                 |
-| `transition.event`        | Stable semantic class of the input the boundary handles    | When the boundary handles an input                             | A low-cardinality class of the input rather than the input itself; the form used by a future macro's `event(...)` argument is deferred |
+| `transition.state.before` | The label of the state observed on entry                   | When the boundary observes a state                             | A stable label; it should be the value `StateName::state_name` returns                                                                 |
+| `transition.event`        | Stable label describing the input the boundary handles     | When the boundary handles an input                             | A low-cardinality class of the input rather than the input itself; the form used by a future macro's `event(...)` argument is deferred |
 | `transition.outcome`      | Stable label of the result the boundary produced           | When the application has such a label for the completed call   | A stable, low-cardinality label chosen by the application, for example the variant of its own decision enum                            |
 | `transition.error`        | Bounded category of the error a fallible boundary returned | Only by a fallible boundary, and only when it returns an error | A stable, low-cardinality category, for example the variant label of the application's error enum; not arbitrary error text            |
 
 <!-- transition-fields:end -->
 
 *Table 2: The transition tracing field contract.*
+
+The meaning column states what each field *is*; the value rule column states
+what an application *should* record. Where the two overlap, the value rule is
+the recommendation: `transition.state.before` should carry the
+`StateName::state_name` label, and `transition.event` should carry a
+low-cardinality class rather than the raw input. Neither is a prohibition, and
+the ban on secrets and raw payloads in "Value rules" is not provisional.
 
 ## Location and presence rules
 
