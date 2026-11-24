@@ -581,9 +581,16 @@ tied to evidence; fixtures and helpers do not become exempt merely because a
 test consumes them. Keep direct environment reads and mutations behind injected
 configuration or process-state dependencies. Recognized test bodies may use
 `expect` with a reason, while shared fixtures and setup helpers remain
-fallible. The complexity ceilings are 9 for cognitive complexity, 4 arguments,
-70 lines, and 4 levels of nesting. `rust-toolchain.toml` pins the nightly
-components for Clippy, rustfmt, LLVM tools, Cranelift, and rust-analyzer.
+fallible. Whitaker's experimental `macro_aware_cognitive_complexity` gates
+cognitive complexity at `max_complexity = 9`, CodeScene's ceiling;
+`dylint.toml` opts in with
+`[whitaker] experimental = ["macro_aware_cognitive_complexity"]`. Clippy no
+longer gates it, because its `cognitive_complexity` scores code after macro
+expansion and counts branching a macro generated. Fix a finding by extracting
+named helpers, never by raising the threshold. The other ceilings are 4
+arguments, 70 lines, and 4 levels of nesting. `rust-toolchain.toml` pins the
+nightly components for Clippy, rustfmt, LLVM tools, Cranelift, and
+rust-analyzer.
 
 ## Markdown tooling
 
