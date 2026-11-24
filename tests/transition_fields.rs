@@ -11,6 +11,8 @@
 mod behaviour;
 #[path = "transition_fields/behaviour_scenarios.rs"]
 mod behaviour_scenarios;
+#[path = "transition_fields/behaviour_steps.rs"]
+mod behaviour_steps;
 #[path = "transition_fields/capture.rs"]
 mod capture;
 #[path = "transition_fields/capture_tests.rs"]

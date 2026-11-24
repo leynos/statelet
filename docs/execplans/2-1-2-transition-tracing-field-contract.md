@@ -608,6 +608,21 @@ lines).
   promise something the recommended recording idiom cannot always keep.
   Date/Author: 2026-11-24, implementation agent; review evidence in
   `/tmp/coderabbit-review-statelet-2-1-2-transition-tracing-field-contract.out`.
+- D20. Decision: clear the three hosted CodeScene findings by refactoring, not
+  suppression. (1) `downstream.rs` no longer duplicates the decision logic:
+  both instrumented boundaries call one non-instrumented `decide` helper, so
+  they differ only in how they spell their field names — which is exactly what
+  the form-equivalence test claims, so the extraction strengthens the evidence
+  as well as the metric. (2) `behaviour.rs` stores typed `Mode` and `Event`
+  values in its `Plan` instead of two `String` fields, with `parse_mode` and
+  `Event::from_label` at the Gherkin boundary; that removes the string-heavy
+  argument ratio honestly. (3) `docs_agree.rs` gains `Document` (path plus
+  embedded text) and `Section` (document, name, body) types with cohesive
+  methods, replacing loose text parameters and duplicated path strings. The
+  local `cs delta e69af49` then reports no issues. No `.codescene` rule was
+  changed and no source directive was added. Date/Author: 2026-11-24,
+  implementation agent; hosted findings in the CodeScene review at head
+  `c35b290`.
 
 ## Outcomes & retrospective
 

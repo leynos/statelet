@@ -27,11 +27,11 @@ use super::{
 fn literal_and_constant_forms_agree(#[case] fails: bool) {
     let mode = Mode::Normalize;
     let constants = capture("handle_line", || {
-        let _outcome = handle_line(&mode, fails);
+        let _outcome = handle_line(mode, fails);
     })
     .expect("the constant-form boundary must create exactly one span");
     let literals = capture("handle_line", || {
-        let _outcome = handle_line_with_literals(&mode, fails);
+        let _outcome = handle_line_with_literals(mode, fails);
     })
     .expect("the literal-form boundary must create exactly one span");
 
@@ -60,7 +60,7 @@ fn literal_and_constant_forms_agree(#[case] fails: bool) {
 fn the_success_run_records_the_outcome_as_a_string() {
     let mode = Mode::Normalize;
     let span = capture("handle_line", || {
-        let _outcome = handle_line(&mode, false);
+        let _outcome = handle_line(mode, false);
     })
     .expect("the success run must create exactly one span");
 
@@ -77,7 +77,7 @@ fn the_success_run_records_the_outcome_as_a_string() {
 fn the_error_run_records_the_category_as_a_string() {
     let mode = Mode::Normalize;
     let span = capture("handle_line", || {
-        let _outcome = handle_line(&mode, true);
+        let _outcome = handle_line(mode, true);
     })
     .expect("the error run must create exactly one span");
 

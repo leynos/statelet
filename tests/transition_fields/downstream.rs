@@ -15,6 +15,7 @@
 use statelet::{StateName, fields};
 
 /// The fixture application's continuation mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     /// A normalization step.
     Normalize,
@@ -80,15 +81,8 @@ impl ParseFailure {
     {fields::TRANSITION_OUTCOME} = tracing::field::Empty,
     {fields::TRANSITION_ERROR} = tracing::field::Empty,
 ))]
-pub fn handle_line(mode: &Mode, fails: bool) -> Result<Decision, ParseFailure> {
-    if fails {
-        let failure = ParseFailure::UnterminatedRow;
-        tracing::Span::current().record(fields::TRANSITION_ERROR, failure.category());
-        return Err(failure);
-    }
-    let decision = Decision::Stay;
-    tracing::Span::current().record(fields::TRANSITION_OUTCOME, decision.label());
-    Ok(decision)
+pub fn handle_line(mode: Mode, fails: bool) -> Result<Decision, ParseFailure> {
+    decide(mode, fails)
 }
 
 /// The same boundary as [`handle_line`], naming its fields with literals.
@@ -103,7 +97,19 @@ pub fn handle_line(mode: &Mode, fails: bool) -> Result<Decision, ParseFailure> {
     transition.outcome = tracing::field::Empty,
     transition.error = tracing::field::Empty,
 ))]
-pub fn handle_line_with_literals(mode: &Mode, fails: bool) -> Result<Decision, ParseFailure> {
+pub fn handle_line_with_literals(mode: Mode, fails: bool) -> Result<Decision, ParseFailure> {
+    decide(mode, fails)
+}
+
+/// Decides the result and records it on the enclosing boundary span.
+///
+/// The two instrumented above differ only in how they spell their field names;
+/// everything after that is the same decision, so it lives once here. This
+/// helper is deliberately not instrumented: it records through
+/// `tracing::Span::current()`, which resolves to the boundary span its caller
+/// created.
+fn decide(mode: Mode, fails: bool) -> Result<Decision, ParseFailure> {
+    let _ = mode;
     if fails {
         let failure = ParseFailure::UnterminatedRow;
         tracing::Span::current().record(fields::TRANSITION_ERROR, failure.category());
@@ -127,7 +133,7 @@ pub fn handle_line_with_literals(mode: &Mode, fails: bool) -> Result<Decision, P
     {fields::TRANSITION_EVENT} = "fence",
     {fields::TRANSITION_OUTCOME} = tracing::field::Empty,
 ))]
-pub fn handle_fence(mode: &Mode) -> Decision {
+pub fn handle_fence(mode: Mode) -> Decision {
     let decision = Decision::Move;
     tracing::Span::current().record(fields::TRANSITION_OUTCOME, decision.label());
     decision
@@ -160,7 +166,7 @@ pub fn handle_undeclared(outcome: &str) {
     {fields::TRANSITION_EVENT} = "table_row",
     {fields::TRANSITION_ERROR} = tracing::field::Empty,
 ))]
-pub fn handle_early_return(mode: &Mode, fails: bool) -> Result<Decision, ParseFailure> {
+pub fn handle_early_return(mode: Mode, fails: bool) -> Result<Decision, ParseFailure> {
     let decision = check(fails)?;
     tracing::Span::current().record(fields::TRANSITION_OUTCOME, decision.label());
     Ok(decision)
@@ -178,7 +184,7 @@ const fn check(fails: bool) -> Result<Decision, ParseFailure> {
 #[test]
 fn the_instrumented_boundary_runs() {
     let mode = Mode::Normalize;
-    let decision = handle_line(&mode, false)
+    let decision = handle_line(mode, false)
         .expect("the fixture boundary must return its decision without an error");
     assert_eq!(
         decision.label(),

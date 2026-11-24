@@ -130,9 +130,12 @@ compact and omits build output such as `target/`.
 - `tests/transition_fields.rs` and `tests/transition_fields/`: Prove the
   published transition fields work with ordinary
   `#[tracing::instrument(fields(...))]`, as a downstream crate sees them. Its
-  private children hold the exported-name contract, the application-shaped
-  fixtures, the capture subscriber, the form-equivalence and absence cases, the
-  behavioural steps, and the document-agreement check.
+  private children each own one concern: the exported-name contract
+  (`contract.rs`), the application-shaped fixtures (`downstream.rs`), the
+  capture subscriber and its unit tests (`capture.rs`, `capture_tests.rs`), the
+  form-equivalence and absence cases (`forms.rs`), the behavioural world, step
+  definitions, and scenario bindings (`behaviour.rs`, `behaviour_steps.rs`,
+  `behaviour_scenarios.rs`), and the document-agreement check (`docs_agree.rs`).
 - `tests/state_name_consumption_contract.rs`: Guards ADR 0004 against drift in
   its status and aggregation registers, its gate table, the validation note
   template, and the source clauses it quotes. It also reads
