@@ -562,8 +562,13 @@ remains active independently of `RUSTFLAGS`; other targets use Cargo's default
 platform linker.*
 
 Whitaker uses its installer-managed toolchain and does not receive the
-repository's development `RUSTFLAGS`. The toolchain and CI routes are checked
-by the build and workflow contracts.
+repository's development `RUSTFLAGS`. `make lint-whitaker` sets
+`DYLINT_RUSTFLAGS=-Dwarnings` instead (one word, as the Make contract parses
+recipe assignments), which Dylint applies only to the analysed crates, so a
+Whitaker finding (for example one from the experimental
+`macro_aware_cognitive_complexity` lint) fails the gate rather than printing a
+warning. The toolchain and CI routes are checked by the build and workflow
+contracts.
 
 ## Lint baseline
 
