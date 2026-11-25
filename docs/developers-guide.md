@@ -67,11 +67,13 @@ would then pass for the wrong reason.
 `#[tracing::instrument]` expands to a span guard whose `log`-fallback branch
 this crate's CodeScene-aligned `cognitive_complexity` threshold counts as
 boundary complexity, and `rstest-bdd` enables the `tracing/log` feature that
-generates it. Each instrumented fixture therefore carries an item-scoped
-`#[expect(clippy::cognitive_complexity, reason = "...")]` naming the expansion.
-Keep that expectation narrow: it exists because the lint is measuring
-`tracing-attributes` output, not fixture logic, and it fails closed through
-`unfulfilled_lint_expectations` if a later release stops generating the branch.
+generates it. A fixture whose expanded body crosses the threshold carries an
+item-scoped `#[expect(clippy::cognitive_complexity, reason = "...")]` naming
+the expansion; fixtures that stay under it carry none, so the expectation
+tracks the lint rather than the attribute. Keep it narrow: it exists because
+the lint is measuring `tracing-attributes` output, not fixture logic, and it
+fails closed through `unfulfilled_lint_expectations` if the generated branch
+disappears.
 
 `tracing-core` is declared with `default-features = false`: its default
 features add the optional `valuable` package to `Cargo.lock`, and `tracing`
