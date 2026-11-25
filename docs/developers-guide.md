@@ -45,9 +45,12 @@ literal, and nothing else in `src/` redefines one. A new field needs an ADR
 in the same change. The constants carry `#[doc(alias = "<dotted name>")]` so a
 Rustdoc search for the literal still finds them.
 
-The dotted literal form stays documented as an equal alternative because the
-braced constant form needs `tracing` 0.1.42 or later. Do not delete either form
-from the guide or the rustdoc while both work.
+The dotted field-name form stays documented as an equal alternative because the
+braced constant form needs both a `tracing` facade whose macros accept braced
+names and a resolved `tracing-attributes` 0.1.31 or later — in practice
+`tracing` 0.1.43 or later (`tracing` 0.1.42 is yanked) with
+`tracing-attributes` 0.1.31 or later. Do not delete either form from the guide
+or the rustdoc while both work.
 
 `tests/transition_fields.rs` compiles as an external crate, so it proves the
 published surface rather than crate internals. Its `contract` child pins each

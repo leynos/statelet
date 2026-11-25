@@ -188,23 +188,23 @@ git diff --name-only "$base" -- ':!docs/execplans' | wc -l
 
 There is no elapsed-time limit; a healthy compiler queue is not a failure.
 
-Measured at completion (2026-11-24), against the merge base `e69af49`:
+Measured at completion (2026-11-25), against the merge base `e69af49`:
 
 ```plaintext
 files   24 changed non-ExecPlan files   limit 20   exceeded by 4
-code    2278 net lines                  limit 1300 exceeded by 978
+code    2283 net lines                  limit 1300 exceeded by 983
 config  13 net lines                    limit 20   within
-docs    435 net lines                   limit 550  within
+docs    444 net lines                   limit 550  within
 ```
 
 Both exceptions are recorded rather than silently accepted. The file count
 moved because the plan's budget assumed five modules under
 `tests/transition_fields/` while its plan of work names six, and the 400-line
-cap then forced `capture_tests.rs`, `behaviour_scenarios.rs`, and
-`behaviour_steps.rs` out of `behaviour.rs`'s module family, and
-`docs_agree/section.rs` out of the document-agreement module (the last two
-required by the plan's own "split `behaviour.rs` … if it passes 300"). The code
-count moved further when the hosted CodeScene review required genuine refactors
+cap then forced `capture_tests.rs` out of `capture.rs`,
+`behaviour_scenarios.rs` and `behaviour_steps.rs` out of `behaviour.rs` (as the
+plan's own "split `behaviour.rs` … if it passes 300" requires), and
+`docs_agree/section.rs` out of the document-agreement module. The code count
+moved further when the hosted CodeScene review required genuine refactors
 rather than suppression (D20, D21), adding the expectation map, the whole-map
 comparison, the first-column and declaration-count checks, and their
 documentation. That growth is rustdoc- and comment-heavy in the same way the
