@@ -65,15 +65,12 @@ created outside a scoped dispatcher can be discarded and an absence assertion
 would then pass for the wrong reason.
 
 `#[tracing::instrument]` expands to a span guard whose `log`-fallback branch
-this crate's CodeScene-aligned `cognitive_complexity` threshold counts as
-boundary complexity, and `rstest-bdd` enables the `tracing/log` feature that
-generates it. A fixture whose expanded body crosses the threshold carries an
-item-scoped `#[expect(clippy::cognitive_complexity, reason = "...")]` naming
-the expansion; fixtures that stay under it carry none, so the expectation
-tracks the lint rather than the attribute. Keep it narrow: it exists because
-the lint is measuring `tracing-attributes` output, not fixture logic, and it
-fails closed through `unfulfilled_lint_expectations` if the generated branch
-disappears.
+adds branching the fixture did not write. This repository does not suppress it:
+cognitive complexity is gated by Whitaker's macro-aware lint (see the lint
+baseline section), which scores the source rather than the expansion, so the
+instrumented fixtures need no expectation. Do not add a Clippy
+`cognitive_complexity` expectation to them; Clippy no longer gates that lint,
+and an unfulfilled expectation fails the build.
 
 `tracing-core` is declared with `default-features = false`: its default
 features add the optional `valuable` package to `Cargo.lock`, and `tracing`

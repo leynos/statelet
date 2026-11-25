@@ -147,12 +147,6 @@ impl tracing::Subscriber for FilteredSubscriber {
 }
 
 /// A boundary whose own span the filter rejects.
-#[expect(
-    clippy::cognitive_complexity,
-    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; this fixture's body fits the ceiling but the guard alone \
-              scores 10"
-)]
 #[tracing::instrument(name = "filtered_boundary", skip_all, fields(
     {fields::TRANSITION_NAME} = "filtered_boundary",
     {fields::TRANSITION_OUTCOME} = tracing::field::Empty,

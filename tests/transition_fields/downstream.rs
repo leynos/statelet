@@ -121,12 +121,6 @@ fn decide(mode: Mode, fails: bool) -> Result<Decision, ParseFailure> {
 }
 
 /// An infallible boundary, which declares no error field.
-#[expect(
-    clippy::cognitive_complexity,
-    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; this fixture's body fits the ceiling but the guard alone \
-              scores 10"
-)]
 #[tracing::instrument(skip_all, fields(
     {fields::TRANSITION_NAME} = "handle_fence",
     {fields::TRANSITION_STATE_BEFORE} = mode.state_name(),
@@ -144,12 +138,6 @@ pub fn handle_fence(mode: Mode) -> Decision {
 /// This is the negative control for the declaration rule: its `record` call is
 /// the same one [`handle_line`] makes, and `tracing` discards it because the
 /// span never declared the field.
-#[expect(
-    clippy::cognitive_complexity,
-    reason = "the span guard `tracing-attributes` generates for an INFO-level span is counted as \
-              boundary complexity; this fixture's body fits the ceiling but the guard alone \
-              scores 10"
-)]
 #[tracing::instrument(skip_all, fields({fields::TRANSITION_NAME} = "handle_undeclared"))]
 pub fn handle_undeclared(outcome: &str) {
     tracing::Span::current().record(fields::TRANSITION_OUTCOME, outcome);

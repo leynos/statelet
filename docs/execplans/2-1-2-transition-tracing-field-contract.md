@@ -188,13 +188,14 @@ git diff --name-only "$base" -- ':!docs/execplans' | wc -l
 
 There is no elapsed-time limit; a healthy compiler queue is not a failure.
 
-Measured at completion (2026-11-25), against the merge base `e69af49`:
+Measured at completion (2026-11-25), against the live base `origin/main`
+(`b82a26c`); the earlier figures below were taken before the rebase:
 
 ```plaintext
 files   24 changed non-ExecPlan files   limit 20   exceeded by 4
-code    2326 net lines                  limit 1300 exceeded by 1026
+code    2308 net lines                  limit 1300 exceeded by 1008
 config  13 net lines                    limit 20   within
-docs    444 net lines                   limit 550  within
+docs    443 net lines                   limit 550  within
 ```
 
 Both exceptions are recorded rather than silently accepted. The file count
@@ -377,7 +378,8 @@ lines).
   appears for dotted literals, the constant form, `skip_all` alone, and a body
   containing nothing. `clippy -- -Zunpretty=expanded` shows the guard
   `tracing-attributes` 0.1.31 generates, whose `log`-fallback branch exists
-  because `rstest-bdd` enables `tracing/log`. Impact: D17.
+  because `rstest-bdd` enables `tracing/log`. Impact: D17, superseded by D25
+  after `main` replaced Clippy's macro-unaware gate.
 - Observation: declaring `tracing-core` with its default features adds the
   optional `valuable` package to `Cargo.lock`, increasing the resolved package
   count. Evidence: the first `cargo nextest` run printed "Adding valuable
@@ -579,22 +581,23 @@ lines).
   review.
 - D17. Decision: accept the lint-compatibility tolerance's trigger and record
   its resolution rather than abandoning the `#[instrument]` evidence. Each
-  instrumented downstream fixture carries an item-scoped
+  instrumented downstream fixture carried an item-scoped
   `#[expect(clippy::cognitive_complexity, reason = "...")]` naming the
-  `tracing-attributes` expansion; no other lint is suppressed and no
-  repository-wide threshold changes. Rationale: `EP-M1` proved that the
-  attribute's generated guard alone scores 10 against this crate's
-  CodeScene-aligned ceiling of 9, whatever the body and whichever form the
-  field names take; `rstest-bdd`'s `tracing/log` feature adds the
-  `log`-fallback branch that pushes it over. The lint is measuring third-party
-  generated code, not fixture logic; the roadmap success criterion requires
-  ordinary `#[instrument(fields(...))]`, so replacing the attribute would void
-  the evidence. The expectation is item-scoped, carries a reason, and fails
-  closed: if a later `tracing` release stops generating the branch,
-  `unfulfilled_lint_expectations` fails the gate and forces its removal. This
-  is the repository's sanctioned last resort, not the "wholesale" suppression
-  the tolerance prohibits. Date/Author: 2026-11-23, implementation agent;
-  evidence in `Surprises & discoveries`.
+  `tracing-attributes` expansion; no other lint was suppressed and no
+  repository-wide threshold changed. **Superseded by D25**, which removes the
+  expectations after `main` replaced Clippy's gate with Whitaker's macro-aware
+  lint. Rationale: `EP-M1` proved that the attribute's generated guard alone
+  scores 10 against this crate's CodeScene-aligned ceiling of 9, whatever the
+  body and whichever form the field names take; `rstest-bdd`'s `tracing/log`
+  feature adds the `log`-fallback branch that pushes it over. The lint is
+  measuring third-party generated code, not fixture logic; the roadmap success
+  criterion requires ordinary `#[instrument(fields(...))]`, so replacing the
+  attribute would void the evidence. The expectation is item-scoped, carries a
+  reason, and fails closed: if a later `tracing` release stops generating the
+  branch, `unfulfilled_lint_expectations` fails the gate and forces its
+  removal. This is the repository's sanctioned last resort, not the "wholesale"
+  suppression the tolerance prohibits. Date/Author: 2026-11-23, implementation
+  agent; evidence in `Surprises & discoveries`.
 - D18. Decision: declare the `tracing-core` dev-dependency with
   `default-features = false`. Rationale: `tracing-core`'s default features
   include `valuable?/std`, which adds the optional `valuable` package to
@@ -691,6 +694,20 @@ lines).
   deduplicating, so a sixth row repeating a field is rejected. A synthetic
   duplicate-row case pins that. Both cases were shown non-vacuous by seeded
   faults and reverted. Date/Author: 2026-11-25, implementation agent.
+- D25. Decision: withdraw D17's Clippy expectation workaround after rebasing
+  onto `main`. Main commit `0f1952c` ("Gate cognitive complexity with the
+  macro-aware lint at 9") removed `cognitive_complexity` from the Clippy deny
+  set, deleted `clippy.toml`'s `cognitive-complexity-threshold`, and opted
+  Whitaker into the experimental `macro_aware_cognitive_complexity` lint at 9
+  through `dylint.toml`. Under the new pinned toolchain `nightly-2026-11-25`
+  the Clippy lint no longer fires on the instrumented fixtures, so every
+  `#[expect(clippy::cognitive_complexity, ...)]` became unfulfilled and failed
+  the hosted lint gate. All three expectations are removed, and the developers'
+  guide now says not to add one because the macro-aware lint scores the source
+  rather than the expansion. This is a policy change in the base branch, not a
+  defect in the fixtures: the `tracing-attributes` guard still adds the
+  branching, and the macro-aware lint is the repository's chosen answer to it.
+  Date/Author: 2026-11-25, implementation agent.
 
 ## Outcomes & retrospective
 
