@@ -192,7 +192,7 @@ Measured at completion (2026-11-25), against the merge base `e69af49`:
 
 ```plaintext
 files   24 changed non-ExecPlan files   limit 20   exceeded by 4
-code    2283 net lines                  limit 1300 exceeded by 983
+code    2326 net lines                  limit 1300 exceeded by 1026
 config  13 net lines                    limit 20   within
 docs    444 net lines                   limit 550  within
 ```
