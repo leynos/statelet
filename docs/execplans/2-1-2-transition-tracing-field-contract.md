@@ -189,27 +189,28 @@ There is no elapsed-time limit; a healthy compiler queue is not a failure.
 Measured at completion (2026-11-24), against the merge base `e69af49`:
 
 ```plaintext
-files   23 changed non-ExecPlan files   limit 20   exceeded by 3
-code    2200 net lines                  limit 1300 exceeded by 900
+files   24 changed non-ExecPlan files   limit 20   exceeded by 4
+code    2278 net lines                  limit 1300 exceeded by 978
 config  13 net lines                    limit 20   within
-docs    419 net lines                   limit 550  within
+docs    435 net lines                   limit 550  within
 ```
 
 Both exceptions are recorded rather than silently accepted. The file count
 moved because the plan's budget assumed five modules under
 `tests/transition_fields/` while its plan of work names six, and the 400-line
-cap then forced `capture_tests.rs`, `behaviour_scenarios.rs` and
-`behaviour_steps.rs` out of their parents (the last two required by the plan's
-own "split `behaviour.rs` … if it passes 300"). The code count moved further
-when the hosted CodeScene review required genuine refactors rather than
-suppression (D20, D21), adding the expectation map, the whole-map comparison,
-the first-column and declaration-count checks, and their documentation. That
-growth is rustdoc- and comment-heavy in the same way the budget rationale
-records for 1.2.1's 900-to-1,736 overrun; no unapproved behaviour, interface,
-or dependency is in the excess. Reducing either number would mean deleting
-required evidence (the capture unit tests, the document-agreement checks, or
-the module and item documentation this repository's lints require), so the
-deviation is recorded here for review rather than papered over.
+cap then forced `capture_tests.rs`, `behaviour_scenarios.rs`,
+`behaviour_steps.rs`, and `docs_agree/section.rs` out of their parents (the
+last two required by the plan's own "split `behaviour.rs` … if it passes 300").
+The code count moved further when the hosted CodeScene review required genuine
+refactors rather than suppression (D20, D21), adding the expectation map, the
+whole-map comparison, the first-column and declaration-count checks, and their
+documentation. That growth is rustdoc- and comment-heavy in the same way the
+budget rationale records for 1.2.1's 900-to-1,736 overrun; no unapproved
+behaviour, interface, or dependency is in the excess. Reducing either number
+would mean deleting required evidence (the capture unit tests, the
+document-agreement checks, or the module and item documentation this
+repository's lints require), so the deviation is recorded here for review
+rather than papered over.
 
 Budget rationale. The surveyed surface is `src/lib.rs` (75 lines, one trait),
 `tests/state_name.rs` (134 lines), the 21-line `tests/documented_examples.rs`
@@ -291,7 +292,8 @@ lines).
 - Risk: the `{path::CONST}` form fails for downstream crates on `tracing`
   older than 0.1.42. Severity: low. Likelihood: medium. Mitigation: the guide
   and rustdoc state the minimum version and keep dotted literals as the equal
-  alternative; it needs `tracing` 0.1.9 or later, since 0.1.8's
+  alternative; it needs a resolved `tracing-attributes` 0.1.9 or later, and a
+  `tracing` version alone does not establish that, since 0.1.8's
   `tracing-attributes` rejects a dotted key.
 - Risk: document-agreement tests become brittle prose checks. Severity: low.
   Likelihood: medium. Mitigation: one marker-delimited table is the single

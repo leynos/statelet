@@ -85,20 +85,21 @@
 #[doc(alias = "transition.name")]
 pub const TRANSITION_NAME: &str = "transition.name";
 
-/// The [`crate::StateName`] label of the state observed on entry.
+/// The label of the state observed on entry.
 ///
-/// Recorded by a boundary that observes a state. The value *should* be the
-/// label `StateName::state_name` returns; the contract recommends that label
-/// but does not require it, and a different stable label is permitted.
+/// Recorded by a boundary that observes a state. The contract recommends the
+/// label [`crate::StateName::state_name`] returns, but does not require it; a
+/// different stable label is permitted.
 #[doc(alias = "transition.state.before")]
 pub const TRANSITION_STATE_BEFORE: &str = "transition.state.before";
 
-/// The stable semantic class of the input the boundary handles.
+/// The stable label describing the input the boundary handles.
 ///
-/// The contract *recommends* a low-cardinality class of the input rather than
-/// the input itself, so a raw parsed line does not reach the trace. It does not
-/// forbid recording the expression form a future macro's `event(...)` argument
-/// accepts; that projection question is deferred in design §14.
+/// The contract recommends a low-cardinality semantic class of the input rather
+/// than the input itself, so a raw parsed line does not reach the trace, but it
+/// does not require that projection. It does not forbid recording the
+/// expression form a future macro's `event(...)` argument accepts; that
+/// question is deferred in design §14.
 #[doc(alias = "transition.event")]
 pub const TRANSITION_EVENT: &str = "transition.event";
 

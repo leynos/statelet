@@ -1,6 +1,6 @@
 //! Equivalence between the two field-naming forms, and absence semantics.
 //!
-//! The contract accepts dotted string literals and the exported constants as
+//! The contract accepts dotted field names and the exported constants as
 //! equal alternatives. Equality is a claim about the fields `tracing` builds,
 //! not about the source text, so it is checked by capturing both forms and
 //! comparing the whole observation: declared fields, recorded values, and how

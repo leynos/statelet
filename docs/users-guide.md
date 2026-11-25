@@ -73,8 +73,10 @@ Statelet fixes five `tracing` field names for a transition boundary, so
 dashboards and log queries can depend on them however the boundary is written:
 
 - `transition.name` — the boundary's stable label.
-- `transition.state.before` — the `StateName` label of the observed state.
-- `transition.event` — the semantic class of the handled input.
+- `transition.state.before` — the label of the observed state; the
+  `StateName::state_name` label is recommended.
+- `transition.event` — a stable label for the handled input; a
+  low-cardinality semantic class is recommended.
 - `transition.outcome` — the label of the result the boundary produced.
 - `transition.error` — the bounded category of a returned error.
 
