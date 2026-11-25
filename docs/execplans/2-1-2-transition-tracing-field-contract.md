@@ -40,7 +40,9 @@ After this change, a downstream crate author can do three things.
    `docs/users-guide.md` name the same fields and link to that table.
 2. Name the fields either as dotted field names, which need a resolved
    `tracing-attributes` 0.1.9 or later, or through zero-dependency constants
-   that Statelet exports, which need `tracing-attributes` 0.1.31 or later:
+   that Statelet exports, which need a `tracing` facade that accepts braced
+   names together with `tracing-attributes` 0.1.31 or later (`tracing` 0.1.43
+   or later in practice):
 
    ```rust
    use statelet::{StateName, fields};
@@ -198,12 +200,13 @@ docs    435 net lines                   limit 550  within
 Both exceptions are recorded rather than silently accepted. The file count
 moved because the plan's budget assumed five modules under
 `tests/transition_fields/` while its plan of work names six, and the 400-line
-cap then forced `capture_tests.rs`, `behaviour_scenarios.rs`,
-`behaviour_steps.rs`, and `docs_agree/section.rs` out of their parents (the
-last two required by the plan's own "split `behaviour.rs` … if it passes 300").
-The code count moved further when the hosted CodeScene review required genuine
-refactors rather than suppression (D20, D21), adding the expectation map, the
-whole-map comparison, the first-column and declaration-count checks, and their
+cap then forced `capture_tests.rs`, `behaviour_scenarios.rs`, and
+`behaviour_steps.rs` out of `behaviour.rs`'s module family, and
+`docs_agree/section.rs` out of the document-agreement module (the last two
+required by the plan's own "split `behaviour.rs` … if it passes 300"). The code
+count moved further when the hosted CodeScene review required genuine refactors
+rather than suppression (D20, D21), adding the expectation map, the whole-map
+comparison, the first-column and declaration-count checks, and their
 documentation. That growth is rustdoc- and comment-heavy in the same way the
 budget rationale records for 1.2.1's 900-to-1,736 overrun; no unapproved
 behaviour, interface, or dependency is in the excess. Reducing either number
@@ -290,10 +293,10 @@ lines).
   (Clippy and Whitaker) before the rest of the suite is written; a failure
   triggers the lint-compatibility tolerance.
 - Risk: the `{path::CONST}` form fails for downstream crates on `tracing`
-  older than 0.1.42. Severity: low. Likelihood: medium. Mitigation: the guide
-  and rustdoc state the minimum version and keep dotted literals as the equal
-  alternative; it needs a resolved `tracing-attributes` 0.1.9 or later, and a
-  `tracing` version alone does not establish that, since 0.1.8's
+  older than the supported pair. Severity: low. Likelihood: medium. Mitigation:
+  the guide and rustdoc state the minimum version and keep dotted literals as
+  the equal alternative; it needs a resolved `tracing-attributes` 0.1.9 or
+  later, and a `tracing` version alone does not establish that, since 0.1.8's
   `tracing-attributes` rejects a dotted key.
 - Risk: document-agreement tests become brittle prose checks. Severity: low.
   Likelihood: medium. Mitigation: one marker-delimited table is the single
@@ -550,9 +553,9 @@ lines).
   the rules drifting, and the agreement test then needs only name sets outside
   the ADR. Date/Author: 2026-11-16, design review.
 - D13. Decision: state the minimum `tracing` version for the constant form
-  (0.1.42, carrying `tracing-attributes` 0.1.31) in the constants' rustdoc and
-  the users' guide. Rationale: see `Surprises & discoveries`. Date/Author:
-  2026-11-16, design review.
+  (`tracing` 0.1.43 with `tracing-attributes` 0.1.31; 0.1.42 is yanked) in the
+  constants' rustdoc and the users' guide. Rationale: see
+  `Surprises & discoveries`. Date/Author: 2026-11-16, design review.
 - D14. Decision: record usage evidence for the constants. ADR 0008's
   outstanding decisions ask the 2.2.1 and 2.2.2 validation notes to record
   whether `mdtablefix` used the constants or dotted literals and whether the
@@ -668,6 +671,18 @@ lines).
   Debug-delivered outcome probe now ran (it previously recorded a Display
   substitution); it fails the string-tag assertion with the value `"stay"`
   delivered via Debug. Date/Author: 2026-11-24, implementation agent.
+- D23. Decision: document the constant form's requirement as a facade and
+  attributes pair, verified by compile probes. The requirement is `tracing`
+  0.1.43 or later (0.1.42, the first release requiring attributes 0.1.31, is
+  yanked) together with `tracing-attributes` 0.1.31 or later; a newer
+  attributes release with an older facade still fails, because the facade's
+  `span!` macros must accept the braced name. Evidence (2026-11-25): a scratch
+  crate pinned to `tracing` 0.1.9 plus `tracing-attributes` 0.1.31 fails with
+  "no rules expected `,`" inside `tracing-0.1.9/src/macros.rs`, while the same
+  source pinned to `tracing` 0.1.43 plus 0.1.31 compiles. Also corrected two
+  statements: ADR 0008 says the constants make a misspelt constant fail to
+  compile, and the tolerance note no longer calls `docs_agree/section.rs` a
+  split from `behaviour.rs`. Date/Author: 2026-11-25, implementation agent.
 
 ## Outcomes & retrospective
 
@@ -1440,6 +1455,15 @@ The `enabled -> false` run leaves `capture_rejects_no_span` passing, which is
 correct: a subscriber that observes nothing still reports "no span". Each
 absence-bearing scenario failed through `CaptureError::NoSpan` rather than
 passing vacuously.
+
+Minimum-pair compile probes (2026-11-25), in a scratch crate outside the
+repository:
+
+```plaintext
+tracing 0.1.9  + tracing-attributes 0.1.31  fails: "no rules expected `,`"
+tracing 0.1.42 + tracing-attributes 0.1.31  unavailable: 0.1.42 is yanked
+tracing 0.1.43 + tracing-attributes 0.1.31  compiles
+```
 
 Document seeded faults (`EP-M3`, 2026-11-23), each rejected and reverted:
 

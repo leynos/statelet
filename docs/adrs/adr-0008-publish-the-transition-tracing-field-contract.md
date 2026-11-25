@@ -68,14 +68,14 @@ what stability promise attaches to them.
 
 ## Options considered
 
-| Option                        | What it publishes                     | Why it was not chosen                                                                                   |
-| ----------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Documentation only            | The rules, with no code               | Leaves the runtime crate owning the contract only on paper and gives a later macro nothing to reference |
-| `FieldName` newtype           | A wrapper type per name               | `tracing`'s field-name position and `Span::record` take `&str`, so every use would need `.as_str()`     |
-| `tracing`-typed constants     | Constants typed by `tracing`          | Requires a runtime `tracing` dependency, which design §3.4 defers                                       |
-| Constants behind a feature    | The constants only with `tracing`     | The constants need no `tracing`, so the feature would add matrix rows for no benefit                    |
-| `statelet::transition` module | The constants under that path         | Clashes conceptually with the future `#[statelet::transition]` attribute                                |
-| `statelet::fields` constants  | Five `pub const` names of type `&str` | Chosen: compiles a misspelt name, needs no dependency, and a later macro can emit the paths             |
+| Option                        | What it publishes                     | Why it was not chosen                                                                                        |
+| ----------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Documentation only            | The rules, with no code               | Leaves the runtime crate owning the contract only on paper and gives a later macro nothing to reference      |
+| `FieldName` newtype           | A wrapper type per name               | `tracing`'s field-name position and `Span::record` take `&str`, so every use would need `.as_str()`          |
+| `tracing`-typed constants     | Constants typed by `tracing`          | Requires a runtime `tracing` dependency, which design §3.4 defers                                            |
+| Constants behind a feature    | The constants only with `tracing`     | The constants need no `tracing`, so the feature would add matrix rows for no benefit                         |
+| `statelet::transition` module | The constants under that path         | Clashes conceptually with the future `#[statelet::transition]` attribute                                     |
+| `statelet::fields` constants  | Five `pub const` names of type `&str` | Chosen: makes a misspelt constant fail to compile, needs no dependency, and a later macro can emit the paths |
 
 *Table 1: Options considered for publishing the field names.*
 
@@ -85,13 +85,16 @@ Statelet fixes the five field names, records them in the table below, and
 publishes the names as five zero-dependency constants in the module
 `statelet::fields`. A dotted field name written in the `fields(...)` list
 remains a documented, equal alternative; it needs a resolved
-`tracing-attributes` 0.1.9 or later, and the braced constant form needs 0.1.31
-or later. The requirement is on the resolved attributes crate, because a given
-`tracing` release may permit an older `tracing-attributes`. The contract fixes
-field names, their location, and their meaning, presence, and value-shape
-rules. It does not fix the label vocabulary of any value: transition names,
-state labels, event classes, outcome labels, and error categories remain
-application-owned.
+`tracing-attributes` 0.1.9 or later, and the braced constant form needs a
+`tracing` facade whose macros accept braced names together with
+`tracing-attributes` 0.1.31 or later — in practice `tracing` 0.1.43 or later
+with `tracing-attributes` 0.1.31 or later. The requirement is on the resolved
+pair: a given `tracing` release may permit an older `tracing-attributes`, and a
+newer `tracing-attributes` with an older facade still fails, because the
+facade's `span!` macros must accept the braced name. The contract fixes field
+names, their location, and their meaning, presence, and value-shape rules. It
+does not fix the label vocabulary of any value: transition names, state labels,
+event classes, outcome labels, and error categories remain application-owned.
 
 ## The field contract
 

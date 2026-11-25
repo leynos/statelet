@@ -67,8 +67,13 @@
 //! identify the boundary's own span under filtering. An application that needs
 //! the strict location must keep the boundary span enabled.
 //!
-//! Braced constant field names need a resolved `tracing-attributes` 0.1.31 or
-//! later, which `tracing` 0.1.42 first carried. A dotted field name written in
+//! Braced constant field names need both a `tracing` facade whose macros accept
+//! braced names and a resolved `tracing-attributes` 0.1.31 or later. In
+//! practice that is `tracing` 0.1.43 or later — `tracing` 0.1.42, the first
+//! release to require 0.1.31, is yanked — with `tracing-attributes` 0.1.31 or
+//! later. A newer `tracing-attributes` with an older facade is not sufficient,
+//! because the facade's own `span!` macros must accept the braced name. A
+//! dotted field name written in
 //! the list, such as `transition.name = "handle_line"`, produces the same field
 //! and needs a resolved `tracing-attributes` 0.1.9 or later; `tracing` 0.1.9
 //! itself permits an older `tracing-attributes`, so the requirement is on the

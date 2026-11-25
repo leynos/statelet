@@ -94,9 +94,12 @@ compile, while a misspelt name silently creates a field nothing reads. Dotted
 field names need a resolved `tracing-attributes` 0.1.9 or later, the first
 release that parses a dotted key; `tracing` 0.1.9 permits an older
 `tracing-attributes`, so the requirement is on the resolved attributes crate,
-not on the `tracing` version alone. The compiled constant form needs a resolved
-`tracing-attributes` 0.1.31 or later, which `tracing` 0.1.42 first carried.
-Dotted names are the equal alternative.
+not on the `tracing` version alone. The compiled constant form needs both
+elements of a working pair: a `tracing` facade whose macros accept braced field
+names, and a resolved `tracing-attributes` 0.1.31 or later — in practice
+`tracing` 0.1.43 or later (`tracing` 0.1.42 is yanked) with
+`tracing-attributes` 0.1.31 or later. A newer `tracing-attributes` with an
+older facade is not sufficient. Dotted names are the equal alternative.
 
 Two habits keep a span readable. First, use `skip_all` on the instrumented
 boundary: without it every argument is recorded with `Debug`, including raw
