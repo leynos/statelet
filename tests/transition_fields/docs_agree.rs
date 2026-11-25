@@ -188,6 +188,29 @@ fn glossary_names_the_contract() -> Result<(), String> {
     Section::heading(CONTEXT, "### Transition field contract")?.require_the_contract()
 }
 
+/// A duplicated first-column row is rejected.
+///
+/// The table is the authority for each field's rules, so two rows for one
+/// field could state conflicting rules. Deduplicating the names before
+/// comparison would hide that, so this case pins the full-list comparison.
+#[test]
+fn a_duplicate_table_row_is_rejected() {
+    let text = "<!-- begin -->\n| Field | Meaning |\n| ----- | ------- |\n| `transition.name` | \
+                first |\n| `transition.state.before` | second |\n| `transition.event` | third \
+                |\n| `transition.outcome` | fourth |\n| `transition.error` | fifth |\n| \
+                `transition.name` | duplicate |\n<!-- end -->\n";
+    let document = Document {
+        path: "synthetic",
+        text,
+    };
+    let result = Section::between(document, "field table", "<!-- begin -->", "<!-- end -->")
+        .and_then(|section| section.require_first_column());
+    assert!(
+        result.is_err(),
+        "a duplicate first-column row must be rejected, but the check accepted it"
+    );
+}
+
 /// The exported constants are exactly the contracted names.
 #[test]
 fn constants_match_the_contract_table() {

@@ -106,6 +106,27 @@ fn no_name_is_a_namespace_of_another() {
     }
 }
 
+/// The namespace predicate rejects a genuine prefix pair.
+///
+/// The five contracted names are all siblings, so the pairwise check alone
+/// would pass for a predicate that always returned `false`. This case supplies
+/// the pair the plan names and requires the predicate to see the prefix.
+#[test]
+fn the_namespace_rule_rejects_a_prefix_pair() {
+    assert!(
+        is_dot_prefix("transition.state", "transition.state.before"),
+        "a dot-prefix must be recognized as a namespace of its extension"
+    );
+    assert!(
+        !is_dot_prefix("transition.state.before", "transition.state"),
+        "the longer name must not be a prefix of the shorter one"
+    );
+    assert!(
+        !is_dot_prefix("transition.state", "transition.stateful"),
+        "a shared prefix without a dot separator is not a namespace"
+    );
+}
+
 /// The runtime manifest declares no `tracing` dependency and no feature table.
 #[test]
 fn runtime_has_no_tracing_dependency() -> Result<(), String> {

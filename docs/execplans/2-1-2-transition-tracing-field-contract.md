@@ -683,6 +683,14 @@ lines).
   statements: ADR 0008 says the constants make a misspelt constant fail to
   compile, and the tolerance note no longer calls `docs_agree/section.rs` a
   split from `behaviour.rs`. Date/Author: 2026-11-25, implementation agent.
+- D24. Decision: close the two test-strength gaps from the sixth assessment
+  round. `no_name_is_a_namespace_of_another` now has a companion case supplying
+  the plan's `transition.state` / `transition.state.before` pair, so a
+  predicate that always returned `false` fails; and the ADR first-column
+  comparison keeps the full sorted list (including duplicates) instead of
+  deduplicating, so a sixth row repeating a field is rejected. A synthetic
+  duplicate-row case pins that. Both cases were shown non-vacuous by seeded
+  faults and reverted. Date/Author: 2026-11-25, implementation agent.
 
 ## Outcomes & retrospective
 
@@ -1449,6 +1457,8 @@ outcome recorded with Display      42 run, 3 failed  (BDD success, form agreemen
 outcome recorded with Debug        44 run, 2 failed  (string-tag, BDD success: via Debug)
 design 9.1 event moved into 9.2    design_names_the_contract fails (missing transition.event)
 glossary event moved to next entry glossary_names_the_contract fails
+first-column names deduplicated  a_duplicate_table_row_is_rejected fails
+is_dot_prefix always false        the_namespace_rule_rejects_a_prefix_pair fails
 ```
 
 The `enabled -> false` run leaves `capture_rejects_no_span` passing, which is

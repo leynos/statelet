@@ -143,7 +143,6 @@ impl<'a> Section<'a> {
         let names = self.first_column();
         let mut sorted = names.clone();
         sorted.sort();
-        sorted.dedup();
         let mut expected = EXPECTED.map(str::to_owned);
         expected.sort();
         if sorted != expected {
