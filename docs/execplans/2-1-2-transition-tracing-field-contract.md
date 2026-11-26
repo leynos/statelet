@@ -338,13 +338,14 @@ lines).
       `make markdownlint`, and `make nixie` all pass. `make test` was not
       re-run; its earlier phases passed on the prior candidate and the
       feature-matrix suite is untouched by these edits.
-- [ ] (2026-11-23) `EP-M1` red observed: `cargo nextest run --test
+- [x] (2026-11-23) `EP-M1` red observed: `cargo nextest run --test
       transition_fields` failed on the unresolved `statelet::fields` path.
-- [ ] (2026-11-23) `EP-M1` green observed for the constants and contract
-      tests; doctests pass. Lint compatibility resolved through D17 and D18
-      (see `Surprises & discoveries`).
-- [ ] (2026-11-23) `EP-M2` capture subscriber, fixtures, form-equivalence, and
-      five BDD scenarios pass: 42 focused tests green. Seeded faults next.
+- [x] (2026-11-23) `EP-M1` green observed for the constants and contract
+      tests; doctests pass. Lint compatibility was resolved through D17 and
+      D18; D25 later superseded D17 after `main` changed the gate.
+- [x] (2026-11-23) `EP-M2` capture subscriber, fixtures, form-equivalence, and
+      five BDD scenarios passed: 42 focused tests green at that point; the
+      suite later grew to 48 with the review regressions.
 
 ## Surprises & discoveries
 
