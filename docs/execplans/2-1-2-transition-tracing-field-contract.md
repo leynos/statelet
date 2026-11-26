@@ -188,15 +188,16 @@ git diff --name-only "$base" -- ':!docs/execplans' | wc -l
 
 There is no elapsed-time limit; a healthy compiler queue is not a failure.
 
-Measured at completion (2026-11-25), against the live base `origin/main`
-(`b82a26c`); the earlier figures below were taken before the rebase:
+Measured at each milestone against its live base (`origin/main` at the time):
 
 ```plaintext
-files   24 changed non-ExecPlan files   limit 20   exceeded by 4
-code    2308 net lines                  limit 1300 exceeded by 1008
-config  13 net lines                    limit 20   within
-docs    443 net lines                   limit 550  within
+head      base      files  code  config  docs
+34da51d   b82a26c   24     2308  13      443    post-rebase
+411390a   b82a26c   24     2418  13      446    after the D26 review repairs
 ```
+
+The pre-rebase measurement against `e69af49` was 23 files, 2,278 code, 13
+configuration, and 444 documentation, before `main` advanced.
 
 Both exceptions are recorded rather than silently accepted. The file count
 moved because the plan's budget assumed five modules under
