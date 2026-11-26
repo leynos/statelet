@@ -708,6 +708,19 @@ lines).
   defect in the fixtures: the `tracing-attributes` guard still adds the
   branching, and the macro-aware lint is the repository's chosen answer to it.
   Date/Author: 2026-11-25, implementation agent.
+- D26. Decision: accept and fix all five findings from CodeRabbit's formal
+  review and Codex's review at head `34da51d`. (1) The plan's concrete gate
+  commands now enable `pipefail`, because a bare `make ... | tee` reports
+  `tee`'s status. (2) The capture subscriber's `exit` removes the innermost
+  matching entry (`rposition`), so a re-entered span cannot leave an outer
+  instance current. (3) The ADR first-column extractor now rejects a row whose
+  first cell is not backticked instead of silently dropping it, and a synthetic
+  case pins that. (4) `docs/contents.md` indexes the 2.1.2 ExecPlan. (5) The
+  backslash-continued string literals in the test files use `concat!`, as
+  `AGENTS.md` requires. The two behavioural fixes were shown non-vacuous by
+  seeded faults (reverting `rposition`, and skipping unbackticked rows), each
+  failing its regression case and reverted. Date/Author: 2026-11-25,
+  implementation agent.
 
 ## Outcomes & retrospective
 
@@ -1394,6 +1407,8 @@ Acceptance: all gates pass; the seeded document faults are rejected; roadmap
 Run from the repository root, sequentially, with `tee` logs:
 
 ```bash
+# Without pipefail the pipeline reports `tee`'s status, not the gate's.
+set -o pipefail
 cargo nextest run --test transition_fields 2>&1 | tee /tmp/focused-statelet-2-1-2-transition-tracing-field-contract.out
 make check-fmt 2>&1 | tee /tmp/check-fmt-statelet-2-1-2-transition-tracing-field-contract.out
 make lint 2>&1 | tee /tmp/lint-statelet-2-1-2-transition-tracing-field-contract.out
@@ -1476,6 +1491,8 @@ design 9.1 event moved into 9.2    design_names_the_contract fails (missing tran
 glossary event moved to next entry glossary_names_the_contract fails
 first-column names deduplicated  a_duplicate_table_row_is_rejected fails
 is_dot_prefix always false        the_namespace_rule_rejects_a_prefix_pair fails
+capture exit uses first match     exiting_a_reentered_span_restores_the_previous_span fails
+unbackticked table rows skipped   an_unbackticked_table_row_is_rejected fails
 ```
 
 The `enabled -> false` run leaves `capture_rejects_no_span` passing, which is

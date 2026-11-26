@@ -47,6 +47,9 @@ set.
   - [Implement StateName and handwritten examples](execplans/2-1-1-state-name-trait-examples.md)
     records the approved and delivered runtime trait and examples for task
     2.1.1, including their local verification.
+  - [Publish the transition tracing field contract](execplans/2-1-2-transition-tracing-field-contract.md)
+    records the approved and delivered field contract and constants for task
+    2.1.2, including their local and hosted verification.
 
 ## Product and design
 

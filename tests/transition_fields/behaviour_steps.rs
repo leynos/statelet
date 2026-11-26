@@ -155,10 +155,11 @@ fn returns_outcome(world: &TransitionWorld, label: String) -> Result<(), String>
             world.result.set(Ok(decision));
             Ok(())
         }
-        Boundary::Undeclared | Boundary::EarlyReturn => Err("this step runs a fallible or \
-                                                             infallible boundary, not the \
-                                                             selected control"
-            .to_owned()),
+        Boundary::Undeclared | Boundary::EarlyReturn => Err(concat!(
+            "this step runs a fallible or infallible boundary, ",
+            "not the selected control"
+        )
+        .to_owned()),
     }
 }
 

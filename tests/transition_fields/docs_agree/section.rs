@@ -7,6 +7,14 @@
 
 use super::{Document, EXPECTED, EXPECTED_SPANS, heading_rank, section_body};
 
+/// Whether a first cell is a Markdown table separator (`---`/`:--:`).
+fn is_separator(cell: &str) -> bool {
+    !cell.is_empty()
+        && cell
+            .chars()
+            .all(|character| matches!(character, '-' | ':' | ' '))
+}
+
 /// One extracted region of a document, with the name it is reported under.
 #[derive(Debug, Clone, Copy)]
 pub(super) struct Section<'a> {
@@ -116,21 +124,39 @@ impl<'a> Section<'a> {
     /// The contract table's first column is the field name; a name that moved
     /// into the meaning or value cell would still satisfy a whole-row search,
     /// so the ADR check reads this column alone.
-    pub(super) fn first_column(&self) -> Vec<String> {
-        self.body
+    pub(super) fn first_column(&self) -> Result<Vec<String>, String> {
+        let path = self.document.path;
+        let mut names = Vec::new();
+        for (row, line) in self
+            .body
             .lines()
             .filter(|line| line.trim_start().starts_with('|'))
-            .filter_map(|line| {
-                let cells = line.trim().trim_matches('|');
-                let mut split = cells.split('|');
-                let first = split.next()?.trim();
-                // The header and separator rows carry no backticked field.
-                first
-                    .strip_prefix('`')
-                    .and_then(|rest| rest.split_once('`'))
-                    .map(|(name, _)| name.to_owned())
-            })
-            .collect()
+            .enumerate()
+        {
+            let cells = line.trim().trim_matches('|');
+            let first = cells.split('|').next().unwrap_or("").trim();
+            // Row zero is the header and a separator row is dashes only.
+            if row == 0 || is_separator(first) {
+                continue;
+            }
+            let name = first
+                .strip_prefix('`')
+                .and_then(|rest| rest.split_once('`'))
+                .map(|(name, _)| name.to_owned());
+            match name {
+                Some(field) => names.push(field),
+                None => {
+                    return Err(format!(
+                        concat!(
+                            "{} table row {} has the unbackticked first cell {:?}; ",
+                            "every field row must name its field in backticks"
+                        ),
+                        path, row, first
+                    ));
+                }
+            }
+        }
+        Ok(names)
     }
 
     /// Rejects a table whose first column is not exactly the contract.
@@ -140,7 +166,7 @@ impl<'a> Section<'a> {
     /// Returns a message naming the missing, unexpected, or duplicated field.
     pub(super) fn require_first_column(&self) -> Result<(), String> {
         let path = self.document.path;
-        let names = self.first_column();
+        let names = self.first_column()?;
         let mut sorted = names.clone();
         sorted.sort();
         let mut expected = EXPECTED.map(str::to_owned);

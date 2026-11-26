@@ -249,7 +249,9 @@ impl Subscriber for CaptureSubscriber {
 
     fn exit(&self, span: &Id) {
         let mut state = self.state();
-        if let Some(position) = state.stack.iter().position(|entered| entered == span) {
+        // Nested entries can repeat an identifier (A, B, A), and the span being
+        // exited is the innermost one, so remove the last match.
+        if let Some(position) = state.stack.iter().rposition(|entered| entered == span) {
             state.stack.remove(position);
         }
     }

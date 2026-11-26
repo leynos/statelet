@@ -188,26 +188,63 @@ fn glossary_names_the_contract() -> Result<(), String> {
     Section::heading(CONTEXT, "### Transition field contract")?.require_the_contract()
 }
 
-/// A duplicated first-column row is rejected.
+/// Whether the first-column check rejects `text` as a marked table.
 ///
-/// The table is the authority for each field's rules, so two rows for one
-/// field could state conflicting rules. Deduplicating the names before
-/// comparison would hide that, so this case pins the full-list comparison.
-#[test]
-fn a_duplicate_table_row_is_rejected() {
-    let text = "<!-- begin -->\n| Field | Meaning |\n| ----- | ------- |\n| `transition.name` | \
-                first |\n| `transition.state.before` | second |\n| `transition.event` | third \
-                |\n| `transition.outcome` | fourth |\n| `transition.error` | fifth |\n| \
-                `transition.name` | duplicate |\n<!-- end -->\n";
+/// Both synthetic cases share this runner so a change to the table grammar or
+/// the markers touches one place rather than two nearly identical tests.
+fn first_column_rejects(text: &'static str) -> bool {
     let document = Document {
         path: "synthetic",
         text,
     };
-    let result = Section::between(document, "field table", "<!-- begin -->", "<!-- end -->")
-        .and_then(|section| section.require_first_column());
+    Section::between(document, "field table", "<!-- begin -->", "<!-- end -->")
+        .and_then(|section| section.require_first_column())
+        .is_err()
+}
+
+/// A synthetic table whose last row repeats `transition.name`.
+const DUPLICATE_ROW_TABLE: &str = concat!(
+    "<!-- begin -->\n",
+    "| Field | Meaning |\n",
+    "| ----- | ------- |\n",
+    "| `transition.name` | first |\n",
+    "| `transition.state.before` | second |\n",
+    "| `transition.event` | third |\n",
+    "| `transition.outcome` | fourth |\n",
+    "| `transition.error` | fifth |\n",
+    "| `transition.name` | duplicate |\n",
+    "<!-- end -->\n",
+);
+
+/// A synthetic table whose last row names a field without backticks.
+const UNBACKTICKED_ROW_TABLE: &str = concat!(
+    "<!-- begin -->\n",
+    "| Field | Meaning |\n",
+    "| ----- | ------- |\n",
+    "| `transition.name` | first |\n",
+    "| `transition.state.before` | second |\n",
+    "| `transition.event` | third |\n",
+    "| `transition.outcome` | fourth |\n",
+    "| `transition.error` | fifth |\n",
+    "| transition.after | sixth, unbackticked |\n",
+    "<!-- end -->\n",
+);
+
+/// A duplicated first-column row is rejected.
+#[test]
+fn a_duplicate_table_row_is_rejected() {
     assert!(
-        result.is_err(),
+        first_column_rejects(DUPLICATE_ROW_TABLE),
         "a duplicate first-column row must be rejected, but the check accepted it"
+    );
+}
+
+/// A field row without backticks is rejected, not silently ignored.
+#[test]
+fn an_unbackticked_table_row_is_rejected() {
+    assert!(
+        first_column_rejects(UNBACKTICKED_ROW_TABLE),
+        "an unbackticked field row must be rejected, but the check accepted it"
     );
 }
 

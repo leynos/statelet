@@ -198,3 +198,44 @@ fn a_filtered_boundary_records_into_an_enabled_ancestor() {
         "the filtered boundary's record must land on the enabled ancestor, as documented"
     );
 }
+
+/// Exiting a re-entered span removes the innermost entry.
+///
+/// Entering the same span twice produces `A, B, A`. Exiting the innermost `A`
+/// must leave `B` current; removing the first `A` would instead leave the outer
+/// `A` current and misattribute the record.
+#[test]
+fn exiting_a_reentered_span_restores_the_previous_span() {
+    let inner_subscriber = CaptureSubscriber::new();
+    tracing::subscriber::with_default(inner_subscriber.clone(), || {
+        tracing::callsite::rebuild_interest_cache();
+        let outer = info_span!("outer", probe = tracing::field::Empty);
+        let inner = info_span!("inner", probe = tracing::field::Empty);
+        let outer_guard = outer.enter();
+        let inner_guard = inner.enter();
+        let outer_again = outer.enter();
+        drop(outer_again);
+        tracing::Span::current().record("probe", "after");
+        drop(inner_guard);
+        drop(outer_guard);
+    });
+
+    let spans = inner_subscriber.into_spans();
+    let value = |name: &str| {
+        spans
+            .iter()
+            .find(|span| span.name == name)
+            .and_then(|span| span.value("probe"))
+            .map(|value| value.text.as_str())
+    };
+    assert_eq!(
+        value("inner"),
+        Some("after"),
+        "the record must land on the inner span after the re-entered span exits"
+    );
+    assert_eq!(
+        value("outer"),
+        None,
+        "the outer span must not receive a record made after the inner entry exited"
+    );
+}
