@@ -173,8 +173,11 @@ impl<'a> Section<'a> {
         expected.sort();
         if sorted != expected {
             return Err(format!(
-                "{path} field table first column is {names:?}; expected exactly the contracted \
-                 fields in any order"
+                concat!(
+                    "{} field table first column is {:?}; ",
+                    "expected exactly the contracted fields in any order"
+                ),
+                path, names
             ));
         }
         Ok(())
