@@ -34,6 +34,51 @@ on the `&'static str` projection alone; they must not assume the label matches
 preserved by the implementor, and the trait cannot enforce that policy for
 downstream implementations.
 
+## Transition field contract
+
+`statelet::fields` publishes the five `transition.*` tracing field names that
+[ADR 0008](adrs/adr-0008-publish-the-transition-tracing-field-contract.md)
+makes semver-relevant. The constants are the crate's only copy of the strings:
+applications and a future macro reference them rather than restating a dotted
+literal, and nothing else in `src/` redefines one. A new field needs an ADR
+0008 amendment, a new constant, and the agreement test's expected set widened
+in the same change. The constants carry `#[doc(alias = "<dotted name>")]` so a
+Rustdoc search for the literal still finds them.
+
+The dotted field-name form stays documented as an equal alternative because the
+braced constant form needs both a `tracing` facade whose macros accept braced
+names and a resolved `tracing-attributes` 0.1.31 or later — in practice
+`tracing` 0.1.43 or later (`tracing` 0.1.42 is yanked) with
+`tracing-attributes` 0.1.31 or later. Do not delete either form from the guide
+or the rustdoc while both work.
+
+`tests/transition_fields.rs` compiles as an external crate, so it proves the
+published surface rather than crate internals. Its `contract` child pins each
+constant to a literal written in the test and parses the manifest with the
+existing `toml` dev-dependency, so it reads files only through `include_str!`.
+Its `docs_agree` child reads every document that names the fields and fails
+when one drifts. The capture subscriber in `capture.rs` is test-only and local
+to this suite: it is not the structured recorder proposed for roadmap 6.3.1,
+and a second suite that needs one should promote it deliberately rather than
+import this copy. Fixtures are called only inside `capture`, because a span
+created outside a scoped dispatcher can be discarded and an absence assertion
+would then pass for the wrong reason.
+
+`#[tracing::instrument]` expands to a span guard whose `log`-fallback branch
+adds branching the fixture did not write. This repository does not suppress it:
+cognitive complexity is gated by Whitaker's macro-aware lint (see the lint
+baseline section), which scores the source rather than the expansion, so the
+instrumented fixtures need no expectation. Do not add a Clippy
+`cognitive_complexity` expectation to them; Clippy no longer gates that lint,
+and an unfulfilled expectation fails the build.
+
+`tracing-core` is declared with `default-features = false`: its default
+features add the optional `valuable` package to `Cargo.lock`, and `tracing`
+already enables the `tracing-core/std` feature the capture subscriber needs.
+Check `git diff Cargo.lock` after touching these dev-dependencies; the only
+expected change is the two-line dependency list in the `statelet` package
+record.
+
 ## Local Workflow
 
 Install `rustup` and `uv` first. Local repository Python gateways use managed

@@ -126,6 +126,18 @@ means transition-specific fields such as state, event, transition name,
 outcome, and error. It does not mean a general replacement for
 `tracing::instrument`.
 
+### Transition field contract
+
+The five `tracing` field names a transition boundary records, published as
+semver-relevant operational API: `transition.name`, `transition.state.before`,
+`transition.event`, `transition.outcome`, and `transition.error`. The contract
+fixes their names, location on the boundary span, meaning, presence, and value
+shape, but not the label vocabulary any application puts in them. It is stated
+once in
+[ADR 0008](adrs/adr-0008-publish-the-transition-tracing-field-contract.md) and
+exported as the constants in `statelet::fields`; the design records the names
+in §9.1.
+
 ### Framework
 
 A crate that owns the state-machine object, dispatch model, lifecycle, or graph

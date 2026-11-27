@@ -7,10 +7,11 @@ manual.
 ## Current status
 
 Statelet is being evaluated as a small toolkit for marking transition
-boundaries in ordinary Rust state machines. Its only runtime API is the
-handwritten `StateName` trait described below; it does not yet expose a
-procedural macro or a stable public API. The trait's `&'static str` return
-shape is provisional until the consumption evidence required by
+boundaries in ordinary Rust state machines. Its runtime API is the handwritten
+`StateName` trait and the `statelet::fields` constants described below; it does
+not yet expose a procedural macro or a stable public API. The trait's
+`&'static str` return shape is provisional until the consumption evidence
+required by
 [ADR 0004](adrs/adr-0004-define-the-statename-consumption-evidence.md) is
 recorded.
 
@@ -65,6 +66,64 @@ derived from a handwritten `Display`, a type name, or a numeric discriminant
 can stay unchanged across a rename or change for a reason unrelated to the
 name. Use explicit literals for any name that operational tooling may observe,
 so a rename and its label change are one deliberate edit.
+
+## Transition tracing fields
+
+Statelet fixes five `tracing` field names for a transition boundary, so
+dashboards and log queries can depend on them however the boundary is written:
+
+- `transition.name` — the boundary's stable label.
+- `transition.state.before` — the label of the observed state; the
+  `StateName::state_name` label is recommended.
+- `transition.event` — a stable label for the handled input; a
+  low-cardinality semantic class is recommended.
+- `transition.outcome` — the label of the result the boundary produced.
+- `transition.error` — the bounded category of a returned error.
+
+The
+[ADR 0008 field table](adrs/adr-0008-publish-the-transition-tracing-field-contract.md#the-field-contract)
+is the authoritative statement of each field's meaning, when it is recorded,
+and what its value may contain. The
+[`statelet::fields` Rustdoc example](../src/fields.rs) compiles and runs an
+instrumented boundary that uses all five.
+
+Name the fields either as dotted field names in the `fields(...)` list — for
+example `transition.name = "handle_line"` — or through the exported constants,
+which move the spelling under the compiler: a misspelt constant fails to
+compile, while a misspelt name silently creates a field nothing reads. Dotted
+field names need a resolved `tracing-attributes` 0.1.9 or later, the first
+release that parses a dotted key; `tracing` 0.1.9 permits an older
+`tracing-attributes`, so the requirement is on the resolved attributes crate,
+not on the `tracing` version alone. The compiled constant form needs both
+elements of a working pair: a `tracing` facade whose macros accept braced field
+names, and a resolved `tracing-attributes` 0.1.31 or later — in practice
+`tracing` 0.1.43 or later (`tracing` 0.1.42 is yanked) with
+`tracing-attributes` 0.1.31 or later. A newer `tracing-attributes` with an
+older facade is not sufficient. Dotted names are the equal alternative.
+
+Two habits keep a span readable. First, use `skip_all` on the instrumented
+boundary: without it every argument is recorded with `Debug`, including raw
+input that the contract forbids in a trace. Second, declare every late field
+when the span is created — `tracing::field::Empty` is the idiomatic declaration
+— because a value recorded for an undeclared field is discarded silently.
+
+A declared field that is never recorded stays absent, and absence means only
+that the boundary did not capture it. It never implies success or failure: a
+`?` or an early return can leave `transition.error` absent even though the
+boundary failed, so do not build an alert on a missing field alone.
+
+Recording through `tracing::Span::current()` targets the nearest enabled span.
+If the subscriber's filter disables the boundary's own span, the record can
+reach an enclosing span that declares the same field, so keep the boundary span
+enabled when the field's location matters.
+
+Each boundary call creates one span, filtered by the subscriber's level like
+any other `tracing` span, so record a boundary only where the transition is
+worth observing. The field names are semver-relevant once a release contains
+them: adding a field is compatible, while renaming one or changing its meaning
+is a breaking change. Whether Statelet publishes at all is still
+[ADR 0003](adrs/adr-0003-record-the-v0-1-exit-register.md)'s decision, so no
+release promise attaches to the names yet.
 
 ## Quick start
 

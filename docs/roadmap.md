@@ -119,7 +119,7 @@ of any later macro. See design.md §§3.1-3.2, 6.1, 9, and 10.
   - Success: enum states can expose stable names without requiring `Debug` as
     the observability contract.
   - See design.md §6.1.
-- [ ] 2.1.2. Publish the transition tracing field contract.
+- [x] 2.1.2. Publish the transition tracing field contract.
   - Requires 2.1.1.
   - Document `transition.name`, `transition.state.before`,
     `transition.event`, `transition.outcome`, and `transition.error` as

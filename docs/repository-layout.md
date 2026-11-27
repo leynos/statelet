@@ -112,7 +112,11 @@ compact and omits build output such as `target/`.
   `docs/contents.md`.
 
 - `src/lib.rs`: Contains the library crate root and exported public API
-  surface, currently the `StateName` trait.
+  surface, currently the `StateName` trait and the `fields` module.
+- `src/fields.rs`: Holds the five `transition.*` tracing field name constants
+  published by
+  [ADR 0008](adrs/adr-0008-publish-the-transition-tracing-field-contract.md),
+  with a runnable Rustdoc example of an instrumented boundary.
 
 - `tests/`: Holds integration and behavioural tests that exercise public
   behaviour.
@@ -123,6 +127,15 @@ compact and omits build output such as `target/`.
   is exported as a shared runtime utility.
 - `tests/v0_1_exit_register_contract.rs`: Guards ADR 0003 against drift in its
   exit register, cited evidence, and roadmap gates.
+- `tests/transition_fields.rs` and `tests/transition_fields/`: Prove the
+  published transition fields work with ordinary
+  `#[tracing::instrument(fields(...))]`, as a downstream crate sees them. Its
+  private children each own one concern: the exported-name contract
+  (`contract.rs`), the application-shaped fixtures (`downstream.rs`), the
+  capture subscriber and its unit tests (`capture.rs`, `capture_tests.rs`), the
+  form-equivalence and absence cases (`forms.rs`), the behavioural world, step
+  definitions, and scenario bindings (`behaviour.rs`, `behaviour_steps.rs`,
+  `behaviour_scenarios.rs`), and the document-agreement check (`docs_agree.rs`).
 - `tests/state_name_consumption_contract.rs`: Guards ADR 0004 against drift in
   its status and aggregation registers, its gate table, the validation note
   template, and the source clauses it quotes. It also reads
@@ -176,6 +189,10 @@ compact and omits build output such as `target/`.
   Cargo's `dep:` feature syntax suppresses an implicit dependency feature.
 - `tests/feature_matrix_command/assertions.rs`: Interprets recorded Cargo
   invocations for the command-boundary suite's configuration assertions.
+- `tests/features/transition_fields.feature`: The Gherkin scenarios the
+  transition-field behavioural steps run: a fallible success, a fallible
+  failure, an infallible boundary, an undeclared late field, and an error
+  propagated before recording.
 - `tests/features/topology_check.feature`: The Gherkin scenarios the topology
   check's behavioural suite runs.
 - `tests/workflow_contracts/topology_wiring_contract.py` and

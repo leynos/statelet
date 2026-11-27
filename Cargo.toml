@@ -121,3 +121,14 @@ thiserror = "2.0.21"
 # The codegen-backend contract parses `.cargo/config.toml` structurally; a
 # substring search would accept a commented-out table as a live one.
 toml = "1.1.4"
+# Downstream-shaped transition-field tests instrument ordinary functions with
+# the plain `#[tracing::instrument]` attribute. Already resolved through
+# `rstest-bdd`, so this adds no package. See D8 in the 2.1.2 plan.
+tracing = "0.1.44"
+# The capture subscriber implements `Subscriber::current_span`, whose return
+# type lives in `tracing-core` and is not re-exported by `tracing`. Its default
+# features pull the optional `valuable` package into `Cargo.lock`; `tracing`
+# already enables `tracing-core/std`, so this declaration takes no defaults and
+# adds no resolved package. Already resolved through `rstest-bdd`. See D8 in
+# the 2.1.2 plan.
+tracing-core = { version = "0.1.36", default-features = false }
