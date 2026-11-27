@@ -60,7 +60,12 @@ def test_parallel_composite_propagates_whitaker_failure(tmp_path: Path) -> None:
         "WHITAKER_TEST_EVENT_LOG": str(events),
     }
     result = subprocess.run(
-        ["make", "--no-print-directory", "-j", "lint", f"CARGO={cargo}", f"WHITAKER={whitaker}"],
+        [
+            "make", "--no-print-directory", "-j", "lint",
+            f"CARGO={cargo}", f"WHITAKER={whitaker}",
+            # The YAML lint prerequisites are not under test; stub them out.
+            "YAMLLINT=true", "ACTIONLINT=true",
+        ],
         cwd=ROOT, env=env, capture_output=True, text=True, check=False,
     )
     observed = events.read_text(encoding="utf-8").splitlines()
