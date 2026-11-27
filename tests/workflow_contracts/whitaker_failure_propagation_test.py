@@ -14,6 +14,19 @@ def _executable(path: Path, body: str) -> None:
     path.chmod(0o755)
 
 
+def _lint_command(cargo: Path, whitaker: Path) -> list[str]:
+    """Return the ``make lint`` command with fake Cargo and Whitaker and no YAML lint.
+
+    The YAML lint prerequisites are not under test and need the estate tools on
+    ``PATH``, so ``YAMLLINT`` and ``ACTIONLINT`` are replaced by ``true``.
+    """
+    return [
+        "make", "--no-print-directory", "-j", "lint",
+        f"CARGO={cargo}", f"WHITAKER={whitaker}",
+        "YAMLLINT=true", "ACTIONLINT=true",
+    ]
+
+
 def test_parallel_composite_propagates_whitaker_failure(tmp_path: Path) -> None:
     """A failing Whitaker executable aborts sequential Make lint after Clippy."""
     tool_bin = tmp_path / "bin"
@@ -60,12 +73,7 @@ def test_parallel_composite_propagates_whitaker_failure(tmp_path: Path) -> None:
         "WHITAKER_TEST_EVENT_LOG": str(events),
     }
     result = subprocess.run(
-        [
-            "make", "--no-print-directory", "-j", "lint",
-            f"CARGO={cargo}", f"WHITAKER={whitaker}",
-            # The YAML lint prerequisites are not under test; stub them out.
-            "YAMLLINT=true", "ACTIONLINT=true",
-        ],
+        _lint_command(cargo, whitaker),
         cwd=ROOT, env=env, capture_output=True, text=True, check=False,
     )
     observed = events.read_text(encoding="utf-8").splitlines()
